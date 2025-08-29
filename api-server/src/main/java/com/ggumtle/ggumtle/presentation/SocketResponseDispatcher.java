@@ -43,6 +43,20 @@ public class SocketResponseDispatcher {
         }
     }
 
+    @EventListener
+    private void handleSocketErrorMessageEvent(SendErrorSocketEvent event) {
+        SocketResponse response = new SocketResponse(false, event.message());
+
+        for (String sessionId : event.sessionIds()) {
+            for (WebSocketSession session : sessions) {
+                if (session.getId().equals(sessionId)) {
+                    sendMessage(session, response);
+                    break;
+                }
+            }
+        }
+    }
+
     private void sendMessage(WebSocketSession session, SocketResponse response) {
         try {
             String json = objectMapper.writeValueAsString(response);

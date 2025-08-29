@@ -7,6 +7,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
@@ -15,6 +16,7 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -24,6 +26,7 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
     private final Map<SocketCommand, HandlerInfo> commandToHandler = new HashMap<>();
     private final ObjectMapper objectMapper;
     private final ApplicationContext applicationContext;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
@@ -47,7 +50,25 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
                     throw new IllegalStateException("중복된 커맨드 핸들러: " + command);
                 }
 
-                commandToHandler.put(command, new HandlerInfo(bean, method, paramTypes[0]));
+                if (paramTypes.length == 0) {
+                    commandToHandler.put(command, new HandlerInfo(bean, method, null, false));
+                    continue;
+                }
+
+                if (paramTypes.length == 1) {
+                    commandToHandler.put(command, new HandlerInfo(bean, method, paramTypes[0], false));
+                    continue;
+                }
+
+                if (paramTypes.length == 2) {
+                    if (paramTypes[0] != String.class) {
+                        throw new RuntimeException("파라미터가 2개인 소켓 커맨드 핸들러의 첫번째 파라미터는 세션 ID여야 합니다");
+                    }
+                    commandToHandler.put(command, new HandlerInfo(bean, method, paramTypes[1], true));
+                    continue;
+                }
+
+                throw new RuntimeException("소켓 커맨드 핸들러의 파라미터는 2개 이하여야 합니다");
             }
         }
     }
@@ -73,9 +94,22 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
         log.info("파라미터 {}", parameter);
 
         try {
-            handlerInfo.method().invoke(handlerInfo.bean(), session.getId(), parameter);
+            if (handlerInfo.needSessionId) {
+                handlerInfo.method().invoke(handlerInfo.bean(), session.getId(), parameter);
+            } else {
+                handlerInfo.method().invoke(handlerInfo.bean(), parameter);
+            }
         } catch (Exception e) {
-            // TODO: 기능 수행 중 발생한 예외 처리
+            if (e.getCause() instanceof RuntimeException runtimeException) {
+                log.error("Runtime exception 발생: {}", runtimeException.getMessage());
+
+                SendErrorSocketEvent event = new SendErrorSocketEvent(List.of(session.getId()), runtimeException.getMessage());
+                applicationEventPublisher.publishEvent(event);
+
+                return;
+            }
+
+            log.error("Exception 발생: {}", e.getMessage());
         }
     }
 
@@ -88,7 +122,8 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
     private record HandlerInfo(
             Object bean,
             Method method,
-            Class<?> parameterType
+            Class<?> parameterType,
+            Boolean needSessionId
     ) {
     }
 }

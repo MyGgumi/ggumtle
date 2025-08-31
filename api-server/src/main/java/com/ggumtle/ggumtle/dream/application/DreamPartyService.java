@@ -6,10 +6,10 @@ import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
-import com.ggumtle.ggumtle.dream.domain.Party;
+import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.dream.domain.PartyInvitation;
 import com.ggumtle.ggumtle.dream.persistence.PartyInvitationRepository;
-import com.ggumtle.ggumtle.dream.persistence.PartyRepository;
+import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
 import com.ggumtle.ggumtle.common.SocketCommand;
 import com.ggumtle.ggumtle.common.SocketCommandHandler;
@@ -25,30 +25,30 @@ import java.util.UUID;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class DreamPartyService {
     private final ApplicationEventPublisher applicationEventPublisher;
-    private final PartyRepository partyRepository;
+    private final PartyParticipantRepository partyParticipantRepository;
     private final PartyInvitationRepository partyInvitationRepository;
 
     @SocketCommandHandler(command = SocketCommand.CREATE_PARTY)
     public void createParty(String sessionId, CreatePartyCommand command) {
-        if (partyRepository.existsById(command.memberId())) {
+        if (partyParticipantRepository.existsById(command.memberId())) {
             throw new RuntimeException("이미 방에 속해 있습니다");
         }
 
-        Party party = new Party(command.memberId(), UUID.randomUUID().toString(), true);
-        partyRepository.save(party);
+        PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), true);
+        partyParticipantRepository.save(partyParticipant);
 
-        SendSocketEvent event = new SendSocketEvent(List.of(sessionId), new CreatePartyResult(party.getPartyId()));
+        SendSocketEvent event = new SendSocketEvent(List.of(sessionId), new CreatePartyResult(partyParticipant.getPartyId()));
         applicationEventPublisher.publishEvent(event);
     }
 
     @SocketCommandHandler(command = SocketCommand.INVITE_PARTY)
     public void inviteParty(String sessionId, InvitePartyCommand command) {
-        Party party = partyRepository.findById(command.requesterId())
+        PartyParticipant partyParticipant = partyParticipantRepository.findById(command.requesterId())
                 .orElseThrow(() -> new RuntimeException("속한 방이 없습니다"));
 
         PartyInvitation partyInvitation = PartyInvitation.builder()
                 .id(UUID.randomUUID().toString())
-                .partyId(party.getPartyId())
+                .partyId(partyParticipant.getPartyId())
                 .inviteeId(command.inviteeId())
                 .inviterId(command.requesterId())
                 .build();
@@ -69,12 +69,12 @@ public class DreamPartyService {
         }
 
         partyInvitationRepository.delete(partyInvitation);
-        Party party = new Party(command.requesterId(), UUID.randomUUID().toString(), false);
-        partyRepository.save(party);
+        PartyParticipant partyParticipant = new PartyParticipant(partyInvitation.getInviteeId(), partyInvitation.getPartyId(), false);
+        partyParticipantRepository.save(partyParticipant);
 
         // TODO: WebSocket에 Principal 주입 후, 해당 파티에 속한 모든 사용자의 Long ID들을 반환하도록 수정
         // TODO: Member 도메인 기능 구현 후, 가입한 사용자의 닉네임 조회 후 반환하도록 수정
-        SendSocketEvent event = new SendSocketEvent(List.of(sessionId), new AcceptInvitationResult(party.getMemberId(), "Temp nickname"));
+        SendSocketEvent event = new SendSocketEvent(List.of(sessionId), new AcceptInvitationResult(partyParticipant.getMemberId(), "Temp nickname"));
         applicationEventPublisher.publishEvent(event);
     }
 }

@@ -1,13 +1,15 @@
 package com.ggumtle.ggumtle.dream.domain;
 
 import lombok.Getter;
+import lombok.ToString;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.redis.core.RedisHash;
 import org.springframework.data.redis.core.index.Indexed;
 
-@RedisHash("party")
+@RedisHash("party_participant")
 @Getter
-public class Party {
+@ToString
+public class PartyParticipant {
     @Id
     private Long memberId;
 
@@ -16,7 +18,7 @@ public class Party {
 
     private boolean isLeader;
 
-    public Party(Long memberId, String partyId, boolean isLeader) {
+    public PartyParticipant(Long memberId, String partyId, boolean isLeader) {
         this.memberId = memberId;
         this.partyId = partyId;
         this.isLeader = isLeader;

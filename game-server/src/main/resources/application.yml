@@ -1,3 +1,10 @@
 spring:
   application:
     name: ggumtle
+
+# 게임 서버 설정
+game:
+  server:
+    port: 8888
+    max-players-per-room: 6
+    tick-rate: 30

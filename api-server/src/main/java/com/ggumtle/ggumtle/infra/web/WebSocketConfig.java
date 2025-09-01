@@ -1,5 +1,7 @@
 package com.ggumtle.ggumtle.infra.web;
 
+import com.ggumtle.ggumtle.infra.websocket.JwtHandshakeHandler;
+import com.ggumtle.ggumtle.infra.websocket.JwtHandshakeInterceptor;
 import com.ggumtle.ggumtle.presentation.SocketHandler;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -13,9 +15,14 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
     private final SocketHandler socketHandler;
+    private final JwtHandshakeInterceptor jwtHandshakeInterceptor;
+    private final JwtHandshakeHandler jwtHandshakeHandler;
 
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
-        registry.addHandler(socketHandler, "ws");
+        registry.addHandler(socketHandler, "ws")
+                .addInterceptors(jwtHandshakeInterceptor)
+                .setHandshakeHandler(jwtHandshakeHandler)
+                .setAllowedOrigins("*");
     }
 }

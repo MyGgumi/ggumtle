@@ -32,6 +32,13 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	implementation 'io.netty:netty-all:4.2.4.Final'
+
+    implementation 'org.springframework.boot:spring-boot-starter-json'
+
+    // Jwt
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.12.5'
+    runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.12.5'
 }
 
 tasks.named('test') {

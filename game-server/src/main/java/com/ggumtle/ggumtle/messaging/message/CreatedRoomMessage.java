@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.messaging.message;
 
-public record CreatedDreamMessage(
+public record CreatedRoomMessage(
         Long roomId,
         String dreamServerId
 ) {

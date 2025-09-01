@@ -41,12 +41,12 @@ public class RoomManager {
      *
      * @return 생성된 방 ID
      */
-    public Room createRoom() {
+    public Room createRoom(List<Long> players) {
         long roomId = roomIdGenerator.incrementAndGet();
 
         log.debug("{} 방 생성", roomId);
 
-        Room room = new Room(roomId);
+        Room room = new Room(roomId, players);
         roomMap.put(roomId, room);
 
         return room;
@@ -87,20 +87,6 @@ public class RoomManager {
      * @return 방 리스트
      */
     public List<Room> getRooms() {
-        return Collections.unmodifiableList(roomMap.values().stream().toList());
-    }
-
-    /**
-     * party 멤버 모두가 들어갈 수 있는 방을 조회합니다.
-     * 없으면 새로운 방을 생성합니다.
-     *
-     * @param partyMemberCount 파티 멤버 수
-     * @return 조회된 방
-     */
-    public Room getRoomForPartyMembers(int partyMemberCount) {
-        return roomMap.values().stream()
-                .filter(room -> room.isAvailable(partyMemberCount))
-                .findFirst()
-                .orElse(createRoom());
+        return roomMap.values().stream().toList();
     }
 }

@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.server;
 
-import com.ggumtle.ggumtle.server.packet.PacketType;
+import com.ggumtle.ggumtle.common.dto.Command;
+import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +12,8 @@ import java.nio.ByteBuffer;
 @RequiredArgsConstructor
 public class PacketMapper {
 
-    public <T extends Command> T getCommand(PacketType packetType, byte[] bytes) throws Exception {
-        Class<? extends Command> clazz = packetType.getClazz();
+    public <T extends Command> T getCommand(ReceivePacketType receivePacketType, byte[] bytes) throws Exception {
+        Class<? extends Command> clazz = receivePacketType.getClazz();
 
         ByteBuffer buffer = ByteBuffer.wrap(bytes);
 

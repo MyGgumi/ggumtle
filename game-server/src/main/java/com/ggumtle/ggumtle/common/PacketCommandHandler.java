@@ -1,6 +1,6 @@
-package com.ggumtle.ggumtle.server;
+package com.ggumtle.ggumtle.common;
 
-import com.ggumtle.ggumtle.server.packet.PacketType;
+import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -11,5 +11,5 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface PacketCommandHandler {
 
-    PacketType type();
+    ReceivePacketType type();
 }

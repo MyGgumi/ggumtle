@@ -13,7 +13,7 @@ import java.util.List;
 public class PacketDecoder extends ByteToMessageDecoder {
 
     @Override
-    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
+    protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) {
         // 헤더 크기만큼 읽을 수 있는지 확인
         if (in.readableBytes() < PacketHeader.HEADER_SIZE) {
             return; // 더 많은 데이터를 기다림

@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.session;
 
 import com.ggumtle.ggumtle.server.packet.Packet;
+import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import io.netty.channel.Channel;
 import lombok.Builder;
 import lombok.Getter;
@@ -8,13 +9,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Getter
-@Builder
 @RequiredArgsConstructor
+@Builder
+@Getter
 public class Session {
 
     private final long sessionId;
     private final Channel channel;
+    private final long memberId;
 
     /**
      * Session에게 패킷을 전송합니다.
@@ -24,7 +26,7 @@ public class Session {
     public void sendPacket(Packet packet) {
         if (isConnected()) {
             channel.writeAndFlush(packet);
-            log.debug("Session {}에게 패킷 전송: {}", sessionId, packet.header().packetType());
+            log.debug("Session {}에게 패킷 전송: {}", sessionId, SendPacketType.fromValue(packet.header().packetType()));
         } else {
             log.warn("Session {}가 연결되지 않아 패킷 전송 실패", sessionId);
         }

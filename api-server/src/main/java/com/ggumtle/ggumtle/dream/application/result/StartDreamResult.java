@@ -4,7 +4,7 @@ public record StartDreamResult(
         START_DREAM_STATUS status,
         Dream dream
 ) {
-    public StartDreamResult(START_DREAM_STATUS status, String roomId, String dreamServerId) {
+    public StartDreamResult(START_DREAM_STATUS status, Long roomId, String dreamServerId) {
         this(status, new Dream(roomId, dreamServerId));
     }
 
@@ -13,7 +13,7 @@ public record StartDreamResult(
     }
 
     public record Dream(
-            String roomId,
+            Long roomId,
             String dreamServerId
     ) {
     }

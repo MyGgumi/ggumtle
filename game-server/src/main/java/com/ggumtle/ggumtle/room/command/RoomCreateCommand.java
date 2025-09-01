@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.room.command;
 
-import com.ggumtle.ggumtle.server.Command;
+import com.ggumtle.ggumtle.common.dto.Command;
 
 public record RoomCreateCommand(
         int partyMemberCount

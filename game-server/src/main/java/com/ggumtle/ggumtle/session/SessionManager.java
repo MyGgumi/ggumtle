@@ -1,10 +1,9 @@
 package com.ggumtle.ggumtle.session;
 
 import com.ggumtle.ggumtle.server.packet.Packet;
+import com.ggumtle.ggumtle.server.packet.SendPacketType;
+import com.ggumtle.ggumtle.session.result.SessionResult;
 import io.netty.channel.Channel;
-import io.netty.channel.group.ChannelGroup;
-import io.netty.channel.group.DefaultChannelGroup;
-import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -22,17 +21,15 @@ public class SessionManager {
     // Session 관리를 위한 맵
     private final ConcurrentHashMap<Channel, Session> sessionMap = new ConcurrentHashMap<>();
 
-    // 모든 채널을 관리하기 위한 채널 그룹
-    private final ChannelGroup allChannels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-
     /**
      * 모든 세션에 패킷을 브로드캐스트합니다.
      *
      * @param packet 브로드캐스트할 패킷
      */
     public void broadcast(Packet packet) {
-        log.debug("모든 세션에 패킷 브로드캐스트: {}", packet.header().packetType());
-        allChannels.writeAndFlush(packet);
+        log.debug("모든 세션에 패킷 브로드캐스트: {}", SendPacketType.fromValue(packet.header().packetType()));
+
+        sessionMap.values().forEach(session -> session.sendPacket(packet));
     }
 
     /**
@@ -40,19 +37,27 @@ public class SessionManager {
      *
      * @param channel 세션에 연결된 채널
      */
-    public void createSession(Channel channel) {
+    public void createSession(Channel channel, long memberId) {
         long sessionId = sessionIdGenerator.incrementAndGet();
-
-        log.debug("새로운 세션 생성: {}", sessionId);
 
         Session session = Session.builder()
                 .sessionId(sessionId)
                 .channel(channel)
+                .memberId(memberId)
                 .build();
 
-        log.debug("세션 맵에 추가: {}", sessionId);
+        log.debug("새로운 세션 생성: {}", session);
+
         sessionMap.put(channel, session);
-        allChannels.add(session.getChannel());
+        log.debug("세션 맵에 추가: {}", sessionId);
+
+        SessionResult sessionResult = new SessionResult(true, sessionId);
+        Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
+        channel.writeAndFlush(packet);
+    }
+
+    public boolean existSession(Channel channel) {
+        return sessionMap.containsKey(channel);
     }
 
     /**
@@ -81,11 +86,6 @@ public class SessionManager {
             log.debug("세션 제거: {}", session.getSessionId());
             session.disconnect();
             sessionMap.remove(channel);
-        }
-
-        if (allChannels.contains(channel)) {
-            log.debug("모든 채널에서 제거: {}", channel.remoteAddress());
-            allChannels.remove(channel);
         }
     }
 

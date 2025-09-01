@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
  * @param timestamp  타임스탬프
  */
 public record PacketHeader(
-        PacketType packetType,
+        short packetType,
         int dataLength,
         long timestamp
 ) {
@@ -25,7 +25,7 @@ public record PacketHeader(
         // 명시해두기 위해 작성해두었지만, 혹시 모를 성능을 대비해 주석 처리
         // buffer.order(ByteOrder.BIG_ENDIAN);
 
-        PacketType packetType = PacketType.fromValue(buffer.getShort());
+        short packetType = buffer.getShort();
         int dataLength = buffer.getInt();
         long timestamp = buffer.getLong();
 
@@ -39,7 +39,7 @@ public record PacketHeader(
         // 명시해두기 위해 작성해두었지만, 혹시 모를 성능을 대비해 주석 처리
         // buffer.order(ByteOrder.BIG_ENDIAN);
 
-        buffer.putShort(packetType.getValue());
+        buffer.putShort(packetType);
         buffer.putInt(dataLength);
         buffer.putLong(timestamp);
 

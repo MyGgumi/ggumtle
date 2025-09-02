@@ -3,57 +3,63 @@ package com.ggumtle.ggumtle.presentation;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+@Slf4j
 public class SocketResponseDispatcher {
-    private static final Set<WebSocketSession> sessions = Collections.synchronizedSet(new HashSet<>());
+    private static final ConcurrentHashMap<Long, WebSocketSession> idToSession = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
 
     void registerSession(WebSocketSession session) {
-        sessions.add(session);
-        sendMessage(session, new SocketResponse(true, "API 서버와 연결 완료"));
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+
+        idToSession.put(memberId, session);
+        sendMessage(session, new SocketResponse(true, null, "API 서버와 연결 완료"));
     }
 
     void removeSession(WebSocketSession session) {
-        sessions.remove(session);
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+
+        idToSession.remove(memberId);
     }
 
     @EventListener
     private void handleSocketMessageEvent(SendSocketEvent event) {
-        SocketResponse response = new SocketResponse(true, event.data());
+        SocketResponse response = new SocketResponse(true, null, event.data());
 
-        for (String sessionId : event.sessionIds()) {
+        for (Long memberId : event.memberIds()) {
+            WebSocketSession session = idToSession.get(memberId);
 
-            for (WebSocketSession session : sessions) {
-                if (session.getId().equals(sessionId)) {
-                    sendMessage(session, response);
-                    break;
-                }
+            if (session == null) {
+                log.warn("{}번 사용자의 세션이 없습니다", memberId);
+                continue;
             }
 
+            sendMessage(session, response);
         }
     }
 
     @EventListener
     private void handleSocketErrorMessageEvent(SendErrorSocketEvent event) {
-        SocketResponse response = new SocketResponse(false, event.message());
+        SocketResponse response = new SocketResponse(false, event.code(), event.message());
 
-        for (String sessionId : event.sessionIds()) {
-            for (WebSocketSession session : sessions) {
-                if (session.getId().equals(sessionId)) {
-                    sendMessage(session, response);
-                    break;
-                }
+        for (Long memberId : event.memberIds()) {
+            WebSocketSession session = idToSession.get(memberId);
+
+            if (session == null) {
+                log.warn("{}번 사용자의 세션이 없습니다", memberId);
+                continue;
             }
+
+            sendMessage(session, response);
         }
     }
 
@@ -70,6 +76,7 @@ public class SocketResponseDispatcher {
 
     private record SocketResponse (
             Boolean success,
+            String code,
             Object data
     ) {
     }

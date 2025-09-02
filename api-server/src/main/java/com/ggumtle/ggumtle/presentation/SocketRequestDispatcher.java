@@ -1,8 +1,8 @@
 package com.ggumtle.ggumtle.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ggumtle.ggumtle.common.SocketCommand;
 import com.ggumtle.ggumtle.common.SocketCommandHandler;
+import com.ggumtle.ggumtle.common.SocketRequestType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +23,7 @@ import java.util.Map;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
 public class SocketRequestDispatcher implements ApplicationListener<ContextRefreshedEvent> {
-    private final Map<SocketCommand, HandlerInfo> commandToHandler = new HashMap<>();
+    private final Map<SocketRequestType, HandlerInfo> typeToHandler = new HashMap<>();
     private final ObjectMapper objectMapper;
     private final ApplicationContext applicationContext;
     private final ApplicationEventPublisher applicationEventPublisher;
@@ -43,34 +43,45 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
                     continue;
                 }
 
-                SocketCommand command = annotation.command();
+                SocketRequestType type = annotation.type();
                 Class<?>[] paramTypes = method.getParameterTypes();
 
-                if (commandToHandler.containsKey(command)) {
-                    throw new IllegalStateException("중복된 커맨드 핸들러: " + command);
+                if (typeToHandler.containsKey(type)) {
+                    log.warn("{} 핸들러 무시: 중복된 핸들러", type);
+                    continue;
                 }
 
                 if (paramTypes.length == 0) {
-                    commandToHandler.put(command, new HandlerInfo(bean, method, null, false));
+                    typeToHandler.put(type, new HandlerInfo(bean, method, null, false));
                     continue;
                 }
 
                 if (paramTypes.length == 1) {
-                    commandToHandler.put(command, new HandlerInfo(bean, method, paramTypes[0], false));
-                    continue;
+                    if (paramTypes[0] == WebSocketSession.class) {
+                        typeToHandler.put(type, new HandlerInfo(bean, method, null, true));
+                        continue;
+                    }
+                    else {
+                        typeToHandler.put(type, new HandlerInfo(bean, method, paramTypes[0], false));
+                        continue;
+                    }
                 }
 
                 if (paramTypes.length == 2) {
-                    if (paramTypes[0] != String.class) {
-                        throw new RuntimeException("파라미터가 2개인 소켓 커맨드 핸들러의 첫번째 파라미터는 세션 ID여야 합니다");
+                    if (paramTypes[1] != WebSocketSession.class) {
+                        log.warn("{} 핸들러 무시: 파라미터가 2개인 소켓 요청 핸들러의 첫번째 파라미터는 Request DTO, 두번째 파라미터는 WebSocketSession이어야 합니다", type);
+                        continue;
                     }
-                    commandToHandler.put(command, new HandlerInfo(bean, method, paramTypes[1], true));
+
+                    typeToHandler.put(type, new HandlerInfo(bean, method, paramTypes[0], true));
                     continue;
                 }
 
-                throw new RuntimeException("소켓 커맨드 핸들러의 파라미터는 2개 이하여야 합니다");
+                log.warn("{} 핸들러 무시: 소켓 커맨드 핸들러의 파라미터는 2개 이하여야 합니다", type);
             }
         }
+
+        log.info(typeToHandler.toString());
     }
 
     void dispatchSocketResponse(WebSocketSession session, TextMessage message) {
@@ -86,35 +97,50 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
             return;
         }
 
-        SocketCommand socketCommand = SocketCommand.valueOf(socketRequest.command);
-        log.info("커맨드 {}", socketCommand);
-        HandlerInfo handlerInfo = commandToHandler.get(socketCommand);
-        log.info("핸들러 {}", handlerInfo);
-        Object parameter = objectMapper.convertValue(socketRequest.data(), handlerInfo.parameterType());
-        log.info("파라미터 {}", parameter);
+        SocketRequestType type = SocketRequestType.valueOf(socketRequest.type);
+        log.info("요청 유형: {}", type);
+        HandlerInfo handlerInfo = typeToHandler.get(type);
+        log.info("요청 핸들러: {}", handlerInfo);
+        Object parameter = null;
+        if (handlerInfo.parameterType() != null) {
+            parameter = objectMapper.convertValue(socketRequest.data(), handlerInfo.parameterType());
+        }
+        log.info("요청 파라미터: {}", parameter);
 
         try {
-            if (handlerInfo.needSessionId) {
-                handlerInfo.method().invoke(handlerInfo.bean(), session.getId(), parameter);
-            } else {
-                handlerInfo.method().invoke(handlerInfo.bean(), parameter);
+            if (handlerInfo.parameterType != null && handlerInfo.needSession) {
+                handlerInfo.method().invoke(handlerInfo.bean(), parameter, session);
+                return;
             }
+
+            if (handlerInfo.needSession) {
+                handlerInfo.method().invoke(handlerInfo.bean(), session);
+                return;
+            }
+
+            if (handlerInfo.parameterType != null) {
+                handlerInfo.method().invoke(handlerInfo.bean(), parameter);
+                return;
+            }
+
+            handlerInfo.method().invoke(handlerInfo.bean());
         } catch (Exception e) {
             if (e.getCause() instanceof RuntimeException runtimeException) {
                 log.error("Runtime exception 발생: {}", runtimeException.getMessage());
 
-                SendErrorSocketEvent event = new SendErrorSocketEvent(List.of(session.getId()), runtimeException.getMessage());
+                SendErrorSocketEvent event = new SendErrorSocketEvent(List.of(Long.parseLong(session.getPrincipal().getName())), null, runtimeException.getMessage());
                 applicationEventPublisher.publishEvent(event);
 
                 return;
             }
 
+            e.printStackTrace();
             log.error("Exception 발생: {}", e.getMessage());
         }
     }
 
     private record SocketRequest(
-            String command,
+            String type,
             Object data
     ) {
     }
@@ -123,7 +149,7 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
             Object bean,
             Method method,
             Class<?> parameterType,
-            Boolean needSessionId
+            Boolean needSession
     ) {
     }
 }

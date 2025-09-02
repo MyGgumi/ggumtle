@@ -1,7 +1,6 @@
 package com.ggumtle.ggumtle.infra.websocket;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketHandler;
@@ -17,7 +16,8 @@ public class JwtHandshakeHandler extends DefaultHandshakeHandler {
                                       @NotNull WebSocketHandler webSocketHandler,
                                       @NotNull Map<String, Object> attributes) {
         Object memberId = attributes.get("memberId");
-        if (memberId != null) {
+
+        if (memberId == null) {
             return null;
         }
         String name = String.valueOf(memberId);

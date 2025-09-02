@@ -1,6 +1,9 @@
 package com.ggumtle.ggumtle.dream.application.result;
 
-public record AcceptInvitationResult(
+import java.util.List;
+
+public record AcceptPartyInvitationResult(
+        List<Long> memberIds,
         Long joinedMemberId,
         String joinedMemberNickname
 ) {

@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.dream.application;
 
-import com.ggumtle.ggumtle.common.SocketCommand;
+import com.ggumtle.ggumtle.common.SocketRequestType;
 import com.ggumtle.ggumtle.common.SocketCommandHandler;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.StartDreamResult;
@@ -42,21 +42,19 @@ public class DreamService {
      * 매칭에 실패한 경우 매칭을 기다린다
      * 요청 수신과 매칭 기다리기, 매칭 성공, 드림 시작과 같은 전 과정에 대한 정보를 이벤트로 발행한다
      */
-    @SocketCommandHandler(command = SocketCommand.START_DREAM)
-    public void startDream(String sessionId, StartDreamCommand command) {
-        // TODO: 모든 이벤트 퍼블리싱에 대해 WebSocket에 Principal 붙인 후 파티에 관련된 모든 플레이어에게 방송하도록 수정
-        publishEvent(List.of(sessionId), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
-
+    public void startDream(StartDreamCommand command) {
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(command.partyId());
+        List<Long> requesterPartyParticipantIds = convertToId(participants);
+        publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
+
         log.info("드림 시작을 요청한 파티원: {}", participants);
 
         // 요청한 파티가 드림 플레이어 인원 수와 일치하면 바로 시작
         if (participants.size() == DREAM_PLAYER_SIZE) {
-            publishEvent(List.of(sessionId), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+            publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
 
-            List<Long> playerIds = convertToId(participants);
-            requestRoom(playerIds);
-            publishEvent(List.of(sessionId), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+            requestRoom(requesterPartyParticipantIds);
+            publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
             return;
         }
 
@@ -69,20 +67,20 @@ public class DreamService {
             WaitingParty waitingParty = new WaitingParty(participants.getFirst().getPartyId(), participants.size());
             waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis());
 
-            publishEvent(List.of(sessionId), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
+            publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
             return;
         }
 
         // 매칭 성공 시 매칭된 파티를 대기열에서 삭제하고 드림 시작
-        publishEvent(List.of(sessionId), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+        List<Long> matchedParticipantIds = convertToId(participants, matchedParties);
+        publishEvent(matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
 
         for (WaitingParty matchedParty : matchedParties) {
             waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, matchedParty, System.currentTimeMillis());
         }
 
-        List<Long> playerIds = convertToId(participants, matchedParties);
-        requestRoom(playerIds);
-        publishEvent(List.of(sessionId), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+        requestRoom(matchedParticipantIds);
+        publishEvent(matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
     }
 
     /**
@@ -94,7 +92,7 @@ public class DreamService {
     public void handleCreatedRoom(CreatedRoomEvent event) {
         StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START, event.roomId(), event.dreamServerId());
 
-        applicationEventPublisher.publishEvent(new SendSocketEvent(List.of(""), result));
+        applicationEventPublisher.publishEvent(new SendSocketEvent(List.of(1L), result));
     }
 
     /**
@@ -158,8 +156,8 @@ public class DreamService {
         roomMessageManager.sendMessage(dreamServer, playerIds);
     }
 
-    private void publishEvent(List<String> sessionIds, Object data) {
-        SendSocketEvent event = new SendSocketEvent(sessionIds, data);
+    private void publishEvent(List<Long> memberIds, Object data) {
+        SendSocketEvent event = new SendSocketEvent(memberIds, data);
         applicationEventPublisher.publishEvent(event);
     }
 }

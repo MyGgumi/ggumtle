@@ -1,0 +1,36 @@
+# Build outputs
+/build/
+/release/
+
+# APK files
+*.apk
+*.aab
+
+# Proguard
+/proguard/
+
+# Signing configs (민감한 정보)
+keystore.properties
+*.jks
+*.keystore
+
+# Generated files
+/generated/
+
+# Test results
+/androidTest-results/
+/test-results/
+
+# Coverage reports
+/coverage/
+
+# Lint reports
+/lint-results/
+lint-results.html
+lint-results.xml
+
+# Local configuration
+local.properties
+
+# Temporary files
+*.tmp

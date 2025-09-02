@@ -1,0 +1,147 @@
+# Android Studio & IntelliJ IDEA
+*.iml
+.idea/
+*.iws
+out/
+*.swp
+*.swo
+*~
+
+# Gradle
+.gradle/
+/build/
+*/build/
+gradlew
+gradlew.bat
+/gradle/wrapper/gradle-wrapper.jar
+local.properties
+
+# Build Logic
+build-logic/.gradle/
+build-logic/.kotlin/
+build-logic/convention/build/
+
+# Core modules build outputs
+core/*/build/
+
+# Kotlin metadata
+*.kotlin_module
+
+# Android
+.DS_Store
+/captures
+.externalNativeBuild/
+.cxx/
+*.hprof
+*.log
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+lint/reports/
+.navigation/
+
+# Keystore files
+*.jks
+*.keystore
+key.properties
+release/
+
+# Unity
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+/[Aa]ssets/Plugins/Editor/JetBrains*
+ExportedObj/
+.consulo/
+*.csproj
+*.unityproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+sysinfo.txt
+*.apk
+*.aab
+*.unitypackage
+*.app
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Legacy Eclipse
+.classpath
+.project
+.settings/
+
+# Mobile Tools for Java
+.mtj.tmp/
+
+# Package Files
+*.war
+*.ear
+
+# VM crash logs
+hs_err_pid*
+
+# Firebase & Google Services
+google-services.json
+GoogleService-Info.plist
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Test results
+test-results/
+junit-results/
+
+# Compose compiler reports
+**/build/compose_compiler/
+
+# KSP generated files
+**/build/generated/ksp/
+
+# Baseline profiles
+*/src/main/baseline-prof.txt
+**/baseline-prof.txt
+
+# Android profiling
+*.trace
+
+# Database files  
+*.db
+*.db-shm  
+*.db-wal
+
+# Backup files
+*.bak
+*~

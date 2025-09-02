@@ -1,0 +1,190 @@
+[versions]
+# ───── Android Gradle 플러그인 및 Kotlin 관련 버전 ─────
+androidGradlePlugin = "8.9.0"
+datastorePreferences = "1.1.7"
+kotlin = "2.1.10"
+jetbrainsKotlinJvm = "2.1.10"
+kotlinxCoroutinesCore = "1.8.1"
+ksp = "2.1.10-1.0.31"
+androidTools = "31.11.0"
+
+# ───── AndroidX / Jetpack 라이브러리 버전 ─────
+coreKtx = "1.16.0"
+lifecycleRuntimeKtx = "2.9.1"
+activityCompose = "1.10.1"
+appcompat = "1.7.1"
+androidxComposeBom = "2025.06.02"
+androidxComposeMaterial3Adaptive = "1.1.0-rc01"
+androidxComposeRuntimeTracing = "1.7.6"
+androidxComposeFoundation = "1.8.0-alpha07"
+androidxDataStore = "1.1.1"
+androidxBrowser = "1.8.0"
+androidxNavigation = "2.8.5"
+accompanist = "0.36.0"
+
+# ───── 빌드 도구 및 기타 ─────
+androidDesugarJdkLibs = "2.1.5"
+googleOssPlugin = "0.10.6"
+
+# ───── 테스트 라이브러리 버전 ─────
+junit = "4.13.2"
+junitVersion = "1.2.1"
+espressoCore = "3.6.1"
+androidxMacroBenchmark = "1.3.4"
+
+# ───── 의존성 주입 / Hilt / Google 서비스 ─────
+hilt = "2.56.2"
+gmsPlugin = "4.4.3"
+androidxHiltNavigationCompose = "1.2.0"
+
+# ───── Kotlin 확장 / 네트워크 / 직렬화 / 날짜 / 이미지 ─────
+kotlinxCoroutines = "1.10.1"
+kotlinxDatetime = "0.6.1"
+kotlinxSerializationJson = "1.8.0"
+okhttp = "4.12.0"
+retrofit = "2.11.0"
+coil = "2.7.0"
+
+# ───── Room ─────
+room = "2.7.2"
+
+# ───── Material 디자인 ─────
+material = "1.12.0"
+
+# ───── Google Auth / Credentials ─────
+androidxCredentials = "1.5.0"
+googleIdentity = "1.1.1"
+
+# ───── Orbit MVI ─────
+orbit = "8.0.0"
+
+[libraries]
+# ───── Android 기본 및 Jetpack ─────
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-datastore-preferences-v117 = { module = "androidx.datastore:datastore-preferences", version.ref = "datastorePreferences" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+androidx-browser = { group = "androidx.browser", name = "browser", version.ref = "androidxBrowser" }
+androidx-lifecycle-runtimeCompose = { group = "androidx.lifecycle", name = "lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-runtimeTesting = { group = "androidx.lifecycle", name = "lifecycle-runtime-testing", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewModelCompose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom-alpha", version.ref = "androidxComposeBom" }
+androidx-dataStore = { group = "androidx.datastore", name = "datastore", version.ref = "androidxDataStore" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "androidxDataStore" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "androidxNavigation" }
+androidx-navigation-testing = { group = "androidx.navigation", name = "navigation-testing", version.ref = "androidxNavigation" }
+
+# ───── Compose ─────
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "androidxComposeFoundation" }
+androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout" }
+androidx-compose-material-iconsExtended = { group = "androidx.compose.material", name = "material-icons-extended" }
+androidx-compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-compose-material3-navigationSuite = { group = "androidx.compose.material3", name = "material3-adaptive-navigation-suite" }
+androidx-compose-material3-adaptive = { group = "androidx.compose.material3.adaptive", name = "adaptive", version.ref = "androidxComposeMaterial3Adaptive" }
+androidx-compose-material3-adaptive-layout = { group = "androidx.compose.material3.adaptive", name = "adaptive-layout", version.ref = "androidxComposeMaterial3Adaptive" }
+androidx-compose-material3-adaptive-navigation = { group = "androidx.compose.material3.adaptive", name = "adaptive-navigation", version.ref = "androidxComposeMaterial3Adaptive" }
+androidx-compose-material3-windowSizeClass = { group = "androidx.compose.material3", name = "material3-window-size-class" }
+androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime" }
+androidx-compose-runtime-tracing = { group = "androidx.compose.runtime", name = "runtime-tracing", version.ref = "androidxComposeRuntimeTracing" }
+androidx-compose-ui-test = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-compose-ui-testManifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-compose-ui-util = { group = "androidx.compose.ui", name = "ui-util" }
+androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "androidxNavigation" }
+accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
+
+# ───── 테스트 ─────
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+
+# ───── Material 디자인 ─────
+kotlinx-coroutines-core-v181 = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinxCoroutinesCore" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+
+# ───── Room ─────
+room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+
+# ───── 의존성 주입 ─────
+hilt-core = { group = "com.google.dagger", name = "hilt-core", version.ref = "hilt" }
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHiltNavigationCompose" }
+javax-inject = { module = "javax.inject:javax.inject", version = "1" }
+
+# ───── Kotlin 관련 라이브러리 ─────
+kotlinx-coroutines-core = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version.ref = "kotlinxCoroutines" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version.ref = "kotlinxDatetime" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+
+# ───── 네트워크 ─────
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+retrofit-core = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-kotlin-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
+
+# ───── 이미지 로딩 ─────
+coil-kt = { group = "io.coil-kt", name = "coil", version.ref = "coil" }
+coil-kt-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
+coil-kt-svg = { group = "io.coil-kt", name = "coil-svg", version.ref = "coil" }
+
+# ───── Google Auth / Credentials ─────
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "androidxCredentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "androidxCredentials" }
+google-identity-googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleIdentity" }
+
+# ───── Orbit MVI ─────
+orbit-viewmodel = { group = "org.orbit-mvi", name = "orbit-viewmodel", version.ref = "orbit" }
+orbit-compose = { group = "org.orbit-mvi", name = "orbit-compose", version.ref = "orbit" }
+
+# ───── 빌드 도구 및 기타 ─────
+android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
+google-oss-licenses-plugin = { group = "com.google.android.gms", name = "oss-licenses-plugin", version.ref = "googleOssPlugin" }
+
+# ───── Build Logic 용 라이브러리 ─────
+android-gradlePlugin = { group = "com.android.tools.build", name = "gradle", version.ref = "androidGradlePlugin" }
+android-tools-common = { group = "com.android.tools", name = "common", version.ref = "androidTools" }
+compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
+kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
+ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
+room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
+
+[plugins]
+# ───── 공식 Gradle 플러그인 ─────
+android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
+android-library = { id = "com.android.library", version.ref = "androidGradlePlugin" }
+android-test = { id = "com.android.test", version.ref = "androidGradlePlugin" }
+
+# ───── Kotlin 관련 ─────
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+jetbrains-kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "jetbrainsKotlinJvm" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+
+# ───── 기타 외부 플러그인 ─────
+baselineprofile = { id = "androidx.baselineprofile", version.ref = "androidxMacroBenchmark"}
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+gms = { id = "com.google.gms.google-services", version.ref = "gmsPlugin" }
+room = { id = "androidx.room", version.ref = "room" }
+google-oss-licenses = { id = "com.google.android.gms.oss-licenses-plugin", version.ref = "googleOssPlugin" }
+
+# ───── 커스텀 플러그인 (이 프로젝트에서 정의) ─────
+multimodulebase-android-application = { id = "multimodulebase.android.application" }
+multimodulebase-android-application-compose = { id = "multimodulebase.android.application.compose" }
+multimodulebase-android-feature = { id = "multimodulebase.android.feature" }
+multimodulebase-android-library = { id = "multimodulebase.android.library" }
+multimodulebase-android-library-compose = { id = "multimodulebase.android.library.compose" }
+multimodulebase-hilt = { id = "multimodulebase.hilt" }
+multimodulebase-jvm-library = { id = "multimodulebase.jvm.library" }
+multimodulebase-android-room = { id = "multimodulebase.android.room" }

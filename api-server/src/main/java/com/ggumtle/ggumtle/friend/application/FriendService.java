@@ -3,8 +3,10 @@ package com.ggumtle.ggumtle.friend.application;
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
+import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
+import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.domain.Friend;
@@ -71,5 +73,18 @@ public class FriendService {
         asFollowee.forEach(f -> friends.add(f.getFollower()));
 
         return GetFriendsResult.of(friends);
+    }
+
+    @Transactional(readOnly = true)
+    public GetFriendRequestsResult getFriendRequests(GetFriendRequestsCommand command) {
+        Long memberId = command.memberId();
+
+        List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndStatus(memberId, Status.PENDING);
+
+        List<Member> friends = new ArrayList<>();
+
+        asFollowee.forEach(f -> friends.add(f.getFollower()));
+
+        return  GetFriendRequestsResult.of(friends);
     }
 }

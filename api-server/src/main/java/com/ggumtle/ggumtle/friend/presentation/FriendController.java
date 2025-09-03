@@ -5,11 +5,14 @@ import com.ggumtle.ggumtle.common.SocketRequestType;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.FriendService;
+import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
+import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.presentation.request.RequestFriendRequest;
+import com.ggumtle.ggumtle.friend.presentation.response.GetFriendRequestsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.RequestFriendResponse;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
@@ -27,7 +30,7 @@ public class FriendController {
     private final FriendService friendService;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @SocketCommandHandler(type = SocketRequestType.FRIEND_REQUEST)
+    @SocketCommandHandler(type = SocketRequestType.REQUEST_FRIEND)
     public void requestFriend(RequestFriendRequest request, WebSocketSession session) {
         if (request.targetMemberId() == null) {
             throw new GgumtleException(FriendErrorCode.TARGET_REQUIRED);
@@ -43,7 +46,7 @@ public class FriendController {
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SocketCommandHandler(type = SocketRequestType.FRIEND_LIST)
+    @SocketCommandHandler(type = SocketRequestType.GET_FRIENDS)
     public void getFriends(WebSocketSession session) {
         Long memberId = Long.parseLong(session.getPrincipal().getName());
         GetFriendsCommand command = new GetFriendsCommand(memberId);
@@ -51,6 +54,18 @@ public class FriendController {
         GetFriendsResult result = friendService.getFriends(command);
 
         GetFriendsResponse response = GetFriendsResponse.from(result);
+        SendSocketEvent event = new SendSocketEvent(List.of(memberId), response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketRequestType.GET_FRIEND_REQUESTS)
+    public void getFriendRequests(WebSocketSession session) {
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+        GetFriendRequestsCommand command = new GetFriendRequestsCommand(memberId);
+
+        GetFriendRequestsResult result = friendService.getFriendRequests(command);
+
+        GetFriendRequestsResponse response = GetFriendRequestsResponse.from(result);
         SendSocketEvent event = new SendSocketEvent(List.of(memberId), response);
         applicationEventPublisher.publishEvent(event);
     }

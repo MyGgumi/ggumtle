@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.server.packet;
 
-import com.ggumtle.ggumtle.room.command.RoomCreateCommand;
+import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
 import com.ggumtle.ggumtle.common.dto.Command;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -11,10 +11,8 @@ public enum ReceivePacketType {
     // 요청
     VERIFY_TOKEN((short) 1, null),
 
-    ROOM_GET_OR_CREATE((short) 10, RoomCreateCommand.class),
-
-    ROOM_JOIN((short) 11, null),
-    SCENE_CHANGE((short) 12, null),
+    ROOM_JOIN((short) 10, JoinRoomCommand.class),
+    SCENE_CHANGE((short) 20, null),
     ;
 
     private final short value;

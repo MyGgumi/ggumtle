@@ -11,7 +11,7 @@ import org.springframework.data.redis.core.RedisKeyValueAdapter;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
-import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 
 @Configuration
 @EnableRedisRepositories(enableKeyspaceEvents = RedisKeyValueAdapter.EnableKeyspaceEvents.ON_STARTUP)
@@ -42,7 +42,10 @@ public class RedisConfig {
     @Bean
     public RedisTemplate<String, String> redisTemplate() {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
+
         redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setKeySerializer(RedisSerializer.string());
+        redisTemplate.setValueSerializer(RedisSerializer.string());
 
         return redisTemplate;
     }
@@ -50,8 +53,9 @@ public class RedisConfig {
     @Bean
     public RedisTemplate<String, WaitingParty> waitingPartyRedisTemplate() {
         RedisTemplate<String, WaitingParty> redisTemplate = new RedisTemplate<>();
+
         redisTemplate.setConnectionFactory(redisConnectionFactory());
-        redisTemplate.setKeySerializer(new StringRedisSerializer());
+        redisTemplate.setKeySerializer(RedisSerializer.string());
         redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(WaitingParty.class));
 
         return redisTemplate;

@@ -5,8 +5,8 @@ import com.ggumtle.ggumtle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -14,26 +14,32 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class RoomManager {
 
-    // 방 ID 생성을 위한 시퀀스
     private final AtomicLong roomIdGenerator = new AtomicLong(0);
+    private final ConcurrentHashMap<Long, Room> idToRoom = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, Room> playerIdToRoom = new ConcurrentHashMap<>();
 
-    // 방 관리를 위한 맵
-    // TODO: DB로 변경해도 괜찮을 듯?
-    private final ConcurrentHashMap<Long, Room> roomMap = new ConcurrentHashMap<>();
+    public Optional<Room> getRoomById(Long roomId) {
+        Room room = idToRoom.getOrDefault(roomId, null);
 
-    /**
-     * 방을 조회합니다.
-     *
-     * @param roomId 조회할 방 ID
-     * @return 조회된 방
-     */
-    public Room getRoom(Long roomId) {
-        if (!roomMap.containsKey(roomId)) {
-            throw new IllegalArgumentException("방 조회에 실패했습니다. roomId: " + roomId);
+        if (room == null) {
+            log.warn("{}번 방 조회에 실패했습니다", roomId);
+            return  Optional.empty();
         }
 
-        log.debug("{} 방 조회", roomId);
-        return roomMap.get(roomId);
+        log.debug("{}번 방 조회", room.getRoomId());
+        return Optional.of(room);
+    }
+
+    public Optional<Room> getRoomByPlayerId(Long playerId) {
+        Room room = playerIdToRoom.getOrDefault(playerId, null);
+
+        if (room == null) {
+            log.warn("{}번 사용자의 방 조회에 실패했습니다", playerId);
+            return  Optional.empty();
+        }
+
+        log.debug("{}번 사용자의 방 조회: {}", playerId, room.getRoomId());
+        return Optional.of(room);
     }
 
     /**
@@ -44,12 +50,16 @@ public class RoomManager {
     public Room createRoom(List<Long> players) {
         long roomId = roomIdGenerator.incrementAndGet();
 
-        log.debug("{} 방 생성", roomId);
+        log.debug("{}번 방 생성: {}", roomId, players);
 
         Room room = new Room(roomId, players);
-        roomMap.put(roomId, room);
+        idToRoom.put(roomId, room);
 
         return room;
+    }
+
+    public void insertRoom(Room room) {
+        idToRoom.put(room.getRoomId(), room);
     }
 
     /**
@@ -58,27 +68,32 @@ public class RoomManager {
      * @param roomId 삭제할 방 ID
      */
     public void removeRoom(Long roomId) {
-        if (!roomMap.containsKey(roomId)) {
+        if (!idToRoom.containsKey(roomId)) {
             throw new IllegalArgumentException("방 삭제에 실패했습니다. roomId: " + roomId);
         }
 
         log.debug("{} 방 삭제", roomId);
-        roomMap.remove(roomId);
+        idToRoom.remove(roomId);
     }
 
-    /**
-     * 세션을 방에 추가합니다.
-     *
-     * @param roomId  세션을 추가할 방 ID
-     * @param session 추가할 세션
-     */
-    public void addSession(Long roomId, Session session) {
-        if (!roomMap.containsKey(roomId)) {
-            throw new IllegalArgumentException("방 조회에 실패했습니다. roomId: " + roomId);
+    public boolean joinRoom(Long roomId, Session session) {
+        Room existingRoom = playerIdToRoom.getOrDefault(session.getMemberId(), null);
+        if (existingRoom != null) {
+            log.error("{}번 사용자는 이미 {}번 방에 들어와있습니다", session.getMemberId(), existingRoom.getRoomId());
+            return false;
         }
 
-        log.debug("{} 방에 세션 추가: {}", roomId, session.getSessionId());
-        roomMap.get(roomId).addSession(session);
+        Room room = idToRoom.getOrDefault(roomId, null);
+        if (room == null) {
+            log.error("{}번 방을 찾을 수 없습니다", roomId);
+            return false;
+        }
+
+        room.addSession(session);
+        playerIdToRoom.put(session.getMemberId(), room);
+        log.debug("{}번 방에 세션 추가 결과: 현재 인원 {}인", roomId, idToRoom.get(roomId).getConnectedPlayerCount());
+
+        return true;
     }
 
     /**
@@ -87,6 +102,6 @@ public class RoomManager {
      * @return 방 리스트
      */
     public List<Room> getRooms() {
-        return roomMap.values().stream().toList();
+        return idToRoom.values().stream().toList();
     }
 }

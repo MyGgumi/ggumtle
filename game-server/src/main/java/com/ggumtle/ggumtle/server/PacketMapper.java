@@ -22,11 +22,11 @@ public class PacketMapper {
 
         for (int i = 0; i < parameters.length; i++) {
             Parameter parameter = parameters[i];
-            if (parameter.getType().equals(short.class)) {
+            if (parameter.getType().equals(short.class) || parameter.getType().equals(Short.class)) {
                 constructorArgs[i] = buffer.getShort();
-            } else if (parameter.getType().equals(int.class)) {
+            } else if (parameter.getType().equals(int.class) || parameter.getType().equals(Integer.class)) {
                 constructorArgs[i] = buffer.getInt();
-            } else if (parameter.getType().equals(long.class)) {
+            } else if (parameter.getType().equals(long.class) || parameter.getType().equals(Long.class)) {
                 constructorArgs[i] = buffer.getLong();
             }
         }

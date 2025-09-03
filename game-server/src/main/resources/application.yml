@@ -18,3 +18,7 @@ game:
 jwt:
   access:
     secret: ${ACCESS_SECRET}
+
+logging:
+  level:
+    com.ggumtle: DEBUG

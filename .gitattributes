@@ -1,0 +1,71 @@
+# =======================================================
+# 1. 전역 설정 (Global Settings)
+# =======================================================
+
+# 모든 텍스트 파일의 줄바꿈(Line Ending)을 LF로 통일
+# text=auto는 Git이 자동으로 텍스트/바이너리를 감지하게 함
+* text=auto eol=lf
+
+
+# =======================================================
+# 2. Git LFS 설정 (Unity 프로젝트 전용)
+# =======================================================
+# 'unity' 폴더 내의 지정된 대용량 파일들만 LFS로 관리
+
+# 3D 모델 및 애니메이션
+unity/**/*.fbx filter=lfs diff=lfs merge=lfs -text
+unity/**/*.obj filter=lfs diff=lfs merge=lfs -text
+unity/**/*.blend filter=lfs diff=lfs merge=lfs -text
+unity/**/*.max filter=lfs diff=lfs merge=lfs -text
+
+# 이미지 및 텍스처
+unity/**/*.png filter=lfs diff=lfs merge=lfs -text
+unity/**/*.jpg filter=lfs diff=lfs merge=lfs -text
+unity/**/*.jpeg filter=lfs diff=lfs merge=lfs -text
+unity/**/*.psd filter=lfs diff=lfs merge=lfs -text
+unity/**/*.tga filter=lfs diff=lfs merge=lfs -text
+unity/**/*.gif filter=lfs diff=lfs merge=lfs -text
+unity/**/*.tif filter=lfs diff=lfs merge=lfs -text
+unity/**/*.bmp filter=lfs diff=lfs merge=lfs -text
+
+# 오디오
+unity/**/*.wav filter=lfs diff=lfs merge=lfs -text
+unity/**/*.mp3 filter=lfs diff=lfs merge=lfs -text
+unity/**/*.ogg filter=lfs diff=lfs merge=lfs -text
+
+# 폰트
+unity/**/*.ttf filter=lfs diff=lfs merge=lfs -text
+unity/**/*.otf filter=lfs diff=lfs merge=lfs -text
+unity/**/*.eot filter=lfs diff=lfs merge=lfs -text
+unity/**/*.woff filter=lfs diff=lfs merge=lfs -text
+unity/**/*.woff2 filter=lfs diff=lfs merge=lfs -text
+
+# 유니티 전용 에셋 및 기타 대용량 파일
+unity/**/*.asset filter=lfs diff=lfs merge=lfs -text
+unity/**/*.unitypackage filter=lfs diff=lfs merge=lfs -text
+unity/**/*.unity filter=lfs diff=lfs merge=lfs -text
+unity/**/*.dll filter=lfs diff=lfs merge=lfs -text
+unity/**/*.so filter=lfs diff=lfs merge=lfs -text
+unity/**/*.a filter=lfs diff=lfs merge=lfs -text
+
+# 비디오
+unity/**/*.mp4 filter=lfs diff=lfs merge=lfs -text
+unity/**/*.mov filter=lfs diff=lfs merge=lfs -text
+
+
+# =======================================================
+# 3. 백엔드 및 기타 프로젝트용 설정
+# =======================================================
+
+# 기존 설정에서 LFS로 관리되지 않는 바이너리 파일들
+# (만약 backend 폴더에서도 이 파일들을 일반 Git으로 관리하고 싶다면 그대로 두세요)
+*.svg binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.jar binary
+
+
+# 특정 파일의 diff 비활성화 (버전 충돌 방지)
+package-lock.json -diff
+yarn.lock -diff

@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.security.jwt;
+package com.ggumtle.ggumtle.auth.jwt;
 
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;

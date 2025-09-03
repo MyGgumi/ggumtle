@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: b7b9301a194065847ac06253fd1f6602
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Animation/House_Door.controller
+  uploadId: 706346

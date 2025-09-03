@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 677992f5daaf9e24b85536647d2793eb
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 36300000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Demo/Demo/OcclusionCullingData.asset
+  uploadId: 706346

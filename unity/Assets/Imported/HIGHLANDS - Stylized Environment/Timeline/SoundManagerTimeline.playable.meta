@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 104dff203ffec7e44b963279550e92f0
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Timeline/SoundManagerTimeline.playable
+  uploadId: 706346

@@ -3,6 +3,7 @@ package com.ggumtle.ggumtle.server.applicatoin;
 import com.ggumtle.ggumtle.auth.JwtService;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
+import com.ggumtle.ggumtle.session.Session;
 import com.ggumtle.ggumtle.session.SessionManager;
 import com.ggumtle.ggumtle.session.result.SessionResult;
 import io.netty.channel.Channel;
@@ -55,5 +56,9 @@ public class ChannelManager {
 
     public boolean isAuthorized(Channel channel) {
         return sessionManager.existSession(channel);
+    }
+
+    public Session getSession(Channel channel) {
+        return sessionManager.getSession(channel);
     }
 }

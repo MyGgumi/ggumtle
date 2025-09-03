@@ -8,9 +8,10 @@ import lombok.RequiredArgsConstructor;
 public enum SendPacketType {
     VERIFY_TOKEN_RESULT((short) 2),
 
-    ROOM_JOIN_RESULT((short) 13),  // int result
-    SCENE_CHANGE_RESULT((short) 14),
-    GAME_START_RESULT((short) 15),
+    ROOM_JOIN_RESULT((short) 11),
+    ROOM_JOIN_DONE((short) 12),
+    SCENE_CHANGE_RESULT((short) 21),
+    GAME_START((short) 30),
     ;
 
     private final short value;

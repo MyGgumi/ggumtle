@@ -6,12 +6,14 @@ import io.netty.channel.Channel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
 @Builder
 @Getter
+@ToString
 public class Session {
 
     private final long sessionId;

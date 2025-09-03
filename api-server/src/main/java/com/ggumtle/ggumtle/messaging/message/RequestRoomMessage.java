@@ -1,9 +1,9 @@
 package com.ggumtle.ggumtle.messaging.message;
 
-import java.io.Serializable;
 import java.util.List;
 
 public record RequestRoomMessage(
+        String requestId,
         List<Long> playerIds
-) implements Serializable {
+) {
 }

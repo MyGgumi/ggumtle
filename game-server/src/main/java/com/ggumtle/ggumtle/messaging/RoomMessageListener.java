@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.messaging.message.CreatedRoomMessage;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
 import com.ggumtle.ggumtle.room.application.RoomManager;
 import com.ggumtle.ggumtle.room.domain.Room;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.Message;
@@ -13,6 +14,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
+@Slf4j
 public class RoomMessageListener implements MessageListener {
     private static final String CREATED_ROOM_CHANNEL = "created_room";
 
@@ -40,9 +42,10 @@ public class RoomMessageListener implements MessageListener {
 
             Room room = roomManager.createRoom(requestRoom.playerIds());
 
-            CreatedRoomMessage createdRoomMessage = new CreatedRoomMessage(room.getRoomId(), gameServerId);
+            CreatedRoomMessage createdRoomMessage = new CreatedRoomMessage(room.getRoomId(), requestRoom.requestId(), this.gameServerId);
+            String json =  objectMapper.writeValueAsString(createdRoomMessage);
 
-            redisTemplate.convertAndSend(CREATED_ROOM_CHANNEL, createdRoomMessage);
+            redisTemplate.convertAndSend(CREATED_ROOM_CHANNEL, json);
         } catch (Exception e) {
             e.printStackTrace();
         }

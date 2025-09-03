@@ -13,10 +13,15 @@ public record Packet(
         byte[] data
 ) {
     public static Packet of(SendPacketType sendPacketType, long timestamp, Result result) {
-        byte[] data = result.toBytes(StandardCharsets.UTF_8);
-        PacketHeader packetHeader = new PacketHeader(sendPacketType.getValue(), data.length, timestamp);
+        if (result != null) {
+            byte[] data = result.toBytes(StandardCharsets.UTF_8);
 
-        return new Packet(packetHeader, data);
+            PacketHeader packetHeader = new PacketHeader(sendPacketType.getValue(), data.length, timestamp);
+            return new Packet(packetHeader, data);
+        }
+
+        PacketHeader packetHeader = new PacketHeader(sendPacketType.getValue(), 0, timestamp);
+        return new Packet(packetHeader, null);
     }
 
     public boolean hasData() {

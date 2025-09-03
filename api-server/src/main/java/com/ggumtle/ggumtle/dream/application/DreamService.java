@@ -1,12 +1,12 @@
 package com.ggumtle.ggumtle.dream.application;
 
-import com.ggumtle.ggumtle.common.SocketRequestType;
-import com.ggumtle.ggumtle.common.SocketCommandHandler;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.StartDreamResult;
+import com.ggumtle.ggumtle.dream.domain.Dream;
 import com.ggumtle.ggumtle.dream.domain.DreamServer;
 import com.ggumtle.ggumtle.dream.domain.WaitingParty;
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
+import com.ggumtle.ggumtle.dream.persistence.DreamRepository;
 import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
 import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -34,6 +36,7 @@ public class DreamService {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final PartyParticipantRepository partyParticipantRepository;
     private final RedisTemplate<String, WaitingParty> waitingPartyRedisTemplate;
+    private final DreamRepository dreamRepository;
     private final RoomMessageManager roomMessageManager;
 
     /**
@@ -90,9 +93,15 @@ public class DreamService {
      */
     @EventListener
     public void handleCreatedRoom(CreatedRoomEvent event) {
+        Optional<Dream> dream = dreamRepository.findByRoomRequestId(event.requestId());
+        if (dream.isEmpty()) {
+            log.error("방 생성 응답에 대한 요청 없음");
+            return;
+        }
+
         StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START, event.roomId(), event.dreamServerId());
 
-        applicationEventPublisher.publishEvent(new SendSocketEvent(List.of(1L), result));
+        applicationEventPublisher.publishEvent(new SendSocketEvent(dream.get().getPlayerIds(), result));
     }
 
     /**
@@ -152,8 +161,12 @@ public class DreamService {
     private void requestRoom(List<Long> playerIds) {
         // TODO: 요청할 드림 서버 선정
         DreamServer dreamServer = new DreamServer("1");
+        String roomRequestId = UUID.randomUUID().toString();
 
-        roomMessageManager.sendMessage(dreamServer, playerIds);
+        Dream dream = new Dream(roomRequestId, playerIds);
+        dreamRepository.save(dream);
+
+        roomMessageManager.sendMessage(dreamServer, roomRequestId, playerIds);
     }
 
     private void publishEvent(List<Long> memberIds, Object data) {

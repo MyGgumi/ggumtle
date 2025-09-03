@@ -1,6 +1,5 @@
 package com.ggumtle.ggumtle.infra.redis;
 
-import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +13,7 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class RedisListenerConfig {
 
-    private static final String DREAM_CREATED_CHANEL = "dream_created";
+    private static final String DREAM_CREATED_CHANEL = "created_room";
 
     private final RoomMessageManager roomMessageManager;
 

@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.friend.application.command;
 
-public record FriendRequestCommand(
+public record RequestFriendCommand(
         Long requesterId,
         Long targetMemberId
 ) {

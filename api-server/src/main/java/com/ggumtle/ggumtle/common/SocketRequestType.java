@@ -8,5 +8,5 @@ public enum SocketRequestType {
     START_DREAM,
 
     // FRIEND
-    FRIEND_REQUEST
+    FRIEND_REQUEST, FRIEND_LIST
 }

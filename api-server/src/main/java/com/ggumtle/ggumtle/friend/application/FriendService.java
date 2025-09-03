@@ -3,8 +3,10 @@ package com.ggumtle.ggumtle.friend.application;
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
-import com.ggumtle.ggumtle.friend.application.command.FriendRequestCommand;
-import com.ggumtle.ggumtle.friend.application.result.FriendRequestResult;
+import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
+import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
+import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
+import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.domain.Friend;
 import com.ggumtle.ggumtle.friend.domain.Status;
 import com.ggumtle.ggumtle.friend.persistence.FriendRepository;
@@ -15,6 +17,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -23,7 +28,7 @@ public class FriendService {
     private final MemberRepository memberRepository;
 
     @Transactional
-    public FriendRequestResult requestFriend(FriendRequestCommand command) {
+    public RequestFriendsResult requestFriend(RequestFriendCommand command) {
         Long requesterId = command.requesterId();
         Long targetMemgerId = command.targetMemberId();
 
@@ -50,6 +55,21 @@ public class FriendService {
         Friend friend = Friend.request(requester,target);
         friendRepository.save(friend);
 
-        return FriendRequestResult.of(requesterId,targetMemgerId);
+        return RequestFriendsResult.of(requesterId,targetMemgerId);
+    }
+
+    @Transactional(readOnly = true)
+    public GetFriendsResult getFriends(GetFriendsCommand command) {
+        Long memberId = command.memberId();
+
+        List<Friend> asFollower = friendRepository.findAllByFollower_IdAndStatus(memberId, Status.ACCEPTED);
+        List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndStatus(memberId, Status.ACCEPTED);
+
+        List<Member> friends = new ArrayList<>();
+
+        asFollower.forEach(f -> friends.add(f.getFollowee()));
+        asFollowee.forEach(f -> friends.add(f.getFollower()));
+
+        return GetFriendsResult.of(friends);
     }
 }

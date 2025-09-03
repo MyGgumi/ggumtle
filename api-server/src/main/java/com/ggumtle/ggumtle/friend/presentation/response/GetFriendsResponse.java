@@ -1,0 +1,22 @@
+package com.ggumtle.ggumtle.friend.presentation.response;
+
+import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
+
+import java.util.List;
+
+public record GetFriendsResponse(
+        List<Friend> friends
+) {
+    public static GetFriendsResponse from(GetFriendsResult result) {
+        return new GetFriendsResponse(
+                result.friends().stream()
+                        .map(f -> new Friend(f.memberId(), f.nickname()))
+                        .toList()
+        );
+    }
+
+    public record Friend(
+            Long memberId,
+            String nickname
+    ) {}
+}

@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.infra.websocket;
 
-import com.ggumtle.ggumtle.security.jwt.JwtProvider;
+import com.ggumtle.ggumtle.auth.jwt.JwtProvider;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.server.ServerHttpRequest;

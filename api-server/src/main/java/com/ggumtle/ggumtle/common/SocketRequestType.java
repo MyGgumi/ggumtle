@@ -5,5 +5,8 @@ public enum SocketRequestType {
     CREATE_PARTY, INVITE_PARTY, ACCEPT_PARTY_INVITATION, LEAVE_PARTY,
 
     // DREAM
-    START_DREAM
+    START_DREAM,
+
+    // FRIEND
+    FRIEND_REQUEST
 }

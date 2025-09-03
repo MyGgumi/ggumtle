@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: fa4f6d9fa050c6048ad6ff23382a6365
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Materials/Forest/Skybox.mat
+  uploadId: 706346

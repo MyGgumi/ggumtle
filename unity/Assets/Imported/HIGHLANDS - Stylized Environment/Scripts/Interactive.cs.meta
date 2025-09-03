@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 032afca5781ebbf4297689acad0dc1d8
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Scripts/Interactive.cs
+  uploadId: 706346

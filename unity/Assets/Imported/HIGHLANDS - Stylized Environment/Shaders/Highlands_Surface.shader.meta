@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: 9c453302c6300e64996a20b6e6d61178
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Shaders/Highlands_Surface.shader
+  uploadId: 706346

@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: ca17eb9d328bd334c93af7d8e6e8842e
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Shaders/Highlands_Background_Objects.shader
+  uploadId: 706346

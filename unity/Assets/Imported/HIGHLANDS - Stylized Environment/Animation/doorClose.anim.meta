@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: d75440130a4000841b43a01399e9ff2c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 255775
+  packageName: HIGHLANDS - Stylized Environment
+  packageVersion: 1.0.3
+  assetPath: Assets/HIGHLANDS - Stylized Environment/Animation/doorClose.anim
+  uploadId: 706346

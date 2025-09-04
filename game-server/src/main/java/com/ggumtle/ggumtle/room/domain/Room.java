@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.room.domain;
 
+import com.ggumtle.ggumtle.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.result.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.result.SceneChangeResult;
 import com.ggumtle.ggumtle.server.packet.Packet;
@@ -7,6 +8,7 @@ import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Set;
@@ -21,12 +23,14 @@ public class Room {
     private final Set<Long> playerIds;
     private final ConcurrentHashMap<Long, Session> playerSessions;
     private final CopyOnWriteArraySet<Long> sceneChanger;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public Room(long roomId, List<Long> playerIds) {
+    public Room(long roomId, List<Long> playerIds, ApplicationEventPublisher applicationEventPublisher) {
         this.roomId = roomId;
         this.playerIds = Set.of(playerIds.toArray(new Long[0]));
         this.playerSessions = new ConcurrentHashMap<>(playerIds.size());
         this.sceneChanger = new CopyOnWriteArraySet<>();
+        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     public int getConnectedPlayerCount() {
@@ -93,9 +97,10 @@ public class Room {
         playerSessions.get(playerId).sendPacket(packet);
 
         if (isAllChanged) {
-            Packet donePacket = Packet.of(SendPacketType.GAME_START, System.currentTimeMillis(), null);
-            broadcast(donePacket);
+            DreamStartEvent dreamStartEvent = new DreamStartEvent(this.roomId);
+            applicationEventPublisher.publishEvent(dreamStartEvent);
         }
+
         return true;
     }
 

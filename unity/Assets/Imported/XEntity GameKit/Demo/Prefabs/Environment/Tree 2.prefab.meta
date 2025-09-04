@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 0b89913e5a6f41c4b8c6bc0cd4a63d3f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Demo/Prefabs/Environment/Tree 2.prefab
+  uploadId: 612386

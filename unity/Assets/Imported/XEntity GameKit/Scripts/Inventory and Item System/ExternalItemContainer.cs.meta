@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 9d770cfc99e33904e905bb937d6a8b7e
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Scripts/Inventory and Item System/ExternalItemContainer.cs
+  uploadId: 612386

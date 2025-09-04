@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 0375fb6aae2da3448848e4e9fd2cd0f3
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Scripts/Inventory and Item System/Harvestable.cs
+  uploadId: 612386

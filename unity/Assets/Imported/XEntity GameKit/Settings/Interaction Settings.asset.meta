@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: abe8891459efa584cb7b99994fd6dfea
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Settings/Interaction Settings.asset
+  uploadId: 612386

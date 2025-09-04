@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: e6a4076d72796ae419293760ff95be76
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Demo/Scripts/PlayerMovement.cs
+  uploadId: 612386

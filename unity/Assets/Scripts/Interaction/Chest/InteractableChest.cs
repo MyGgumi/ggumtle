@@ -123,10 +123,16 @@ public class InteractableChest : MonoBehaviour
 
     public void CloseChest()
     {
+        Debug.Log($"[InteractableChest] CloseChest 호출됨 - {chestName}, 현재 isOpen: {isOpen}");
+        
         if (!isOpen)
+        {
+            Debug.Log($"[InteractableChest] {chestName}는 이미 닫혀있음");
             return;
+        }
 
         isOpen = false;
+        Debug.Log($"[InteractableChest] {chestName} isOpen을 false로 설정함");
 
         // 상호작용 아이콘 다시 표시 (거리 체크는 Update에서)
         if (interactionIcon != null && IsPlayerInRange())
@@ -144,7 +150,7 @@ public class InteractableChest : MonoBehaviour
             handler.HandleChestClose();
         }
 
-        Debug.Log($"상자 닫힘: {chestName}");
+        Debug.Log($"[InteractableChest] 상자 닫힘 완료: {chestName}, isOpen: {isOpen}");
     }
 
     // 아이템 관리 메서드들

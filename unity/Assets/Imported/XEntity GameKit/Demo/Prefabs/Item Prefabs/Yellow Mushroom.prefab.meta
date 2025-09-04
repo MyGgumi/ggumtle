@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ec5d91232451fb14980c7c04fe64c697
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Demo/Prefabs/Item Prefabs/Yellow Mushroom.prefab
+  uploadId: 612386

@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.infra.redis;
 
+import com.ggumtle.ggumtle.common.property.GameServerProperty;
 import com.ggumtle.ggumtle.messaging.RoomMessageListener;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -14,8 +14,8 @@ public class RedisListenerConfig {
     private final String dreamRequestChannel;
     private final RoomMessageListener roomMessageListener;
 
-    protected RedisListenerConfig(@Value("${game.server.id}") String gameServerId, RoomMessageListener roomMessageListener) {
-        this.dreamRequestChannel = "dream_request_" + gameServerId;
+    protected RedisListenerConfig(GameServerProperty gameServerProperty, RoomMessageListener roomMessageListener) {
+        this.dreamRequestChannel = "dream_request_" + gameServerProperty.getId();
         this.roomMessageListener = roomMessageListener;
     }
 

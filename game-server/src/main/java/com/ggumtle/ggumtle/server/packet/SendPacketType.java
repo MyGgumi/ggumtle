@@ -17,6 +17,9 @@ public enum SendPacketType {
     // 게임 초기화
     INITIALIZE_MAP((short) 30),
     INITIALIZE_PLAYER((short) 31),
+
+    // 게임 플레이
+    PLAYER_MOVE_RELAY((short) 41),
     ;
 
     private final short value;

@@ -1,6 +1,5 @@
 package com.ggumtle.ggumtle.server.packet;
 
-import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -8,15 +7,17 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ReceivePacketType {
     // 인증
-    VERIFY_TOKEN((short) 1, null),
+    VERIFY_TOKEN((short) 1),
 
     // 방 관리
-    ROOM_JOIN((short) 10, JoinRoomCommand.class),
-    SCENE_CHANGE((short) 20, null),
+    ROOM_JOIN((short) 10),
+    SCENE_CHANGE((short) 20),
+
+    // 게임 플레이
+    PLAYER_MOVE((short) 40),
     ;
 
     private final short value;
-    private final Class<?> clazz;
 
     public static ReceivePacketType fromValue(short value) {
         for (ReceivePacketType type : values()) {

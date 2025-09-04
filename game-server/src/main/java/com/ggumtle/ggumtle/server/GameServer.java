@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.server;
 
+import com.ggumtle.ggumtle.common.property.GameServerProperty;
 import com.ggumtle.ggumtle.server.pipeline.PacketDecoder;
 import com.ggumtle.ggumtle.server.pipeline.PacketEncoder;
 import com.ggumtle.ggumtle.server.pipeline.PacketHandler;
@@ -14,7 +15,6 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 
@@ -29,11 +29,8 @@ public class GameServer {
     private EventLoopGroup workerGroup;
     private ChannelFuture serverChannelFuture;
 
-    private GameServer(
-            @Value("${game.server.port}") int port,
-            PacketHandler packetHandler
-    ) {
-        this.port = port;
+    private GameServer(GameServerProperty gameServerProperty, PacketHandler packetHandler) {
+        this.port = gameServerProperty.getPort();
         this.packetHandler = packetHandler;
     }
 

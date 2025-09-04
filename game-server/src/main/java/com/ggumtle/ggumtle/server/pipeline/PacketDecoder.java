@@ -45,6 +45,6 @@ public class PacketDecoder extends ByteToMessageDecoder {
         Packet packet = new Packet(header, data);
         out.add(packet);
 
-        log.debug("패킷 디코딩 완료 - Type: {}, Length: {}", header.packetType(), header.dataLength());
+        log.debug("[{}] 패킷 디코딩 완료 - Type: {}, Length: {}", ctx.channel().id(), header.packetType(), header.dataLength());
     }
 }

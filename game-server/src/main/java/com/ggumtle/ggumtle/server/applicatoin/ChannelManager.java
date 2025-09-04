@@ -43,7 +43,7 @@ public class ChannelManager {
         Optional<Session> optionalSession = sessionManager.getSession(channel);
         if (optionalSession.isPresent()) {
             Session existingSession = optionalSession.get();
-            log.warn("이미 {}번 사용자의 {}번 세션이 존재합니다", existingSession.getMemberId(), existingSession.getSessionId());
+            log.warn("[{}] 이미 {}번 사용자의 {}번 세션이 존재합니다", channel.id(), existingSession.getMemberId(), existingSession.getSessionId());
 
             SessionResult sessionResult = new SessionResult(false, -1L);
             Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
@@ -53,7 +53,7 @@ public class ChannelManager {
         }
 
         if (!jwtService.verifyToken(accessToken)) {
-            log.info("토큰이 유효하지 않습니다");
+            log.info("[{}] 토큰이 유효하지 않습니다", channel.id());
 
             SessionResult sessionResult = new SessionResult(false, -1L);
             Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
@@ -62,7 +62,7 @@ public class ChannelManager {
             return;
         }
 
-        log.info("토큰 인증 성공");
+        log.info("[{}] 토큰 인증 성공", channel.id());
         long memberId = jwtService.parseId(accessToken);
 
         sessionManager.createSession(channel, memberId);

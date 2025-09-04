@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: f2a956c4761f6374d977e979898f958a
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 11400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Demo/Items/Mushroom.asset
+  uploadId: 612386

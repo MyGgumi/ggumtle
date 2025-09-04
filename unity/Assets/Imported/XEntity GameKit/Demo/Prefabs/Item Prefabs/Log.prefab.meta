@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: f2974bb2b17e9064cad44805c0222288
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Demo/Prefabs/Item Prefabs/Log.prefab
+  uploadId: 612386

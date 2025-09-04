@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 761f058075434ec4a97e370193d3470e
+TextScriptImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/ReadMe.txt
+  uploadId: 612386

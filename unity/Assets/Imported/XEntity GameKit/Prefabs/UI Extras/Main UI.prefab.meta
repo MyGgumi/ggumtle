@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: efb8e389830fb2f4395ae723d2820b6f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Prefabs/UI Extras/Main UI.prefab
+  uploadId: 612386

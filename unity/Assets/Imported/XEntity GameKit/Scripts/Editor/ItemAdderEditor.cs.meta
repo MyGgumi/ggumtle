@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 56bae8f836fd1db4499f56b0f10e64b0
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 205357
+  packageName: XEntity - Inventory & Item system
+  packageVersion: 2.1.1
+  assetPath: Assets/XEntity GameKit/Scripts/Editor/ItemAdderEditor.cs
+  uploadId: 612386

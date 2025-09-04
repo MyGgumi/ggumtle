@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
+import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Player;
@@ -10,6 +11,7 @@ import com.ggumtle.ggumtle.dream.util.ItemDistributor;
 import com.ggumtle.ggumtle.dream.vo.BoxSpawn;
 import com.ggumtle.ggumtle.dream.vo.GgumtleSpawn;
 import com.ggumtle.ggumtle.dream.vo.Item;
+import com.ggumtle.ggumtle.dream.vo.PlayerSpawn;
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.Packet;
@@ -43,8 +45,10 @@ public class DreamManager {
         this.ggumtles = new ConcurrentHashMap<>();
         this.boxes = new ConcurrentHashMap<>();
 
+        log.info("{}번 게임의 초기화 시작", room.getRoomId());
+
         initializeMap();
-        initializePlayers(room.getPlayerIds().stream().toList());
+        initializePlayers();
 
         log.info("{}번 게임의 초기화 종료", room.getRoomId());
     }
@@ -77,16 +81,27 @@ public class DreamManager {
         this.room.broadcast(packet);
     }
 
-    // TODO: 체력, 속도, 아이템, 위치 초기화
-    private void initializePlayers(List<Long> playerIds) {
-        this.players = new ArrayList<>();
+    // TODO: 클래스 별 체력, 속도 초기화
+    private void initializePlayers() {
+        List<Long> playerIds = room.getPlayerIds().stream().toList();
+        List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
 
-        for (long playerId : room.getPlayerIds()) {
-            Player player = new Player(playerId);
+        this.players = new ArrayList<>();
+        for (int i = 0; i < playerIds.size(); i++) {
+            Player player = new Player(playerIds.get(i), Position.from(playerSpawns.get(i)));
 
             this.players.add(player);
         }
 
         log.info("{}번 게임의 플레이어 초기화 종료", room.getRoomId());
+
+        for (long playerId : playerIds) {
+            Result result = new InitializePlayerResult(players, playerId);
+            Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), result);
+            boolean success = room.sendPacket(playerId, packet);
+            if (!success) {
+                log.error("{}번 사용자에게 {}번 게임의 플레이어 초기 정보를 전송하지 못했습니다", playerId, this.room.getRoomId());
+            }
+        }
     }
 }

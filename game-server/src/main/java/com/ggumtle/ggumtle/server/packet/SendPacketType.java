@@ -6,12 +6,17 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum SendPacketType {
+    // 인증
     VERIFY_TOKEN_RESULT((short) 2),
 
+    // 방 관리
     ROOM_JOIN_RESULT((short) 11),
     ROOM_JOIN_DONE((short) 12),
     SCENE_CHANGE_RESULT((short) 21),
-    GAME_START((short) 30),
+
+    // 게임 초기화
+    INITIALIZE_MAP((short) 30),
+    INITIALIZE_PLAYER((short) 31),
     ;
 
     private final short value;

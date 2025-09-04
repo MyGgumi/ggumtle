@@ -2,7 +2,10 @@ package com.ggumtle.ggumtle.room.application;
 
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.session.Session;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -12,11 +15,13 @@ import java.util.concurrent.atomic.AtomicLong;
 
 @Slf4j
 @Component
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class RoomManager {
 
     private final AtomicLong roomIdGenerator = new AtomicLong(0);
     private final ConcurrentHashMap<Long, Room> idToRoom = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Room> playerIdToRoom = new ConcurrentHashMap<>();
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     public Optional<Room> getRoomById(Long roomId) {
         Room room = idToRoom.getOrDefault(roomId, null);
@@ -52,7 +57,7 @@ public class RoomManager {
 
         log.debug("{}번 방 생성: {}", roomId, players);
 
-        Room room = new Room(roomId, players);
+        Room room = new Room(roomId, players, applicationEventPublisher);
         idToRoom.put(roomId, room);
 
         return room;

@@ -1,6 +1,5 @@
 package com.ggumtle.ggumtle.server;
 
-import com.ggumtle.ggumtle.common.dto.Command;
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
@@ -14,7 +13,9 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
 
@@ -47,18 +48,6 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                 ReceivePacketType type = annotation.type();
                 Class<?>[] parameterTypes = method.getParameterTypes();
 
-                for (Class<?> parameterType : parameterTypes) {
-                    if (Command.class.isAssignableFrom(parameterType)) {
-                        continue;
-                    }
-
-                    if (Session.class.isAssignableFrom(parameterType)) {
-                        continue;
-                    }
-
-                    throw new RuntimeException("파라미터가 Command나 Session형이 아닙니다");
-                }
-
                 commandHandlerMap.put(type, new HandlerInfo(type, bean, method, parameterTypes));
             }
         }
@@ -78,38 +67,72 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
             throw new RuntimeException("채널 인증 전입니다");
         }
 
+        log.info("수신한 패킷 데이터: {}", packet.data());
+
         // 핸들러로 디스패치
         HandlerInfo handlerInfo = commandHandlerMap.get(receivePacketType);
         if (handlerInfo == null) {
             throw new RuntimeException("알 수 없는 패킷 타입: " + packet.header().packetType());
         }
 
-        log.info("수신한 패킷 data():" + packet.data());
+        Object[] parameters;
+        if (packet.data() == null || packet.data().length == 0) {
+            parameters = parseParameter(handlerInfo, ctx);
+        }
+        else {
+            parameters = parseParameterWithData(handlerInfo, packet.data(), ctx);
+        }
+        try {
+            handlerInfo.method.invoke(handlerInfo.bean, parameters);
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            log.error("핸들러 실행 중 오류 발생: {}", e);
+            e.printStackTrace();
+        }
+    }
+
+    private Object[] parseParameter(HandlerInfo handlerInfo, ChannelHandlerContext ctx) {
+        Object[] parameters = new Object[handlerInfo.parameterTypes.length];
 
         try {
-            Object[] parameters = new Object[handlerInfo.parameterTypes.length];
-
             for (int i = 0; i < handlerInfo.parameterTypes.length; i++) {
                 Class<?> parameterType = handlerInfo.parameterTypes[i];
 
-                if (Command.class.isAssignableFrom(parameterType)) {
-                    Command command = packetMapper.getCommand(receivePacketType, packet.data());
-                    parameters[i] = command;
+                if (Session.class.isAssignableFrom(parameterType)) {
+                    parameters[i] = channelManager.getSession(ctx.channel());
                     continue;
                 }
 
-                if (Session.class.isAssignableFrom(parameterType)) {
-                    parameters[i] = channelManager.getSession(ctx.channel());
-                }
+                throw new RuntimeException("Data가 없는데 핸들러가 파라미터를 요구합니다");
             }
-
-            handlerInfo.method.invoke(handlerInfo.bean, parameters);
-
-            log.info("패킷 처리 완료: {}", receivePacketType);
         } catch (Exception e) {
-            log.error("패킷 처리 중 오류가 발생했습니다.", e);
+            log.error("패킷 데이터 직렬화 중 오류 발생: ", e);
             e.printStackTrace();
         }
+
+        return parameters;
+    }
+
+    private Object[] parseParameterWithData(HandlerInfo handlerInfo, byte[] data, ChannelHandlerContext ctx) {
+        ByteBuffer buffer = ByteBuffer.wrap(data);
+        Object[] parameters = new Object[handlerInfo.parameterTypes.length];
+
+        try {
+            for (int i = 0; i < handlerInfo.parameterTypes.length; i++) {
+                Class<?> parameterType = handlerInfo.parameterTypes[i];
+
+                if (Session.class.isAssignableFrom(parameterType)) {
+                    parameters[i] = channelManager.getSession(ctx.channel());
+                    continue;
+                }
+
+                parameters[i] = packetMapper.getInstance(parameterType, buffer);
+            }
+        } catch (Exception e) {
+            log.error("패킷 데이터 직렬화 중 오류 발생: ", e);
+            e.printStackTrace();
+        }
+
+        return parameters;
     }
 
     private record HandlerInfo(

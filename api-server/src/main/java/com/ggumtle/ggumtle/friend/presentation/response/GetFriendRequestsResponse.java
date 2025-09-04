@@ -10,12 +10,13 @@ public record GetFriendRequestsResponse(
     public static GetFriendRequestsResponse from(GetFriendRequestsResult result) {
         return new GetFriendRequestsResponse(
                 result.friendRequests().stream()
-                        .map(f -> new Friend(f.memberId(), f.nickname()))
+                        .map(f -> new Friend(f.id(),f.memberId(), f.nickname()))
                         .toList()
         );
     }
 
     public record Friend(
+            Long id,
             Long memberId,
             String nickname
     ) {}

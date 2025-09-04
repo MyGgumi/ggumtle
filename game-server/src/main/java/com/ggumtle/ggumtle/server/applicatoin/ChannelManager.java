@@ -15,6 +15,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -38,6 +40,18 @@ public class ChannelManager {
     }
 
     public void authorizeChannel(Channel channel, String accessToken) {
+        Optional<Session> optionalSession = sessionManager.getSession(channel);
+        if (optionalSession.isPresent()) {
+            Session existingSession = optionalSession.get();
+            log.warn("이미 {}번 사용자의 {}번 세션이 존재합니다", existingSession.getMemberId(), existingSession.getSessionId());
+
+            SessionResult sessionResult = new SessionResult(false, -1L);
+            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
+            channel.writeAndFlush(packet);
+
+            return;
+        }
+
         if (!jwtService.verifyToken(accessToken)) {
             log.info("토큰이 유효하지 않습니다");
 
@@ -58,7 +72,7 @@ public class ChannelManager {
         return sessionManager.existSession(channel);
     }
 
-    public Session getSession(Channel channel) {
+    public Optional<Session> getSession(Channel channel) {
         return sessionManager.getSession(channel);
     }
 }

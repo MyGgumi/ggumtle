@@ -68,6 +68,16 @@ public class Room {
         }
     }
 
+    public boolean removeSession(Session session) {
+        Session removedSession = playerSessions.remove(session.getMemberId());
+        if (removedSession == null) {
+            return false;
+        }
+
+        sceneChanger.remove(removedSession.getMemberId());
+        return true;
+    }
+
     /**
      * 씬 체인지가 완료된 사용자를 추가한다.
      * @param playerId 씬 체인지를 완료한 사용자

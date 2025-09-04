@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.EnumMap;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -98,7 +99,13 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                 Class<?> parameterType = handlerInfo.parameterTypes[i];
 
                 if (Session.class.isAssignableFrom(parameterType)) {
-                    parameters[i] = channelManager.getSession(ctx.channel());
+                    Optional<Session> optionalSession = channelManager.getSession(ctx.channel());
+
+                    if (optionalSession.isEmpty()) {
+                        throw new RuntimeException("Session 정보를 요청하는 핸들러를 호출하였으나 채널에 세션이 없습니다");
+                    }
+
+                    parameters[i] = optionalSession.get();
                     continue;
                 }
 

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -60,27 +61,17 @@ public class SessionManager {
         return sessionMap.containsKey(channel);
     }
 
-    /**
-     * 채널에 연결된 세션을 조회합니다.
-     *
-     * @param channel 조회할 채널
-     * @return 조회된 세션
-     */
-    public Session getSession(Channel channel) {
+    public Optional<Session> getSession(Channel channel) {
         if (!sessionMap.containsKey(channel)) {
-            throw new IllegalArgumentException("해당 세션이 존재하지 않습니다.");
+            log.warn("세션이 존재하지 않습니다");
+            return Optional.empty();
         }
 
-        return sessionMap.get(channel);
+        return Optional.of(sessionMap.get(channel));
     }
 
-    /**
-     * 세션을 제거합니다.
-     *
-     * @param channel 제거할 채널
-     */
     public void removeSession(Channel channel) {
-        Session session = sessionMap.get(channel);
+        Session session = sessionMap.getOrDefault(channel, null);
 
         if (session != null) {
             log.debug("세션 제거: {}", session.getSessionId());

@@ -6,10 +6,12 @@ import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
+import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
+import com.ggumtle.ggumtle.friend.application.result.RejectFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.domain.Friend;
 import com.ggumtle.ggumtle.friend.domain.Status;
@@ -98,5 +100,19 @@ public class FriendService {
         String nickname = friend.getFollower().getNickname();
 
         return AcceptFriendRequestResult.of(followerId,nickname);
+    }
+
+    @Transactional
+    public RejectFriendRequestResult rejectFriendRequest(RejectFriendRequestCommand command) {
+        Long friendId = command.friendId();
+        Long loginMemberId = command.loginMemberId();
+        Friend friend = friendRepository.findByIdAndFollowee_Id(friendId, loginMemberId)
+                .orElseThrow(() -> new GgumtleException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        friend.reject();
+        Long followerId = friend.getFollower().getId();
+        String nickname = friend.getFollower().getNickname();
+
+        return RejectFriendRequestResult.of(followerId,nickname);
     }
 }

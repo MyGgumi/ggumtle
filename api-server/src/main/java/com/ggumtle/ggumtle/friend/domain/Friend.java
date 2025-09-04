@@ -56,18 +56,18 @@ public class Friend {
     }
 
     public void accept() {
-        checkPending();
-        this.status = Status.ACCEPTED;
+        switch (this.status) {
+            case PENDING -> this.status = Status.ACCEPTED;
+            case ACCEPTED -> throw new GgumtleException(FriendErrorCode.ALREADY_FRIEND);
+            case REJECTED -> throw new GgumtleException(FriendErrorCode.REJECTED_REQUEST);
+        }
     }
 
     public void reject() {
-        checkPending();
-        this.status = Status.REJECTED;
-    }
-
-    private void checkPending() {
-        if (this.status != Status.PENDING) {
-            throw new GgumtleException(FriendErrorCode.ALREADY_REQUEST);
+        switch (this.status) {
+            case PENDING -> this.status = Status.REJECTED;
+            case ACCEPTED -> throw new GgumtleException(FriendErrorCode.ALREADY_FRIEND);
+            case REJECTED -> throw new GgumtleException(FriendErrorCode.REJECTED_REQUEST);
         }
     }
 }

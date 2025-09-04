@@ -14,8 +14,10 @@ public enum FriendErrorCode implements ErrorCode {
 
     ALREADY_FRIEND(HttpStatus.CONFLICT, "FR40901", "이미 친구 관계입니다"),
     ALREADY_REQUEST(HttpStatus.CONFLICT, "FR40902", "이미 친구 요청을 보낸 상태입니다."),
+    REJECTED_REQUEST(HttpStatus.CONFLICT, "FR40903", "이미 거절한 친구 요청입니다."),
 
-    TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "FR40401", "대상 회원을 찾을 수 없습니다");
+    TARGET_NOT_FOUND(HttpStatus.NOT_FOUND, "FR40401", "대상 회원을 찾을 수 없습니다"),
+    REQUEST_NOT_FOUND(HttpStatus.NOT_FOUND, "FR40402", "친구 요청을 찾을 수 없습니다.");
 
     private final HttpStatus httpStatus;
     private final String code;

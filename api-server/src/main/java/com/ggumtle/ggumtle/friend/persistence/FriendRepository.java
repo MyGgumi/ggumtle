@@ -26,5 +26,6 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     @EntityGraph(attributePaths = "follower")
     List<Friend> findAllByFollowee_IdAndStatus(Long followeeId, Status status);
 
+    @EntityGraph(attributePaths = "follower")
     Optional<Friend> findByIdAndFollowee_Id(Long id, Long followeeId);
 }

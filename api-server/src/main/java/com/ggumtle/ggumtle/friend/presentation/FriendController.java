@@ -5,13 +5,17 @@ import com.ggumtle.ggumtle.common.SocketRequestType;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.FriendService;
+import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
+import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
+import com.ggumtle.ggumtle.friend.presentation.request.AcceptFriendRequestRequest;
 import com.ggumtle.ggumtle.friend.presentation.request.RequestFriendRequest;
+import com.ggumtle.ggumtle.friend.presentation.response.AcceptFriendRequestResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendRequestsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.RequestFriendResponse;
@@ -68,5 +72,19 @@ public class FriendController {
         GetFriendRequestsResponse response = GetFriendRequestsResponse.from(result);
         SendSocketEvent event = new SendSocketEvent(List.of(memberId), response);
         applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketRequestType.ACCEPT_FRIEND_REQUEST)
+    public void acceptFriendRequest(AcceptFriendRequestRequest request, WebSocketSession session) {
+        Long loginMemberId = Long.parseLong(session.getPrincipal().getName());
+
+        AcceptFriendRequestCommand command = request.toCommand(loginMemberId);
+
+        AcceptFriendRequestResult result = friendService.acceptFriendRequest(command);
+        AcceptFriendRequestResponse response = AcceptFriendRequestResponse.from(result);
+
+        SendSocketEvent event = new SendSocketEvent(List.of(loginMemberId,result.followerId()), response);
+        applicationEventPublisher.publishEvent(event);
+
     }
 }

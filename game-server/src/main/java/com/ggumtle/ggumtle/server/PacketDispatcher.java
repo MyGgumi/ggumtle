@@ -17,6 +17,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Optional;
 
@@ -83,6 +84,8 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         else {
             parameters = parseParameterWithData(handlerInfo, packet.data(), ctx);
         }
+
+        log.info("핸들러: {}\n파라미터: {}", handlerInfo, Arrays.toString(parameters));
         try {
             handlerInfo.method.invoke(handlerInfo.bean, parameters);
         } catch (InvocationTargetException | IllegalAccessException e) {
@@ -128,7 +131,13 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                 Class<?> parameterType = handlerInfo.parameterTypes[i];
 
                 if (Session.class.isAssignableFrom(parameterType)) {
-                    parameters[i] = channelManager.getSession(ctx.channel());
+                    Optional<Session> optionalSession = channelManager.getSession(ctx.channel());
+
+                    if (optionalSession.isEmpty()) {
+                        throw new RuntimeException("Session 정보를 요청하는 핸들러를 호출하였으나 채널에 세션이 없습니다");
+                    }
+
+                    parameters[i] = optionalSession.get();
                     continue;
                 }
 

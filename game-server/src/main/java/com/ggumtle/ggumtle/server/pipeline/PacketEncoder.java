@@ -10,7 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PacketEncoder extends MessageToByteEncoder<Packet> {
 
     @Override
-    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf out) throws Exception {
+    protected void encode(ChannelHandlerContext ctx, Packet packet, ByteBuf out) {
         // 헤더를 바이트로 변환
         byte[] headerBytes = packet.header().toBytes();
         out.writeBytes(headerBytes);
@@ -20,6 +20,6 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
             out.writeBytes(packet.data());
         }
 
-        log.debug("패킷 인코딩 완료 - Type: {}, Length: {}", packet.header().packetType(), packet.getDataLength());
+        log.debug("[{}] 패킷 인코딩 완료 - Type: {}, Length: {}", ctx.channel().id(), packet.header().packetType(), packet.getDataLength());
     }
 }

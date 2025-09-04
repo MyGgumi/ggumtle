@@ -49,6 +49,8 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Env
+    implementation "me.paulschwarz:spring-dotenv:3.0.0"
 }
 
 tasks.named('test') {

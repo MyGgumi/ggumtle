@@ -1,13 +1,13 @@
 package com.ggumtle.ggumtle.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ggumtle.ggumtle.common.property.GameServerProperty;
 import com.ggumtle.ggumtle.messaging.message.CreatedRoomMessage;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
 import com.ggumtle.ggumtle.room.application.RoomManager;
 import com.ggumtle.ggumtle.room.domain.Room;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -25,11 +25,11 @@ public class RoomMessageListener implements MessageListener {
 
     @Autowired
     protected RoomMessageListener(
-            @Value("${game.server.id}") String gameServerId,
+            GameServerProperty gameServerProperty,
             ObjectMapper objectMapper,
             RedisTemplate<String, String> redisTemplate,
             RoomManager roomManager) {
-        this.gameServerId = gameServerId;
+        this.gameServerId = gameServerProperty.getId();
         this.objectMapper = objectMapper;
         this.redisTemplate = redisTemplate;
         this.roomManager = roomManager;

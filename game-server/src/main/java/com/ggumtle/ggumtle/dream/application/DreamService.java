@@ -1,9 +1,13 @@
 package com.ggumtle.ggumtle.dream.application;
 
+import com.ggumtle.ggumtle.common.PacketCommandHandler;
+import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.RoomManager;
 import com.ggumtle.ggumtle.room.domain.Room;
+import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
+import com.ggumtle.ggumtle.session.Session;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +24,7 @@ public class DreamService {
 
     private final RoomManager roomManager;
     private final ConcurrentHashMap<Long, DreamManager> dreamManagers = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, DreamManager> sessionIdToDreamManagers = new ConcurrentHashMap<>();
     private final SpawnCache spawnCache;
 
     @EventListener
@@ -34,6 +39,28 @@ public class DreamService {
         Room room = optionalRoom.get();
         DreamManager dreamManager = new DreamManager(room, spawnCache);
 
-        dreamManagers.put(room.getRoomId(),  dreamManager);
+        dreamManagers.put(room.getRoomId(), dreamManager);
+        room.getPlayerSessions()
+                .forEach((sessionId, session) -> sessionIdToDreamManagers.put(sessionId, dreamManager));
+        log.debug(sessionIdToDreamManagers.toString());
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.PLAYER_MOVE)
+    public void handlePlayerMove(PlayerMoveCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.movePlayer(session.getMemberId(), command.x(), command.y(), command.z());
+    }
+
+    private DreamManager getDreamManager(Session session) {
+        DreamManager dreamManager = sessionIdToDreamManagers.getOrDefault(session.getSessionId(), null);
+
+        if (dreamManager != null) {
+            return dreamManager;
+        }
+
+        log.error("{}번 사용자의 {}번 세션의 플레이 중인 드림이 없습니다", session.getMemberId(), session.getSessionId());
+
+        throw new RuntimeException(String.format("%d번 사용자의 %d번 세션의 플레이 중인 드림이 없습니다", session.getMemberId(), session.getSessionId()));
     }
 }

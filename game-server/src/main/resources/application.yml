@@ -23,8 +23,7 @@ spring:
     hibernate:
       ddl-auto: update
 
-game:
-  server:
+game-server:
     port: 8888
     max-players-per-room: 6
     tick-rate: 30

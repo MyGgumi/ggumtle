@@ -3,6 +3,7 @@ package com.ggumtle.ggumtle.dream.application;
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
+import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Player;
@@ -19,8 +20,9 @@ import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 @Slf4j
 public class DreamManager {
@@ -33,17 +35,17 @@ public class DreamManager {
 
     // 인게임 캐시
     private final Room room;
-    private List<Player> players;
-    private ConcurrentHashMap<Integer, Ggumtle> ggumtles;
-    private ConcurrentHashMap<Integer, Box> boxes;
+    private Map<Long, Player> players;
+    private Map<Integer, Ggumtle> ggumtles;
+    private Map<Integer, Box> boxes;
 
     public DreamManager(Room room, SpawnCache spawnCache) {
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
 
         this.spawnCache = spawnCache;
         this.room = room;
-        this.ggumtles = new ConcurrentHashMap<>();
-        this.boxes = new ConcurrentHashMap<>();
+        this.ggumtles = new HashMap<>();
+        this.boxes = new HashMap<>();
 
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
 
@@ -51,6 +53,17 @@ public class DreamManager {
         initializePlayers();
 
         log.info("{}번 게임의 초기화 종료", room.getRoomId());
+    }
+
+    public void movePlayer(long id, int x, int y, int z) {
+        Position position = new Position(x, y, z, System.currentTimeMillis());
+
+        Player player = players.get(id);
+        player.addPosition(position);
+
+        Result result = new PlayerMoveResult(player.getId(), x, y, z);
+        Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
     }
 
     private void initializeMap() {
@@ -86,15 +99,16 @@ public class DreamManager {
         List<Long> playerIds = room.getPlayerIds().stream().toList();
         List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
 
-        this.players = new ArrayList<>();
+        this.players = new HashMap<>();
         for (int i = 0; i < playerIds.size(); i++) {
             Player player = new Player(playerIds.get(i), Position.from(playerSpawns.get(i)));
 
-            this.players.add(player);
+            this.players.put(player.getId(), player);
         }
 
         log.info("{}번 게임의 플레이어 초기화 종료", room.getRoomId());
 
+        List<Player> players = this.players.values().stream().toList();
         for (long playerId : playerIds) {
             Result result = new InitializePlayerResult(players, playerId);
             Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), result);

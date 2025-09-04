@@ -69,7 +69,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
             throw new RuntimeException("채널 인증 전입니다");
         }
 
-        log.info("수신한 패킷 데이터: {}", packet.data());
+        log.info("[{}] 수신한 패킷 데이터: {}", ctx.channel().id(), packet.data());
 
         // 핸들러로 디스패치
         HandlerInfo handlerInfo = commandHandlerMap.get(receivePacketType);
@@ -85,11 +85,11 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
             parameters = parseParameterWithData(handlerInfo, packet.data(), ctx);
         }
 
-        log.info("핸들러: {}\n파라미터: {}", handlerInfo, Arrays.toString(parameters));
+        log.info("[{}] 핸들러: {}\n파라미터: {}", ctx.channel(), handlerInfo, Arrays.toString(parameters));
         try {
             handlerInfo.method.invoke(handlerInfo.bean, parameters);
         } catch (InvocationTargetException | IllegalAccessException e) {
-            log.error("핸들러 실행 중 오류 발생: {}", e);
+            log.error("[{}] 핸들러 실행 중 오류 발생: {}", ctx.channel().id(), e.getMessage());
             e.printStackTrace();
         }
     }
@@ -115,7 +115,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                 throw new RuntimeException("Data가 없는데 핸들러가 파라미터를 요구합니다");
             }
         } catch (Exception e) {
-            log.error("패킷 데이터 직렬화 중 오류 발생: ", e);
+            log.error("[{}] 패킷 데이터 직렬화 중 오류 발생: {}", ctx.channel().id(), e.getMessage());
             e.printStackTrace();
         }
 
@@ -144,7 +144,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                 parameters[i] = packetMapper.getInstance(parameterType, buffer);
             }
         } catch (Exception e) {
-            log.error("패킷 데이터 직렬화 중 오류 발생: ", e);
+            log.error("[{}] 패킷 데이터 직렬화 중 오류 발생: {}", ctx.channel().id(), e.getMessage());
             e.printStackTrace();
         }
 

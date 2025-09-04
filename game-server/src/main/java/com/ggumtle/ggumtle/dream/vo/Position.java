@@ -14,7 +14,9 @@ public final class Position {
 
     public final int z;
 
+    public final long timestamp;
+
     public static Position from(Spawn spawn) {
-        return new Position(spawn.getX(), spawn.getY(), spawn.getZ());
+        return new Position(spawn.getX(), spawn.getY(), spawn.getZ(), System.currentTimeMillis());
     }
 }

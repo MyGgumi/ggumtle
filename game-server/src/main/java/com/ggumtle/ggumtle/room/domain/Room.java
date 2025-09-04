@@ -107,4 +107,13 @@ public class Room {
     public void broadcast(Packet packet) {
         playerSessions.values().forEach(session -> session.sendPacket(packet));
     }
+
+    public boolean sendPacket(long memberId, Packet packet) {
+        if (!playerSessions.containsKey(memberId)) {
+            return false;
+        }
+
+        playerSessions.get(memberId).sendPacket(packet);
+        return true;
+    }
 }

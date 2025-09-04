@@ -85,6 +85,7 @@ public class RoomManager {
         for (Room room : idToRoom.values()) {
             room.removeSession(session);
         }
+        playerIdToRoom.remove(session.getMemberId());
     }
 
     public boolean joinRoom(Long roomId, Session session) {

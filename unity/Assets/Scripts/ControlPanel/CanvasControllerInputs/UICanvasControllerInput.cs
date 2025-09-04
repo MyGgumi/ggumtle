@@ -27,7 +27,7 @@ namespace StarterAssets
         private Vector2 touchStartPosition;
         private Vector2 currentTouchPosition;
 
-        void Start()
+        void Awake()
         {
             SetupFreeLookCamera();
         }
@@ -45,6 +45,13 @@ namespace StarterAssets
             // FreeLook 기본 입력 비활성화
             freeLookCamera.m_XAxis.m_InputAxisName = "";
             freeLookCamera.m_YAxis.m_InputAxisName = "";
+
+            // Y축 범위 설정 BEFORE 값 설정
+            freeLookCamera.m_YAxis.m_MinValue = 0.2f;
+            freeLookCamera.m_YAxis.m_MaxValue = 0.7f;
+
+            // 현재 Y값을 원하는 위치로 설정 (중간값으로)
+            freeLookCamera.m_YAxis.Value = 0.3f; // 또는 원하는 시작 위치
 
             // 모바일 최적화 설정
             freeLookCamera.m_XAxis.m_MaxSpeed = 300f;

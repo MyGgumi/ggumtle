@@ -81,10 +81,6 @@ public class FriendService {
 
         List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndStatus(memberId, Status.PENDING);
 
-        List<Member> friends = new ArrayList<>();
-
-        asFollowee.forEach(f -> friends.add(f.getFollower()));
-
-        return  GetFriendRequestsResult.of(friends);
+        return  GetFriendRequestsResult.of(asFollowee);
     }
 }

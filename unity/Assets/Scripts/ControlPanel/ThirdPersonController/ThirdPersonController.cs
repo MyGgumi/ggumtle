@@ -52,27 +52,27 @@ namespace StarterAssets
 
         // 컴포넌트 참조
 #if ENABLE_INPUT_SYSTEM
-        private PlayerInput _playerInput;
+        // private PlayerInput _playerInput;
 #endif
         private Animator _animator;
         private CharacterController _controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
 
-        private const float _threshold = 0.01f;
+        // private const float _threshold = 0.01f;
         private bool _hasAnimator;
 
-        private bool IsCurrentDeviceMouse
-        {
-            get
-            {
-#if ENABLE_INPUT_SYSTEM
-                return _playerInput.currentControlScheme == "KeyboardMouse";
-#else
-                return false;
-#endif
-            }
-        }
+        //         private bool IsCurrentDeviceMouse
+        //         {
+        //             get
+        //             {
+        // #if ENABLE_INPUT_SYSTEM
+        //                 return _playerInput.currentControlScheme == "KeyboardMouse";
+        // #else
+        //                 return false;
+        // #endif
+        //             }
+        //         }
 
         private void Awake()
         {
@@ -87,10 +87,14 @@ namespace StarterAssets
         {
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
+
+            // 벽과 거리 유지를 위해 radius 늘리기
+            // _controller.radius = 0.8f;
+
             _input = GetComponent<StarterAssetsInputs>();
-#if ENABLE_INPUT_SYSTEM
-            _playerInput = GetComponent<PlayerInput>();
-#endif
+            // #if ENABLE_INPUT_SYSTEM
+            //             _playerInput = GetComponent<PlayerInput>();
+            // #endif
 
             AssignAnimationIDs();
 

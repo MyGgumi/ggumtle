@@ -147,5 +147,23 @@ namespace StarterAssets
         {
             starterAssetsInputs.SprintInput(virtualSprintState);
         }
+
+        public void VirtualInteractionInput(bool virtualInteractionState)
+        {
+            if (virtualInteractionState)
+            {
+                Debug.Log("[UICanvasControllerInput] 상호작용 버튼 눌림");
+                // InteractionManager에게 상호작용 요청 전달
+                if (InteractionManager.Instance != null)
+                {
+                    Debug.Log("[UICanvasControllerInput] InteractionManager 찾음, TryNearestInteraction 호출");
+                    InteractionManager.Instance.TryNearestInteraction();
+                }
+                else
+                {
+                    Debug.LogWarning("[UICanvasControllerInput] InteractionManager.Instance가 null입니다!");
+                }
+            }
+        }
     }
 }

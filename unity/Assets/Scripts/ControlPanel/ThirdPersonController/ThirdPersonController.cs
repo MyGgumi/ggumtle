@@ -32,6 +32,9 @@ namespace StarterAssets
         [Header("모바일 카메라 설정")]
         public bool useFreeLookCamera = true; // FreeLook 카메라 사용 여부
 
+        [Header("상호작용 설정")]
+        public bool canMove = true;
+
         // 내부 변수들
         private float _speed;
         private float _animationBlend;
@@ -50,29 +53,12 @@ namespace StarterAssets
         private int _animIDFreeFall;
         private int _animIDMotionSpeed;
 
-        // 컴포넌트 참조
-#if ENABLE_INPUT_SYSTEM
-        // private PlayerInput _playerInput;
-#endif
         private Animator _animator;
         private CharacterController _controller;
         private StarterAssetsInputs _input;
         private GameObject _mainCamera;
 
-        // private const float _threshold = 0.01f;
         private bool _hasAnimator;
-
-        //         private bool IsCurrentDeviceMouse
-        //         {
-        //             get
-        //             {
-        // #if ENABLE_INPUT_SYSTEM
-        //                 return _playerInput.currentControlScheme == "KeyboardMouse";
-        // #else
-        //                 return false;
-        // #endif
-        //             }
-        //         }
 
         private void Awake()
         {
@@ -88,13 +74,7 @@ namespace StarterAssets
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
-            // 벽과 거리 유지를 위해 radius 늘리기
-            // _controller.radius = 0.8f;
-
             _input = GetComponent<StarterAssetsInputs>();
-            // #if ENABLE_INPUT_SYSTEM
-            //             _playerInput = GetComponent<PlayerInput>();
-            // #endif
 
             AssignAnimationIDs();
 
@@ -143,6 +123,9 @@ namespace StarterAssets
 
         private void Move()
         {
+            if (!canMove)
+                return;
+
             // 스프린트 여부에 따른 목표 속도 설정
             float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
 
@@ -222,6 +205,11 @@ namespace StarterAssets
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
             }
+        }
+
+        public void SetMovementEnabled(bool enabled)
+        {
+            canMove = enabled;
         }
 
         private void JumpAndGravity()

@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 // 클릭 기반 상자 상호작용
-public class InteractableChest : MonoBehaviour
+public class InteractableChest : MonoBehaviour, IInteractable
 {
     [Header("상자 설정")]
     public string chestName = "상자";
@@ -17,6 +17,10 @@ public class InteractableChest : MonoBehaviour
 
     [Header("UI 힌트")]
     public GameObject interactionIcon; // 상호작용 힌트 아이콘 (선택사항)
+    
+    [Header("테스트용 더미 아이템")]
+    public bool useTestItems = true; // 테스트 아이템 사용 여부
+    public Sprite[] testItemSprites; // 테스트용 아이템 스프라이트들
 
     private ChestInteractionHandler handler;
     private Transform playerTransform;
@@ -37,6 +41,12 @@ public class InteractableChest : MonoBehaviour
         // 상호작용 아이콘 초기화
         if (interactionIcon != null)
             interactionIcon.SetActive(!isOpen);
+            
+        // 테스트 아이템 초기화
+        if (useTestItems && chestItems.Count == 0)
+        {
+            InitializeTestItems();
+        }
     }
 
     void Update()
@@ -59,37 +69,10 @@ public class InteractableChest : MonoBehaviour
         }
     }
 
-    // UI 버튼에서 호출되는 상호작용 메서드
-
+    // UI 버튼에서 호출되는 상호작용 메서드 (레거시)
     public void TryInteract()
     {
-        // 이미 다른 상호작용 중이면 무시
-        if (InteractionManager.Instance != null && InteractionManager.Instance.IsInteracting())
-        {
-            Debug.Log("다른 상호작용이 진행 중입니다.");
-            return;
-        }
-
-        // 이미 열려있으면 무시
-        if (isOpen)
-        {
-            Debug.Log("상자가 이미 열려있습니다.");
-            return;
-        }
-
-        // 거리 체크
-        if (!IsPlayerInRange())
-        {
-            Debug.Log("너무 멀어서 상자를 열 수 없습니다.");
-            // TODO: UI로 "너무 멀다" 메시지 표시
-            return;
-        }
-
-        // 상호작용 실행
-        if (handler != null)
-        {
-            handler.HandleChestInteraction(this);
-        }
+        Interact();
     }
 
     private bool IsPlayerInRange()
@@ -150,6 +133,12 @@ public class InteractableChest : MonoBehaviour
             handler.HandleChestClose();
         }
 
+        // InteractionManager에게 상호작용 종료 알림
+        if (InteractionManager.Instance != null)
+        {
+            InteractionManager.Instance.EndInteraction(this);
+        }
+
         Debug.Log($"[InteractableChest] 상자 닫힘 완료: {chestName}, isOpen: {isOpen}");
     }
 
@@ -170,10 +159,119 @@ public class InteractableChest : MonoBehaviour
             chestItems.RemoveAt(index);
     }
 
+    /// <summary>
+    /// 테스트용 더미 아이템 초기화 (나중에 서버에서 받아올 데이터로 교체)
+    /// </summary>
+    private void InitializeTestItems()
+    {
+        Debug.Log("[InteractableChest] 테스트 더미 아이템 초기화");
+        
+        // 기본 테스트 아이템들
+        var testItems = new[]
+        {
+            new ChestItem("포션", GetTestSprite(0), 5, "체력을 회복하는 물약"),
+            new ChestItem("마나 포션", GetTestSprite(1), 3, "마나를 회복하는 물약"),
+            new ChestItem("검", GetTestSprite(2), 1, "날카로운 검"),
+            new ChestItem("방패", GetTestSprite(3), 1, "든든한 방패"),
+            new ChestItem("코인", GetTestSprite(4), 50, "반짝이는 금화")
+        };
+
+        chestItems.AddRange(testItems);
+        
+        Debug.Log($"[InteractableChest] {testItems.Length}개 테스트 아이템 추가됨");
+    }
+    
+    /// <summary>
+    /// 테스트용 스프라이트 가져오기 (인덱스 범위 체크 포함)
+    /// </summary>
+    private Sprite GetTestSprite(int index)
+    {
+        if (testItemSprites != null && index >= 0 && index < testItemSprites.Length)
+        {
+            return testItemSprites[index];
+        }
+        return null; // 스프라이트가 없으면 null 반환
+    }
+
     // Gizmos로 상호작용 범위 표시
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireSphere(transform.position, interactionRange);
     }
+
+    #region IInteractable 구현
+    /// <summary>
+    /// 상호작용 가능한지 확인
+    /// </summary>
+    public bool CanInteract()
+    {
+        // 이미 열려있거나, 플레이어가 범위 밖에 있으면 상호작용 불가
+        return !isOpen && IsPlayerInRange();
+    }
+
+    /// <summary>
+    /// 상호작용 실행
+    /// </summary>
+    public void Interact()
+    {
+        // 이미 다른 상호작용 중이면 무시
+        if (InteractionManager.Instance != null && InteractionManager.Instance.IsInteracting())
+        {
+            Debug.Log("다른 상호작용이 진행 중입니다.");
+            return;
+        }
+
+        // 상호작용 가능 체크
+        if (!CanInteract())
+        {
+            if (isOpen)
+                Debug.Log("상자가 이미 열려있습니다.");
+            else
+                Debug.Log("너무 멀어서 상자를 열 수 없습니다.");
+            return;
+        }
+
+        // 상호작용 시작 알림
+        InteractionManager.Instance?.BeginInteraction(this);
+
+        // 상호작용 실행
+        if (handler != null)
+        {
+            handler.HandleChestInteraction(this);
+        }
+    }
+
+    /// <summary>
+    /// 상호작용 종료 (거리 멀어지거나 강제 종료시)
+    /// </summary>
+    public void OnInteractionEnd()
+    {
+        CloseChest();
+    }
+
+    /// <summary>
+    /// 상호작용 범위 반환
+    /// </summary>
+    public float GetInteractionRange()
+    {
+        return interactionRange;
+    }
+
+    /// <summary>
+    /// Transform 반환
+    /// </summary>
+    public Transform GetTransform()
+    {
+        return transform;
+    }
+
+    /// <summary>
+    /// 상호작용 객체 이름 반환
+    /// </summary>
+    public string GetInteractableName()
+    {
+        return chestName;
+    }
+    #endregion
 }

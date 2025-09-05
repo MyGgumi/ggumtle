@@ -7,10 +7,10 @@ public class UIManager : MonoBehaviour
     public static UIManager Instance;
 
     [Header("오버레이 UI들")]
-    public ChestInventoryUI chestInventoryUI;
+    public ChestBoxUI chestBoxUI;
+    public PlayerInventoryUI playerInventoryUI; // 플레이어 인벤토리 UI
     public GameObject shopUI; // 나중에 상점 UI
     public GameObject dialogueUI; // 나중에 대화 UI
-    public GameObject inventoryUI; // 플레이어 인벤토리 UI
 
     // 활성화된 오버레이들을 추적
     private Stack<GameObject> activeOverlays = new Stack<GameObject>();
@@ -51,8 +51,11 @@ public class UIManager : MonoBehaviour
     private void InitializeUIComponents()
     {
         // 자동으로 UI 컴포넌트들 찾아서 등록
-        if (chestInventoryUI != null)
-            uiComponents[typeof(ChestInventoryUI)] = chestInventoryUI.gameObject;
+        if (chestBoxUI != null)
+            uiComponents[typeof(ChestBoxUI)] = chestBoxUI.gameObject;
+            
+        if (playerInventoryUI != null)
+            uiComponents[typeof(PlayerInventoryUI)] = playerInventoryUI.gameObject;
     }
 
     public void ShowOverlay(GameObject overlay)
@@ -139,8 +142,14 @@ public class UIManager : MonoBehaviour
         }
 
         // 개별 UI들도 명시적으로 닫기
-        if (chestInventoryUI != null)
-            chestInventoryUI.HideChestInventory();
+        if (chestBoxUI != null)
+            chestBoxUI.HideChestBox();
+
+        // 플레이어 인벤토리 UI도 닫기
+        if (playerInventoryUI != null && playerInventoryUI.gameObject.activeInHierarchy)
+        {
+            playerInventoryUI.gameObject.SetActive(false);
+        }
 
         Debug.Log("모든 오버레이 닫음");
     }
@@ -195,10 +204,10 @@ public class UIManager : MonoBehaviour
 
     public void ShowChestInventory(InteractableChest chest)
     {
-        if (chestInventoryUI != null)
+        if (chestBoxUI != null)
         {
-            ShowOverlay(chestInventoryUI.gameObject);
-            chestInventoryUI.ShowChestInventory(chest);
+            ShowOverlay(chestBoxUI.gameObject);
+            chestBoxUI.ShowChestInventory(chest);
         }
     }
 
@@ -220,9 +229,17 @@ public class UIManager : MonoBehaviour
 
     public void ShowPlayerInventory()
     {
-        if (inventoryUI != null)
+        if (playerInventoryUI != null)
         {
-            ShowOverlay(inventoryUI);
+            ShowOverlay(playerInventoryUI.gameObject);
+        }
+    }
+    
+    public void HidePlayerInventory()
+    {
+        if (playerInventoryUI != null)
+        {
+            CloseOverlay(playerInventoryUI.gameObject);
         }
     }
 

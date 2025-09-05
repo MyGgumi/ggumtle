@@ -13,9 +13,11 @@ import com.ggumtle.ggumtle.dream.persistence.PartyInvitationRepository;
 import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
+import com.ggumtle.ggumtle.member.domain.Member;
+import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -27,6 +29,7 @@ import java.util.UUID;
 public class DreamPartyService {
     private final PartyParticipantRepository partyParticipantRepository;
     private final PartyInvitationRepository partyInvitationRepository;
+    private final MemberRepository memberRepository;
 
     public CreatePartyResult createParty(CreatePartyCommand command) {
         if (partyParticipantRepository.existsById(command.memberId())) {
@@ -62,6 +65,9 @@ public class DreamPartyService {
     }
 
     public AcceptPartyInvitationResult acceptPartyInvitation(AcceptPartyInvitationCommand command) {
+        Member member = memberRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(MemberErrorCode.NOT_FOUND, command.requesterId() + "번 사용자를 찾을 수 없습니다"));
+
         if (partyParticipantRepository.existsById(command.requesterId())) {
             throw new GgumtleException(DreamErrorCode.ALREADY_IN_PARTY);
         }
@@ -82,7 +88,6 @@ public class DreamPartyService {
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(joinedParticipant.getPartyId());
         List<Long> participantIds = participants.stream().map(PartyParticipant::getMemberId).toList();
 
-        // TODO: Member 도메인 기능 구현 후, 가입한 사용자의 닉네임 조회 후 반환하도록 수정
-        return new AcceptPartyInvitationResult(participantIds, joinedParticipant.getMemberId(), "Temp nickname");
+        return new AcceptPartyInvitationResult(participantIds, joinedParticipant.getMemberId(), member.getNickname());
     }
 }

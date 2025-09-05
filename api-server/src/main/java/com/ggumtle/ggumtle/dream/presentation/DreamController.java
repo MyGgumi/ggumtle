@@ -64,10 +64,10 @@ public class DreamController {
     }
 
     @SocketCommandHandler(type = SocketType.START_DREAM)
-    public void startDream(StartDreamRequest request, WebSocketSession session) {
+    public void startDream(WebSocketSession session) {
         Long requesterId = Long.parseLong(session.getPrincipal().getName());
 
-        StartDreamCommand command = new StartDreamCommand(requesterId, request.partyId());
+        StartDreamCommand command = new StartDreamCommand(requesterId);
         dreamService.startDream(command);
     }
 }

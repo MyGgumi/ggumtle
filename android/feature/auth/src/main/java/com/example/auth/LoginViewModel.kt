@@ -3,11 +3,11 @@ package com.example.auth
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import com.example.datastore.AuthManager
-import com.example.datastore.GoogleSignInResult
 import com.example.designsystem.dialog.DialogState
-import com.example.domain.model.Resource
 import com.example.domain.unity.UnitySendManager
-import com.example.domain.usecase.auth.GoogleLoginUseCase
+import com.example.domain.unity.model.UnityMethod
+import com.example.domain.unity.model.UnityTarget
+import com.example.domain.rest.usecase.auth.GoogleLoginUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.ContainerHost
@@ -88,7 +88,10 @@ class LoginViewModel @Inject constructor(
 
     fun navigateToMain() = intent {
         reduce { state.copy(isNavigating = true) }
-        unitySendManager.sendToUnity("AndroidUnityController", "StartTransition")
+        unitySendManager.sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.START_TRANSITION.value
+        )
         delay(2000)
         postSideEffect(LoginContract.SideEffect.NavigateToMain)
     }

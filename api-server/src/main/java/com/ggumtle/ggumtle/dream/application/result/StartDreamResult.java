@@ -9,7 +9,7 @@ public record StartDreamResult(
     }
 
     public enum START_DREAM_STATUS {
-        RECEIVED, WAITING, MATCHED, CREATE_ROOM, START
+        RECEIVED, START_MATCH, WAITING, MATCHED, CREATE_ROOM, START_DREAM
     }
 
     public record Dream(

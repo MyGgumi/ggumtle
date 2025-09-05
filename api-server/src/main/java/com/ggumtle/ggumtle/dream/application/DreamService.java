@@ -9,6 +9,8 @@ import com.ggumtle.ggumtle.dream.domain.WaitingParty;
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.dream.persistence.DreamRepository;
 import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
+import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
@@ -47,9 +49,21 @@ public class DreamService {
      * 요청 수신과 매칭 기다리기, 매칭 성공, 드림 시작과 같은 전 과정에 대한 정보를 이벤트로 발행한다
      */
     public void startDream(StartDreamCommand command) {
-        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(command.partyId());
+        publishEvent(SocketType.START_DREAM, List.of(command.requesterId()), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
+
+        PartyParticipant leader = partyParticipantRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        if (!leader.isLeader()) {
+            throw new GgumtleException(DreamErrorCode.NOT_LEADER, "파티의 리더만 드림을 시작할 수 있습니다");
+        }
+
+        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(leader.getPartyId());
         List<Long> requesterPartyParticipantIds = convertToId(participants);
-        publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
+        publishEvent(
+                SocketType.START_DREAM,
+                requesterPartyParticipantIds,
+                new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_MATCH, null));
 
         log.info("드림 시작을 요청한 파티원: {}", participants);
 
@@ -100,7 +114,7 @@ public class DreamService {
             return;
         }
 
-        StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START, event.roomId(), event.dreamServerId());
+        StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_DREAM, event.roomId(), event.dreamServerId());
         publishEvent(SocketType.START_DREAM, dream.get().getPlayerIds(), result);
     }
 

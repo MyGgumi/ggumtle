@@ -122,7 +122,7 @@ class AuthManager @Inject constructor(
         logout(LogoutReason.UserLogout)
     }
 
-    suspend fun checkAutoLogin() {
+    fun checkAutoLogin() {
         try {
             val accessToken = getAccessToken()
             val memberId = getMemberId()

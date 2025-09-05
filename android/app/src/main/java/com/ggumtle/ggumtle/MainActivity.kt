@@ -39,22 +39,14 @@ class MainActivity : UnityPlayerGameActivity()
     @Inject
     lateinit var unityStartupManager: UnityStartupManager
 
+    //todo 유니티 스크립트 수정 후 삭제 필요
     @JvmField
     val isFinishing = false
-
-    private var isUnityVisible = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         observeUnityMessages()
-
-        lifecycleScope.launch {
-            authManager.logoutEvent.collect { reason ->
-                handleLogoutEvent(reason)
-            }
-        }
-
         addComposeOverlay()
     }
 
@@ -72,6 +64,8 @@ class MainActivity : UnityPlayerGameActivity()
                             onAutoLoginComplete = { isLoggedIn ->
                                 AppNavigation(
                                     isLoggedIn = isLoggedIn,
+                                    authManager = authManager,
+                                    unitySendManager = unitySendManager
                                 )
                             }
                         )
@@ -88,30 +82,6 @@ class MainActivity : UnityPlayerGameActivity()
                 FrameLayout.LayoutParams.MATCH_PARENT
             )
         )
-    }
-
-    private fun handleLogoutEvent(reason: LogoutReason) {
-        when (reason) {
-            LogoutReason.UserLogout -> {
-                showToast("로그아웃되었습니다")
-            }
-            LogoutReason.TokenExpired -> {
-                showToast("세션이 만료되어 다시 로그인해 주세요")
-            }
-            LogoutReason.NetworkError -> {
-                showToast("네트워크 오류로 인해 로그아웃되었습니다")
-            }
-            is LogoutReason.SessionExpired -> {
-                showToast("세션이 만료되었습니다. 다시 로그인해 주세요")
-            }
-        }
-        lifecycleScope.launch {
-            authManager.checkAutoLogin()
-        }
-    }
-
-    private fun showToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 
     private fun observeUnityMessages() {

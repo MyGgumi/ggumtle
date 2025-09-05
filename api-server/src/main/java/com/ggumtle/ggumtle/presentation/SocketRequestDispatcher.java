@@ -2,7 +2,9 @@ package com.ggumtle.ggumtle.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ggumtle.ggumtle.common.SocketCommandHandler;
-import com.ggumtle.ggumtle.common.SocketRequestType;
+import com.ggumtle.ggumtle.common.SocketType;
+import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.CommonErrorCode;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,6 +17,7 @@ import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
 public class SocketRequestDispatcher implements ApplicationListener<ContextRefreshedEvent> {
-    private final Map<SocketRequestType, HandlerInfo> typeToHandler = new HashMap<>();
+    private final Map<SocketType, HandlerInfo> typeToHandler = new HashMap<>();
     private final ObjectMapper objectMapper;
     private final ApplicationContext applicationContext;
     private final ApplicationEventPublisher applicationEventPublisher;
@@ -43,7 +46,7 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
                     continue;
                 }
 
-                SocketRequestType type = annotation.type();
+                SocketType type = annotation.type();
                 Class<?>[] paramTypes = method.getParameterTypes();
 
                 if (typeToHandler.containsKey(type)) {
@@ -51,33 +54,7 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
                     continue;
                 }
 
-                if (paramTypes.length == 0) {
-                    typeToHandler.put(type, new HandlerInfo(bean, method, null, false));
-                    continue;
-                }
-
-                if (paramTypes.length == 1) {
-                    if (paramTypes[0] == WebSocketSession.class) {
-                        typeToHandler.put(type, new HandlerInfo(bean, method, null, true));
-                        continue;
-                    }
-                    else {
-                        typeToHandler.put(type, new HandlerInfo(bean, method, paramTypes[0], false));
-                        continue;
-                    }
-                }
-
-                if (paramTypes.length == 2) {
-                    if (paramTypes[1] != WebSocketSession.class) {
-                        log.warn("{} 핸들러 무시: 파라미터가 2개인 소켓 요청 핸들러의 첫번째 파라미터는 Request DTO, 두번째 파라미터는 WebSocketSession이어야 합니다", type);
-                        continue;
-                    }
-
-                    typeToHandler.put(type, new HandlerInfo(bean, method, paramTypes[0], true));
-                    continue;
-                }
-
-                log.warn("{} 핸들러 무시: 소켓 커맨드 핸들러의 파라미터는 2개 이하여야 합니다", type);
+                typeToHandler.put(type, new HandlerInfo(bean, method, paramTypes));
             }
         }
 
@@ -97,38 +74,71 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
             return;
         }
 
-        SocketRequestType type = SocketRequestType.valueOf(socketRequest.type);
-        log.info("요청 유형: {}", type);
-        HandlerInfo handlerInfo = typeToHandler.get(type);
-        log.info("요청 핸들러: {}", handlerInfo);
-        Object parameter = null;
-        if (handlerInfo.parameterType() != null) {
-            parameter = objectMapper.convertValue(socketRequest.data(), handlerInfo.parameterType());
-        }
-        log.info("요청 파라미터: {}", parameter);
-
+        // 요청 유형 파싱
+        SocketType type;
         try {
-            if (handlerInfo.parameterType != null && handlerInfo.needSession) {
-                handlerInfo.method().invoke(handlerInfo.bean(), parameter, session);
-                return;
-            }
+            type = SocketType.valueOfRequest(socketRequest.type);
+            log.info("요청 유형: {}", type);
+        } catch (GgumtleException e) {
+            log.error("소켓 유형 파싱에 실패했습니다");
 
-            if (handlerInfo.needSession) {
-                handlerInfo.method().invoke(handlerInfo.bean(), session);
-                return;
-            }
+            SendErrorSocketEvent event = new SendErrorSocketEvent(
+                    SocketType.UNKNOWN,
+                    List.of(Long.parseLong(session.getPrincipal().getName())),
+                    e.getCode(),
+                    e.getMessage());
+            applicationEventPublisher.publishEvent(event);
 
-            if (handlerInfo.parameterType != null) {
-                handlerInfo.method().invoke(handlerInfo.bean(), parameter);
-                return;
-            }
+            return;
+        }
 
-            handlerInfo.method().invoke(handlerInfo.bean());
+        // 핸들러 정보 조회 및 파라미터 파싱
+        HandlerInfo handlerInfo;
+        Object[] parameters;
+        try {
+            handlerInfo = typeToHandler.get(type);
+            log.info("요청 핸들러: {}", handlerInfo);
+            parameters = new Object[handlerInfo.parameterTypes.length];
+            for (int i = 0; i < handlerInfo.parameterTypes.length; i++) {
+                if (handlerInfo.parameterTypes[i].equals(WebSocketSession.class)) {
+                    parameters[i] = session;
+                    continue;
+                }
+
+                try {
+                    parameters[i] = objectMapper.convertValue(socketRequest.data(), handlerInfo.parameterTypes[i]);
+                } catch (Exception e) {
+                    String errorMessage = String.format("요청 데이터 [%s]을 %s형으로 매핑할 수 없습니다", socketRequest.data(), handlerInfo.parameterTypes[i]);
+                    log.error(errorMessage);
+
+                    SendErrorSocketEvent event = new SendErrorSocketEvent(
+                            type,
+                            List.of(Long.parseLong(session.getPrincipal().getName())),
+                            CommonErrorCode.BAD_REQUEST.getCode(),
+                            CommonErrorCode.BAD_REQUEST.getMessage());
+                    applicationEventPublisher.publishEvent(event);
+
+                    return;
+                }
+            }
+            log.info("요청 파라미터: {}", Arrays.toString(parameters));
+
+        } catch (RuntimeException e) {
+            return;
+        }
+
+        // 핸들러 호출
+        try {
+            handlerInfo.method().invoke(handlerInfo.bean(), parameters);
         } catch (Exception e) {
-            if (e.getCause() instanceof RuntimeException runtimeException) {
-                log.error("Runtime exception 발생: {}", runtimeException.getMessage());
+            if (e.getCause() instanceof GgumtleException ggumtleException) {
+                log.error("Ggumtle exception 발생: {}", ggumtleException.getMessage());
 
-                SendErrorSocketEvent event = new SendErrorSocketEvent(List.of(Long.parseLong(session.getPrincipal().getName())), null, runtimeException.getMessage());
+                SendErrorSocketEvent event = new SendErrorSocketEvent(
+                        type,
+                        List.of(Long.parseLong(session.getPrincipal().getName())),
+                        ggumtleException.getCode(),
+                        ggumtleException.getMessage());
                 applicationEventPublisher.publishEvent(event);
 
                 return;
@@ -136,6 +146,13 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
 
             e.printStackTrace();
             log.error("Exception 발생: {}", e.getMessage());
+
+            SendErrorSocketEvent event = new SendErrorSocketEvent(
+                    type,
+                    List.of(Long.parseLong(session.getPrincipal().getName())),
+                    CommonErrorCode.INTERNAL_SERVER_ERROR.getCode(),
+                    CommonErrorCode.INTERNAL_SERVER_ERROR.getMessage());
+            applicationEventPublisher.publishEvent(event);
         }
     }
 
@@ -148,8 +165,7 @@ public class SocketRequestDispatcher implements ApplicationListener<ContextRefre
     private record HandlerInfo(
             Object bean,
             Method method,
-            Class<?> parameterType,
-            Boolean needSession
+            Class<?>[] parameterTypes
     ) {
     }
 }

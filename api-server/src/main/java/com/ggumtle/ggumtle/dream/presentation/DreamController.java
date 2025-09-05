@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.dream.presentation;
 
-import com.ggumtle.ggumtle.common.SocketRequestType;
 import com.ggumtle.ggumtle.common.SocketCommandHandler;
+import com.ggumtle.ggumtle.common.SocketType;
 import com.ggumtle.ggumtle.dream.application.DreamPartyService;
 import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
@@ -31,27 +31,27 @@ public class DreamController {
     private final DreamService dreamService;
     private final DreamPartyService dreamPartyService;
 
-    @SocketCommandHandler(type = SocketRequestType.CREATE_PARTY)
+    @SocketCommandHandler(type = SocketType.CREATE_PARTY)
     public void createParty(WebSocketSession session) {
         Long requesterId = Long.parseLong(session.getPrincipal().getName());
 
         CreatePartyResult result = dreamPartyService.createParty(new CreatePartyCommand(requesterId));
 
-        SendSocketEvent event = new SendSocketEvent(result.clientMemberIds(), new CreatePartyResponse(result.partyId()));
+        SendSocketEvent event = new SendSocketEvent(SocketType.CREATE_PARTY, result.clientMemberIds(), new CreatePartyResponse(result.partyId()));
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SocketCommandHandler(type = SocketRequestType.INVITE_PARTY)
+    @SocketCommandHandler(type = SocketType.INVITE_PARTY)
     public void inviteParty(InvitePartyRequest request, WebSocketSession session) {
         Long requesterId = Long.parseLong(session.getPrincipal().getName());
 
         InvitePartyResult result = dreamPartyService.inviteParty(new InvitePartyCommand(requesterId, request.inviteeId()));
 
-        SendSocketEvent event = new SendSocketEvent(result.memberIds(), new InvitePartyResponse(result.invitationId()));
+        SendSocketEvent event = new SendSocketEvent(SocketType.INVITE_PARTY, result.memberIds(), new InvitePartyResponse(result.invitationId()));
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SocketCommandHandler(type = SocketRequestType.ACCEPT_PARTY_INVITATION)
+    @SocketCommandHandler(type = SocketType.ACCEPT_PARTY_INVITATION)
     public void acceptPartyInvitation(AcceptPartyInvitationRequest request, WebSocketSession session) {
         Long requesterId = Long.parseLong(session.getPrincipal().getName());
 
@@ -59,11 +59,11 @@ public class DreamController {
         AcceptPartyInvitationResult result = dreamPartyService.acceptPartyInvitation(command);
 
         AcceptPartyInvitationResponse response = new AcceptPartyInvitationResponse(result.joinedMemberId(), result.joinedMemberNickname());
-        SendSocketEvent event = new SendSocketEvent(result.memberIds(), response);
+        SendSocketEvent event = new SendSocketEvent(SocketType.ACCEPT_PARTY_INVITATION, result.memberIds(), response);
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SocketCommandHandler(type = SocketRequestType.START_DREAM)
+    @SocketCommandHandler(type = SocketType.START_DREAM)
     public void startDream(StartDreamRequest request, WebSocketSession session) {
         Long requesterId = Long.parseLong(session.getPrincipal().getName());
 

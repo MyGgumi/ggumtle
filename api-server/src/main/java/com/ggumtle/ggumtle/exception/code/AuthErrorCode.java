@@ -1,10 +1,10 @@
-package com.ggumtle.ggumtle.exception.errorCode;
+package com.ggumtle.ggumtle.exception.code;
 
-import com.ggumtle.ggumtle.exception.ErrorCode;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import org.springframework.http.HttpStatus;
+
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter

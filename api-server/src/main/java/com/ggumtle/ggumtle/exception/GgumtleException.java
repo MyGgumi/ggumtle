@@ -1,14 +1,28 @@
 package com.ggumtle.ggumtle.exception;
 
+import com.ggumtle.ggumtle.exception.code.ErrorCode;
+
 public class GgumtleException extends RuntimeException {
     private final ErrorCode errorCode;
+    private final String message;
 
     public GgumtleException(ErrorCode errorCode) {
         super(errorCode.getMessage());
         this.errorCode = errorCode;
+        this.message = errorCode.getMessage();
     }
 
-    public ErrorCode getErrorCode() {
-        return errorCode;
+    public GgumtleException(ErrorCode errorCode, String message) {
+        super(errorCode.getMessage());
+        this.errorCode = errorCode;
+        this.message = message;
+    }
+
+    public String getCode() {
+        return errorCode.getCode();
+    }
+
+    public String getMessage() {
+        return message;
     }
 }

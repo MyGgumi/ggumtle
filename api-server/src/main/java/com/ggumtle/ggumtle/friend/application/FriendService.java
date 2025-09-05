@@ -2,7 +2,7 @@ package com.ggumtle.ggumtle.friend.application;
 
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
-import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
+import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;

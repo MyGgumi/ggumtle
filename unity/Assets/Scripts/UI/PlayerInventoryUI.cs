@@ -66,7 +66,7 @@ public class PlayerInventoryUI : MonoBehaviour
         {
             PlayerInventory.Instance.OnInventoryChanged += OnInventorySlotChanged;
             PlayerInventory.Instance.OnInventoryMessage += ShowMessage;
-            
+
             // 초기 UI 업데이트
             RefreshAllSlots();
         }
@@ -89,7 +89,11 @@ public class PlayerInventoryUI : MonoBehaviour
     /// </summary>
     private void OnInventorySlotChanged(int slotIndex)
     {
-        if (slotIndex >= 0 && slotIndex < inventorySlots.Length && inventorySlots[slotIndex] != null)
+        if (
+            slotIndex >= 0
+            && slotIndex < inventorySlots.Length
+            && inventorySlots[slotIndex] != null
+        )
         {
             InventoryItem item = PlayerInventory.Instance.GetItem(slotIndex);
             inventorySlots[slotIndex].UpdateSlot(item);
@@ -124,7 +128,7 @@ public class PlayerInventoryUI : MonoBehaviour
             messageText.text = message;
             messageText.gameObject.SetActive(true);
             messageTimer = messageDuration;
-            
+
             Debug.Log($"[PlayerInventoryUI] 메시지 표시: {message}");
         }
     }
@@ -137,7 +141,7 @@ public class PlayerInventoryUI : MonoBehaviour
         if (messageTimer > 0f)
         {
             messageTimer -= Time.deltaTime;
-            
+
             if (messageTimer <= 0f && messageText != null)
             {
                 messageText.gameObject.SetActive(false);
@@ -155,10 +159,12 @@ public class PlayerInventoryUI : MonoBehaviour
             return;
 
         InventoryItem item = PlayerInventory.Instance.GetItem(slotIndex);
-        
+
         if (!item.IsEmpty())
         {
-            Debug.Log($"[PlayerInventoryUI] 슬롯 {slotIndex} 클릭: {item.itemName} x{item.quantity}");
+            Debug.Log(
+                $"[PlayerInventoryUI] 슬롯 {slotIndex} 클릭: {item.itemName} x{item.quantity}"
+            );
             ShowMessage($"{item.itemName}: {item.description}");
         }
         else
@@ -209,8 +215,10 @@ public class InventorySlotUI
         if (slotButton != null)
         {
             slotButton.onClick.RemoveAllListeners();
-            slotButton.onClick.AddListener(() => {
-                PlayerInventoryUI inventoryUI = slotButton.GetComponentInParent<PlayerInventoryUI>();
+            slotButton.onClick.AddListener(() =>
+            {
+                PlayerInventoryUI inventoryUI =
+                    slotButton.GetComponentInParent<PlayerInventoryUI>();
                 inventoryUI?.OnSlotClicked(slotIndex);
             });
         }
@@ -256,7 +264,7 @@ public class InventorySlotUI
 
         if (emptySlotIndicator != null)
             emptySlotIndicator.SetActive(true);
-            
+
         Debug.Log($"[InventorySlotUI] 슬롯 {slotIndex} 빈 슬롯으로 표시");
     }
 
@@ -270,7 +278,7 @@ public class InventorySlotUI
             itemIcon.enabled = true; // 아이템이 있을 때 이미지 컴포넌트 활성화
             itemIcon.sprite = item.itemIcon;
             itemIcon.color = filledSlotColor;
-            
+
             // 아이템 아이콘이 null인 경우 처리
             if (item.itemIcon == null)
             {
@@ -289,7 +297,9 @@ public class InventorySlotUI
 
         if (emptySlotIndicator != null)
             emptySlotIndicator.SetActive(false);
-            
-        Debug.Log($"[InventorySlotUI] 슬롯 {slotIndex}에 {item.itemName} x{item.quantity} 표시, 아이콘: {(item.itemIcon != null ? "있음" : "없음")}");
+
+        Debug.Log(
+            $"[InventorySlotUI] 슬롯 {slotIndex}에 {item.itemName} x{item.quantity} 표시, 아이콘: {(item.itemIcon != null ? "있음" : "없음")}"
+        );
     }
 }

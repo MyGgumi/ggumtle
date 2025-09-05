@@ -79,13 +79,13 @@ public class InventoryItem
     {
         int canRemove = Mathf.Min(amount, quantity);
         quantity -= canRemove;
-        
+
         // 수량이 0이 되면 빈 슬롯으로 만들기
         if (quantity <= 0)
         {
             Clear();
         }
-        
+
         return canRemove;
     }
 

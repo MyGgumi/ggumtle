@@ -6,9 +6,11 @@ public class InteractableChest : MonoBehaviour, IInteractable
 {
     [Header("상자 설정")]
     public string chestName = "상자";
+    public string chestId; // 고유 상자 ID (Inspector에서 설정하거나 자동 생성)
     public float interactionRange = 2.0f;
     public bool isOpen = false;
-    public List<ChestItem> chestItems = new List<ChestItem>();
+
+    // 기존 chestItems는 호환성을 위해 유지하되, 실제로는 ChestInventoryManager 사용
 
     [Header("애니메이션")]
     public Animator chestAnimator;
@@ -17,7 +19,7 @@ public class InteractableChest : MonoBehaviour, IInteractable
 
     [Header("UI 힌트")]
     public GameObject interactionIcon; // 상호작용 힌트 아이콘 (선택사항)
-    
+
     [Header("테스트용 더미 아이템")]
     public bool useTestItems = true; // 테스트 아이템 사용 여부
     public Sprite[] testItemSprites; // 테스트용 아이템 스프라이트들
@@ -27,6 +29,22 @@ public class InteractableChest : MonoBehaviour, IInteractable
 
     void Start()
     {
+        Debug.Log($"[InteractableChest] Start() 호출됨 - GameObject: {gameObject.name}, 초기 chestId: '{chestId}'");
+        
+        // 상자 ID 자동 생성 (Inspector에서 설정하지 않은 경우)
+        if (string.IsNullOrEmpty(chestId))
+        {
+            chestId = $"Chest_{transform.position.x}_{transform.position.z}_{GetInstanceID()}";
+            Debug.Log($"[InteractableChest] 자동 생성된 chestId: {chestId}");
+        }
+        else
+        {
+            Debug.Log($"[InteractableChest] Inspector에서 설정된 chestId: {chestId}");
+        }
+
+        // 매니저 초기화 대기 후 등록
+        StartCoroutine(RegisterChestWhenReady());
+
         // 핸들러 찾기
         handler = FindFirstObjectByType<ChestInteractionHandler>();
 
@@ -41,12 +59,13 @@ public class InteractableChest : MonoBehaviour, IInteractable
         // 상호작용 아이콘 초기화
         if (interactionIcon != null)
             interactionIcon.SetActive(!isOpen);
-            
+
+        // 서버 시스템을 사용하므로 로컬 테스트 아이템 생성 비활성화
         // 테스트 아이템 초기화
-        if (useTestItems && chestItems.Count == 0)
-        {
-            InitializeTestItems();
-        }
+        // if (useTestItems && GetChestItemCount() == 0)
+        // {
+        //     InitializeTestItems();
+        // }
     }
 
     void Update()
@@ -107,7 +126,7 @@ public class InteractableChest : MonoBehaviour, IInteractable
     public void CloseChest()
     {
         Debug.Log($"[InteractableChest] CloseChest 호출됨 - {chestName}, 현재 isOpen: {isOpen}");
-        
+
         if (!isOpen)
         {
             Debug.Log($"[InteractableChest] {chestName}는 이미 닫혀있음");
@@ -142,45 +161,124 @@ public class InteractableChest : MonoBehaviour, IInteractable
         Debug.Log($"[InteractableChest] 상자 닫힘 완료: {chestName}, isOpen: {isOpen}");
     }
 
-    // 아이템 관리 메서드들
+    // 아이템 관리 메서드들 (ChestInventoryManager 연동)
     public void AddItem(ChestItem item)
     {
-        chestItems.Add(item);
+        if (ChestInventoryManager.Instance != null)
+        {
+            ChestInventoryManager.Instance.AddItemToChest(chestId, item);
+        }
     }
 
     public void RemoveItem(ChestItem item)
     {
-        chestItems.Remove(item);
+        // 특정 아이템 제거는 인덱스 기반으로 처리
+        var items = GetChestItems();
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (items[i].itemName == item.itemName)
+            {
+                RemoveItemAt(i);
+                break;
+            }
+        }
     }
 
     public void RemoveItemAt(int index)
     {
-        if (index >= 0 && index < chestItems.Count)
-            chestItems.RemoveAt(index);
+        if (ChestInventoryManager.Instance != null)
+        {
+            ChestInventoryManager.Instance.RemoveItemFromChest(chestId, index);
+        }
     }
 
     /// <summary>
-    /// 테스트용 더미 아이템 초기화 (나중에 서버에서 받아올 데이터로 교체)
+    /// ChestInventoryManager에서 현재 상자의 아이템 리스트 조회
+    /// </summary>
+    public List<ChestItem> GetChestItems()
+    {
+        if (ChestInventoryManager.Instance != null)
+        {
+            return ChestInventoryManager.Instance.GetChestItems(chestId);
+        }
+        return new List<ChestItem>();
+    }
+
+    /// <summary>
+    /// 현재 상자의 아이템 개수 반환
+    /// </summary>
+    public int GetChestItemCount()
+    {
+        return GetChestItems().Count;
+    }
+
+    /// <summary>
+    /// 호환성을 위한 chestItems 프로퍼티 (읽기 전용)
+    /// </summary>
+    public List<ChestItem> chestItems => GetChestItems();
+
+    /// <summary>
+    /// 테스트용 더미 아이템 초기화 (새로운 시스템 사용)
     /// </summary>
     private void InitializeTestItems()
     {
-        Debug.Log("[InteractableChest] 테스트 더미 아이템 초기화");
-        
-        // 기본 테스트 아이템들
-        var testItems = new[]
-        {
-            new ChestItem("포션", GetTestSprite(0), 5, "체력을 회복하는 물약"),
-            new ChestItem("마나 포션", GetTestSprite(1), 3, "마나를 회복하는 물약"),
-            new ChestItem("검", GetTestSprite(2), 1, "날카로운 검"),
-            new ChestItem("방패", GetTestSprite(3), 1, "든든한 방패"),
-            new ChestItem("코인", GetTestSprite(4), 50, "반짝이는 금화")
-        };
+        Debug.Log($"[InteractableChest] 테스트 더미 아이템 초기화: {chestId}");
 
-        chestItems.AddRange(testItems);
-        
-        Debug.Log($"[InteractableChest] {testItems.Length}개 테스트 아이템 추가됨");
+        if (GlobalItemManager.Instance == null || ChestInventoryManager.Instance == null)
+        {
+            Debug.LogWarning(
+                "[InteractableChest] GlobalItemManager 또는 ChestInventoryManager가 없습니다!"
+            );
+            return;
+        }
+
+        // GlobalItemManager를 통해 아이템 생성 (메타데이터 기반)
+        var testItemNames = new[]
+        {
+            "Apple",
+            "Stone",
+            "Apple",
+            "Stone",
+            "Apple",
+            "Stone",
+            "Apple",
+            "Stone",
+            "Apple",
+        };
+        var testQuantities = new[] { 4, 4, 3, 3, 2, 2, 1, 1, 5 };
+
+        for (int i = 0; i < testItemNames.Length; i++)
+        {
+            // ItemDatabase에 해당 아이템이 있는지 확인 후 생성
+            var chestItem = GlobalItemManager.Instance.CreateChestItem(
+                testItemNames[i],
+                testQuantities[i]
+            );
+            if (chestItem != null)
+            {
+                AddItem(chestItem);
+            }
+            else
+            {
+                // ItemDatabase에 없으면 임시로 기존 방식으로 생성
+                var fallbackItem = new ChestItem(
+                    testItemNames[i],
+                    GetTestSprite(i),
+                    testQuantities[i],
+                    $"{testItemNames[i]} 설명"
+                );
+                AddItem(fallbackItem);
+                Debug.LogWarning(
+                    $"[InteractableChest] ItemDatabase에 '{testItemNames[i]}' 없음, 임시 아이템 생성"
+                );
+            }
+        }
+
+        Debug.Log(
+            $"[InteractableChest] {testItemNames.Length}개 테스트 아이템 초기화 완료 (9개 슬롯 모두 채움)"
+        );
     }
-    
+
     /// <summary>
     /// 테스트용 스프라이트 가져오기 (인덱스 범위 체크 포함)
     /// </summary>
@@ -235,6 +333,12 @@ public class InteractableChest : MonoBehaviour, IInteractable
         // 상호작용 시작 알림
         InteractionManager.Instance?.BeginInteraction(this);
 
+        // 서버에 상자 열기 요청 (실시간 멀티플레이어)
+        if (ServerSyncManager.Instance != null)
+        {
+            ServerSyncManager.Instance.RequestOpenChest(chestId);
+        }
+
         // 상호작용 실행
         if (handler != null)
         {
@@ -272,6 +376,25 @@ public class InteractableChest : MonoBehaviour, IInteractable
     public string GetInteractableName()
     {
         return chestName;
+    }
+
+    /// <summary>
+    /// 매니저가 준비될 때까지 대기 후 상자 등록
+    /// </summary>
+    private System.Collections.IEnumerator RegisterChestWhenReady()
+    {
+        // 매니저들이 초기화될 때까지 대기
+        while (ChestInventoryManager.Instance == null)
+        {
+            yield return null;
+        }
+        
+        // 추가 안전장치: 1프레임 더 대기
+        yield return null;
+        
+        // 상자 등록
+        ChestInventoryManager.Instance.RegisterChest(chestId);
+        Debug.Log($"[InteractableChest] {chestId} 등록 완료 (지연 등록)");
     }
     #endregion
 }

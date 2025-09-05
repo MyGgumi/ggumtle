@@ -38,6 +38,7 @@ public class ChestItemSlot : MonoBehaviour
         {
             takeButton.onClick.RemoveAllListeners();
             takeButton.onClick.AddListener(OnTakeButtonClicked);
+            takeButton.gameObject.SetActive(true); // 아이템이 있을 때는 버튼 표시
         }
     }
 
@@ -47,5 +48,35 @@ public class ChestItemSlot : MonoBehaviour
         {
             chestBoxUI.TakeItem(itemIndex);
         }
+    }
+
+    public void ClearSlot()
+    {
+        item = null;
+        itemIndex = -1;
+
+        // UI를 빈 슬롯으로 초기화
+        if (itemIcon != null)
+            itemIcon.sprite = null;
+
+        if (itemName != null)
+            itemName.text = "";
+
+        if (itemQuantity != null)
+            itemQuantity.text = "";
+
+        if (itemDescription != null)
+            itemDescription.text = "";
+
+        if (takeButton != null)
+        {
+            takeButton.onClick.RemoveAllListeners();
+            takeButton.gameObject.SetActive(false); // 빈 슬롯에서는 버튼 숨김
+        }
+    }
+
+    public bool IsEmpty()
+    {
+        return item == null;
     }
 }

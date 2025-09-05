@@ -10,10 +10,12 @@ public class PlayerInventory : MonoBehaviour
     public static PlayerInventory Instance;
 
     [Header("인벤토리 설정")]
-    [SerializeField] private int inventorySlots = 3; // 고정 3개 슬롯
+    [SerializeField]
+    private int inventorySlots = 3; // 고정 3개 슬롯
 
     [Header("디버그 (읽기 전용)")]
-    [SerializeField] private InventoryItem[] items; // Inspector에서 확인용
+    [SerializeField]
+    private InventoryItem[] items; // Inspector에서 확인용
 
     // 인벤토리 변경 이벤트
     public event Action<int> OnInventoryChanged; // 슬롯 인덱스를 매개변수로 전달
@@ -25,7 +27,6 @@ public class PlayerInventory : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(gameObject);
             InitializeInventory();
         }
         else
@@ -40,12 +41,12 @@ public class PlayerInventory : MonoBehaviour
     private void InitializeInventory()
     {
         items = new InventoryItem[inventorySlots];
-        
+
         for (int i = 0; i < inventorySlots; i++)
         {
             items[i] = new InventoryItem();
         }
-        
+
         Debug.Log($"[PlayerInventory] {inventorySlots}개 슬롯 인벤토리 초기화 완료");
     }
 
@@ -74,7 +75,7 @@ public class PlayerInventory : MonoBehaviour
             return 0;
 
         int remainingAmount = item.quantity;
-        
+
         // 1단계: 같은 아이템이 있는 슬롯에 스택
         for (int i = 0; i < inventorySlots; i++)
         {
@@ -82,18 +83,18 @@ public class PlayerInventory : MonoBehaviour
             {
                 int added = items[i].AddToStack(remainingAmount);
                 remainingAmount -= added;
-                
+
                 if (added > 0)
                 {
                     OnInventoryChanged?.Invoke(i);
                     Debug.Log($"[PlayerInventory] 슬롯 {i}에 {item.itemName} {added}개 스택 추가");
                 }
-                
+
                 if (remainingAmount <= 0)
                     break;
             }
         }
-        
+
         // 2단계: 빈 슬롯에 새로 추가
         if (remainingAmount > 0)
         {
@@ -108,32 +109,36 @@ public class PlayerInventory : MonoBehaviour
                         item.description,
                         item.maxStack
                     );
-                    
+
                     OnInventoryChanged?.Invoke(i);
-                    Debug.Log($"[PlayerInventory] 슬롯 {i}에 {item.itemName} {remainingAmount}개 새로 추가");
+                    Debug.Log(
+                        $"[PlayerInventory] 슬롯 {i}에 {item.itemName} {remainingAmount}개 새로 추가"
+                    );
                     remainingAmount = 0;
                     break;
                 }
             }
         }
-        
+
         int totalAdded = item.quantity - remainingAmount;
-        
+
         // 결과 메시지
         if (totalAdded > 0)
         {
             OnInventoryMessage?.Invoke($"{item.itemName} {totalAdded}개 획득!");
-            
+
             if (remainingAmount > 0)
             {
-                OnInventoryMessage?.Invoke($"인벤토리 가득참! {item.itemName} {remainingAmount}개 버려짐");
+                OnInventoryMessage?.Invoke(
+                    $"인벤토리 가득참! {item.itemName} {remainingAmount}개 버려짐"
+                );
             }
         }
         else
         {
             OnInventoryMessage?.Invoke("인벤토리가 가득 차서 아이템을 가져올 수 없습니다!");
         }
-        
+
         return totalAdded;
     }
 
@@ -144,7 +149,7 @@ public class PlayerInventory : MonoBehaviour
     {
         if (slotIndex < 0 || slotIndex >= inventorySlots)
             return null;
-            
+
         return items[slotIndex];
     }
 
@@ -157,14 +162,14 @@ public class PlayerInventory : MonoBehaviour
             return false;
 
         int removed = items[slotIndex].RemoveFromStack(amount);
-        
+
         if (removed > 0)
         {
             OnInventoryChanged?.Invoke(slotIndex);
             Debug.Log($"[PlayerInventory] 슬롯 {slotIndex}에서 {removed}개 제거");
             return true;
         }
-        
+
         return false;
     }
 
@@ -175,7 +180,7 @@ public class PlayerInventory : MonoBehaviour
     {
         if (slotIndex < 0 || slotIndex >= inventorySlots)
             return;
-            
+
         if (!items[slotIndex].IsEmpty())
         {
             items[slotIndex].Clear();
@@ -197,7 +202,7 @@ public class PlayerInventory : MonoBehaviour
                 OnInventoryChanged?.Invoke(i);
             }
         }
-        
+
         OnInventoryMessage?.Invoke("인벤토리를 모두 비웠습니다.");
         Debug.Log("[PlayerInventory] 전체 인벤토리 초기화");
     }

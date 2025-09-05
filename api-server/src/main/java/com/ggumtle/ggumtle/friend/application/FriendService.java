@@ -8,18 +8,23 @@ import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
 import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
+import com.ggumtle.ggumtle.friend.application.command.SearchMemberCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.RejectFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
+import com.ggumtle.ggumtle.friend.application.result.SearchMemberResult;
 import com.ggumtle.ggumtle.friend.domain.Friend;
 import com.ggumtle.ggumtle.friend.domain.Status;
 import com.ggumtle.ggumtle.friend.persistence.FriendRepository;
+import com.ggumtle.ggumtle.friend.persistence.po.MemberPo;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -109,10 +114,21 @@ public class FriendService {
         Friend friend = friendRepository.findByIdAndFollowee_Id(friendId, loginMemberId)
                 .orElseThrow(() -> new GgumtleException(FriendErrorCode.REQUEST_NOT_FOUND));
 
-        friend.reject();
         Long followerId = friend.getFollower().getId();
         String nickname = friend.getFollower().getNickname();
 
+        friendRepository.delete(friend);
         return RejectFriendRequestResult.of(followerId,nickname);
+    }
+
+    @Transactional(readOnly = true)
+    public SearchMemberResult searchMember(SearchMemberCommand command) {
+        Slice<MemberPo> poSlice = friendRepository.searchMembers(
+                command.requesterId(),
+                command.keyword(),
+                PageRequest.of(command.page(), command.size())
+        );
+
+        return SearchMemberResult.fromPoSlice(poSlice);
     }
 }

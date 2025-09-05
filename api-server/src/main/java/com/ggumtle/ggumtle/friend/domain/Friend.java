@@ -59,15 +59,6 @@ public class Friend {
         switch (this.status) {
             case PENDING -> this.status = Status.ACCEPTED;
             case ACCEPTED -> throw new GgumtleException(FriendErrorCode.ALREADY_FRIEND);
-            case REJECTED -> throw new GgumtleException(FriendErrorCode.REJECTED_REQUEST);
-        }
-    }
-
-    public void reject() {
-        switch (this.status) {
-            case PENDING -> this.status = Status.REJECTED;
-            case ACCEPTED -> throw new GgumtleException(FriendErrorCode.ALREADY_FRIEND);
-            case REJECTED -> throw new GgumtleException(FriendErrorCode.REJECTED_REQUEST);
         }
     }
 }

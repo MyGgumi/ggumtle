@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.exception;
+package com.ggumtle.ggumtle.exception.code;
 
 import org.springframework.http.HttpStatus;
 

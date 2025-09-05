@@ -1,14 +1,17 @@
 package com.ggumtle.ggumtle.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ggumtle.ggumtle.common.SocketType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -22,7 +25,6 @@ public class SocketResponseDispatcher {
         Long memberId = Long.parseLong(session.getPrincipal().getName());
 
         idToSession.put(memberId, session);
-        sendMessage(session, new SocketResponse(true, null, "API 서버와 연결 완료"));
     }
 
     void removeSession(WebSocketSession session) {
@@ -33,7 +35,7 @@ public class SocketResponseDispatcher {
 
     @EventListener
     private void handleSocketMessageEvent(SendSocketEvent event) {
-        SocketResponse response = new SocketResponse(true, null, event.data());
+        SocketResponse response = new SocketResponse(event.socketType().getResponseType(), true, null, event.data());
 
         for (Long memberId : event.memberIds()) {
             WebSocketSession session = idToSession.get(memberId);
@@ -49,7 +51,7 @@ public class SocketResponseDispatcher {
 
     @EventListener
     private void handleSocketErrorMessageEvent(SendErrorSocketEvent event) {
-        SocketResponse response = new SocketResponse(false, event.code(), event.message());
+        SocketResponse response = new SocketResponse(event.socketType().getResponseType(), false, event.code(), event.message());
 
         for (Long memberId : event.memberIds()) {
             WebSocketSession session = idToSession.get(memberId);
@@ -75,6 +77,7 @@ public class SocketResponseDispatcher {
     }
 
     private record SocketResponse (
+            String responseType,
             Boolean success,
             String code,
             Object data

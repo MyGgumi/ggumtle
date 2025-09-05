@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.dream.application;
 
+import com.ggumtle.ggumtle.common.SocketType;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
@@ -10,6 +11,8 @@ import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.dream.domain.PartyInvitation;
 import com.ggumtle.ggumtle.dream.persistence.PartyInvitationRepository;
 import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
+import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
@@ -28,7 +31,7 @@ public class DreamPartyService {
 
     public CreatePartyResult createParty(CreatePartyCommand command) {
         if (partyParticipantRepository.existsById(command.memberId())) {
-            throw new RuntimeException("이미 방에 속해 있습니다");
+            throw new GgumtleException(DreamErrorCode.ALREADY_IN_PARTY);
         }
 
         PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), true);
@@ -39,7 +42,9 @@ public class DreamPartyService {
 
     public InvitePartyResult inviteParty(InvitePartyCommand command) {
         PartyParticipant inviter = partyParticipantRepository.findById(command.requesterId())
-                .orElseThrow(() -> new RuntimeException("속한 방이 없습니다"));
+                .orElseThrow(() -> new GgumtleException(
+                        DreamErrorCode.NOT_FOUND_PARTY,
+                        "현재 사용자가 속한 파티가 없어 다른 사용자를 파티에 초대할 수 없습니다"));
 
         PartyInvitation partyInvitation = PartyInvitation.builder()
                 .id(UUID.randomUUID().toString())
@@ -52,17 +57,23 @@ public class DreamPartyService {
         List<Long> memberIds = new ArrayList<>();
         memberIds.add(partyInvitation.getInviteeId());
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(inviter.getPartyId());
-        participants.stream().forEach(participant -> memberIds.add(participant.getMemberId()));
+        participants.forEach(participant -> memberIds.add(participant.getMemberId()));
 
         return new InvitePartyResult(memberIds, partyInvitation.getId());
     }
 
     public AcceptPartyInvitationResult acceptPartyInvitation(AcceptPartyInvitationCommand command) {
+        if (partyParticipantRepository.existsById(command.requesterId())) {
+            throw new GgumtleException(DreamErrorCode.ALREADY_IN_PARTY);
+        }
+
         PartyInvitation partyInvitation = partyInvitationRepository.findById(command.invitationId())
-                .orElseThrow(() -> new RuntimeException("존재하거나 이미 처리된 초대입니다"));
+                .orElseThrow(() -> new GgumtleException(
+                        DreamErrorCode.NOT_FOUND_INVITATION,
+                        "존재하지 않거나 이미 수락된 초대입니다"));
 
         if (!partyInvitation.getInviteeId().equals(command.requesterId())) {
-            throw new RuntimeException("본인이 받은 파티 초대만 수락할 수 있습니다");
+            throw new GgumtleException(DreamErrorCode.NOT_MY_INVITATION);
         }
 
         partyInvitationRepository.delete(partyInvitation);

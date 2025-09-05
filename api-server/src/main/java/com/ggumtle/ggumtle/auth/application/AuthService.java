@@ -3,7 +3,7 @@ package com.ggumtle.ggumtle.auth.application;
 import com.ggumtle.ggumtle.auth.application.command.LoginCommand;
 import com.ggumtle.ggumtle.auth.application.result.LoginResult;
 import com.ggumtle.ggumtle.exception.GgumtleException;
-import com.ggumtle.ggumtle.exception.errorCode.AuthErrorCode;
+import com.ggumtle.ggumtle.exception.code.AuthErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.auth.jwt.JwtProvider;

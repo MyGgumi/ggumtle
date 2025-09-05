@@ -1,8 +1,7 @@
 package com.ggumtle.ggumtle.friend.domain;
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
-import com.ggumtle.ggumtle.exception.errorCode.AuthErrorCode;
-import com.ggumtle.ggumtle.exception.errorCode.FriendErrorCode;
+import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

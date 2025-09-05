@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.dream.application;
 
+import com.ggumtle.ggumtle.common.SocketType;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.StartDreamResult;
 import com.ggumtle.ggumtle.dream.domain.Dream;
@@ -48,16 +49,16 @@ public class DreamService {
     public void startDream(StartDreamCommand command) {
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(command.partyId());
         List<Long> requesterPartyParticipantIds = convertToId(participants);
-        publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
+        publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
 
         log.info("드림 시작을 요청한 파티원: {}", participants);
 
         // 요청한 파티가 드림 플레이어 인원 수와 일치하면 바로 시작
         if (participants.size() == DREAM_PLAYER_SIZE) {
-            publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
 
             requestRoom(requesterPartyParticipantIds);
-            publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
             return;
         }
 
@@ -70,20 +71,20 @@ public class DreamService {
             WaitingParty waitingParty = new WaitingParty(participants.getFirst().getPartyId(), participants.size());
             waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis());
 
-            publishEvent(requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
+            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
             return;
         }
 
         // 매칭 성공 시 매칭된 파티를 대기열에서 삭제하고 드림 시작
         List<Long> matchedParticipantIds = convertToId(participants, matchedParties);
-        publishEvent(matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+        publishEvent(SocketType.START_DREAM, matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
 
         for (WaitingParty matchedParty : matchedParties) {
             waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, matchedParty, System.currentTimeMillis());
         }
 
         requestRoom(matchedParticipantIds);
-        publishEvent(matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+        publishEvent(SocketType.START_DREAM, matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
     }
 
     /**
@@ -100,8 +101,7 @@ public class DreamService {
         }
 
         StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START, event.roomId(), event.dreamServerId());
-
-        applicationEventPublisher.publishEvent(new SendSocketEvent(dream.get().getPlayerIds(), result));
+        publishEvent(SocketType.START_DREAM, dream.get().getPlayerIds(), result);
     }
 
     /**
@@ -169,8 +169,8 @@ public class DreamService {
         roomMessageManager.sendMessage(dreamServer, roomRequestId, playerIds);
     }
 
-    private void publishEvent(List<Long> memberIds, Object data) {
-        SendSocketEvent event = new SendSocketEvent(memberIds, data);
+    private void publishEvent(SocketType socketType, List<Long> memberIds, Object data) {
+        SendSocketEvent event = new SendSocketEvent(socketType, memberIds, data);
         applicationEventPublisher.publishEvent(event);
     }
 }

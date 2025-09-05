@@ -1,8 +1,10 @@
 package com.ggumtle.ggumtle.server;
 
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
+import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
+import com.ggumtle.ggumtle.server.packet.PacketHeader;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.session.Session;
 import io.netty.channel.ChannelHandlerContext;
@@ -79,10 +81,10 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
 
         Object[] parameters;
         if (packet.data() == null || packet.data().length == 0) {
-            parameters = parseParameter(handlerInfo, ctx);
+            parameters = parseParameter(handlerInfo, ctx, packet.header());
         }
         else {
-            parameters = parseParameterWithData(handlerInfo, packet.data(), ctx);
+            parameters = parseParameterWithData(handlerInfo, packet.data(), ctx, packet.header());
         }
 
         log.info("[{}] 핸들러: {}\n파라미터: {}", ctx.channel(), handlerInfo, Arrays.toString(parameters));
@@ -94,7 +96,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         }
     }
 
-    private Object[] parseParameter(HandlerInfo handlerInfo, ChannelHandlerContext ctx) {
+    private Object[] parseParameter(HandlerInfo handlerInfo, ChannelHandlerContext ctx, PacketHeader header) {
         Object[] parameters = new Object[handlerInfo.parameterTypes.length];
 
         try {
@@ -112,6 +114,11 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                     continue;
                 }
 
+                if (Timestamp.class.isAssignableFrom(parameterType)) {
+                    parameters[i] = new Timestamp(header.timestamp());
+                    continue;
+                }
+
                 throw new RuntimeException("Data가 없는데 핸들러가 파라미터를 요구합니다");
             }
         } catch (Exception e) {
@@ -122,7 +129,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         return parameters;
     }
 
-    private Object[] parseParameterWithData(HandlerInfo handlerInfo, byte[] data, ChannelHandlerContext ctx) {
+    private Object[] parseParameterWithData(HandlerInfo handlerInfo, byte[] data, ChannelHandlerContext ctx, PacketHeader header) {
         ByteBuffer buffer = ByteBuffer.wrap(data);
         Object[] parameters = new Object[handlerInfo.parameterTypes.length];
 
@@ -138,6 +145,11 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                     }
 
                     parameters[i] = optionalSession.get();
+                    continue;
+                }
+
+                if (Timestamp.class.isAssignableFrom(parameterType)) {
+                    parameters[i] = new Timestamp(header.timestamp());
                     continue;
                 }
 

@@ -20,6 +20,8 @@ public enum SendPacketType {
 
     // 게임 플레이
     PLAYER_MOVE_RELAY((short) 41),
+
+    HIT_RESULT((short) 51),
     ;
 
     private final short value;

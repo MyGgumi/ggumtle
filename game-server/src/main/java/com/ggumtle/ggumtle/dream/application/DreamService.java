@@ -1,6 +1,8 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
+import com.ggumtle.ggumtle.common.dto.Timestamp;
+import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.event.DreamStartEvent;
@@ -50,6 +52,13 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.movePlayer(session.getMemberId(), command.x(), command.y(), command.z());
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.HIT_MONGGING)
+    public void handleHitMongging(HitMonggingCommand command, Session session, Timestamp timestamp) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.hitMongging(command, session, timestamp.value);
     }
 
     private DreamManager getDreamManager(Session session) {

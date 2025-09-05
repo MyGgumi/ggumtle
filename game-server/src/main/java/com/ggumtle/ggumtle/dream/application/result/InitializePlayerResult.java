@@ -24,9 +24,9 @@ public record InitializePlayerResult(
             buffer.put((byte) (player.getId() == receiverId ? 1 : 0));
             buffer.put((byte) 1);
 
-            buffer.putInt(player.getPositions()[player.getTail() - 1].getX());
-            buffer.putInt(player.getPositions()[player.getTail() - 1].getY());
-            buffer.putInt(player.getPositions()[player.getTail() - 1].getZ());
+            buffer.putInt(player.getPositions()[player.getCurr()].x);
+            buffer.putInt(player.getPositions()[player.getCurr()].y);
+            buffer.putInt(player.getPositions()[player.getCurr()].z);
 
             buffer.putInt(0);
             buffer.putInt(0);

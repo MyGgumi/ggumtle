@@ -1,11 +1,15 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Result;
+import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
+import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
+import com.ggumtle.ggumtle.dream.domain.Mongdung;
+import com.ggumtle.ggumtle.dream.domain.Mongging;
 import com.ggumtle.ggumtle.dream.domain.Player;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.dream.util.ItemDistributor;
@@ -17,12 +21,14 @@ import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
+import com.ggumtle.ggumtle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 @Slf4j
 public class DreamManager {
@@ -66,6 +72,49 @@ public class DreamManager {
         this.room.broadcast(packet);
     }
 
+    public void hitMongging(HitMonggingCommand command, Session session, long timestamp) {
+        Player requester = players.getOrDefault(session.getMemberId(), null);
+
+        if (requester == null) {
+            Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_PLAYER, -1);
+            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (!(requester instanceof Mongdung)) {
+            Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_MONGDUNG, -1);
+            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Mongging target = (Mongging) players.getOrDefault(command.targetId(), null);
+        if (target == null) {
+            Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_FOUND_TARGET, -1);
+            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Mongdung mongdung = (Mongdung) requester;
+        boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, target);
+
+        if (!isHit) {
+            Result result = new HitMonggingResult(HitMonggingResult.HitResult.FAIL, -1);
+            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        int damage = mongdung.getDamage();
+        int leftHp = target.getHit(damage);
+
+        Result result = new HitMonggingResult(HitMonggingResult.HitResult.SUCCESS, leftHp);
+        Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+        room.sendPacket(List.of(mongdung.getId(), target.getId()), packet);
+    }
+
     private void initializeMap() {
         // 꿈틀이 위치 초기화
         List<GgumtleSpawn> ggumtleSpawns = spawnCache.getRandomGgumtleSpawns(GGUMTLE_SPAWN_SIZE);
@@ -99,14 +148,22 @@ public class DreamManager {
         List<Long> playerIds = room.getPlayerIds().stream().toList();
         List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
 
+        int mongdungIndex = pickMongdungIndex(playerIds.size());
+
         this.players = new HashMap<>();
         for (int i = 0; i < playerIds.size(); i++) {
-            Player player = new Player(playerIds.get(i), Position.from(playerSpawns.get(i)));
+            if (i == mongdungIndex) {
+                Mongdung mongdung = new Mongdung(playerIds.get(i), Position.from(playerSpawns.get(i)));
+                this.players.put(mongdung.getId(), mongdung);
+                continue;
+            }
 
-            this.players.put(player.getId(), player);
+            Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)));
+            this.players.put(mongging.getId(), mongging);
         }
 
         log.info("{}번 게임의 플레이어 초기화 종료", room.getRoomId());
+        log.debug("{}번 게임의 플레이어: {}", room.getRoomId(), this.players.values());
 
         List<Player> players = this.players.values().stream().toList();
         for (long playerId : playerIds) {
@@ -117,5 +174,11 @@ public class DreamManager {
                 log.error("{}번 사용자에게 {}번 게임의 플레이어 초기 정보를 전송하지 못했습니다", playerId, this.room.getRoomId());
             }
         }
+    }
+
+    private int pickMongdungIndex(int size) {
+        Random random = new Random();
+
+        return random.nextInt(size);
     }
 }

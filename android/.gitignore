@@ -24,6 +24,9 @@ build-logic/convention/build/
 # Core modules build outputs
 core/*/build/
 
+# Feature modules build outputs  
+feature/*/build/
+
 # Kotlin metadata
 *.kotlin_module
 

@@ -34,7 +34,7 @@ public interface FriendRepository extends JpaRepository<Friend, Long> {
     Optional<Friend> findByIdAndFollowee_Id(Long id, Long followeeId);
 
     @Query("""
-        select new com.ggumtle.ggumtle.friend.persistence.MemberPo(
+        select new com.ggumtle.ggumtle.friend.persistence.po.MemberPo(
             m.id,
             m.nickname,
             f.status

@@ -30,8 +30,18 @@ android {
 
 dependencies {
 
+    implementation(projects.core.designsystem)
+    implementation(projects.core.common)
+    implementation(projects.core.data)
+    implementation(projects.core.domain)
+    implementation(projects.core.datastore)
+    implementation(projects.feature.auth)
+    implementation(projects.feature.startup)
+
+    implementation(project(":unityLibrary"))
     implementation("androidx.games:games-activity:3.0.5")
     implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation(files("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest\\unityLibrary\\libs\\unity-classes.jar"))
 
 
     // ───── Android 기본 ─────

@@ -37,8 +37,7 @@ class GoogleLoginUseCase @Inject constructor(
                         val loginResponse = resource.data
                         authManager.saveTokenAndEmail(
                             accessToken = loginResponse.accessToken,
-                            refreshToken = loginResponse.refreshToken,
-                            email = loginResponse.email
+                            memberId = loginResponse.memberId
                         )
                     }
 

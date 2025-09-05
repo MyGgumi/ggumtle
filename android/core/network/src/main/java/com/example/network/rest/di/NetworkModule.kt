@@ -1,10 +1,9 @@
 package com.example.network.rest.di
 
 import com.example.datastore.AuthManager
-import com.example.multimodulebase.core.network.BuildConfig
-import com.example.network.rest.util.authenticator.TokenAuthenticator
 import com.example.network.rest.util.calladapter.NetworkResultCallAdapterFactory
 import com.example.network.rest.util.convertor.NullOnEmptyConverterFactory
+import com.ggumtle.core.network.BuildConfig
 import com.example.network.rest.util.interceptor.AuthInterceptor
 import dagger.Module
 import dagger.Provides
@@ -30,8 +29,8 @@ object NetworkModule {
     @Singleton
     fun provideJson(): Json {
         return Json {
-            ignoreUnknownKeys = true // API에서 추가 필드가 와도 무시
-            coerceInputValues = true // null 값을 기본값으로 변환
+            ignoreUnknownKeys = true
+            coerceInputValues = true
             encodeDefaults = true
         }
     }
@@ -42,25 +41,22 @@ object NetworkModule {
         authManager: AuthManager
     ): Interceptor = AuthInterceptor(authManager)
 
-    @Provides
-    @Singleton
-    fun provideTokenAuthenticator(
-        tokenAuthenticator: TokenAuthenticator
-    ): Authenticator = tokenAuthenticator
+//    @Provides
+//    @Singleton
+//    fun provideTokenAuthenticator(
+//        tokenAuthenticator: TokenAuthenticator
+//    ): Authenticator = tokenAuthenticator
 
     @Provides
     @Singleton
     fun provideOkHttpClient(
         authInterceptor: Interceptor,
-        tokenAuthenticator: Authenticator,
+//        tokenAuthenticator: Authenticator,
     ): OkHttpClient {
         return OkHttpClient.Builder().apply {
 
-            // 인증 토큰 자동 첨부 인터셉터
             addInterceptor(authInterceptor)
-
-            //토근 갱신
-            authenticator(tokenAuthenticator)
+//            authenticator(tokenAuthenticator)
 
             // 타임아웃 설정
             connectTimeout(30, TimeUnit.SECONDS)

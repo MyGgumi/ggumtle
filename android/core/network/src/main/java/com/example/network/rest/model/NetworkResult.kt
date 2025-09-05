@@ -2,6 +2,7 @@ package com.example.network.rest.model
 
 import com.example.common.constant.HttpStatus
 
+
 /**
  * API 호출 결과를 표현하는 sealed class.
  * - Success: 성공적으로 데이터를 받아온 경우

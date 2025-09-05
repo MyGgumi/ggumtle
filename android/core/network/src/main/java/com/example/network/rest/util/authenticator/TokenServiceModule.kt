@@ -1,6 +1,6 @@
 package com.example.network.rest.util.authenticator
 
-import com.example.multimodulebase.core.network.BuildConfig
+import com.ggumtle.core.network.BuildConfig
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

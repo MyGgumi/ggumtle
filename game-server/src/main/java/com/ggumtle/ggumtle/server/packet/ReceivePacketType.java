@@ -13,8 +13,11 @@ public enum ReceivePacketType {
     ROOM_JOIN((short) 10),
     SCENE_CHANGE((short) 20),
 
-    // 게임 플레이
+    // 드림 플레이
     PLAYER_MOVE((short) 40),
+
+    // 드림 내 상호작용
+    HIT_MONGGING((short) 50),
     ;
 
     private final short value;

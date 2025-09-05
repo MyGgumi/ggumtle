@@ -32,17 +32,17 @@ public record InitializeMapResult(
         buffer.putInt(boxes.size());
         for (Box box : boxes) {
             buffer.putInt(box.getId());
-            buffer.putInt(box.getPosition().getX());
-            buffer.putInt(box.getPosition().getY());
-            buffer.putInt(box.getPosition().getZ());
+            buffer.putInt(box.getPosition().x);
+            buffer.putInt(box.getPosition().y);
+            buffer.putInt(box.getPosition().z);
         }
 
         buffer.putInt(ggumtles.size());
         for (Ggumtle ggumtle : ggumtles) {
             buffer.putInt(ggumtle.getId());
-            buffer.putInt(ggumtle.getPosition().getX());
-            buffer.putInt(ggumtle.getPosition().getY());
-            buffer.putInt(ggumtle.getPosition().getZ());
+            buffer.putInt(ggumtle.getPosition().x);
+            buffer.putInt(ggumtle.getPosition().y);
+            buffer.putInt(ggumtle.getPosition().z);
         }
 
         // TODO: 힐팩과 스피드팩 초기화 구현 후 실제 데이터로 수정

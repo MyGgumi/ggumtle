@@ -31,4 +31,15 @@ public class Mongging extends Player {
 
         this.items = new ConcurrentHashMap<>();
     }
+
+    public synchronized int getHit(int damage) {
+        if (this.hp > damage) {
+            this.hp -= damage;
+            return this.hp;
+        }
+
+        this.hp = 0;
+        items.clear();
+        return this.hp;
+    }
 }

@@ -126,4 +126,20 @@ public class Room {
         playerSessions.get(memberId).sendPacket(packet);
         return true;
     }
+
+    public int sendPacket(List<Long> memberIds, Packet packet) {
+        int count = 0;
+
+        for (int i = 0; i < memberIds.size(); i++) {
+            Session session = playerSessions.getOrDefault(memberIds.get(i), null);
+            if (session == null) {
+                log.warn("{}번 사용자의 세션이 없어 {} 패킷을 전송하지 못했습니다", memberIds.get(i), packet);
+                continue;
+            }
+            session.sendPacket(packet);
+            count++;
+        }
+
+        return count;
+    }
 }

@@ -10,8 +10,7 @@ public class Player {
     protected long id;
 
     protected Position[] positions = new Position[POSITION_BUFFER_SIZE];
-    private int head = 0;
-    private int tail = 0;
+    private int curr = 0;
 
     public Player(long id, Position position) {
         this.id = id;
@@ -19,15 +18,25 @@ public class Player {
     }
 
     public synchronized void addPosition(Position position) {
-        positions[tail] = position;
-        tail = (tail + 1) % POSITION_BUFFER_SIZE;
-
-        if (tail == head) {
-            head = (head + 1) % POSITION_BUFFER_SIZE;
-        }
+        curr = (curr + 1) % POSITION_BUFFER_SIZE;
+        positions[curr] = position;
     }
 
-    public synchronized boolean isEmpty() {
-        return head == tail && positions[head] == null;
+    public Position getPositionAt(long timestamp) {
+        Position position = this.positions[curr];
+        for (int i = 0; i < POSITION_BUFFER_SIZE; i++) {
+            int index = (curr - i + POSITION_BUFFER_SIZE) % POSITION_BUFFER_SIZE;
+
+            if (positions[index] == null) {
+                break;
+            }
+
+            if (positions[index].timestamp <= timestamp) {
+                return positions[index];
+            }
+            position = positions[index];
+        }
+
+        return position;
     }
 }

@@ -1,17 +1,14 @@
 package com.ggumtle.ggumtle.presentation;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ggumtle.ggumtle.common.SocketType;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Component
@@ -77,7 +74,7 @@ public class SocketResponseDispatcher {
     }
 
     private record SocketResponse (
-            String responseType,
+            String type,
             Boolean success,
             String code,
             Object data

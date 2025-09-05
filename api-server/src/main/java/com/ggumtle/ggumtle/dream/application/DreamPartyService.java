@@ -25,7 +25,6 @@ import java.util.UUID;
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class DreamPartyService {
-    private final ApplicationEventPublisher applicationEventPublisher;
     private final PartyParticipantRepository partyParticipantRepository;
     private final PartyInvitationRepository partyInvitationRepository;
 

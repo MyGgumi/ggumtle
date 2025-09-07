@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.room.application;
 
+import com.ggumtle.ggumtle.common.event.JoinRoomEvent;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.AccessLevel;
@@ -67,11 +68,6 @@ public class RoomManager {
         idToRoom.put(room.getRoomId(), room);
     }
 
-    /**
-     * 방을 삭제합니다.
-     *
-     * @param roomId 삭제할 방 ID
-     */
     public void removeRoom(Long roomId) {
         if (!idToRoom.containsKey(roomId)) {
             throw new IllegalArgumentException("방 삭제에 실패했습니다. roomId: " + roomId);
@@ -105,6 +101,7 @@ public class RoomManager {
         playerIdToRoom.put(session.getMemberId(), room);
         log.debug("{}번 방에 세션 추가 결과: 현재 인원 {}인", roomId, idToRoom.get(roomId).getConnectedPlayerCount());
 
+        applicationEventPublisher.publishEvent(new JoinRoomEvent(roomId, session));
         return true;
     }
 

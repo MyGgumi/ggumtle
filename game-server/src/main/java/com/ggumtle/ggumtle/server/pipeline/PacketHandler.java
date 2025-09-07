@@ -1,18 +1,16 @@
 package com.ggumtle.ggumtle.server.pipeline;
 
-import com.ggumtle.ggumtle.room.application.RoomManager;
+import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
 import com.ggumtle.ggumtle.server.PacketDispatcher;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
-import com.ggumtle.ggumtle.session.Session;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
-
-import java.util.Optional;
 
 @Slf4j
 @Component
@@ -21,8 +19,8 @@ import java.util.Optional;
 public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     private final ChannelManager channelManager;
-    private final RoomManager roomManager;
     private final PacketDispatcher packetDispatcher;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Packet packet) {
@@ -38,8 +36,8 @@ public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        Optional<Session> optionalSession = channelManager.getSession(ctx.channel());
-        optionalSession.ifPresent(session -> roomManager.removeSession(session));
+        channelManager.getSession(ctx.channel())
+                .ifPresent(session -> applicationEventPublisher.publishEvent(new DisconnectSessionEvent(session)));
 
         channelManager.removeChannel(ctx.channel());
 

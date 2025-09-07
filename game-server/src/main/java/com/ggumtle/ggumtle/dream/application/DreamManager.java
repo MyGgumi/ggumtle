@@ -3,12 +3,15 @@ package com.ggumtle.ggumtle.dream.application;
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
+import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
+import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.MoveItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
+import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Mongdung;
@@ -34,12 +37,20 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public class DreamManager {
 
     private static final int BOX_SPAWN_SIZE = 20;
     private static final int GGUMTLE_SPAWN_SIZE = 3;
+
+    private final ScheduledExecutorService diggingScheduler;
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> playerIdToDiggingScheduledFuture;
 
     // 정적 데이터 캐싱
     private final SpawnCache spawnCache;
@@ -64,6 +75,9 @@ public class DreamManager {
         initializePlayers();
 
         log.info("{}번 게임의 초기화 종료", room.getRoomId());
+
+        diggingScheduler = Executors.newScheduledThreadPool(players.size());
+        playerIdToDiggingScheduledFuture = new ConcurrentHashMap<>();
     }
 
     public void movePlayer(long id, int x, int y, int z) {
@@ -209,6 +223,59 @@ public class DreamManager {
         for (Session viewer : viewers) {
             viewer.sendPacket(packet);
         }
+    }
+
+    public void digUpGgumtle(int ggumtleId, Session session) {
+        if (!ggumtles.containsKey(ggumtleId)) {
+            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.NOT_FOUND);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Ggumtle ggumtle = ggumtles.get(ggumtleId);
+        if (ggumtle.isDugUp()) {
+            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.ALREADY_DIG_UP);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        ScheduledFuture<?> future = diggingScheduler.schedule(() -> {
+            playerIdToDiggingScheduledFuture.remove(session.getMemberId());
+
+            // 3초를 기다리는 동안 누군가 파냈으면 무시
+            if (!ggumtle.tryDigUp()) {
+                return;
+            }
+
+            DigUpResult result = new DigUpResult(ggumtle.getId(), true);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), result);
+            this.room.broadcast(packet);
+        }, 3, TimeUnit.SECONDS);
+        playerIdToDiggingScheduledFuture.put(session.getMemberId(), future);
+
+        DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.START_DIGGING);
+        Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+    }
+
+    public void stopDigging(Session session) {
+        ScheduledFuture<?> future = playerIdToDiggingScheduledFuture.getOrDefault(session.getMemberId(), null);
+
+        if (future == null) {
+            StopDiggingResult result = new StopDiggingResult(StopDiggingResult.StopResult.NOT_FOUND_DIGGING);
+            Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        future.cancel(true);
+        playerIdToDiggingScheduledFuture.remove(session.getMemberId());
+
+        StopDiggingResult result = new StopDiggingResult(StopDiggingResult.StopResult.STOP);
+        Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
     }
 
     /**

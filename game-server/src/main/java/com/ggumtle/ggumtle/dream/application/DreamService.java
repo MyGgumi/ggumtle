@@ -2,7 +2,9 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.common.dto.Timestamp;
+import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
+import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.application.command.ShowBoxCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
@@ -67,6 +69,20 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.showBox(command.boxId(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.MOVE_ITEM)
+    public void handleMoveItem(MoveItemCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.moveItem(command.direction(), command.boxId(), command.index(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.CLOSE_BOX)
+    public void handleCloseBox(CloseBoxCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.closeBox(command.boxId(), session);
     }
 
     private DreamManager getDreamManager(Session session) {

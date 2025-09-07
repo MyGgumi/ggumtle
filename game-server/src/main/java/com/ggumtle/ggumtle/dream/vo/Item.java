@@ -15,4 +15,13 @@ public enum Item {
     private final int initialCount;
     private final int maxCapacityForBox;
     private final int maxCapacityForMongging;
+
+    public static Item valueOf(int id) {
+        for (Item item : values()) {
+            if (item.id == id) {
+                return item;
+            }
+        }
+        return null;
+    }
 }

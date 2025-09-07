@@ -87,7 +87,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
             parameters = parseParameterWithData(handlerInfo, packet.data(), ctx, packet.header());
         }
 
-        log.info("[{}] 핸들러: {}\n파라미터: {}", ctx.channel(), handlerInfo, Arrays.toString(parameters));
+        log.info("[{}] 핸들러: {}\n파라미터: {}", ctx.channel().id(), handlerInfo, Arrays.toString(parameters));
         try {
             handlerInfo.method.invoke(handlerInfo.bean, parameters);
         } catch (InvocationTargetException | IllegalAccessException e) {

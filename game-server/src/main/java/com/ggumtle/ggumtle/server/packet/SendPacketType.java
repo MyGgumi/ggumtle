@@ -25,7 +25,8 @@ public enum SendPacketType {
     HIT_RESULT((short) 51),
 
     // 상자 상호작용
-    SHOW_BOX_RESULT((short) 61)
+    SHOW_BOX_RESULT((short) 61),
+    MOVE_ITEM_RESULT((short) 63),
     ;
 
     private final short value;

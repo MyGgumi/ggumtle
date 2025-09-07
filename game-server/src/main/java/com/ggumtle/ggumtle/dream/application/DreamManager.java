@@ -2,9 +2,11 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
+import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
+import com.ggumtle.ggumtle.dream.application.result.MoveItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
@@ -26,6 +28,8 @@ import com.ggumtle.ggumtle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -124,11 +128,171 @@ public class DreamManager {
             return;
         }
 
-        Item[] items = boxes.get(boxId).getItems();
+        Box box = boxes.get(boxId);
+        Item[] items = box.getItems();
+        box.addViewer(session);
 
         ShowBoxResult showBoxResult = new ShowBoxResult(true, boxId, items);
         Packet packet = Packet.of(SendPacketType.SHOW_BOX_RESULT, System.currentTimeMillis(), showBoxResult);
         session.sendPacket(packet);
+    }
+
+    public void closeBox(int boxId, Session session) {
+        Box box = boxes.getOrDefault(boxId, null);
+
+        if (box == null) {
+            return;
+        }
+
+        box.removeViewer(session);
+    }
+
+    public void moveItem(byte directionValue, int boxId, int index, Session session) {
+        MoveItemCommand.DIRECTION direction = MoveItemCommand.DIRECTION.valueOf(directionValue);
+
+        // 방향 변수 검사
+        if (direction == null) {
+            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUNT_DIR, null);
+            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+        }
+
+        // 인덱스 검사
+        if (index < 0
+                || (direction == MoveItemCommand.DIRECTION.BOX_TO_INVENTORY && index >= Box.BOX_SIZE)
+                || (direction == MoveItemCommand.DIRECTION.INVENTORY_TO_BOX && index >= Mongging.INVENTORY_SIZE)) {
+            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.INDEX_OUT_OF_RANGE, null);
+            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // 박스 존재 검사
+        if (!boxes.containsKey(boxId)) {
+            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_BOX, null);
+            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // 플레이어 검사
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        if (player == null) {
+            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_PLAYER, null);
+            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (!(player instanceof Mongging mongging)) {
+            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_MONGGING, null);
+            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // 아이템 이동
+        Box box = boxes.get(boxId);
+        Result result;
+        if (direction == MoveItemCommand.DIRECTION.BOX_TO_INVENTORY) {
+            result = moveItemFromBoxToInventory(index, box, mongging, session);
+        } else {
+            result = moveItemFromInventoryToBox(index, box, mongging, session);
+        }
+
+        if (result == null) {
+            return;
+        }
+
+        Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+        List<Session> viewers = box.getViewers();
+        for (Session viewer : viewers) {
+            viewer.sendPacket(packet);
+        }
+    }
+
+    /**
+     * 아이템을 박스에서 인벤토리로 이동한다.
+     * 이동에 실패할 경우 주어진 세션에 메시지를 전송하고, 이동에 성공하면 이동 결과를 반환한다.
+     */
+    private Result moveItemFromBoxToInventory(int index, Box box, Mongging mongging, Session session) {
+        List<Object> lockOrder = Arrays.asList(box, mongging);
+        lockOrder.sort(Comparator.comparing(Object::hashCode));
+
+        synchronized (lockOrder.get(0)) {
+            synchronized (lockOrder.get(1)) {
+                Item targetItem = box.getItemAt(index);
+                if (targetItem == null) {
+                    Result result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_BOX, null);
+                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                }
+
+                if (!mongging.canAddItem(targetItem)) {
+                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FULL_ABOUT_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                }
+
+                Item[] popResult = box.popItem(index);
+                boolean success = mongging.addItem(popResult[Box.BOX_SIZE]);
+
+                if (!success) {
+                    log.error("사용자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패했습니다. 인벤토리: {}",
+                            targetItem,
+                            popResult[Box.BOX_SIZE],
+                            Arrays.deepToString(mongging.getItems()));
+
+                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FAIL, null);
+                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                }
+
+                return new MoveItemResult(MoveItemResult.MoveResult.SUCCESS, popResult);
+            }
+        }
+    }
+
+    /**
+     * 아이템을 인벤토리에서 상자로 이동한다.
+     * 이동에 실패할 경우 주어진 세션에 메시지를 전송하고, 이동에 성공하면 이동 결과를 반환한다.
+     */
+    private Result moveItemFromInventoryToBox(int index, Box box, Mongging mongging, Session session) {
+        List<Object> lockOrder = Arrays.asList(box, mongging);
+        lockOrder.sort(Comparator.comparing(Object::hashCode));
+
+        synchronized (lockOrder.get(0)) {
+            synchronized (lockOrder.get(1)) {
+                Item targetItem = mongging.getItemAt(index);
+                if (targetItem == null) {
+                    Result result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                }
+
+                if (!box.canAddItem(targetItem)) {
+                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FULL_ABOUT_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                }
+
+                Item popItem = mongging.popItem(index);
+                boolean success = box.addItem(popItem);
+
+                if (!success) {
+                    log.error("상자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패했습니다. 상자: {}",
+                            targetItem,
+                            popItem,
+                            Arrays.deepToString(mongging.getItems()));
+
+                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FAIL, null);
+                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                }
+
+                return new MoveItemResult(MoveItemResult.MoveResult.INDEX_OUT_OF_RANGE, box.getItems());
+            }
+        }
     }
 
     private void initializeMap() {

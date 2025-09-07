@@ -21,6 +21,8 @@ public enum ReceivePacketType {
 
     // 상자 및 아이템 상호작용
     SHOW_BOX((short) 60),
+    MOVE_ITEM((short) 62),
+    CLOSE_BOX((short) 64),
     ;
 
     private final short value;

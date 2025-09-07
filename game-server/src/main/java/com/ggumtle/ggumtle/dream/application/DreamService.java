@@ -4,6 +4,7 @@ import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
+import com.ggumtle.ggumtle.dream.application.command.ShowBoxCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.RoomManager;
@@ -59,6 +60,13 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.hitMongging(command, session, timestamp.value);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.SHOW_BOX)
+    public void handleShowBox(ShowBoxCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.showBox(command.boxId(), session);
     }
 
     private DreamManager getDreamManager(Session session) {

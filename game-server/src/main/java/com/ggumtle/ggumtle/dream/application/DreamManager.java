@@ -6,6 +6,7 @@ import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
+import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Mongdung;
@@ -42,8 +43,8 @@ public class DreamManager {
     // 인게임 캐시
     private final Room room;
     private Map<Long, Player> players;
-    private Map<Integer, Ggumtle> ggumtles;
-    private Map<Integer, Box> boxes;
+    private final Map<Integer, Ggumtle> ggumtles;
+    private final Map<Integer, Box> boxes;
 
     public DreamManager(Room room, SpawnCache spawnCache) {
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
@@ -113,6 +114,21 @@ public class DreamManager {
         Result result = new HitMonggingResult(HitMonggingResult.HitResult.SUCCESS, leftHp);
         Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
         room.sendPacket(List.of(mongdung.getId(), target.getId()), packet);
+    }
+
+    public void showBox(int boxId, Session session) {
+        if (!boxes.containsKey(boxId)) {
+            ShowBoxResult showBoxResult = new ShowBoxResult(false, -1, null);
+            Packet packet = Packet.of(SendPacketType.SHOW_BOX_RESULT, System.currentTimeMillis(), showBoxResult);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Item[] items = boxes.get(boxId).getItems();
+
+        ShowBoxResult showBoxResult = new ShowBoxResult(true, boxId, items);
+        Packet packet = Packet.of(SendPacketType.SHOW_BOX_RESULT, System.currentTimeMillis(), showBoxResult);
+        session.sendPacket(packet);
     }
 
     private void initializeMap() {

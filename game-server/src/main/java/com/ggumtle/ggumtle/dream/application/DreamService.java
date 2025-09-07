@@ -3,6 +3,7 @@ package com.ggumtle.ggumtle.dream.application;
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
+import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
@@ -83,6 +84,20 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.closeBox(command.boxId(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.DIG_UP_GGUMTLE)
+    public void handleDigUpGgumtle(DigUpCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.digUpGgumtle(command.ggumtleId(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.STOP_DIGGING)
+    public void handleStopDigging(Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.stopDigging(session);
     }
 
     private DreamManager getDreamManager(Session session) {

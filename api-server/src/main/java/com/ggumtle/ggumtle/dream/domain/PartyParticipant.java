@@ -34,4 +34,8 @@ public class PartyParticipant {
     public void unready() {
         this.isReady = false;
     }
+
+    public void setAsLeader(){
+        this.isLeader = true;
+    }
 }

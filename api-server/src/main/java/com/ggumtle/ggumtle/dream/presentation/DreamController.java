@@ -7,11 +7,13 @@ import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
 import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.presentation.request.AcceptPartyInvitationRequest;
@@ -19,6 +21,7 @@ import com.ggumtle.ggumtle.dream.presentation.request.InvitePartyRequest;
 import com.ggumtle.ggumtle.dream.presentation.response.AcceptPartyInvitationResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.CreatePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.InvitePartyResponse;
+import com.ggumtle.ggumtle.dream.presentation.response.LeavePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.ReadyDreamResponse;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
 import lombok.AccessLevel;
@@ -101,6 +104,18 @@ public class DreamController {
         ReadyDreamResponse response = new ReadyDreamResponse(requesterId,false);
 
         SendSocketEvent event = new SendSocketEvent(SocketType.UNREADY_DREAM, result.participantMemberIds(), response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketType.LEAVE_PARTY)
+    public void leaveParty(WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+
+        LeavePartyCommand command = new LeavePartyCommand(requesterId);
+        LeavePartyResult result = dreamPartyService.leaveParty(command);
+        LeavePartyResponse response = new LeavePartyResponse(requesterId,result.newLeaderId());
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.LEAVE_PARTY, result.participantMembers(),response);
         applicationEventPublisher.publishEvent(event);
     }
 }

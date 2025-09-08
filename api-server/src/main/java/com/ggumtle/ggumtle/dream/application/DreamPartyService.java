@@ -3,14 +3,17 @@ package com.ggumtle.ggumtle.dream.application;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
 import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.dream.domain.PartyInvitation;
+import com.ggumtle.ggumtle.dream.domain.WaitingParty;
 import com.ggumtle.ggumtle.dream.persistence.PartyInvitationRepository;
 import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
@@ -20,19 +23,25 @@ import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class DreamPartyService {
+    private static final String WAITING_PARTY_KEY = "waiting_party";
+
     private final PartyParticipantRepository partyParticipantRepository;
     private final PartyInvitationRepository partyInvitationRepository;
     private final MemberRepository memberRepository;
+    private final RedisTemplate<String, WaitingParty> waitingPartyRedisTemplate;
 
     public CreatePartyResult createParty(CreatePartyCommand command) {
         if (partyParticipantRepository.existsById(command.memberId())) {
@@ -122,5 +131,48 @@ public class DreamPartyService {
                 .stream().map(PartyParticipant::getMemberId).toList();
 
         return new UnreadyDreamResult(participantMemberIds, requester.getMemberId(), false);
+    }
+
+    public LeavePartyResult leaveParty(LeavePartyCommand command) {
+        PartyParticipant requester = partyParticipantRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        String partyId = requester.getPartyId();
+
+        // 드림 매칭 대기열에 있으면 나가기 불가
+        Set<WaitingParty> waiting = waitingPartyRedisTemplate.opsForZSet()
+                .range(WAITING_PARTY_KEY,0,-1);
+
+        boolean inQueue = waiting != null && waiting.stream()
+                .anyMatch(waitingParty -> Objects.equals(waitingParty.getPartyId(), partyId));
+        if (inQueue){
+            throw new GgumtleException(DreamErrorCode.CANNOT_LEAVE_WHILE_MATCHING);
+        }
+
+        List<PartyParticipant> members = partyParticipantRepository.findAllByPartyId(partyId);
+        List<Long> memberIds = members.stream().map(PartyParticipant::getMemberId).toList();
+
+        boolean wasLeader = requester.isLeader();
+        Long leftMemberId = requester.getMemberId();
+
+        partyParticipantRepository.delete(requester);
+        Long newLeaderId = null;
+
+        // 나가는 참가자가 리더라면 다른사람에게 리더 양도
+        if (wasLeader){
+            List<PartyParticipant> others = members.stream()
+                    .filter(participant -> !participant.getMemberId().equals(leftMemberId))
+                    .toList();
+            if (!others.isEmpty()){
+                PartyParticipant newLeader = others.stream()
+                        .min(Comparator.comparing(PartyParticipant::getMemberId))
+                        .get();
+                newLeader.setAsLeader();
+                partyParticipantRepository.save(newLeader);
+                newLeaderId = newLeader.getMemberId();
+            }
+        }
+
+        return new LeavePartyResult(memberIds, leftMemberId, newLeaderId);
     }
 }

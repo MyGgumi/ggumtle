@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.ToString;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 @ToString
@@ -16,14 +17,14 @@ public class Ggumtle {
 
     private final Position position;
 
-    private int leftFeedCount;
+    private AtomicInteger leftFeedCount;
 
     private AtomicBoolean isDugUp;
 
     public Ggumtle(int id, Position position) {
         this.id = id;
         this.position = position;
-        this.leftFeedCount = INIT_LEFT_FEED_COUNT;
+        this.leftFeedCount = new AtomicInteger(INIT_LEFT_FEED_COUNT);
         this.isDugUp = new AtomicBoolean(false);
     }
 
@@ -33,5 +34,13 @@ public class Ggumtle {
 
     public boolean tryDigUp() {
         return this.isDugUp.compareAndSet(false, true);
+    }
+
+    public boolean isDone() {
+        return leftFeedCount.get() <= 0;
+    }
+
+    public int feed() {
+        return leftFeedCount.decrementAndGet();
     }
 }

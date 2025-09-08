@@ -32,6 +32,12 @@ public enum SendPacketType {
     DIG_UP_RECEIVE((short) 101),
     STOP_DIGGING((short) 103),
     DIG_UP_DONE((short) 104),
+    START_FEED_RESULT((short) 111),
+    STOP_FEED_RESULT((short) 113),
+    FEED_DONE((short) 120),
+
+    // 탈출
+    OPEN_EXIT((short) 130),
     ;
 
     private final short value;

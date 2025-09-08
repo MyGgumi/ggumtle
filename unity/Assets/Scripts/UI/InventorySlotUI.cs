@@ -37,6 +37,15 @@ public class InventorySlotUI
                     slotButton.GetComponentInParent<PlayerInventoryUI>();
                 inventoryUI?.OnSlotClicked(slotIndex);
             });
+
+            // 드래그 가능한 슬롯 컴포넌트 추가
+            DraggableInventorySlot draggableSlot =
+                slotButton.GetComponent<DraggableInventorySlot>();
+            if (draggableSlot == null)
+            {
+                draggableSlot = slotButton.gameObject.AddComponent<DraggableInventorySlot>();
+            }
+            draggableSlot.Initialize(index);
         }
 
         // 초기 빈 슬롯으로 설정
@@ -57,6 +66,17 @@ public class InventorySlotUI
         {
             // 아이템이 있는 슬롯 표시
             ShowFilledSlot(item);
+        }
+
+        // DraggableInventorySlot도 업데이트
+        if (slotButton != null)
+        {
+            DraggableInventorySlot draggableSlot =
+                slotButton.GetComponent<DraggableInventorySlot>();
+            if (draggableSlot != null)
+            {
+                draggableSlot.UpdateSlotData();
+            }
         }
     }
 

@@ -199,7 +199,7 @@ public class PlayerInventoryUI : MonoBehaviour
     {
         if (PlayerInventory.Instance != null)
         {
-            PlayerInventory.Instance.PrintInventoryStatus();
+            // PlayerInventory.Instance.PrintInventoryStatus();
         }
     }
 }

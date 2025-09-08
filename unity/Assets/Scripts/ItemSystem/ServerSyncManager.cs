@@ -305,16 +305,9 @@ public class ServerSyncManager : MonoBehaviour
                     || currentItem.quantity != serverSlot.quantity
                 )
                 {
-                    // 서버 데이터로 교체
-                    PlayerInventory.Instance.ClearSlot(i);
-                    var inventoryItem = GlobalItemManager.Instance?.CreateInventoryItem(
-                        serverSlot.itemName,
-                        serverSlot.quantity
-                    );
-                    if (inventoryItem != null)
-                    {
-                        PlayerInventory.Instance.TryAddItem(inventoryItem);
-                    }
+                    // PlayerInventory.OnServerActionResponse()에서 처리하므로 여기서는 제거
+                    // 직접 조작하면 슬롯 순서가 파괴됨
+                    Debug.Log($"[ServerSyncManager] 인벤토리 동기화는 PlayerInventory에서 처리됨 - 슬롯{i} 스킵");
                 }
             }
         }

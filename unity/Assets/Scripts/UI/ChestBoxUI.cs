@@ -60,8 +60,18 @@ public class ChestBoxUI : MonoBehaviour
         if (chestTitleText != null)
             chestTitleText.text = "상자";
 
-        // 아이템 목록 갱신
-        RefreshItemList();
+        Debug.Log($"[ChestBoxUI] 상자 UI 표시 - 서버에서 최신 데이터 요청");
+
+        // 서버에서 최신 상자 데이터 요청
+        if (ServerSyncManager.Instance != null)
+        {
+            ServerSyncManager.Instance.RequestOpenChest(chest.chestId);
+        }
+        else
+        {
+            Debug.LogError("[ChestBoxUI] ServerSyncManager를 찾을 수 없음 - 로컬 데이터로 표시");
+            RefreshItemList(); // 서버 없으면 로컬 데이터로 표시
+        }
     }
 
     public void HideChestBox()
@@ -107,18 +117,6 @@ public class ChestBoxUI : MonoBehaviour
         }
     }
 
-    private void ClearFixedSlots()
-    {
-        // 고정 슬롯들을 빈 슬롯으로 초기화
-        for (int i = 0; i < fixedItemSlots.Length; i++)
-        {
-            if (fixedItemSlots[i] != null)
-            {
-                fixedItemSlots[i].ClearSlot();
-            }
-        }
-    }
-
     public void TakeItem(int index)
     {
         if (currentChest == null)
@@ -130,6 +128,20 @@ public class ChestBoxUI : MonoBehaviour
 
         ChestItem item = chestItems[index];
 
+        // 클라이언트에서 먼저 스택 제한 검사
+        if (PlayerInventory.Instance != null)
+        {
+            bool canAdd = PlayerInventory.Instance.CanAddItem(item.itemName, item.quantity);
+            if (!canAdd)
+            {
+                Debug.LogWarning(
+                    $"[ChestBoxUI] {item.itemName} x{item.quantity} 획득 불가 - 인벤토리 가득 참 또는 스택 제한"
+                );
+                // TODO: UI로 사용자에게 알림 표시
+                return;
+            }
+        }
+
         // 실시간 멀티플레이어: 서버에 직접 요청
         if (ServerSyncManager.Instance != null)
         {
@@ -139,11 +151,11 @@ public class ChestBoxUI : MonoBehaviour
                 item.quantity
             );
 
-            Debug.Log($"[ChestBoxUI] 서버에 아이템 획득 요청: {item.itemName} x{item.quantity}");
+            Debug.Log(
+                $"[ChestBoxUI] 서버에 아이템 획득 요청: {item.itemName} x{item.quantity} - 서버 응답 대기"
+            );
 
-            // 예측적 UI 업데이트 (서버 응답 전 즉시 반영)
-            // 실제 결과는 서버 응답에서 처리되지만, UX를 위해 즉시 갱신
-            RefreshItemList();
+            // 예측적 UI 업데이트 제거 - 서버 응답에서만 UI 갱신
         }
         else
         {
@@ -224,12 +236,17 @@ public class ChestBoxUI : MonoBehaviour
         var successValue = (bool)successField.GetValue(responseObj);
         var messageValue = messageField?.GetValue(responseObj)?.ToString() ?? "";
 
-        // Take 또는 OpenChest 액션인지 확인
-        bool isTakeOrOpenChest =
-            actionValue.ToString() == "Take" || actionValue.ToString() == "OpenChest";
+        // Take, Put, OpenChest 액션인지 확인
+        bool isChestRelatedAction =
+            actionValue.ToString() == "Take"
+            || actionValue.ToString() == "Put"
+            || actionValue.ToString() == "OpenChest";
 
-        if (!isTakeOrOpenChest)
+        if (!isChestRelatedAction)
+        {
+            Debug.Log($"[ChestBoxUI] 상자와 관련없는 액션 무시: {actionValue}");
             return;
+        }
 
         // 현재 상자와 관련된 응답인지 확인
         bool isCurrentChestResponse = false;
@@ -263,16 +280,34 @@ public class ChestBoxUI : MonoBehaviour
         {
             if (successValue)
             {
-                // 서버에서 성공적으로 처리됨 - UI 갱신
-                RefreshItemList();
+                string actionType = actionValue.ToString();
+                Debug.Log($"[ChestBoxUI] 서버 응답 성공 - {actionType} 액션: {messageValue}");
 
-                if (actionValue.ToString() == "Take")
+                // 액션 타입에 따른 처리
+                if (actionType == "OpenChest")
                 {
-                    Debug.Log($"[ChestBoxUI] 서버 확인 완료 - 아이템 획득 성공: {messageValue}");
+                    // 상자 열기 성공 - UI 갱신만
+                    RefreshItemList();
+                }
+                else if (actionType == "Take")
+                {
+                    // Take 액션 - 상자→인벤토리 이동
+                    RefreshItemList();
 
-                    // 플레이어 인벤토리에 아이템 추가
-                    var dataValue = dataField.GetValue(responseObj);
-                    AddItemToPlayerInventory(dataValue);
+                    // PlayerInventory가 서버 응답에서 자동으로 인벤토리 동기화하므로
+                    // ChestBoxUI에서는 상자 UI만 갱신
+                    Debug.Log($"[ChestBoxUI] Take 액션 - 상자에서 아이템 획득: {messageValue}");
+                }
+                else if (actionType == "Put")
+                {
+                    // Put 액션 - 인벤토리→상자 이동
+                    RefreshItemList();
+                    Debug.Log($"[ChestBoxUI] Put 액션 - 상자에 아이템 추가: {messageValue}");
+                }
+                else
+                {
+                    // 기타 액션 - 기본 UI 갱신
+                    RefreshItemList();
                 }
             }
             else
@@ -286,82 +321,88 @@ public class ChestBoxUI : MonoBehaviour
         }
     }
 
+    // /// <summary>
+    // /// 서버 응답에서 받은 아이템을 플레이어 인벤토리에 추가
+    // /// </summary>
+    // private void AddItemToPlayerInventory(object dataValue)
+    // {
+    //     if (dataValue == null || PlayerInventory.Instance == null)
+    //         return;
+
+    //     try
+    //     {
+    //         // 리플렉션으로 takenItem 정보 추출
+    //         var dataType = dataValue.GetType();
+    //         var takenItemField = dataType.GetField("takenItem");
+
+    //         if (takenItemField != null)
+    //         {
+    //             var takenItemValue = takenItemField.GetValue(dataValue);
+    //             if (takenItemValue != null)
+    //             {
+    //                 var takenItemType = takenItemValue.GetType();
+    //                 var itemNameField = takenItemType.GetField("itemName");
+    //                 var quantityField = takenItemType.GetField("quantity");
+
+    //                 if (itemNameField != null && quantityField != null)
+    //                 {
+    //                     string itemName = itemNameField.GetValue(takenItemValue)?.ToString();
+    //                     int quantity = (int)quantityField.GetValue(takenItemValue);
+
+    //                     if (!string.IsNullOrEmpty(itemName) && quantity > 0)
+    //                     {
+    //                         // GlobalItemManager에서 아이템 데이터 찾기
+    //                         if (GlobalItemManager.Instance != null)
+    //                         {
+    //                             var itemData = GlobalItemManager.Instance.GetItemData(itemName);
+    //                             if (itemData != null)
+    //                             {
+    //                                 // ChestItem 생성
+    //                                 ChestItem chestItem = new ChestItem
+    //                                 {
+    //                                     itemName = itemName,
+    //                                     itemIcon = itemData.itemIcon,
+    //                                     quantity = quantity,
+    //                                     description = itemData.description,
+    //                                 };
+
+    //                                 // 플레이어 인벤토리에 추가
+    //                                 int addedCount = PlayerInventory.Instance.TryAddItem(chestItem);
+
+    //                                 Debug.Log(
+    //                                     $"[ChestBoxUI] 플레이어 인벤토리에 {itemName} {addedCount}개 추가됨"
+    //                                 );
+
+    //                                 if (addedCount < quantity)
+    //                                 {
+    //                                     Debug.LogWarning(
+    //                                         $"[ChestBoxUI] {itemName} {quantity - addedCount}개는 인벤토리가 가득 찼습니다!"
+    //                                     );
+    //                                 }
+    //                             }
+    //                             else
+    //                             {
+    //                                 Debug.LogError(
+    //                                     $"[ChestBoxUI] GlobalItemManager에서 {itemName} 아이템 데이터를 찾을 수 없습니다!"
+    //                                 );
+    //                             }
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //     catch (System.Exception ex)
+    //     {
+    //         Debug.LogError($"[ChestBoxUI] 플레이어 인벤토리 아이템 추가 중 오류: {ex.Message}");
+    //     }
+    // }
+
     /// <summary>
-    /// 서버 응답에서 받은 아이템을 플레이어 인벤토리에 추가
+    /// 현재 열린 상자의 ID 반환
     /// </summary>
-    private void AddItemToPlayerInventory(object dataValue)
+    public string GetCurrentChestId()
     {
-        if (dataValue == null || PlayerInventory.Instance == null)
-            return;
-
-        try
-        {
-            // 리플렉션으로 takenItem 정보 추출
-            var dataType = dataValue.GetType();
-            var takenItemField = dataType.GetField("takenItem");
-
-            if (takenItemField != null)
-            {
-                var takenItemValue = takenItemField.GetValue(dataValue);
-                if (takenItemValue != null)
-                {
-                    var takenItemType = takenItemValue.GetType();
-                    var itemNameField = takenItemType.GetField("itemName");
-                    var quantityField = takenItemType.GetField("quantity");
-
-                    if (itemNameField != null && quantityField != null)
-                    {
-                        string itemName = itemNameField.GetValue(takenItemValue)?.ToString();
-                        int quantity = (int)quantityField.GetValue(takenItemValue);
-
-                        if (!string.IsNullOrEmpty(itemName) && quantity > 0)
-                        {
-                            // GlobalItemManager에서 아이템 데이터 찾기
-                            if (GlobalItemManager.Instance != null)
-                            {
-                                var itemData = GlobalItemManager.Instance.GetItemData(itemName);
-                                if (itemData != null)
-                                {
-                                    // ChestItem 생성
-                                    ChestItem chestItem = new ChestItem
-                                    {
-                                        itemName = itemName,
-                                        itemIcon = itemData.itemIcon,
-                                        quantity = quantity,
-                                        description = itemData.description,
-                                    };
-
-                                    // 플레이어 인벤토리에 추가
-                                    int addedCount = PlayerInventory.Instance.TryAddItem(
-                                        chestItem
-                                    );
-
-                                    Debug.Log(
-                                        $"[ChestBoxUI] 플레이어 인벤토리에 {itemName} {addedCount}개 추가됨"
-                                    );
-
-                                    if (addedCount < quantity)
-                                    {
-                                        Debug.LogWarning(
-                                            $"[ChestBoxUI] {itemName} {quantity - addedCount}개는 인벤토리가 가득 찼습니다!"
-                                        );
-                                    }
-                                }
-                                else
-                                {
-                                    Debug.LogError(
-                                        $"[ChestBoxUI] GlobalItemManager에서 {itemName} 아이템 데이터를 찾을 수 없습니다!"
-                                    );
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"[ChestBoxUI] 플레이어 인벤토리 아이템 추가 중 오류: {ex.Message}");
-        }
+        return currentChest?.chestId ?? "";
     }
 }

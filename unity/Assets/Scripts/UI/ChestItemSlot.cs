@@ -21,7 +21,9 @@ public class ChestItemSlot : MonoBehaviour
         itemIndex = index;
         chestBoxUI = ui;
 
-        Debug.Log($"[ChestItemSlot] SetupItem 호출됨 - 아이템: {chestItem?.itemName}, 인덱스: {index}");
+        Debug.Log(
+            $"[ChestItemSlot] SetupItem 호출됨 - 아이템: {chestItem?.itemName}, 인덱스: {index}"
+        );
 
         // UI 업데이트
         if (itemIcon != null)
@@ -56,25 +58,32 @@ public class ChestItemSlot : MonoBehaviour
             takeButton.onClick.RemoveAllListeners();
             takeButton.onClick.AddListener(OnTakeButtonClicked);
             takeButton.interactable = true; // 아이템이 있을 때는 버튼 활성화
-            
+
             // Button 상태 확인
-            Debug.Log($"[ChestItemSlot] Take 버튼 설정 완료 - {gameObject.name}, Interactable: {takeButton.interactable}");
-            
+            Debug.Log(
+                $"[ChestItemSlot] Take 버튼 설정 완료 - {gameObject.name}, Interactable: {takeButton.interactable}"
+            );
+
             // 테스트용 직접 호출 추가
-            takeButton.onClick.AddListener(() => {
+            takeButton.onClick.AddListener(() =>
+            {
                 Debug.Log($"[ChestItemSlot] 람다 버튼 클릭 감지됨!");
             });
         }
         else
         {
-            Debug.LogError($"[ChestItemSlot] takeButton이 null입니다! GameObject: {gameObject.name}, Inspector에서 연결하세요.");
+            Debug.LogError(
+                $"[ChestItemSlot] takeButton이 null입니다! GameObject: {gameObject.name}, Inspector에서 연결하세요."
+            );
         }
     }
 
     private void OnTakeButtonClicked()
     {
-        Debug.Log($"[ChestItemSlot] Take 버튼 클릭됨! 아이템: {item?.itemName}, 인덱스: {itemIndex}");
-        
+        Debug.Log(
+            $"[ChestItemSlot] Take 버튼 클릭됨! 아이템: {item?.itemName}, 인덱스: {itemIndex}"
+        );
+
         if (chestBoxUI != null)
         {
             Debug.Log($"[ChestItemSlot] ChestBoxUI.TakeItem() 호출");

@@ -36,18 +36,22 @@ public class InventoryItem
     /// </summary>
     public static InventoryItem FromChestItem(ChestItem chestItem)
     {
-        Debug.Log($"[InventoryItem] FromChestItem 호출됨 - 아이템: {chestItem.itemName}, 아이콘: {(chestItem.itemIcon != null ? "있음" : "없음")}");
-        
+        Debug.Log(
+            $"[InventoryItem] FromChestItem 호출됨 - 아이템: {chestItem.itemName}, 아이콘: {(chestItem.itemIcon != null ? "있음" : "없음")}"
+        );
+
         var inventoryItem = new InventoryItem(
             chestItem.itemName,
             chestItem.itemIcon,
             chestItem.quantity,
             chestItem.description,
-            3  // 플레이어 인벤토리는 최대 3개까지 스택
+            3 // 플레이어 인벤토리는 최대 3개까지 스택
         );
-        
-        Debug.Log($"[InventoryItem] 변환 완료 - InventoryItem 아이콘: {(inventoryItem.itemIcon != null ? "있음" : "없음")}");
-        
+
+        Debug.Log(
+            $"[InventoryItem] 변환 완료 - InventoryItem 아이콘: {(inventoryItem.itemIcon != null ? "있음" : "없음")}"
+        );
+
         return inventoryItem;
     }
 

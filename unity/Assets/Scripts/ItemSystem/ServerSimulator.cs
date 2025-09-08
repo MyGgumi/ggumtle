@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-
 /// <summary>
 /// 실제 서버가 없을 때 서버 역할을 시뮬레이션하는 클래스
 /// 실시간 멀티플레이어 로직을 로컬에서 테스트하기 위한 목적
@@ -280,6 +279,10 @@ public class ServerSimulator : MonoBehaviour
                 response = ProcessTakeItem(request);
                 break;
 
+            case ItemAction.Put:
+                response = ProcessPutItem(request);
+                break;
+
             case ItemAction.Use:
                 response = ProcessUseItem(request);
                 break;
@@ -430,7 +433,7 @@ public class ServerSimulator : MonoBehaviour
         return CreateSuccessResponse(
             request,
             "상자 열기 성공",
-            CreateResponseData(request.chestId)
+            CreateChestOnlyResponseData(request.chestId)
         );
     }
 
@@ -483,29 +486,96 @@ public class ServerSimulator : MonoBehaviour
     }
 
     /// <summary>
-    /// 플레이어 인벤토리에 아이템 추가 시도
+    /// 아이템 넣기 처리 (인벤토리 → 상자)
+    /// </summary>
+    private ItemActionResponse ProcessPutItem(ItemActionRequest request)
+    {
+        // 플레이어 인벤토리에서 아이템 찾기 및 제거
+        bool itemFound = false;
+        for (int i = 0; i < serverPlayerInventory.Length; i++)
+        {
+            var slot = serverPlayerInventory[i];
+            if (
+                !slot.isEmpty
+                && slot.itemName == request.itemName
+                && slot.quantity >= request.quantity
+            )
+            {
+                // 아이템 제거
+                slot.quantity -= request.quantity;
+                if (slot.quantity <= 0)
+                {
+                    slot.isEmpty = true;
+                    slot.itemName = "";
+                    slot.quantity = 0;
+                }
+                itemFound = true;
+                break;
+            }
+        }
+
+        if (!itemFound)
+        {
+            return CreateFailureResponse(request, "인벤토리에 해당 아이템이 없습니다");
+        }
+
+        // 상자에 아이템 추가
+        if (!serverChestItems.ContainsKey(request.chestId))
+        {
+            serverChestItems[request.chestId] = new List<ChestItemData>();
+        }
+
+        var chestItems = serverChestItems[request.chestId];
+        chestItems.Add(
+            new ChestItemData
+            {
+                itemName = request.itemName,
+                quantity = request.quantity,
+                description = "",
+            }
+        );
+
+        // 전역 아이템 수량은 변경하지 않음 (인벤토리 → 상자 이동이므로)
+
+        // 인벤토리 정리
+        CompactServerInventory();
+
+        if (enableDebugLogs)
+            Debug.Log(
+                $"[ServerSimulator] 상자에 아이템 넣기 완료: {request.itemName} x{request.quantity} → {request.chestId}"
+            );
+
+        return CreateSuccessResponse(
+            request,
+            $"{request.itemName} {request.quantity}개를 상자에 넣었습니다",
+            CreateResponseData(request.chestId)
+        );
+    }
+
+    /// <summary>
+    /// 플레이어 인벤토리에 아이템 추가 시도 (각 슬롯별 다른 아이템, 슬롯당 최대 3개)
     /// </summary>
     private int TryAddToPlayerInventory(string itemName, int quantity)
     {
         int remainingAmount = quantity;
 
-        // 1단계: 같은 아이템 스택에 추가
+        // 1단계: 같은 아이템이 있는 슬롯에 스택 (한 슬롯에만)
         for (int i = 0; i < serverPlayerInventory.Length; i++)
         {
             var slot = serverPlayerInventory[i];
             if (!slot.isEmpty && slot.itemName == itemName)
             {
-                int maxStack = 99; // ItemDatabase에서 가져와야 하지만 시뮬레이션에서는 고정값
+                int maxStack = 3; // 플레이어 인벤토리는 최대 3개까지 스택
                 int canAdd = Mathf.Min(remainingAmount, maxStack - slot.quantity);
                 slot.quantity += canAdd;
                 remainingAmount -= canAdd;
-
-                if (remainingAmount <= 0)
-                    break;
+                
+                // 해당 아이템이 있는 슬롯에서만 스택하고 종료 (다른 슬롯에는 같은 아이템 추가 안함)
+                break;
             }
         }
 
-        // 2단계: 빈 슬롯에 추가
+        // 2단계: 같은 아이템이 없고 남은 수량이 있으면 빈 슬롯에 새로 추가
         if (remainingAmount > 0)
         {
             for (int i = 0; i < serverPlayerInventory.Length; i++)
@@ -513,10 +583,13 @@ public class ServerSimulator : MonoBehaviour
                 var slot = serverPlayerInventory[i];
                 if (slot.isEmpty)
                 {
+                    int maxStack = 3; // 플레이어 인벤토리는 최대 3개까지 스택
                     slot.itemName = itemName;
-                    slot.quantity = remainingAmount;
+                    slot.quantity = Mathf.Min(remainingAmount, maxStack);
                     slot.isEmpty = false;
-                    remainingAmount = 0;
+                    remainingAmount -= slot.quantity;
+                    
+                    // 한 슬롯에만 추가하고 종료
                     break;
                 }
             }
@@ -608,13 +681,36 @@ public class ServerSimulator : MonoBehaviour
     }
 
     /// <summary>
-    /// 응답 데이터 생성
+    /// 응답 데이터 생성 (플레이어 인벤토리 포함)
     /// </summary>
     private ItemActionData CreateResponseData(string chestId = null)
     {
         var data = new ItemActionData
         {
             playerInventory = new PlayerInventoryData { slots = serverPlayerInventory },
+            globalItemCounts = new Dictionary<string, int>(serverGlobalItems),
+        };
+
+        if (!string.IsNullOrEmpty(chestId) && serverChestItems.ContainsKey(chestId))
+        {
+            data.chestInventory = new ChestInventoryData
+            {
+                chestId = chestId,
+                items = serverChestItems[chestId].ToArray(),
+            };
+        }
+
+        return data;
+    }
+
+    /// <summary>
+    /// OpenChest 전용 응답 데이터 생성 (상자 데이터만 포함, 플레이어 인벤토리 제외)
+    /// </summary>
+    private ItemActionData CreateChestOnlyResponseData(string chestId)
+    {
+        var data = new ItemActionData
+        {
+            playerInventory = null, // OpenChest는 플레이어 인벤토리 업데이트 불필요
             globalItemCounts = new Dictionary<string, int>(serverGlobalItems),
         };
 
@@ -752,6 +848,29 @@ public class ServerSimulator : MonoBehaviour
 
         if (enableDebugLogs)
             Debug.Log("[ServerSimulator] 서버 인벤토리 정리 완료");
+    }
+
+    /// <summary>
+    /// 인벤토리에서 상자로 아이템 넣기 요청 처리
+    /// </summary>
+    public void RequestPutItemToChest(string chestId, string itemName, int quantity = 1)
+    {
+        var request = new ItemActionRequest
+        {
+            action = ItemAction.Put, // 인벤토리 → 상자로 아이템 넣기
+            chestId = chestId,
+            itemName = itemName,
+            quantity = quantity,
+            playerId = "Player1",
+            timestamp = Time.time,
+        };
+
+        if (enableDebugLogs)
+            Debug.Log(
+                $"[ServerSimulator] 상자에 아이템 넣기 요청: {itemName} x{quantity} → {chestId}"
+            );
+
+        ProcessActionRequest(request);
     }
 
     /// <summary>

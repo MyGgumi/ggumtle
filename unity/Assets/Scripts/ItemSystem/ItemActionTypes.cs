@@ -5,7 +5,8 @@ using System.Collections.Generic;
 /// </summary>
 public enum ItemAction
 {
-    Take, // 아이템 획득
+    Take, // 아이템 획득 (상자 → 인벤토리)
+    Put, // 아이템 넣기 (인벤토리 → 상자)
     Use, // 아이템 사용
     OpenChest, // 상자 열기
     RequestSync, // 동기화 요청

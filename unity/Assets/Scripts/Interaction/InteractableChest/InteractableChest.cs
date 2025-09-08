@@ -29,8 +29,10 @@ public class InteractableChest : MonoBehaviour, IInteractable
 
     void Start()
     {
-        Debug.Log($"[InteractableChest] Start() 호출됨 - GameObject: {gameObject.name}, 초기 chestId: '{chestId}'");
-        
+        Debug.Log(
+            $"[InteractableChest] Start() 호출됨 - GameObject: {gameObject.name}, 초기 chestId: '{chestId}'"
+        );
+
         // 상자 ID 자동 생성 (Inspector에서 설정하지 않은 경우)
         if (string.IsNullOrEmpty(chestId))
         {
@@ -388,10 +390,10 @@ public class InteractableChest : MonoBehaviour, IInteractable
         {
             yield return null;
         }
-        
+
         // 추가 안전장치: 1프레임 더 대기
         yield return null;
-        
+
         // 상자 등록
         ChestInventoryManager.Instance.RegisterChest(chestId);
         Debug.Log($"[InteractableChest] {chestId} 등록 완료 (지연 등록)");

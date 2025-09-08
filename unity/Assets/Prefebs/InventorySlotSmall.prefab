@@ -87,6 +87,7 @@ GameObject:
   - component: {fileID: 6593409010996242732}
   - component: {fileID: 1027737170613537232}
   - component: {fileID: 2940539691712772729}
+  - component: {fileID: 6634875909812533841}
   m_Layer: 5
   m_Name: InventorySlotSmall
   m_TagString: Untagged
@@ -197,6 +198,22 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6634875909812533841
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1664561182962590393}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b982c97633e9614b9b2dcb0ae3f94a9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parentCanvas: {fileID: 0}
+  graphicRaycaster: {fileID: 0}
+  dragPreviewPrefab: {fileID: 0}
+  dragColor: {r: 1, g: 1, b: 1, a: 0.7}
 --- !u!1 &4358861181565805144
 GameObject:
   m_ObjectHideFlags: 0

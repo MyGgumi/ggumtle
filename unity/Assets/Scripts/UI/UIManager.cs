@@ -53,7 +53,7 @@ public class UIManager : MonoBehaviour
         // 자동으로 UI 컴포넌트들 찾아서 등록
         if (chestBoxUI != null)
             uiComponents[typeof(ChestBoxUI)] = chestBoxUI.gameObject;
-            
+
         if (playerInventoryUI != null)
             uiComponents[typeof(PlayerInventoryUI)] = playerInventoryUI.gameObject;
     }
@@ -234,7 +234,7 @@ public class UIManager : MonoBehaviour
             ShowOverlay(playerInventoryUI.gameObject);
         }
     }
-    
+
     public void HidePlayerInventory()
     {
         if (playerInventoryUI != null)

@@ -7,23 +7,30 @@ import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
+import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.presentation.request.AcceptPartyInvitationRequest;
 import com.ggumtle.ggumtle.dream.presentation.request.InvitePartyRequest;
-import com.ggumtle.ggumtle.dream.presentation.request.StartDreamRequest;
 import com.ggumtle.ggumtle.dream.presentation.response.AcceptPartyInvitationResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.CreatePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.InvitePartyResponse;
+import com.ggumtle.ggumtle.dream.presentation.response.ReadyDreamResponse;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.List;
+
+@Slf4j
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class DreamController {
@@ -69,5 +76,31 @@ public class DreamController {
 
         StartDreamCommand command = new StartDreamCommand(requesterId);
         dreamService.startDream(command);
+    }
+
+    @SocketCommandHandler(type = SocketType.READY_DREAM)
+    public void readyDream(WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+
+        ReadyDreamCommand command = new ReadyDreamCommand(requesterId);
+        ReadyDreamResult result = dreamPartyService.readyDream(command);
+
+        ReadyDreamResponse response = new ReadyDreamResponse(requesterId,true);
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.READY_DREAM, result.participantMemberIds(), response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketType.UNREADY_DREAM)
+    public void unreadyDream(WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+
+        ReadyDreamCommand command = new ReadyDreamCommand(requesterId);
+        UnreadyDreamResult result = dreamPartyService.unreadyDream(command);
+
+        ReadyDreamResponse response = new ReadyDreamResponse(requesterId,false);
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.UNREADY_DREAM, result.participantMemberIds(), response);
+        applicationEventPublisher.publishEvent(event);
     }
 }

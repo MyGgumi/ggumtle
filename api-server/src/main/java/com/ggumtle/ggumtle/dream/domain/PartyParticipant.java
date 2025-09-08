@@ -18,9 +18,20 @@ public class PartyParticipant {
 
     private boolean isLeader;
 
+    private boolean isReady;
+
     public PartyParticipant(Long memberId, String partyId, boolean isLeader) {
         this.memberId = memberId;
         this.partyId = partyId;
         this.isLeader = isLeader;
+        this.isReady = false;
+    }
+
+    public void ready() {
+        this.isReady = true;
+    }
+
+    public void unready() {
+        this.isReady = false;
     }
 }

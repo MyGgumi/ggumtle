@@ -1,6 +1,8 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+
 
 /// <summary>
 /// 실제 서버가 없을 때 서버 역할을 시뮬레이션하는 클래스
@@ -12,7 +14,7 @@ public class ServerSimulator : MonoBehaviour
 
     [Header("시뮬레이션 설정")]
     public float networkDelay = 0.1f; // 네트워크 지연 시뮬레이션 (초)
-    public float failureRate = 0.05f; // 5% 실패율 시뮬레이션
+    public float failureRate = 0f; // 5% 실패율 시뮬레이션
     public bool enableDebugLogs = true;
 
     // 서버 상태 데이터
@@ -66,6 +68,7 @@ public class ServerSimulator : MonoBehaviour
 
     /// <summary>
     /// 미리 정의된 상자들 초기화 (테스트용 5개 상자)
+    /// 각 아이템이 개별 슬롯을 차지하도록 구성
     /// </summary>
     private void InitializePredefinedChests()
     {
@@ -76,8 +79,20 @@ public class ServerSimulator : MonoBehaviour
                 new ChestItemData
                 {
                     itemName = "Apple",
-                    quantity = 5,
+                    quantity = 1,
                     description = "Apple 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Apple",
+                    quantity = 1,
+                    description = "Apple 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Stone",
+                    quantity = 1,
+                    description = "Stone 설명",
                 },
             },
             ["Chest_1"] = new List<ChestItemData>
@@ -85,7 +100,25 @@ public class ServerSimulator : MonoBehaviour
                 new ChestItemData
                 {
                     itemName = "Stone",
-                    quantity = 4,
+                    quantity = 1,
+                    description = "Stone 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Stone",
+                    quantity = 1,
+                    description = "Stone 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Apple",
+                    quantity = 1,
+                    description = "Apple 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Stone",
+                    quantity = 1,
                     description = "Stone 설명",
                 },
             },
@@ -94,13 +127,25 @@ public class ServerSimulator : MonoBehaviour
                 new ChestItemData
                 {
                     itemName = "Apple",
-                    quantity = 6,
+                    quantity = 1,
                     description = "Apple 설명",
                 },
                 new ChestItemData
                 {
                     itemName = "Stone",
-                    quantity = 3,
+                    quantity = 1,
+                    description = "Stone 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Apple",
+                    quantity = 1,
+                    description = "Apple 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Stone",
+                    quantity = 1,
                     description = "Stone 설명",
                 },
                 new ChestItemData
@@ -115,19 +160,31 @@ public class ServerSimulator : MonoBehaviour
                 new ChestItemData
                 {
                     itemName = "Stone",
-                    quantity = 5,
+                    quantity = 1,
                     description = "Stone 설명",
                 },
                 new ChestItemData
                 {
                     itemName = "Apple",
-                    quantity = 4,
+                    quantity = 1,
                     description = "Apple 설명",
                 },
                 new ChestItemData
                 {
                     itemName = "Stone",
-                    quantity = 2,
+                    quantity = 1,
+                    description = "Stone 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Apple",
+                    quantity = 1,
+                    description = "Apple 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Stone",
+                    quantity = 1,
                     description = "Stone 설명",
                 },
                 new ChestItemData
@@ -142,25 +199,43 @@ public class ServerSimulator : MonoBehaviour
                 new ChestItemData
                 {
                     itemName = "Apple",
-                    quantity = 3,
+                    quantity = 1,
                     description = "Apple 설명",
                 },
                 new ChestItemData
                 {
                     itemName = "Stone",
-                    quantity = 6,
+                    quantity = 1,
                     description = "Stone 설명",
                 },
                 new ChestItemData
                 {
                     itemName = "Apple",
-                    quantity = 2,
+                    quantity = 1,
                     description = "Apple 설명",
                 },
                 new ChestItemData
                 {
+                    itemName = "Stone",
+                    quantity = 1,
+                    description = "Stone 설명",
+                },
+                new ChestItemData
+                {
                     itemName = "Apple",
-                    quantity = 2,
+                    quantity = 1,
+                    description = "Apple 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Stone",
+                    quantity = 1,
+                    description = "Stone 설명",
+                },
+                new ChestItemData
+                {
+                    itemName = "Apple",
+                    quantity = 1,
                     description = "Apple 설명",
                 },
             },
@@ -553,6 +628,130 @@ public class ServerSimulator : MonoBehaviour
         }
 
         return data;
+    }
+
+    /// <summary>
+    /// 아이템 사용 요청 처리
+    /// </summary>
+    public void RequestUseItem(string itemName, int quantity = 1)
+    {
+        var request = new ItemActionRequest
+        {
+            action = ItemAction.Use,
+            itemName = itemName,
+            quantity = quantity,
+            playerId = "Player1",
+            timestamp = Time.time,
+        };
+
+        if (enableDebugLogs)
+            Debug.Log($"[ServerSimulator] 아이템 사용 요청: {itemName} x{quantity}");
+
+        StartCoroutine(ProcessUseItemRequest(request));
+    }
+
+    /// <summary>
+    /// 아이템 사용 요청 비동기 처리
+    /// </summary>
+    private System.Collections.IEnumerator ProcessUseItemRequest(ItemActionRequest request)
+    {
+        yield return new WaitForSeconds(networkDelay);
+
+        // 실패율 시뮬레이션
+        if (UnityEngine.Random.value < failureRate)
+        {
+            SendFailureResponse(request, "네트워크 오류로 요청이 실패했습니다");
+            yield break;
+        }
+
+        // 플레이어 인벤토리에서 해당 아이템 찾기
+        int slotIndex = -1;
+        for (int i = 0; i < serverPlayerInventory.Length; i++)
+        {
+            if (
+                !serverPlayerInventory[i].isEmpty
+                && serverPlayerInventory[i].itemName == request.itemName
+                && serverPlayerInventory[i].quantity >= request.quantity
+            )
+            {
+                slotIndex = i;
+                break;
+            }
+        }
+
+        if (slotIndex == -1)
+        {
+            SendFailureResponse(request, "인벤토리에 해당 아이템이 없습니다");
+            yield break;
+        }
+
+        // 아이템 사용 처리
+        serverPlayerInventory[slotIndex].quantity -= request.quantity;
+        if (serverPlayerInventory[slotIndex].quantity <= 0)
+        {
+            // 아이템이 다 소모되면 슬롯 비우기
+            serverPlayerInventory[slotIndex] = new InventorySlotData
+            {
+                itemName = "",
+                quantity = 0,
+                isEmpty = true,
+            };
+        }
+
+        // 인벤토리 정리 (빈 슬롯을 뒤로 이동)
+        CompactServerInventory();
+
+        // 성공 응답 전송
+        var response = new ItemActionResponse
+        {
+            action = request.action,
+            success = true,
+            message = $"{request.itemName} {request.quantity}개를 사용했습니다",
+            serverTimestamp = Time.time,
+            data = CreateResponseData(),
+        };
+
+        OnActionResponse?.Invoke(response);
+
+        if (enableDebugLogs)
+            Debug.Log(
+                $"[ServerSimulator] 아이템 사용 완료: {request.itemName} x{request.quantity}"
+            );
+    }
+
+    /// <summary>
+    /// 서버 인벤토리 정리 (빈 슬롯을 뒤로 이동)
+    /// </summary>
+    private void CompactServerInventory()
+    {
+        var compactedSlots = new InventorySlotData[serverPlayerInventory.Length];
+
+        // 먼저 모든 슬롯을 빈 슬롯으로 초기화
+        for (int i = 0; i < compactedSlots.Length; i++)
+        {
+            compactedSlots[i] = new InventorySlotData
+            {
+                itemName = "",
+                quantity = 0,
+                isEmpty = true,
+            };
+        }
+
+        // 빈 슬롯이 아닌 아이템들만 앞쪽으로 이동
+        int writeIndex = 0;
+        for (int i = 0; i < serverPlayerInventory.Length; i++)
+        {
+            if (!serverPlayerInventory[i].isEmpty)
+            {
+                compactedSlots[writeIndex] = serverPlayerInventory[i];
+                writeIndex++;
+            }
+        }
+
+        serverPlayerInventory = compactedSlots;
+
+        if (enableDebugLogs)
+            Debug.Log("[ServerSimulator] 서버 인벤토리 정리 완료");
     }
 
     /// <summary>

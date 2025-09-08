@@ -35,6 +35,24 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
+    void Start()
+    {
+        // 서버 응답 이벤트 구독
+        if (ServerSimulator.Instance != null)
+        {
+            ServerSimulator.Instance.OnActionResponse += OnServerActionResponse;
+        }
+    }
+
+    void OnDestroy()
+    {
+        // 이벤트 구독 해제
+        if (ServerSimulator.Instance != null)
+        {
+            ServerSimulator.Instance.OnActionResponse -= OnServerActionResponse;
+        }
+    }
+
     /// <summary>
     /// 인벤토리 초기화
     /// </summary>
@@ -81,13 +99,20 @@ public class PlayerInventory : MonoBehaviour
         {
             if (!items[i].IsEmpty() && items[i].IsSameItem(item))
             {
+                // 아이콘 정보가 없으면 새로운 아이템의 아이콘 정보로 업데이트
+                if (items[i].itemIcon == null && item.itemIcon != null)
+                {
+                    items[i].itemIcon = item.itemIcon;
+                    Debug.Log($"[PlayerInventory] 슬롯 {i}에 아이콘 정보 추가: {item.itemName}");
+                }
+                
                 int added = items[i].AddToStack(remainingAmount);
                 remainingAmount -= added;
 
                 if (added > 0)
                 {
                     OnInventoryChanged?.Invoke(i);
-                    Debug.Log($"[PlayerInventory] 슬롯 {i}에 {item.itemName} {added}개 스택 추가");
+                    Debug.Log($"[PlayerInventory] 슬롯 {i}에 {item.itemName} {added}개 스택 추가, 아이콘: {(items[i].itemIcon != null ? "있음" : "없음")}");
                 }
 
                 if (remainingAmount <= 0)
@@ -112,7 +137,7 @@ public class PlayerInventory : MonoBehaviour
 
                     OnInventoryChanged?.Invoke(i);
                     Debug.Log(
-                        $"[PlayerInventory] 슬롯 {i}에 {item.itemName} {remainingAmount}개 새로 추가"
+                        $"[PlayerInventory] 슬롯 {i}에 {item.itemName} {remainingAmount}개 새로 추가, 아이콘: {(items[i].itemIcon != null ? "있음" : "없음")}"
                     );
                     remainingAmount = 0;
                     break;
@@ -241,6 +266,261 @@ public class PlayerInventory : MonoBehaviour
                 totalCount += items[i].quantity;
         }
         return totalCount;
+    }
+
+    /// <summary>
+    /// 슬롯 0의 아이템 사용 (서버 전송용)
+    /// </summary>
+    public void UseSlot0Item()
+    {
+        if (items[0].IsEmpty())
+        {
+            Debug.Log("[PlayerInventory] 슬롯 0이 비어있어 사용할 수 없습니다.");
+            OnInventoryMessage?.Invoke("사용할 아이템이 없습니다.");
+            return;
+        }
+
+        var item = items[0];
+        Debug.Log($"[PlayerInventory] 슬롯 0 아이템 사용: {item.itemName}");
+
+        // 서버에 아이템 사용 요청
+        if (ServerSimulator.Instance != null)
+        {
+            ServerSimulator.Instance.RequestUseItem(item.itemName, 1);
+        }
+        else
+        {
+            Debug.LogError("[PlayerInventory] ServerSimulator를 찾을 수 없습니다!");
+            // 로컬에서 직접 처리 (폴백)
+            UseItemLocal(0);
+        }
+        
+        OnInventoryMessage?.Invoke($"{item.itemName} 사용");
+    }
+
+    /// <summary>
+    /// 특정 슬롯의 아이템을 슬롯 0과 위치 교체
+    /// </summary>
+    public void SwapWithSlot0(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= inventorySlots || slotIndex == 0)
+            return;
+
+        if (items[slotIndex].IsEmpty())
+        {
+            Debug.Log($"[PlayerInventory] 슬롯 {slotIndex}이 비어있어 교체할 수 없습니다.");
+            return;
+        }
+
+        Debug.Log($"[PlayerInventory] 슬롯 {slotIndex}와 슬롯 0 아이템 교체");
+
+        // 슬롯 교체
+        var temp = items[0].Clone();
+        items[0] = items[slotIndex].Clone();
+        items[slotIndex] = temp;
+
+        // UI 업데이트
+        OnInventoryChanged?.Invoke(0);
+        OnInventoryChanged?.Invoke(slotIndex);
+
+        string message = items[0].IsEmpty() ? 
+            "빈 슬롯과 교체됨" : 
+            $"{items[0].itemName}이(가) 활성 슬롯으로 이동";
+        OnInventoryMessage?.Invoke(message);
+    }
+
+    /// <summary>
+    /// 로컬에서 아이템 사용 처리 (수량 감소 및 정리)
+    /// </summary>
+    private void UseItemLocal(int slotIndex)
+    {
+        if (slotIndex < 0 || slotIndex >= inventorySlots || items[slotIndex].IsEmpty())
+            return;
+
+        // 아이템 수량 감소
+        items[slotIndex].RemoveFromStack(1);
+        
+        Debug.Log($"[PlayerInventory] 슬롯 {slotIndex} 아이템 사용 후 수량: {items[slotIndex].quantity}");
+
+        // 슬롯 0이 비었으면 다른 아이템들을 앞으로 이동
+        if (slotIndex == 0 && items[0].IsEmpty())
+        {
+            CompactInventory();
+        }
+
+        OnInventoryChanged?.Invoke(slotIndex);
+    }
+
+    /// <summary>
+    /// 빈 슬롯을 제거하고 아이템들을 앞으로 이동
+    /// </summary>
+    private void CompactInventory()
+    {
+        Debug.Log("[PlayerInventory] 인벤토리 정리 시작");
+
+        // 빈 슬롯이 아닌 아이템들만 앞쪽으로 이동
+        var compactedItems = new InventoryItem[inventorySlots];
+        for (int i = 0; i < inventorySlots; i++)
+        {
+            compactedItems[i] = new InventoryItem(); // 빈 아이템으로 초기화
+        }
+
+        int writeIndex = 0;
+        for (int i = 0; i < inventorySlots; i++)
+        {
+            if (!items[i].IsEmpty())
+            {
+                compactedItems[writeIndex] = items[i].Clone();
+                writeIndex++;
+            }
+        }
+
+        // 기존 배열 교체
+        items = compactedItems;
+
+        // 모든 슬롯 UI 업데이트
+        for (int i = 0; i < inventorySlots; i++)
+        {
+            OnInventoryChanged?.Invoke(i);
+        }
+
+        Debug.Log("[PlayerInventory] 인벤토리 정리 완료");
+    }
+
+    /// <summary>
+    /// 서버 액션 응답 처리
+    /// </summary>
+    private void OnServerActionResponse(object responseObj)
+    {
+        if (responseObj == null)
+            return;
+
+        // 리플렉션으로 응답 처리
+        var responseType = responseObj.GetType();
+        var actionField = responseType.GetField("action");
+        var successField = responseType.GetField("success");
+        var dataField = responseType.GetField("data");
+
+        if (actionField == null || successField == null)
+            return;
+
+        var actionValue = actionField.GetValue(responseObj);
+        var successValue = (bool)successField.GetValue(responseObj);
+
+        // Use 액션인지 확인
+        if (actionValue.ToString() == "Use")
+        {
+            if (successValue && dataField != null)
+            {
+                // 서버에서 성공적으로 처리됨 - 플레이어 인벤토리 동기화
+                var dataValue = dataField.GetValue(responseObj);
+                if (dataValue != null)
+                {
+                    SyncWithServerInventory(dataValue);
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[PlayerInventory] 서버에서 아이템 사용 실패");
+                OnInventoryMessage?.Invoke("아이템 사용 실패");
+            }
+        }
+    }
+
+    /// <summary>
+    /// 서버 인벤토리 상태와 동기화
+    /// </summary>
+    private void SyncWithServerInventory(object dataValue)
+    {
+        try
+        {
+            var dataType = dataValue.GetType();
+            var playerInventoryField = dataType.GetField("playerInventory");
+            
+            if (playerInventoryField != null)
+            {
+                var playerInventoryValue = playerInventoryField.GetValue(dataValue);
+                if (playerInventoryValue != null)
+                {
+                    var playerInventoryType = playerInventoryValue.GetType();
+                    var slotsField = playerInventoryType.GetField("slots");
+                    
+                    if (slotsField != null)
+                    {
+                        var slotsValue = slotsField.GetValue(playerInventoryValue);
+                        if (slotsValue != null && slotsValue is Array slotsArray)
+                        {
+                            Debug.Log("[PlayerInventory] 서버 인벤토리와 동기화 중...");
+                            
+                            // 서버 데이터로 인벤토리 업데이트
+                            for (int i = 0; i < Math.Min(slotsArray.Length, items.Length); i++)
+                            {
+                                var slotData = slotsArray.GetValue(i);
+                                if (slotData != null)
+                                {
+                                    var slotType = slotData.GetType();
+                                    var isEmptyField = slotType.GetField("isEmpty");
+                                    var itemNameField = slotType.GetField("itemName");
+                                    var quantityField = slotType.GetField("quantity");
+                                    
+                                    if (isEmptyField != null && itemNameField != null && quantityField != null)
+                                    {
+                                        bool isEmpty = (bool)isEmptyField.GetValue(slotData);
+                                        
+                                        if (isEmpty)
+                                        {
+                                            items[i].Clear();
+                                        }
+                                        else
+                                        {
+                                            string itemName = itemNameField.GetValue(slotData)?.ToString();
+                                            int quantity = (int)quantityField.GetValue(slotData);
+                                            
+                                            if (!string.IsNullOrEmpty(itemName) && quantity > 0)
+                                            {
+                                                // GlobalItemManager에서 아이콘과 설명 가져오기
+                                                if (GlobalItemManager.Instance != null)
+                                                {
+                                                    var itemData = GlobalItemManager.Instance.GetItemData(itemName);
+                                                    if (itemData != null)
+                                                    {
+                                                        items[i] = new InventoryItem(
+                                                            itemName,
+                                                            itemData.itemIcon,
+                                                            quantity,
+                                                            itemData.description,
+                                                            3
+                                                        );
+                                                    }
+                                                    else
+                                                    {
+                                                        // 아이콘 정보가 없어도 기본 정보로 생성
+                                                        items[i] = new InventoryItem(itemName, null, quantity, "", 3);
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    items[i] = new InventoryItem(itemName, null, quantity, "", 3);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // 슬롯 UI 업데이트
+                                OnInventoryChanged?.Invoke(i);
+                            }
+                            
+                            Debug.Log("[PlayerInventory] 서버 동기화 완료");
+                        }
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[PlayerInventory] 서버 동기화 중 오류: {ex.Message}");
+        }
     }
 
     /// <summary>

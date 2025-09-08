@@ -145,11 +145,11 @@ public class UIManager : MonoBehaviour
         if (chestBoxUI != null)
             chestBoxUI.HideChestBox();
 
-        // 플레이어 인벤토리 UI도 닫기
-        if (playerInventoryUI != null && playerInventoryUI.gameObject.activeInHierarchy)
-        {
-            playerInventoryUI.gameObject.SetActive(false);
-        }
+        // 플레이어 인벤토리 UI는 항상 표시되어야 하므로 닫지 않음
+        // if (playerInventoryUI != null && playerInventoryUI.gameObject.activeInHierarchy)
+        // {
+        //     playerInventoryUI.gameObject.SetActive(false);
+        // }
 
         Debug.Log("모든 오버레이 닫음");
     }

@@ -21,9 +21,26 @@ public class ChestItemSlot : MonoBehaviour
         itemIndex = index;
         chestBoxUI = ui;
 
+        Debug.Log($"[ChestItemSlot] SetupItem 호출됨 - 아이템: {chestItem?.itemName}, 인덱스: {index}");
+
         // UI 업데이트
-        if (itemIcon != null && item.itemIcon != null)
-            itemIcon.sprite = item.itemIcon;
+        if (itemIcon != null)
+        {
+            if (item.itemIcon != null)
+            {
+                itemIcon.sprite = item.itemIcon;
+                itemIcon.color = new Color(1, 1, 1, 1); // 불투명하게
+            }
+            else
+            {
+                itemIcon.sprite = null;
+                itemIcon.color = new Color(1, 1, 1, 0); // 투명하게
+            }
+        }
+        else
+        {
+            Debug.LogError($"[ChestItemSlot] itemIcon이 null입니다! GameObject: {gameObject.name}");
+        }
 
         if (itemName != null)
             itemName.text = item.itemName;
@@ -38,15 +55,34 @@ public class ChestItemSlot : MonoBehaviour
         {
             takeButton.onClick.RemoveAllListeners();
             takeButton.onClick.AddListener(OnTakeButtonClicked);
-            takeButton.gameObject.SetActive(true); // 아이템이 있을 때는 버튼 표시
+            takeButton.interactable = true; // 아이템이 있을 때는 버튼 활성화
+            
+            // Button 상태 확인
+            Debug.Log($"[ChestItemSlot] Take 버튼 설정 완료 - {gameObject.name}, Interactable: {takeButton.interactable}");
+            
+            // 테스트용 직접 호출 추가
+            takeButton.onClick.AddListener(() => {
+                Debug.Log($"[ChestItemSlot] 람다 버튼 클릭 감지됨!");
+            });
+        }
+        else
+        {
+            Debug.LogError($"[ChestItemSlot] takeButton이 null입니다! GameObject: {gameObject.name}, Inspector에서 연결하세요.");
         }
     }
 
     private void OnTakeButtonClicked()
     {
+        Debug.Log($"[ChestItemSlot] Take 버튼 클릭됨! 아이템: {item?.itemName}, 인덱스: {itemIndex}");
+        
         if (chestBoxUI != null)
         {
+            Debug.Log($"[ChestItemSlot] ChestBoxUI.TakeItem() 호출");
             chestBoxUI.TakeItem(itemIndex);
+        }
+        else
+        {
+            Debug.LogError("[ChestItemSlot] chestBoxUI가 null입니다!");
         }
     }
 
@@ -57,7 +93,10 @@ public class ChestItemSlot : MonoBehaviour
 
         // UI를 빈 슬롯으로 초기화
         if (itemIcon != null)
+        {
             itemIcon.sprite = null;
+            itemIcon.color = new Color(1, 1, 1, 0); // 완전 투명하게
+        }
 
         if (itemName != null)
             itemName.text = "";
@@ -71,7 +110,7 @@ public class ChestItemSlot : MonoBehaviour
         if (takeButton != null)
         {
             takeButton.onClick.RemoveAllListeners();
-            takeButton.gameObject.SetActive(false); // 빈 슬롯에서는 버튼 숨김
+            takeButton.interactable = false; // 버튼 비활성화 (하지만 보이기는 함)
         }
     }
 

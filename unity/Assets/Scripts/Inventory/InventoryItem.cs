@@ -11,7 +11,7 @@ public class InventoryItem
     public Sprite itemIcon;
     public int quantity;
     public string description;
-    public int maxStack = 99; // 최대 스택 개수
+    public int maxStack = 3; // 최대 스택 개수 (플레이어 인벤토리는 3개까지)
 
     public InventoryItem()
     {
@@ -19,10 +19,10 @@ public class InventoryItem
         itemIcon = null;
         quantity = 0;
         description = "";
-        maxStack = 99;
+        maxStack = 3;
     }
 
-    public InventoryItem(string name, Sprite icon, int qty = 1, string desc = "", int stack = 99)
+    public InventoryItem(string name, Sprite icon, int qty = 1, string desc = "", int stack = 3)
     {
         itemName = name;
         itemIcon = icon;
@@ -36,12 +36,19 @@ public class InventoryItem
     /// </summary>
     public static InventoryItem FromChestItem(ChestItem chestItem)
     {
-        return new InventoryItem(
+        Debug.Log($"[InventoryItem] FromChestItem 호출됨 - 아이템: {chestItem.itemName}, 아이콘: {(chestItem.itemIcon != null ? "있음" : "없음")}");
+        
+        var inventoryItem = new InventoryItem(
             chestItem.itemName,
             chestItem.itemIcon,
             chestItem.quantity,
-            chestItem.description
+            chestItem.description,
+            3  // 플레이어 인벤토리는 최대 3개까지 스택
         );
+        
+        Debug.Log($"[InventoryItem] 변환 완료 - InventoryItem 아이콘: {(inventoryItem.itemIcon != null ? "있음" : "없음")}");
+        
+        return inventoryItem;
     }
 
     /// <summary>

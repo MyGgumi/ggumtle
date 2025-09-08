@@ -269,6 +269,10 @@ public class ChestBoxUI : MonoBehaviour
                 if (actionValue.ToString() == "Take")
                 {
                     Debug.Log($"[ChestBoxUI] 서버 확인 완료 - 아이템 획득 성공: {messageValue}");
+
+                    // 플레이어 인벤토리에 아이템 추가
+                    var dataValue = dataField.GetValue(responseObj);
+                    AddItemToPlayerInventory(dataValue);
                 }
             }
             else
@@ -279,6 +283,85 @@ public class ChestBoxUI : MonoBehaviour
                 // UI를 다시 원래 상태로 되돌리기
                 RefreshItemList();
             }
+        }
+    }
+
+    /// <summary>
+    /// 서버 응답에서 받은 아이템을 플레이어 인벤토리에 추가
+    /// </summary>
+    private void AddItemToPlayerInventory(object dataValue)
+    {
+        if (dataValue == null || PlayerInventory.Instance == null)
+            return;
+
+        try
+        {
+            // 리플렉션으로 takenItem 정보 추출
+            var dataType = dataValue.GetType();
+            var takenItemField = dataType.GetField("takenItem");
+
+            if (takenItemField != null)
+            {
+                var takenItemValue = takenItemField.GetValue(dataValue);
+                if (takenItemValue != null)
+                {
+                    var takenItemType = takenItemValue.GetType();
+                    var itemNameField = takenItemType.GetField("itemName");
+                    var quantityField = takenItemType.GetField("quantity");
+
+                    if (itemNameField != null && quantityField != null)
+                    {
+                        string itemName = itemNameField.GetValue(takenItemValue)?.ToString();
+                        int quantity = (int)quantityField.GetValue(takenItemValue);
+
+                        if (!string.IsNullOrEmpty(itemName) && quantity > 0)
+                        {
+                            // GlobalItemManager에서 아이템 데이터 찾기
+                            if (GlobalItemManager.Instance != null)
+                            {
+                                var itemData = GlobalItemManager.Instance.GetItemData(itemName);
+                                if (itemData != null)
+                                {
+                                    // ChestItem 생성
+                                    ChestItem chestItem = new ChestItem
+                                    {
+                                        itemName = itemName,
+                                        itemIcon = itemData.itemIcon,
+                                        quantity = quantity,
+                                        description = itemData.description,
+                                    };
+
+                                    // 플레이어 인벤토리에 추가
+                                    int addedCount = PlayerInventory.Instance.TryAddItem(
+                                        chestItem
+                                    );
+
+                                    Debug.Log(
+                                        $"[ChestBoxUI] 플레이어 인벤토리에 {itemName} {addedCount}개 추가됨"
+                                    );
+
+                                    if (addedCount < quantity)
+                                    {
+                                        Debug.LogWarning(
+                                            $"[ChestBoxUI] {itemName} {quantity - addedCount}개는 인벤토리가 가득 찼습니다!"
+                                        );
+                                    }
+                                }
+                                else
+                                {
+                                    Debug.LogError(
+                                        $"[ChestBoxUI] GlobalItemManager에서 {itemName} 아이템 데이터를 찾을 수 없습니다!"
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[ChestBoxUI] 플레이어 인벤토리 아이템 추가 중 오류: {ex.Message}");
         }
     }
 }

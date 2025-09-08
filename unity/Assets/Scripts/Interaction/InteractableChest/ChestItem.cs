@@ -8,6 +8,11 @@ public class ChestItem
     public int quantity = 1;
     public string description;
 
+    public ChestItem()
+    {
+        // 기본 생성자
+    }
+
     public ChestItem(string name, Sprite icon, int qty = 1, string desc = "")
     {
         itemName = name;

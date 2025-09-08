@@ -1,12 +1,14 @@
 package com.ggumtle.ggumtle.dream.application;
 
-import com.ggumtle.ggumtle.common.SocketType;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
+import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.dream.domain.PartyInvitation;
 import com.ggumtle.ggumtle.dream.persistence.PartyInvitationRepository;
@@ -19,6 +21,7 @@ import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -89,5 +92,35 @@ public class DreamPartyService {
         List<Long> participantIds = participants.stream().map(PartyParticipant::getMemberId).toList();
 
         return new AcceptPartyInvitationResult(participantIds, joinedParticipant.getMemberId(), member.getNickname());
+    }
+
+    public ReadyDreamResult readyDream(ReadyDreamCommand command) {
+        PartyParticipant requester = partyParticipantRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        if (!requester.isReady()){
+            requester.ready();
+            partyParticipantRepository.save(requester);
+        }
+
+        List<Long> participantMemberIds = partyParticipantRepository.findAllByPartyId(requester.getPartyId())
+                .stream().map(PartyParticipant::getMemberId).toList();
+
+        return new ReadyDreamResult(participantMemberIds, requester.getMemberId(), true);
+    }
+
+    public UnreadyDreamResult unreadyDream(ReadyDreamCommand command) {
+        PartyParticipant requester = partyParticipantRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        if (requester.isReady()){
+            requester.unready();
+            partyParticipantRepository.save(requester);
+        }
+
+        List<Long> participantMemberIds = partyParticipantRepository.findAllByPartyId(requester.getPartyId())
+                .stream().map(PartyParticipant::getMemberId).toList();
+
+        return new UnreadyDreamResult(participantMemberIds, requester.getMemberId(), false);
     }
 }

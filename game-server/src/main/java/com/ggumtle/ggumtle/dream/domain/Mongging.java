@@ -109,4 +109,24 @@ public class Mongging extends Player {
         inventory[index][ITEM_COUNT]--;
         return Item.valueOf(inventory[index][ITEM_ID]);
     }
+
+    public synchronized int findItemIndex(Item item) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            if (inventory[i][ITEM_ID] == item.getId() && inventory[i][ITEM_COUNT] > 0) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    public synchronized int countItem(Item item) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            if (inventory[i][ITEM_ID] == item.getId() && inventory[i][ITEM_COUNT] > 0) {
+                return inventory[i][ITEM_COUNT];
+            }
+        }
+
+        return 0;
+    }
 }

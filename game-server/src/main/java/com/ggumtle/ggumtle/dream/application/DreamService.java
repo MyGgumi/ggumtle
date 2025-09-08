@@ -8,6 +8,7 @@ import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.application.command.ShowBoxCommand;
+import com.ggumtle.ggumtle.dream.application.command.StartFeedCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.RoomManager;
@@ -98,6 +99,20 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.stopDigging(session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.START_FEED)
+    public void handleStartFeed(StartFeedCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.startFeed(command.ggumtleId(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.STOP_FEED)
+    public void handleStopFeed(Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.stopFeeding(session);
     }
 
     private DreamManager getDreamManager(Session session) {

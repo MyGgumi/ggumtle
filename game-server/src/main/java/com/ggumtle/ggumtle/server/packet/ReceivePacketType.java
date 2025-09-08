@@ -27,6 +27,8 @@ public enum ReceivePacketType {
     // 꿈틀이 상호작용
     DIG_UP_GGUMTLE((short) 100),
     STOP_DIGGING((short) 102),
+    START_FEED((short) 110),
+    STOP_FEED((short) 112),
     ;
 
     private final short value;

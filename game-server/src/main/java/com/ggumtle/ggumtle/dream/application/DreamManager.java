@@ -5,13 +5,16 @@ import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
 import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
+import com.ggumtle.ggumtle.dream.application.result.FeedDoneResult;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.MoveItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
+import com.ggumtle.ggumtle.dream.application.result.StartFeedResult;
 import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
+import com.ggumtle.ggumtle.dream.application.result.StopFeedingResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Mongdung;
@@ -36,8 +39,9 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -49,8 +53,8 @@ public class DreamManager {
     private static final int BOX_SPAWN_SIZE = 20;
     private static final int GGUMTLE_SPAWN_SIZE = 3;
 
-    private final ScheduledExecutorService diggingScheduler;
-    private final ConcurrentHashMap<Long, ScheduledFuture<?>> playerIdToDiggingScheduledFuture;
+    private final ScheduledExecutorService ggumtleWorkerThread;
+    private final ConcurrentLinkedDeque<WorkingGgumtleThread> workingGgumtleThreads;
 
     // 정적 데이터 캐싱
     private final SpawnCache spawnCache;
@@ -76,8 +80,8 @@ public class DreamManager {
 
         log.info("{}번 게임의 초기화 종료", room.getRoomId());
 
-        diggingScheduler = Executors.newScheduledThreadPool(players.size());
-        playerIdToDiggingScheduledFuture = new ConcurrentHashMap<>();
+        ggumtleWorkerThread = Executors.newScheduledThreadPool(players.size());
+        workingGgumtleThreads = new ConcurrentLinkedDeque<>();
     }
 
     public void movePlayer(long id, int x, int y, int z) {
@@ -241,8 +245,14 @@ public class DreamManager {
             return;
         }
 
-        ScheduledFuture<?> future = diggingScheduler.schedule(() -> {
-            playerIdToDiggingScheduledFuture.remove(session.getMemberId());
+        ScheduledFuture<?> future = ggumtleWorkerThread.schedule(() -> {
+            workingGgumtleThreads.removeIf(thread -> {
+                boolean isSameWork = thread.ggumtleId == ggumtle.getId() && thread.threadType == WorkingGgumtleThread.ThreadType.DIG_UP;
+                if (isSameWork) {
+                    thread.scheduledFuture.cancel(true);
+                }
+                return isSameWork;
+            });
 
             // 3초를 기다리는 동안 누군가 파냈으면 무시
             if (!ggumtle.tryDigUp()) {
@@ -253,7 +263,7 @@ public class DreamManager {
             Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
         }, 3, TimeUnit.SECONDS);
-        playerIdToDiggingScheduledFuture.put(session.getMemberId(), future);
+        workingGgumtleThreads.add(new WorkingGgumtleThread(session.getMemberId(), ggumtle.getId(), future, WorkingGgumtleThread.ThreadType.DIG_UP));
 
         DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.START_DIGGING);
         Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
@@ -261,20 +271,123 @@ public class DreamManager {
     }
 
     public void stopDigging(Session session) {
-        ScheduledFuture<?> future = playerIdToDiggingScheduledFuture.getOrDefault(session.getMemberId(), null);
+        boolean isStopped = workingGgumtleThreads.removeIf(thread -> {
+            boolean target = thread.playerId == session.getMemberId();
+            if (target) {
+                thread.scheduledFuture.cancel(true);
+            }
+            return target;
+        });
 
-        if (future == null) {
-            StopDiggingResult result = new StopDiggingResult(StopDiggingResult.StopResult.NOT_FOUND_DIGGING);
-            Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
+        Result result;
+        if (isStopped) {
+            result = new StopDiggingResult(StopDiggingResult.StopResult.STOP);
+        } else {
+            result = new StopDiggingResult(StopDiggingResult.StopResult.NOT_FOUND_DIGGING);
+        }
+        Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+    }
+
+    public void startFeed(int ggumtleId, Session session) {
+        if (!ggumtles.containsKey(ggumtleId)) {
+            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.NOT_FOUND);
+            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
-        future.cancel(true);
-        playerIdToDiggingScheduledFuture.remove(session.getMemberId());
+        Ggumtle ggumtle = ggumtles.get(ggumtleId);
+        if (!ggumtle.isDugUp()) {
+            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.YET_DIG_UP);
+            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
 
-        StopDiggingResult result = new StopDiggingResult(StopDiggingResult.StopResult.STOP);
-        Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
+        if (ggumtle.isDone()) {
+            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.ALREADY_DONE);
+            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Mongging mongging = (Mongging) players.get(session.getMemberId());
+        int index = mongging.findItemIndex(Item.GGUMTLE_FEED);
+        if (index == -1) {
+            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.LACK_OF_FEED_ITEM);
+            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Runnable task = () -> {
+            final int left = ggumtle.feed();
+            mongging.popItem(index);
+
+            // 남은 아이템이 없으면 종료
+            int leftFeedItem = mongging.countItem(Item.GGUMTLE_FEED);
+            if (leftFeedItem == 0) {
+                Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
+                session.sendPacket(packet);
+
+                this.workingGgumtleThreads.removeIf(thread -> {
+                    boolean target = thread.playerId == session.getMemberId();
+                    if (target) {
+                        thread.scheduledFuture.cancel(true);
+                    }
+                    return target;
+                });
+                return;
+            }
+
+            // 성불시키면 종료
+            if (left <= 0) {
+                this.workingGgumtleThreads.removeIf(thread -> {
+                    boolean isSameWork = thread.ggumtleId == ggumtle.getId();
+                    if (isSameWork) {
+                        thread.scheduledFuture.cancel(true);
+                    }
+                    return isSameWork;
+                });
+
+                Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
+                session.sendPacket(packet);
+
+                result = new FeedDoneResult(ggumtle.getId());
+                packet = Packet.of(SendPacketType.FEED_DONE, System.currentTimeMillis(), result);
+                this.room.broadcast(packet);
+            }
+        };
+        ScheduledFuture<?> future = ggumtleWorkerThread.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
+        workingGgumtleThreads.add(new WorkingGgumtleThread(session.getMemberId(), ggumtle.getId(), future, WorkingGgumtleThread.ThreadType.FEED));
+
+        StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.START_FEEDING);
+        Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+    }
+
+    public void stopFeeding(Session session) {
+        boolean isStopped = workingGgumtleThreads.removeIf(thread -> {
+            boolean target = thread.playerId == session.getMemberId();
+            if (target) {
+                thread.scheduledFuture.cancel(true);
+            }
+            return target;
+        });
+
+        Mongging mongging = (Mongging) players.get(session.getMemberId());
+        int leftItemCount = mongging.countItem(Item.GGUMTLE_FEED);
+
+        Result result;
+        if (isStopped) {
+            result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, leftItemCount);
+        } else {
+            result = new StopFeedingResult(StopFeedingResult.StopResult.NOT_FOUND, leftItemCount);
+        }
+        Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
     }
 

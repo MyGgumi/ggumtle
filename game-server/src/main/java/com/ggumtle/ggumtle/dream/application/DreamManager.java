@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
 import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
+import com.ggumtle.ggumtle.dream.application.result.ExitOpen;
 import com.ggumtle.ggumtle.dream.application.result.FeedDoneResult;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
@@ -16,6 +17,7 @@ import com.ggumtle.ggumtle.dream.application.result.StartFeedResult;
 import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
 import com.ggumtle.ggumtle.dream.application.result.StopFeedingResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
+import com.ggumtle.ggumtle.dream.domain.Exit;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Mongdung;
 import com.ggumtle.ggumtle.dream.domain.Mongging;
@@ -23,6 +25,7 @@ import com.ggumtle.ggumtle.dream.domain.Player;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.dream.util.ItemDistributor;
 import com.ggumtle.ggumtle.dream.vo.BoxSpawn;
+import com.ggumtle.ggumtle.dream.vo.ExitSpawn;
 import com.ggumtle.ggumtle.dream.vo.GgumtleSpawn;
 import com.ggumtle.ggumtle.dream.vo.Item;
 import com.ggumtle.ggumtle.dream.vo.PlayerSpawn;
@@ -39,7 +42,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
@@ -64,6 +66,7 @@ public class DreamManager {
     private Map<Long, Player> players;
     private final Map<Integer, Ggumtle> ggumtles;
     private final Map<Integer, Box> boxes;
+    private final Map<Integer, Exit> exits;
 
     public DreamManager(Room room, SpawnCache spawnCache) {
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
@@ -72,6 +75,7 @@ public class DreamManager {
         this.room = room;
         this.ggumtles = new HashMap<>();
         this.boxes = new HashMap<>();
+        this.exits = new HashMap<>();
 
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
 
@@ -325,23 +329,6 @@ public class DreamManager {
             final int left = ggumtle.feed();
             mongging.popItem(index);
 
-            // 남은 아이템이 없으면 종료
-            int leftFeedItem = mongging.countItem(Item.GGUMTLE_FEED);
-            if (leftFeedItem == 0) {
-                Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
-                Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
-                session.sendPacket(packet);
-
-                this.workingGgumtleThreads.removeIf(thread -> {
-                    boolean target = thread.playerId == session.getMemberId();
-                    if (target) {
-                        thread.scheduledFuture.cancel(true);
-                    }
-                    return target;
-                });
-                return;
-            }
-
             // 성불시키면 종료
             if (left <= 0) {
                 this.workingGgumtleThreads.removeIf(thread -> {
@@ -359,6 +346,27 @@ public class DreamManager {
                 result = new FeedDoneResult(ggumtle.getId());
                 packet = Packet.of(SendPacketType.FEED_DONE, System.currentTimeMillis(), result);
                 this.room.broadcast(packet);
+
+                tryOpenExit();
+
+                return;
+            }
+
+            // 남은 아이템이 없으면 종료
+            int leftFeedItem = mongging.countItem(Item.GGUMTLE_FEED);
+            if (leftFeedItem == 0) {
+                Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
+                session.sendPacket(packet);
+
+                this.workingGgumtleThreads.removeIf(thread -> {
+                    boolean target = thread.playerId == session.getMemberId();
+                    if (target) {
+                        thread.scheduledFuture.cancel(true);
+                    }
+                    return target;
+                });
+                return;
             }
         };
         ScheduledFuture<?> future = ggumtleWorkerThread.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
@@ -389,6 +397,18 @@ public class DreamManager {
         }
         Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
+    }
+
+    public void tryOpenExit() {
+        for (Ggumtle ggumtle : ggumtles.values()) {
+            if (!ggumtle.isDone()) {
+                return;
+            }
+        }
+
+        Result result = new ExitOpen(this.exits.values().stream().toList());
+        Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
     }
 
     /**
@@ -492,6 +512,11 @@ public class DreamManager {
         List<Box> boxes = this.boxes.values().stream().toList();
         for (Item item : Item.values()) {
             ItemDistributor.distribute(item, boxes, item.getInitialCount());
+        }
+
+        List<ExitSpawn> exitSpawns = spawnCache.getRandomExitSpawns();
+        for (int i = 0; i < exitSpawns.size(); i++) {
+            exits.put(i, new Exit(i, Position.from(exitSpawns.get(i))));
         }
 
         // TODO: 필드템 초기화

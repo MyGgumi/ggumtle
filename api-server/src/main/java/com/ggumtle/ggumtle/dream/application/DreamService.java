@@ -58,6 +58,14 @@ public class DreamService {
             throw new GgumtleException(DreamErrorCode.NOT_LEADER, "파티의 리더만 드림을 시작할 수 있습니다");
         }
 
+        String partyId = leader.getPartyId();
+        List<PartyParticipant> participantsInParty = partyParticipantRepository.findAllByPartyId(partyId);
+        boolean allReady = participantsInParty.stream().allMatch(PartyParticipant::isReady);
+        if (!allReady) {
+            throw new GgumtleException((DreamErrorCode.NOT_ALL_READY)
+            );
+        }
+
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(leader.getPartyId());
         List<Long> requesterPartyParticipantIds = convertToId(participants);
         publishEvent(

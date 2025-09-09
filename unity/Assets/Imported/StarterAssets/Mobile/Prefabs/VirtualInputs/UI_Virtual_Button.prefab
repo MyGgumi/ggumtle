@@ -152,6 +152,12 @@ MonoBehaviour:
   buttonClickOutputEvent:
     m_PersistentCalls:
       m_Calls: []
+  buttonHoldStartEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  buttonHoldEndEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &4525221819527958844
 GameObject:
   m_ObjectHideFlags: 0

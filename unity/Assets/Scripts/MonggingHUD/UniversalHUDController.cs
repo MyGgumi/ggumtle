@@ -88,6 +88,9 @@ public class UniversalHUDController : MonoBehaviour
         notificationManager?.Initialize(_root);
         chatManager?.Initialize(_root);
         
+        // 체력바 강제 표시 (CSS 클래스 충돌 해결)
+        healthBarManager?.SetHealthBarVisibility(true);
+        
         Debug.Log("[UniversalHUDController] 모든 매니저 초기화 완료");
     }
     

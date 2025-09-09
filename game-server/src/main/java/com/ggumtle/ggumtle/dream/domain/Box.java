@@ -65,7 +65,7 @@ public class Box {
     public synchronized boolean addItem(Item item) {
         int nextItemCount = this.itemCount.getOrDefault(item, 0) + 1;
 
-        if (this.totalCount + 1 > BOX_SIZE || item.getMaxCapacityForBox() < nextItemCount) {
+        if (this.totalCount + 1 > BOX_SIZE) {
             return false;
         }
 
@@ -90,11 +90,7 @@ public class Box {
     }
 
     public synchronized boolean canAddItem(Item item) {
-        if (totalCount == BOX_SIZE) {
-            return false;
-        }
-
-        return itemCount.getOrDefault(item, 0) + 1 > item.getMaxCapacityForBox();
+        return this.totalCount < BOX_SIZE;
     }
 
     public synchronized Item[] popItem(int index) {

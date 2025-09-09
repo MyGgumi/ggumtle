@@ -5,7 +5,8 @@ import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
-import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
+import com.ggumtle.ggumtle.dream.application.command.PutItemCommand;
+import com.ggumtle.ggumtle.dream.application.command.TakeItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.application.command.ShowBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartFeedCommand;
@@ -73,11 +74,18 @@ public class DreamService {
         dreamManager.showBox(command.boxId(), session);
     }
 
-    @PacketCommandHandler(type = ReceivePacketType.MOVE_ITEM)
-    public void handleMoveItem(MoveItemCommand command, Session session) {
+    @PacketCommandHandler(type = ReceivePacketType.TAKE_ITEM_FROM_BOX)
+    public void handleTakeItem(TakeItemCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.moveItem(command.direction(), command.boxId(), command.index(), session);
+        dreamManager.takeItem(command.boxId(), command.index(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.PUT_ITEM_TO_BOX)
+    public void handlePutItem(PutItemCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.putItem(command.itemId(), command.boxId(), session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.CLOSE_BOX)

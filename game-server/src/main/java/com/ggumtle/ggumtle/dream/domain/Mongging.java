@@ -3,6 +3,9 @@ package com.ggumtle.ggumtle.dream.domain;
 import com.ggumtle.ggumtle.dream.vo.Item;
 import com.ggumtle.ggumtle.dream.vo.Position;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class Mongging extends Player {
     private static final int BASE_HP = 100;
     private static final int BASE_MOVE_SPEED = 100;
@@ -18,7 +21,7 @@ public class Mongging extends Player {
     protected int healSpeed;
     protected int workSpeed;
 
-    private int[][] inventory;
+    private final ConcurrentHashMap <Item, Integer> inventory;
 
     public Mongging(long id, Position position) {
         super(id, position);
@@ -28,7 +31,7 @@ public class Mongging extends Player {
         this.healSpeed = BASE_HEAL_SPEED;
         this.workSpeed = BASE_WORK_SPEED;
 
-        this.inventory = new int[INVENTORY_SIZE][2];
+        this.inventory = new ConcurrentHashMap<>();
     }
 
     public synchronized int getHit(int damage) {
@@ -38,95 +41,67 @@ public class Mongging extends Player {
         }
 
         this.hp = 0;
-        this.inventory = new int[INVENTORY_SIZE][2];
+        this.inventory.clear();
         return this.hp;
     }
 
     public synchronized boolean canAddItem(Item item) {
-        boolean hasEmptyCell = false;
-
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            if (inventory[i][ITEM_ID] == item.getId()) {
-                return inventory[i][ITEM_COUNT] + 1 >= item.getMaxCapacityForMongging();
-            }
-
-            if (inventory[i][ITEM_COUNT] == 0) {
-                hasEmptyCell = true;
-            }
+        if (this.inventory.containsKey(item)) {
+            return this.inventory.get(item) + 1 <= item.getMaxCapacityForMongging();
         }
 
-        return hasEmptyCell;
+        return this.inventory.size() < INVENTORY_SIZE;
     }
 
     public synchronized boolean addItem(Item item) {
-        int emptyCellIndex = -1;
-
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            if (inventory[i][ITEM_ID] == item.getId()) {
-                if (inventory[i][ITEM_COUNT] + 1 >= item.getMaxCapacityForMongging()) {
-                    return false;
-                }
-                inventory[i][ITEM_COUNT]++;
+        if (this.inventory.containsKey(item)) {
+            int nextCount = this.inventory.get(item) + 1;
+            if (nextCount > item.getMaxCapacityForMongging()) {
                 return false;
             }
 
-            if (inventory[i][ITEM_COUNT] == 0) {
-                emptyCellIndex = i;
-            }
+            this.inventory.put(item, nextCount);
+            return true;
         }
 
-        if (emptyCellIndex == -1) {
-            return false;
+        if (this.inventory.size() < INVENTORY_SIZE) {
+            this.inventory.put(item, 1);
+            return true;
         }
 
-        inventory[emptyCellIndex][ITEM_ID] = item.getId();
-        inventory[emptyCellIndex][ITEM_COUNT] = 1;
-        return true;
+        return false;
     }
 
     public synchronized int[][] getItems() {
-        int[][] copy = new int[INVENTORY_SIZE][2];
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            copy[i][0] = this.inventory[i][0];
-            copy[i][1] = this.inventory[i][1];
+        int[][] items = new int[this.inventory.size()][2];
+        int top = 0;
+
+        for (Map.Entry<Item, Integer> entry : this.inventory.entrySet()) {
+            items[top][ITEM_ID] = entry.getKey().getId();
+            items[top][ITEM_COUNT] = entry.getValue();
+            top++;
         }
-        return copy;
+
+        return items;
     }
 
-    public synchronized Item getItemAt(int index) {
-        if (inventory[index][ITEM_COUNT] == 0) {
+    public synchronized Item popItem(Item item) {
+        if (!this.inventory.containsKey(item)) {
             return null;
         }
 
-        return Item.valueOf(inventory[index][ITEM_ID]);
-    }
+        int nextCount = this.inventory.get(item) - 1;
 
-    public synchronized Item popItem(int index) {
-        if (inventory[index][ITEM_COUNT] == 0) {
-            return null;
+        if (nextCount <= 0) {
+            this.inventory.remove(item);
+        } else {
+            this.inventory.put(item, nextCount);
         }
 
-        inventory[index][ITEM_COUNT]--;
-        return Item.valueOf(inventory[index][ITEM_ID]);
-    }
-
-    public synchronized int findItemIndex(Item item) {
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            if (inventory[i][ITEM_ID] == item.getId() && inventory[i][ITEM_COUNT] > 0) {
-                return i;
-            }
-        }
-
-        return -1;
+        return item;
     }
 
     public synchronized int countItem(Item item) {
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            if (inventory[i][ITEM_ID] == item.getId() && inventory[i][ITEM_COUNT] > 0) {
-                return inventory[i][ITEM_COUNT];
-            }
-        }
-
-        return 0;
+        return this.inventory.getOrDefault(item, 0);
     }
 }

@@ -66,6 +66,16 @@ public class DreamService {
             );
         }
 
+        // 중복 시작 방지
+        Set<WaitingParty> waitingParties = waitingPartyRedisTemplate.opsForZSet().range(WAITING_PARTY_KEY, 0, -1);
+        if (waitingParties != null) {
+            boolean alreadyInMatch = waitingParties.stream()
+                    .anyMatch(waitingParty -> waitingParty.getPartyId().equals(partyId));
+            if (alreadyInMatch) {
+                throw new GgumtleException(DreamErrorCode.ALREADY_MATCHING);
+            }
+        }
+
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(leader.getPartyId());
         List<Long> requesterPartyParticipantIds = convertToId(participants);
         publishEvent(

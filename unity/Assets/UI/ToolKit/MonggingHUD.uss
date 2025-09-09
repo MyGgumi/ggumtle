@@ -1,0 +1,97 @@
+
+
+/* 숨김 클래스 */
+.hidden {
+  display: none;
+}
+
+/* 플레이어 색상 테마 클래스들 */
+.player-yellow {
+    -unity-background-image-tint-color: rgba(255, 200, 80, 1.0);
+}
+
+.player-mint {
+    -unity-background-image-tint-color: rgba(80, 255, 200, 1.0);
+}
+
+.player-pink {
+    -unity-background-image-tint-color: rgba(255, 150, 200, 1.0);
+}
+
+/* 플레이어 상태 클래스들 */
+.player-online {
+    opacity: 1.0;
+    border-color: rgba(255, 255, 255, 0.8);
+}
+.player-offline {
+    opacity: 0.5;
+    border-color: rgba(128, 128, 128, 0.5);
+}
+
+
+/* UI 표시 상태 클래스들 */
+.ui-hidden {
+    display: none;
+    opacity: 0;
+}
+
+.ui-visible {
+    display: flex;
+    opacity: 1;
+}
+
+/* Sci-Fi UI 프로그레스 바 스타일 */
+.scifi-progress-bar {
+    position: relative;
+    width: 400px;
+    height: 48px;  /* 24px → 32px로 높이 증가 */
+    background-image: url('project://database/Assets/Sci-Fi UI/_SciFi_GUISkin_/Skin_Assets/bars/progress_bar_background.png');
+    -unity-background-scale-mode: stretch-to-fill;
+    border-radius: 0;
+    border-width: 0;
+}
+
+.scifi-progress-mask {
+    position: absolute;
+    left: 8px;
+    right: 6px;  /* 오른쪽 여백 줄임 */
+    top: 20px;    /* 여백 증가로 fill 높이 감소 */
+    bottom: 20px; /* 여백 증가로 fill 높이 감소 */
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.scifi-progress-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    /* 이미지 대신 색상만 사용 */
+    background-color: rgba(44, 140, 255, 0.8);
+    border-radius: 0;
+    /* 오른쪽 끝까지 채우기 위한 추가 설정 */
+    box-sizing: content-box;
+}
+
+/* 인벤토리 아이템 개수 표시 */
+.item-counter {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 28px;
+    height: 28px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    align-items: center;
+}
+
+.item-count-text {
+    color: rgb(0, 0, 0);
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+}

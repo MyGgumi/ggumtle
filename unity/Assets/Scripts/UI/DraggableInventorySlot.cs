@@ -368,11 +368,12 @@ public class DraggableInventorySlot
         // Put 액션인지 확인 (인벤토리→상자 이동)
         if (actionValue.ToString() == "Put")
         {
-            Debug.Log($"[DraggableInventorySlot] Put 액션 응답 수신 - 성공: {successValue}, 플래그 즉시 해제");
-            
+            Debug.Log(
+                $"[DraggableInventorySlot] Put 액션 응답 수신 - 성공: {successValue}, 플래그 즉시 해제"
+            );
+
             // 즉시 플래그 해제
             isAnySlotProcessing = false;
         }
     }
-
 }

@@ -55,8 +55,9 @@ public class ServerSimulator : MonoBehaviour
         }
 
         // 전역 아이템 수량 초기화 (테스트용)
-        serverGlobalItems["Apple"] = 100;
-        serverGlobalItems["Stone"] = 100;
+        serverGlobalItems["Apple"] = 20;
+        serverGlobalItems["Stone"] = 20;
+        serverGlobalItems["Mushroom"] = 500; // 꿈틀이 먹이용으로 많이 제공
 
         // 상자들 미리 초기화 (5개 기본 상자)
         InitializePredefinedChests();
@@ -75,168 +76,63 @@ public class ServerSimulator : MonoBehaviour
         {
             ["Chest_0"] = new List<ChestItemData>
             {
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Apple", quantity = 1, description = "Apple 설명" },
+                new ChestItemData { itemName = "Apple", quantity = 1, description = "Apple 설명" },
+                new ChestItemData { itemName = "Stone", quantity = 1, description = "Stone 설명" },
             },
             ["Chest_1"] = new List<ChestItemData>
             {
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Apple", quantity = 1, description = "Apple 설명" },
+                new ChestItemData { itemName = "Stone", quantity = 1, description = "Stone 설명" },
             },
             ["Chest_2"] = new List<ChestItemData>
             {
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Apple", quantity = 1, description = "Apple 설명" },
             },
             ["Chest_3"] = new List<ChestItemData>
             {
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Stone", quantity = 1, description = "Stone 설명" },
             },
             ["Chest_4"] = new List<ChestItemData>
             {
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Stone",
-                    quantity = 1,
-                    description = "Stone 설명",
-                },
-                new ChestItemData
-                {
-                    itemName = "Apple",
-                    quantity = 1,
-                    description = "Apple 설명",
-                },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Mushroom", quantity = 1, description = "신비한 버섯" },
+                new ChestItemData { itemName = "Apple", quantity = 1, description = "Apple 설명" },
+                new ChestItemData { itemName = "Stone", quantity = 1, description = "Stone 설명" },
+                new ChestItemData { itemName = "Stone", quantity = 1, description = "Stone 설명" },
             },
         };
 
@@ -334,11 +230,32 @@ public class ServerSimulator : MonoBehaviour
             return CreateFailureResponse(request, "아이템이 충분하지 않습니다");
         }
 
-        // 플레이어 인벤토리에 공간 확인 및 추가
-        int addedAmount = TryAddToPlayerInventory(request.itemName, request.quantity);
-        if (addedAmount == 0)
+        // Mushroom인 경우 FeedingInventory로, 다른 아이템은 PlayerInventory로
+        int addedAmount = 0;
+        if (request.itemName == "Mushroom")
         {
-            return CreateFailureResponse(request, "인벤토리가 가득 찼습니다");
+            // Mushroom은 먹이 인벤토리로 (제한 없음)
+            addedAmount = request.quantity;
+            
+            // 실제로 FeedingInventory에 추가
+            if (FeedingInventory.Instance != null)
+            {
+                FeedingInventory.Instance.AddMushrooms(addedAmount);
+                Debug.Log($"[ServerSimulator] Mushroom {addedAmount}개 - 먹이 인벤토리로 추가됨");
+            }
+            else
+            {
+                Debug.LogError("[ServerSimulator] FeedingInventory.Instance가 null입니다!");
+            }
+        }
+        else
+        {
+            // 다른 아이템은 플레이어 인벤토리로
+            addedAmount = TryAddToPlayerInventory(request.itemName, request.quantity);
+            if (addedAmount == 0)
+            {
+                return CreateFailureResponse(request, "인벤토리가 가득 찼습니다");
+            }
         }
 
         // 상자에서 아이템 차감
@@ -609,13 +526,29 @@ public class ServerSimulator : MonoBehaviour
         int seed = chestId.GetHashCode();
         UnityEngine.Random.InitState(seed);
 
-        var availableItems = new[] { "Apple", "Stone" };
-        int itemCount = UnityEngine.Random.Range(3, 5); // 3-4개 아이템
+        var availableItems = new[] { "Mushroom", "Apple", "Stone" };
+        int itemCount = UnityEngine.Random.Range(6, 10); // 6-9개 아이템 (9슬롯 최대)
 
         for (int i = 0; i < itemCount; i++)
         {
-            string randomItem = availableItems[UnityEngine.Random.Range(0, availableItems.Length)];
-            int randomQuantity = UnityEngine.Random.Range(1, 6); // 1-5개 수량
+            // Mushroom이 나올 확률을 높임 (70%)
+            string randomItem;
+            float itemRoll = UnityEngine.Random.value;
+            if (itemRoll < 0.7f)
+            {
+                randomItem = "Mushroom";
+            }
+            else if (itemRoll < 0.85f)
+            {
+                randomItem = "Apple";
+            }
+            else
+            {
+                randomItem = "Stone";
+            }
+            
+            // 모든 아이템은 1개씩만 (겹치지 않음)
+            int randomQuantity = 1;
 
             chestItems.Add(
                 new ChestItemData

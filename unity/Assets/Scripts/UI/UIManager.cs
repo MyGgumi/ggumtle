@@ -9,6 +9,7 @@ public class UIManager : MonoBehaviour
     [Header("오버레이 UI들")]
     public ChestBoxUI chestBoxUI;
     public PlayerInventoryUI playerInventoryUI; // 플레이어 인벤토리 UI
+    public FeedingInventoryUI feedingInventoryUI; // 먹이 인벤토리 UI
     public GameObject shopUI; // 나중에 상점 UI
     public GameObject dialogueUI; // 나중에 대화 UI
 
@@ -56,6 +57,9 @@ public class UIManager : MonoBehaviour
 
         if (playerInventoryUI != null)
             uiComponents[typeof(PlayerInventoryUI)] = playerInventoryUI.gameObject;
+
+        if (feedingInventoryUI != null)
+            uiComponents[typeof(FeedingInventoryUI)] = feedingInventoryUI.gameObject;
     }
 
     public void ShowOverlay(GameObject overlay)
@@ -151,6 +155,12 @@ public class UIManager : MonoBehaviour
         //     playerInventoryUI.gameObject.SetActive(false);
         // }
 
+        // 먹이 인벤토리 UI도 항상 표시되어야 하므로 닫지 않음
+        // if (feedingInventoryUI != null && feedingInventoryUI.gameObject.activeInHierarchy)
+        // {
+        //     feedingInventoryUI.gameObject.SetActive(false);
+        // }
+
         Debug.Log("모든 오버레이 닫음");
     }
 
@@ -240,6 +250,22 @@ public class UIManager : MonoBehaviour
         if (playerInventoryUI != null)
         {
             CloseOverlay(playerInventoryUI.gameObject);
+        }
+    }
+
+    public void ShowFeedingInventory()
+    {
+        if (feedingInventoryUI != null)
+        {
+            ShowOverlay(feedingInventoryUI.gameObject);
+        }
+    }
+
+    public void HideFeedingInventory()
+    {
+        if (feedingInventoryUI != null)
+        {
+            CloseOverlay(feedingInventoryUI.gameObject);
         }
     }
 

@@ -2,7 +2,6 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
-import com.ggumtle.ggumtle.dream.application.command.MoveItemCommand;
 import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
 import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
 import com.ggumtle.ggumtle.dream.application.result.ExitOpen;
@@ -10,7 +9,8 @@ import com.ggumtle.ggumtle.dream.application.result.FeedDoneResult;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
-import com.ggumtle.ggumtle.dream.application.result.MoveItemResult;
+import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
+import com.ggumtle.ggumtle.dream.application.result.TakeItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
 import com.ggumtle.ggumtle.dream.application.result.StartFeedResult;
@@ -169,30 +169,20 @@ public class DreamManager {
         box.removeViewer(session);
     }
 
-    public void moveItem(byte directionValue, int boxId, int index, Session session) {
-        MoveItemCommand.DIRECTION direction = MoveItemCommand.DIRECTION.valueOf(directionValue);
-
-        // 방향 변수 검사
-        if (direction == null) {
-            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUNT_DIR, null);
-            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-            session.sendPacket(packet);
-        }
-
+    public void takeItem(int boxId, int index, Session session) {
         // 인덱스 검사
-        if (index < 0
-                || (direction == MoveItemCommand.DIRECTION.BOX_TO_INVENTORY && index >= Box.BOX_SIZE)
-                || (direction == MoveItemCommand.DIRECTION.INVENTORY_TO_BOX && index >= Mongging.INVENTORY_SIZE)) {
-            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.INDEX_OUT_OF_RANGE, null);
-            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+        if (index < 0 || index >= Box.BOX_SIZE) {
+            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.INDEX_OUT_OF_RANGE, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         // 박스 존재 검사
-        if (!boxes.containsKey(boxId)) {
-            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_BOX, null);
-            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+        Box box = boxes.getOrDefault(boxId, null);
+        if (box == null) {
+            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.NOT_FOUND_BOX, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
@@ -200,36 +190,135 @@ public class DreamManager {
         // 플레이어 검사
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (player == null) {
-            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_PLAYER, null);
-            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.NOT_FOUND_PLAYER, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         if (!(player instanceof Mongging mongging)) {
-            MoveItemResult result = new MoveItemResult(MoveItemResult.MoveResult.NOT_MONGGING, null);
-            Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
+            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.NOT_MONGGING, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         // 아이템 이동
-        Box box = boxes.get(boxId);
-        Result result;
-        if (direction == MoveItemCommand.DIRECTION.BOX_TO_INVENTORY) {
-            result = moveItemFromBoxToInventory(index, box, mongging, session);
-        } else {
-            result = moveItemFromInventoryToBox(index, box, mongging, session);
-        }
+        List<Object> lockOrder = Arrays.asList(box, mongging);
+        lockOrder.sort(Comparator.comparing(Object::hashCode));
 
-        if (result == null) {
+        synchronized (lockOrder.get(0)) {
+            synchronized (lockOrder.get(1)) {
+                Item targetItem = box.getItemAt(index);
+                if (targetItem == null) {
+                    Result result = new TakeItemResult(TakeItemResult.TakeResult.NOT_FOUND_BOX, null);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                    return;
+                }
+
+                if (!mongging.canAddItem(targetItem)) {
+                    Result result = new TakeItemResult(TakeItemResult.TakeResult.FULL_ABOUT_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                    return;
+                }
+
+                Item[] popResult = box.popItem(index);
+                boolean success = mongging.addItem(popResult[Box.BOX_SIZE]);
+
+                if (!success) {
+                    log.error("사용자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패했습니다. 인벤토리: {}",
+                            targetItem,
+                            popResult[Box.BOX_SIZE],
+                            Arrays.deepToString(mongging.getItems()));
+
+                    Result result = new TakeItemResult(TakeItemResult.TakeResult.FAIL, null);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                    return;
+                }
+
+                Result result = new TakeItemResult(TakeItemResult.TakeResult.SUCCESS, popResult);
+                Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                session.sendPacket(packet);
+            }
+        }
+    }
+
+    public void putItem(int itemId, int boxId, Session session) {
+        Item targetItem = Item.valueOf(itemId);
+        if (targetItem == null) {
+            Result result = new PutItemResult(PutItemResult.PutResult.ILLEGAL_ITEM_ID, null);
+            Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
             return;
         }
 
-        Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-        List<Session> viewers = box.getViewers();
-        for (Session viewer : viewers) {
-            viewer.sendPacket(packet);
+        // 박스 존재 검사
+        Box box = boxes.getOrDefault(boxId, null);
+        if (box == null) {
+            Result result = new PutItemResult(PutItemResult.PutResult.NOT_FOUND_BOX, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // 플레이어 검사
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        if (player == null) {
+            Result result = new PutItemResult(PutItemResult.PutResult.NOT_FOUND_PLAYER, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (!(player instanceof Mongging mongging)) {
+            Result result = new PutItemResult(PutItemResult.PutResult.NOT_MONGGING, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        List<Object> lockOrder = Arrays.asList(box, mongging);
+        lockOrder.sort(Comparator.comparing(Object::hashCode));
+        synchronized (lockOrder.get(0)) {
+            synchronized (lockOrder.get(1)) {
+                int count = mongging.countItem(targetItem);
+                if (count == 0) {
+                    Result result = new PutItemResult(PutItemResult.PutResult.NOT_FOUND_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                    return;
+                }
+
+                if (!box.canAddItem(targetItem)) {
+                    Result result = new PutItemResult(PutItemResult.PutResult.FULL_ABOUT_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                    return;
+                }
+
+                Item poppedItem = mongging.popItem(targetItem);
+                boolean success = box.addItem(poppedItem);
+
+                if (!success) {
+                    log.error("상자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패했습니다. 상자: {}",
+                            targetItem,
+                            poppedItem,
+                            Arrays.deepToString(mongging.getItems()));
+
+                    Result result = new PutItemResult(PutItemResult.PutResult.FAIL, null);
+                    Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+                    return;
+                }
+
+                Result result = new PutItemResult(PutItemResult.PutResult.SUCCESS, box.getItems());
+                Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                session.sendPacket(packet);
+                return;
+            }
         }
     }
 
@@ -317,8 +406,8 @@ public class DreamManager {
         }
 
         Mongging mongging = (Mongging) players.get(session.getMemberId());
-        int index = mongging.findItemIndex(Item.GGUMTLE_FEED);
-        if (index == -1) {
+        int count = mongging.countItem(Item.GGUMTLE_FEED);
+        if (count == 0) {
             StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.LACK_OF_FEED_ITEM);
             Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
@@ -327,7 +416,7 @@ public class DreamManager {
 
         Runnable task = () -> {
             final int left = ggumtle.feed();
-            mongging.popItem(index);
+            mongging.popItem(Item.GGUMTLE_FEED);
 
             // 성불시키면 종료
             if (left <= 0) {
@@ -409,90 +498,6 @@ public class DreamManager {
         Result result = new ExitOpen(this.exits.values().stream().toList());
         Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
-    }
-
-    /**
-     * 아이템을 박스에서 인벤토리로 이동한다.
-     * 이동에 실패할 경우 주어진 세션에 메시지를 전송하고, 이동에 성공하면 이동 결과를 반환한다.
-     */
-    private Result moveItemFromBoxToInventory(int index, Box box, Mongging mongging, Session session) {
-        List<Object> lockOrder = Arrays.asList(box, mongging);
-        lockOrder.sort(Comparator.comparing(Object::hashCode));
-
-        synchronized (lockOrder.get(0)) {
-            synchronized (lockOrder.get(1)) {
-                Item targetItem = box.getItemAt(index);
-                if (targetItem == null) {
-                    Result result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_BOX, null);
-                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-                    session.sendPacket(packet);
-                }
-
-                if (!mongging.canAddItem(targetItem)) {
-                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FULL_ABOUT_ITEM, null);
-                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-                    session.sendPacket(packet);
-                }
-
-                Item[] popResult = box.popItem(index);
-                boolean success = mongging.addItem(popResult[Box.BOX_SIZE]);
-
-                if (!success) {
-                    log.error("사용자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패했습니다. 인벤토리: {}",
-                            targetItem,
-                            popResult[Box.BOX_SIZE],
-                            Arrays.deepToString(mongging.getItems()));
-
-                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FAIL, null);
-                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-                    session.sendPacket(packet);
-                }
-
-                return new MoveItemResult(MoveItemResult.MoveResult.SUCCESS, popResult);
-            }
-        }
-    }
-
-    /**
-     * 아이템을 인벤토리에서 상자로 이동한다.
-     * 이동에 실패할 경우 주어진 세션에 메시지를 전송하고, 이동에 성공하면 이동 결과를 반환한다.
-     */
-    private Result moveItemFromInventoryToBox(int index, Box box, Mongging mongging, Session session) {
-        List<Object> lockOrder = Arrays.asList(box, mongging);
-        lockOrder.sort(Comparator.comparing(Object::hashCode));
-
-        synchronized (lockOrder.get(0)) {
-            synchronized (lockOrder.get(1)) {
-                Item targetItem = mongging.getItemAt(index);
-                if (targetItem == null) {
-                    Result result = new MoveItemResult(MoveItemResult.MoveResult.NOT_FOUND_ITEM, null);
-                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-                    session.sendPacket(packet);
-                }
-
-                if (!box.canAddItem(targetItem)) {
-                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FULL_ABOUT_ITEM, null);
-                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-                    session.sendPacket(packet);
-                }
-
-                Item popItem = mongging.popItem(index);
-                boolean success = box.addItem(popItem);
-
-                if (!success) {
-                    log.error("상자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패했습니다. 상자: {}",
-                            targetItem,
-                            popItem,
-                            Arrays.deepToString(mongging.getItems()));
-
-                    Result result = new MoveItemResult(MoveItemResult.MoveResult.FAIL, null);
-                    Packet packet = Packet.of(SendPacketType.MOVE_ITEM_RESULT, System.currentTimeMillis(), result);
-                    session.sendPacket(packet);
-                }
-
-                return new MoveItemResult(MoveItemResult.MoveResult.INDEX_OUT_OF_RANGE, box.getItems());
-            }
-        }
     }
 
     private void initializeMap() {

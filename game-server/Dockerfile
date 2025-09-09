@@ -1,4 +1,6 @@
-FROM ubuntu:latest
-LABEL authors="SSAFY"
+FROM openjdk:21-jdk-slim
 
-ENTRYPOINT ["top", "-b"]
+COPY ./build/libs/*-latest.jar app.jar
+COPY ./.env .env
+
+ENTRYPOINT java -jar app.jar

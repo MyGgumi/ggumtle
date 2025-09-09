@@ -5,13 +5,17 @@ plugins {
 }
 
 group = 'com.ggumtle'
-version = '0.0.1-SNAPSHOT'
+version = '0.0.1'
 description = 'Game server for Ggumtle'
 
 java {
 	toolchain {
 		languageVersion = JavaLanguageVersion.of(21)
 	}
+}
+
+bootJar {
+    archiveBaseName.set('ggumtle-game-server')
 }
 
 configurations {
@@ -55,4 +59,35 @@ dependencies {
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+// bootJar TaskProvider
+def bootJarProvider = tasks.named('bootJar')
+
+// bootJar 결과물을 복사/이름변경해서 app-latest.jar 생성
+tasks.register('bootJarLatest', Copy) {
+    description = 'Copy bootJar output as -latest.jar'
+    dependsOn bootJarProvider
+
+    // 실행 시점에 bootJar 산출물 경로를 가져오도록 lazy 평가
+    from { bootJarProvider.get().archiveFile.get().asFile }
+
+    // 원래 위치와 동일하게 build/libs 로
+    into layout.buildDirectory.dir('libs')
+
+    // 파일명: app-latest.jar
+    rename { String _ ->
+        def base = bootJarProvider.get().archiveBaseName.get()
+        def ext  = bootJarProvider.get().archiveExtension.getOrElse('jar')
+        "${base}-latest.${ext}"
+    }
+}
+
+// build 하면 latest 까지 같이 만들어지도록 연결
+tasks.named('build') {
+    finalizedBy 'bootJarLatest'
+}
+
+tasks.named('bootJar') {
+    finalizedBy 'bootJarLatest'
 }

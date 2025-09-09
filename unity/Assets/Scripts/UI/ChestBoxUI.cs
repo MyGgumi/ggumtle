@@ -128,17 +128,27 @@ public class ChestBoxUI : MonoBehaviour
 
         ChestItem item = chestItems[index];
 
-        // 클라이언트에서 먼저 스택 제한 검사
-        if (PlayerInventory.Instance != null)
+        // Mushroom인 경우 FeedingInventory로, 다른 아이템은 PlayerInventory로
+        bool canAdd = false;
+        if (item.itemName == "Mushroom")
         {
-            bool canAdd = PlayerInventory.Instance.CanAddItem(item.itemName, item.quantity);
-            if (!canAdd)
+            // Mushroom은 FeedingInventory로 (제한 없음)
+            canAdd = true;
+            Debug.Log($"[ChestBoxUI] Mushroom {item.quantity}개 - 먹이 인벤토리로 이동");
+        }
+        else
+        {
+            // 다른 아이템은 기존 PlayerInventory로
+            if (PlayerInventory.Instance != null)
             {
-                Debug.LogWarning(
-                    $"[ChestBoxUI] {item.itemName} x{item.quantity} 획득 불가 - 인벤토리 가득 참 또는 스택 제한"
-                );
-                // TODO: UI로 사용자에게 알림 표시
-                return;
+                canAdd = PlayerInventory.Instance.CanAddItem(item.itemName, item.quantity);
+                if (!canAdd)
+                {
+                    Debug.LogWarning(
+                        $"[ChestBoxUI] {item.itemName} x{item.quantity} 획득 불가 - 인벤토리 가득 참 또는 스택 제한"
+                    );
+                    return;
+                }
             }
         }
 

@@ -404,6 +404,12 @@ public class PlayerInventory : MonoBehaviour
         {
             if (successValue && dataField != null)
             {
+                // Take 액션에서 Mushroom 획득 처리
+                if (actionValue.ToString() == "Take")
+                {
+                    HandleMushroomTakeResponse(responseObj);
+                }
+
                 // 서버에서 성공적으로 처리됨 - 플레이어 인벤토리 동기화
                 var dataValue = dataField.GetValue(responseObj);
                 if (dataValue != null)
@@ -639,6 +645,51 @@ public class PlayerInventory : MonoBehaviour
                 isAnySlotProcessingField.SetValue(null, false);
                 Debug.Log("[PlayerInventory] 드래그 처리 플래그 즉시 해제 (서버 응답)");
             }
+        }
+    }
+
+    /// <summary>
+    /// Take 액션 응답에서 Mushroom 처리
+    /// </summary>
+    private void HandleMushroomTakeResponse(object responseObj)
+    {
+        try
+        {
+            var responseType = responseObj.GetType();
+            var messageField = responseType.GetField("message");
+            string messageValue = messageField?.GetValue(responseObj)?.ToString() ?? "";
+
+            // 메시지에서 아이템 정보 파싱 (예: "Mushroom 1개를 상자에서 가져왔습니다")
+            if (messageValue.Contains("Mushroom"))
+            {
+                // 간단한 파싱: 숫자 추출
+                var numbers = System.Text.RegularExpressions.Regex.Matches(messageValue, @"\d+");
+                if (numbers.Count > 0 && int.TryParse(numbers[0].Value, out int quantity))
+                {
+                    if (FeedingInventory.Instance != null)
+                    {
+                        FeedingInventory.Instance.AddMushrooms(quantity);
+                        Debug.Log(
+                            $"[PlayerInventory] FeedingInventory에 Mushroom {quantity}개 추가"
+                        );
+                    }
+                }
+                else
+                {
+                    // 파싱 실패시 기본값 1개
+                    if (FeedingInventory.Instance != null)
+                    {
+                        FeedingInventory.Instance.AddMushrooms(1);
+                        Debug.Log(
+                            $"[PlayerInventory] FeedingInventory에 Mushroom 1개 추가 (기본값)"
+                        );
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"[PlayerInventory] Mushroom Take 응답 처리 중 오류: {ex.Message}");
         }
     }
 

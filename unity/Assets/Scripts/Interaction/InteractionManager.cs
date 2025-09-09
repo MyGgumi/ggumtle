@@ -3,6 +3,7 @@ using System.Linq;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 
 /// <summary>
 /// 게임 내 모든 상호작용을 관리하는 중앙 매니저
@@ -19,6 +20,10 @@ public class InteractionManager : MonoBehaviour
 
     [Header("모바일 UI")]
     public Button mobileInteractionButton;
+    
+    // 홀드 상호작용 상태
+    private bool isHoldingInteraction = false;
+    private IInteractable currentHoldInteractable;
 
     // 상호작용 상태
     private bool isInteracting = false;
@@ -74,8 +79,74 @@ public class InteractionManager : MonoBehaviour
         if (mobileInteractionButton != null)
         {
             mobileInteractionButton.gameObject.SetActive(false);
+            
+            // 기존 onClick 리스너는 유지 (레거시 호환성)
             mobileInteractionButton.onClick.AddListener(OnInteractionButtonPressed);
+            
+            // UIVirtualButton 홀드 이벤트 설정
+            SetupUIVirtualButtonHoldEvents();
         }
+    }
+    
+    /// <summary>
+    /// UIVirtualButton 홀드 이벤트 설정
+    /// </summary>
+    private void SetupUIVirtualButtonHoldEvents()
+    {
+        if (mobileInteractionButton == null) return;
+        
+        // UIVirtualButton 컴포넌트 찾기
+        UIVirtualButton virtualButton = mobileInteractionButton.GetComponent<UIVirtualButton>();
+        if (virtualButton != null)
+        {
+            // 홀드 이벤트 연결
+            virtualButton.buttonHoldStartEvent.AddListener(OnInteractionHoldStart);
+            virtualButton.buttonHoldEndEvent.AddListener(OnInteractionHoldEnd);
+            
+            Debug.Log("[InteractionManager] UIVirtualButton 홀드 이벤트 연결 완료");
+        }
+        else
+        {
+            Debug.LogWarning("[InteractionManager] UIVirtualButton 컴포넌트를 찾을 수 없습니다. 기본 Button 컴포넌트만 있나요?");
+            
+            // 폴백: EventTrigger 방식 사용
+            SetupFallbackHoldEvents();
+        }
+    }
+    
+    /// <summary>
+    /// 폴백 홀드 이벤트 설정 (UIVirtualButton이 없는 경우)
+    /// </summary>
+    private void SetupFallbackHoldEvents()
+    {
+        if (mobileInteractionButton == null) return;
+        
+        // EventTrigger 컴포넌트 추가
+        EventTrigger eventTrigger = mobileInteractionButton.GetComponent<EventTrigger>();
+        if (eventTrigger == null)
+        {
+            eventTrigger = mobileInteractionButton.gameObject.AddComponent<EventTrigger>();
+        }
+        
+        // PointerDown 이벤트 (터치 시작)
+        EventTrigger.Entry pointerDownEntry = new EventTrigger.Entry();
+        pointerDownEntry.eventID = EventTriggerType.PointerDown;
+        pointerDownEntry.callback.AddListener((data) => { OnInteractionHoldStart(); });
+        eventTrigger.triggers.Add(pointerDownEntry);
+        
+        // PointerUp 이벤트 (터치 해제)
+        EventTrigger.Entry pointerUpEntry = new EventTrigger.Entry();
+        pointerUpEntry.eventID = EventTriggerType.PointerUp;
+        pointerUpEntry.callback.AddListener((data) => { OnInteractionHoldEnd(); });
+        eventTrigger.triggers.Add(pointerUpEntry);
+        
+        // PointerExit 이벤트 (터치 영역 벗어남)
+        EventTrigger.Entry pointerExitEntry = new EventTrigger.Entry();
+        pointerExitEntry.eventID = EventTriggerType.PointerExit;
+        pointerExitEntry.callback.AddListener((data) => { OnInteractionHoldEnd(); });
+        eventTrigger.triggers.Add(pointerExitEntry);
+        
+        Debug.Log("[InteractionManager] 폴백 홀드 이벤트 설정 완료");
     }
     #endregion
 
@@ -168,6 +239,14 @@ public class InteractionManager : MonoBehaviour
             Debug.Log(
                 $"[InteractionManager] 가까운 상호작용 객체 변경: {currentNearbyInteractable?.GetInteractableName() ?? "없음"} -> {nearestInteractable?.GetInteractableName() ?? "없음"}"
             );
+            
+            // 이전 홀드 상태가 있으면 종료
+            if (isHoldingInteraction && currentHoldInteractable != null)
+            {
+                Debug.Log($"[InteractionManager] 객체 전환으로 인한 홀드 종료: {currentHoldInteractable.GetInteractableName()}");
+                OnInteractionHoldEnd();
+            }
+            
             currentNearbyInteractable = nearestInteractable;
             UpdateInteractionButtonVisibility();
         }
@@ -199,11 +278,85 @@ public class InteractionManager : MonoBehaviour
                     Debug.Log(
                         $"[InteractionManager] {interactable.GetInteractableName()}에서 멀어져서 상호작용 종료 (거리: {distance:F2}m)"
                     );
+                    
+                    // 홀드 중인 객체가 범위를 벗어나면 홀드도 종료
+                    if (isHoldingInteraction && currentHoldInteractable == interactable)
+                    {
+                        Debug.Log($"[InteractionManager] 범위 이탈로 인한 홀드 종료: {interactable.GetInteractableName()}");
+                        OnInteractionHoldEnd();
+                    }
+                    
                     interactable.OnInteractionEnd();
                     EndInteraction(interactable);
                 }
             }
         }
+    }
+    #endregion
+
+    #region 홀드 상호작용 제어
+    /// <summary>
+    /// 상호작용 홀드 시작
+    /// </summary>
+    public void OnInteractionHoldStart()
+    {
+        if (currentNearbyInteractable != null && currentNearbyInteractable.CanInteract())
+        {
+            Debug.Log($"[InteractionManager] 홀드 시작: {currentNearbyInteractable.GetInteractableName()}");
+            
+            isHoldingInteraction = true;
+            currentHoldInteractable = currentNearbyInteractable;
+            
+            // 꿈틀이 타입인지 확인하고 홀드 시작 알림
+            if (currentHoldInteractable is InteractableGgumtle ggumtle)
+            {
+                ggumtle.OnInteractionStart();
+            }
+            else
+            {
+                // 일반 상호작용 객체는 기존 방식으로 처리
+                currentHoldInteractable.Interact();
+            }
+        }
+    }
+    
+    /// <summary>
+    /// 상호작용 홀드 종료
+    /// </summary>
+    public void OnInteractionHoldEnd()
+    {
+        if (isHoldingInteraction && currentHoldInteractable != null)
+        {
+            Debug.Log($"[InteractionManager] 홀드 종료: {currentHoldInteractable.GetInteractableName()}");
+            
+            // 꿈틀이 타입인지 확인하고 홀드 해제 알림
+            if (currentHoldInteractable is InteractableGgumtle ggumtle)
+            {
+                ggumtle.OnInteractionRelease();
+            }
+        }
+        
+        // 홀드 상태는 항상 초기화 (상태 불일치 방지)
+        isHoldingInteraction = false;
+        currentHoldInteractable = null;
+        
+        Debug.Log("[InteractionManager] 홀드 상태 완전 초기화");
+    }
+    
+    /// <summary>
+    /// 현재 홀드 중인지 확인
+    /// </summary>
+    public bool IsHolding()
+    {
+        return isHoldingInteraction;
+    }
+    
+    /// <summary>
+    /// 현재 홀드 중인 객체 반환
+    /// </summary>
+    public IInteractable GetCurrentHoldInteractable()
+    {
+        return currentHoldInteractable;
     }
     #endregion
 
@@ -233,10 +386,19 @@ public class InteractionManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 모바일 상호작용 버튼이 눌렸을 때 호출
+    /// 모바일 상호작용 버튼이 눌렸을 때 호출 (레거시 - 홀드가 없는 경우만 사용)
     /// </summary>
     private void OnInteractionButtonPressed()
     {
+        // UIVirtualButton이 있으면 홀드 이벤트가 처리하므로 여기서는 무시
+        UIVirtualButton virtualButton = mobileInteractionButton?.GetComponent<UIVirtualButton>();
+        if (virtualButton != null)
+        {
+            Debug.Log("[InteractionManager] UIVirtualButton 홀드 이벤트가 처리 중 - onClick 무시");
+            return;
+        }
+        
+        // UIVirtualButton이 없는 경우에만 기존 방식 사용
         if (currentNearbyInteractable != null && currentNearbyInteractable.CanInteract())
         {
             Debug.Log(

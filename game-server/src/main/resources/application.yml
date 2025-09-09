@@ -10,7 +10,7 @@ spring:
 
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: ${MYSQL_URL}
+    url: jdbc:mysql://${MYSQL_HOST}:${MYSQL_PORT}/${MYSQL_DATABASE}?useSSL=${MYSQL_USE_SSL}&serverTimezone=${TIMEZONE}&characterEncoding=${ENCODING}&allowPublicKeyRetrieval=${MYSQL_ALLOW_PUBLIC_KEY_RETRIEVAL}
     username: ${MYSQL_USERNAME}
     password: ${MYSQL_PASSWORD}
 
@@ -24,7 +24,7 @@ spring:
       ddl-auto: update
 
 game-server:
-    port: 8888
+    port: ${GAME_SERVER_PORT}
     max-players-per-room: 6
     tick-rate: 30
     id: 1

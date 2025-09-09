@@ -64,9 +64,11 @@ public class FriendService {
         }
 
         Friend friend = Friend.request(requester,target);
+        String requesterNickname = friend.getFollower().getNickname();
+        String targetNickname = friend.getFollowee().getNickname();
         friendRepository.save(friend);
 
-        return RequestFriendsResult.of(requesterId,targetMemgerId);
+        return RequestFriendsResult.of(requesterId, requesterNickname, targetMemgerId,targetNickname);
     }
 
     @Transactional(readOnly = true)

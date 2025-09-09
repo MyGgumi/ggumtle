@@ -1,9 +1,5 @@
 
 
-/* 숨김 클래스 */
-.hidden {
-  display: none;
-}
 
 /* 플레이어 색상 테마 클래스들 */
 .player-yellow {

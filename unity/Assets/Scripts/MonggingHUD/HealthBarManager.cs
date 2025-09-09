@@ -252,7 +252,21 @@ public class HealthBarManager : MonoBehaviour
     {
         if (_healthBar != null)
         {
-            _healthBar.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            // 모든 숨김 클래스 강제 제거
+            _healthBar.RemoveFromClassList("hidden");
+            _healthBar.RemoveFromClassList("ui-hidden");
+            
+            if (visible)
+            {
+                _healthBar.style.display = DisplayStyle.Flex;
+                _healthBar.AddToClassList("ui-visible");
+                Debug.Log("[HealthBarManager] 체력바 강제 표시 시도");
+            }
+            else
+            {
+                _healthBar.style.display = DisplayStyle.None;
+                _healthBar.AddToClassList("ui-hidden");
+            }
         }
     }
     

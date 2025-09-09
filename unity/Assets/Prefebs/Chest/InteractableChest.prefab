@@ -47,7 +47,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   chestName: "\uC0C1\uC790"
   chestId: Chest_0
-  interactionRange: 3
+  interactionRange: 1.5
   isOpen: 0
   chestAnimator: {fileID: 0}
   openAnimationTrigger: Open
@@ -106,6 +106,18 @@ PrefabInstance:
     - target: {fileID: 6225071514147740668, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
       propertyPath: m_Name
       value: Chest
+      objectReference: {fileID: 0}
+    - target: {fileID: 7524470034809781776, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8069967874999622765, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9100533323770498198, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

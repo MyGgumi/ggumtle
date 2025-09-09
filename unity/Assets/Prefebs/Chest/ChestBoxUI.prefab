@@ -355,6 +355,16 @@ MonoBehaviour:
   itemsContainer: {fileID: 0}
   itemSlotPrefab: {fileID: 0}
   closeButton: {fileID: 2932069136243840575}
+  fixedItemSlots:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
   chestTitleText: {fileID: 0}
   itemCountText: {fileID: 0}
 --- !u!1 &4580983815234060714

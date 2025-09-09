@@ -91,7 +91,7 @@ public class DreamService {
         // 매칭 실패 시 대기열에 추가해 매칭 기다리기
         if (matchedParties.isEmpty()) {
             WaitingParty waitingParty = new WaitingParty(participants.getFirst().getPartyId(), participants.size());
-            waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis());
+            waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis() + 60000);
 
             publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
             return;

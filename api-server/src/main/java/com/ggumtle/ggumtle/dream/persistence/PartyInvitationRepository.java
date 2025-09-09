@@ -4,6 +4,9 @@ import com.ggumtle.ggumtle.dream.domain.PartyInvitation;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface PartyInvitationRepository extends CrudRepository<PartyInvitation, String> {
+    List<PartyInvitation> findAllByInviteeId(Long inviteeId);
 }

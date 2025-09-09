@@ -4,11 +4,13 @@ import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationComman
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.GetInvitationsCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.GetInvitationsResult;
 import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
 import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
@@ -29,9 +31,11 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -174,5 +178,28 @@ public class DreamPartyService {
         }
 
         return new LeavePartyResult(memberIds, leftMemberId, newLeaderId);
+    }
+
+    public GetInvitationsResult getInvitations(GetInvitationsCommand command) {
+        Long requester = command.requesterId();
+
+        List<PartyInvitation> invitations = partyInvitationRepository.findAllByInviteeId(requester);
+
+        List<Long> inviterIds = invitations.stream()
+                .map(PartyInvitation::getInviterId)
+                .toList();
+
+        Map<Long, String> inviterNicknameMap = memberRepository.findAllByIdIn(inviterIds).stream()
+                .collect(Collectors.toMap(Member::getId, Member::getNickname));
+
+        List<GetInvitationsResult.Invitation> invitationInfos = invitations.stream()
+                .filter(invitation -> inviterNicknameMap.containsKey(invitation.getInviterId()))
+                .map(invitation -> new GetInvitationsResult.Invitation(
+                        invitation.getId(),
+                        inviterNicknameMap.get(invitation.getInviterId())
+                ))
+                .toList();
+
+        return new GetInvitationsResult(invitationInfos);
     }
 }

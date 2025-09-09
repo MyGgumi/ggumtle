@@ -6,12 +6,14 @@ import com.ggumtle.ggumtle.dream.application.DreamPartyService;
 import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.GetInvitationsCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.GetInvitationsResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
@@ -20,6 +22,7 @@ import com.ggumtle.ggumtle.dream.presentation.request.AcceptPartyInvitationReque
 import com.ggumtle.ggumtle.dream.presentation.request.InvitePartyRequest;
 import com.ggumtle.ggumtle.dream.presentation.response.AcceptPartyInvitationResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.CreatePartyResponse;
+import com.ggumtle.ggumtle.dream.presentation.response.GetInvitationsResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.InvitePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.LeavePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.ReadyDreamResponse;
@@ -116,6 +119,18 @@ public class DreamController {
         LeavePartyResponse response = new LeavePartyResponse(requesterId,result.newLeaderId());
 
         SendSocketEvent event = new SendSocketEvent(SocketType.LEAVE_PARTY, result.participantMembers(),response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketType.GET_INVITATIONS)
+    public void getInvitations(WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+
+        GetInvitationsCommand command = new GetInvitationsCommand(requesterId);
+        GetInvitationsResult result = dreamPartyService.getInvitations(command);
+        GetInvitationsResponse response = GetInvitationsResponse.from(result);
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.GET_INVITATIONS, List.of(requesterId), response);
         applicationEventPublisher.publishEvent(event);
     }
 }

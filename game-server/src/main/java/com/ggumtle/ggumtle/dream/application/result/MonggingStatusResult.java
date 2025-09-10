@@ -14,7 +14,9 @@ public record MonggingStatusResult(
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum MonggingStatus {
-        ESCAPE(10)
+        KNOCKOUT(50),
+        DEAD(70),
+        ESCAPE(100)
         ;
 
         private final int value;

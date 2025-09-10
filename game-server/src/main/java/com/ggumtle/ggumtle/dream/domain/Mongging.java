@@ -3,6 +3,7 @@ package com.ggumtle.ggumtle.dream.domain;
 import com.ggumtle.ggumtle.dream.vo.Item;
 import com.ggumtle.ggumtle.dream.vo.Position;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -11,9 +12,10 @@ public class Mongging extends Player {
     private static final int BASE_MOVE_SPEED = 100;
     private static final int BASE_HEAL_SPEED = 100;
     private static final int BASE_WORK_SPEED = 100;
-    public static final int INVENTORY_SIZE = 3;
+    private static final int INVENTORY_SIZE = 3;
     private static final int ITEM_ID = 0;
     private static final int ITEM_COUNT = 1;
+    private static final int MAX_KNOCKOUT_COUNT = 3;
 
     protected int hp;
     protected Status status;
@@ -22,9 +24,12 @@ public class Mongging extends Player {
     protected int healSpeed;
     protected int workSpeed;
 
-    private final ConcurrentHashMap <Item, Integer> inventory;
+    protected int knockOutCount = 0;
 
-    public enum Status { ALIVE, DEAD, ESCAPED }
+    private final ConcurrentHashMap <Item, Integer> inventory;
+    private final ConcurrentHashMap<Item, Integer> droppedItems;
+
+    public enum Status { ALIVE, KNOCKOUT, DEAD, ESCAPED }
 
     public Mongging(long id, Position position) {
         super(id, position);
@@ -37,6 +42,7 @@ public class Mongging extends Player {
         this.workSpeed = BASE_WORK_SPEED;
 
         this.inventory = new ConcurrentHashMap<>();
+        this.droppedItems = new ConcurrentHashMap<>();
     }
 
     public synchronized int getHit(int damage) {
@@ -46,8 +52,16 @@ public class Mongging extends Player {
         }
 
         this.hp = 0;
+        this.droppedItems.clear();
+        this.droppedItems.putAll(this.inventory);
         this.inventory.clear();
-        this.status = Status.DEAD;
+        this.status = Status.KNOCKOUT;
+        this.knockOutCount++;
+
+        if (this.knockOutCount > MAX_KNOCKOUT_COUNT) {
+            this.status = Status.DEAD;
+        }
+
         return this.hp;
     }
 
@@ -111,8 +125,16 @@ public class Mongging extends Player {
         return this.inventory.getOrDefault(item, 0);
     }
 
+    public synchronized Map<Item, Integer> getDroppedItems() {
+        return new HashMap<>(this.droppedItems);
+    }
+
     public boolean isNotDead() {
         return this.status == Status.ALIVE && this.hp > 0;
+    }
+
+    public boolean isDead() {
+        return this.status == Status.DEAD;
     }
 
     public synchronized void escape() {

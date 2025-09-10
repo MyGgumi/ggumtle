@@ -1,0 +1,8 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/NotificationBanner.uss" />
+    
+    <!-- 상단 중앙: 알림 배너 (박스 없음) -->
+    <ui:VisualElement name="topBanner" class="notification-banner">
+        <ui:Label text="[꿈틀 정화 +1] 맵이 조금 밝아집니다. (알림 영역)" class="notification-text" />
+    </ui:VisualElement>
+</ui:UXML>

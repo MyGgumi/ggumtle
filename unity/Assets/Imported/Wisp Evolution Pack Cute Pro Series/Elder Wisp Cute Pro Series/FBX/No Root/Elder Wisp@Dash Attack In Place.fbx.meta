@@ -1,5 +1,13 @@
 fileFormatVersion: 2
 guid: cd9888258696e4549a75f9846cab180f
+AssetOrigin:
+  serializedVersion: 1
+  productId: 327135
+  packageName: Wisp Evolution Pack Cute Pro Series
+  packageVersion: 1.0
+  assetPath: Assets/Wisp Evolution Pack Cute Pro Series/Elder Wisp Cute Pro Series/FBX/No
+    Root/Elder Wisp@Dash Attack In Place.fbx
+  uploadId: 774381
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -16,8 +24,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -107,11 +113,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 327135
-  packageName: Wisp Evolution Pack Cute Pro Series
-  packageVersion: 1.0
-  assetPath: Assets/Wisp Evolution Pack Cute Pro Series/Elder Wisp Cute Pro Series/FBX/No
-    Root/Elder Wisp@Dash Attack In Place.fbx
-  uploadId: 774381

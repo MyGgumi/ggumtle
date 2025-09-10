@@ -1,0 +1,13 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/InteractionUI.uss" />
+    
+    <!-- 하단 중앙: 범용 상호작용 UI -->
+    <ui:VisualElement name="interactionUI" class="interaction-container">
+        <ui:Label name="interactionLabel" text="⊙ 땅 파기" class="interaction-label" />
+        <ui:VisualElement name="progressBar" class="scifi-progress-bar">
+            <ui:VisualElement name="progressMask" class="scifi-progress-mask">
+                <ui:VisualElement name="progressFill" class="scifi-progress-fill" style="width: 40%;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

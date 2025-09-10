@@ -104,9 +104,11 @@ public class FriendService {
 
         friend.accept();
         Long followerId = friend.getFollower().getId();
-        String nickname = friend.getFollower().getNickname();
+        String followerNickname = friend.getFollower().getNickname();
+        Long followeeId = friend.getFollowee().getId();
+        String followeeNickname = friend.getFollowee().getNickname();
 
-        return AcceptFriendRequestResult.of(followerId,nickname);
+        return AcceptFriendRequestResult.of(followerId, followerNickname, followeeId, followeeNickname);
     }
 
     @Transactional

@@ -6,7 +6,7 @@ import android.R
 import com.example.designsystem.component.BottomNavItem
 import com.ggumtle.ggumtle.navigation.HomeTabRoute
 import com.ggumtle.ggumtle.navigation.Tab1Route
-import com.ggumtle.ggumtle.navigation.Tab2Route
+import com.ggumtle.ggumtle.navigation.SocialTabRoute
 
 fun getMainBottomItems() = listOf(
     BottomNavItem(
@@ -22,9 +22,9 @@ fun getMainBottomItems() = listOf(
         route = HomeTabRoute::class.qualifiedName
     ),
     BottomNavItem(
-        label = "탭2",
+        label = "소셜",
         iconRes = R.drawable.ic_menu_info_details,
         iconSelectedRes = R.drawable.ic_menu_info_details,
-        route = Tab2Route::class.qualifiedName
+        route = SocialTabRoute::class.qualifiedName
     )
 )

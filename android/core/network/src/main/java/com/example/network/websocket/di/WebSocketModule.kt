@@ -1,17 +1,17 @@
 package com.example.network.websocket.di
 
 import com.example.datastore.AuthManager
-import com.example.network.websocket.datasource.OkHttpWebSocketDataSource
-import com.example.network.websocket.datasource.WebSocketDataSource
-import dagger.*
+import com.example.network.websocket.client.WebSocketClient
+import com.example.network.websocket.client.WebSocketClientImpl
+import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineDispatcher
 import okhttp3.OkHttpClient
 import java.util.concurrent.TimeUnit
-import javax.inject.*
+import javax.inject.Named
+import javax.inject.Singleton
 
-// core/network/websocket/di/WebSocketModule.kt
 @Module
 @InstallIn(SingletonComponent::class)
 object WebSocketModule {
@@ -25,15 +25,16 @@ object WebSocketModule {
             .readTimeout(0, TimeUnit.SECONDS) // WebSocket은 무제한
             .writeTimeout(30, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
+            .pingInterval(30, TimeUnit.SECONDS)
             .build()
     }
 
     @Provides
     @Singleton
-    fun provideWebSocketDataSource(
+    fun provideWebSocketClient(
         @Named("websocket") okHttpClient: OkHttpClient,
         authManager: AuthManager
-    ): WebSocketDataSource {
-        return OkHttpWebSocketDataSource(okHttpClient, authManager)
+    ): WebSocketClient {
+        return WebSocketClientImpl(okHttpClient, authManager)
     }
 }

@@ -37,6 +37,8 @@ dependencies {
     implementation(projects.core.datastore)
     implementation(projects.feature.auth)
     implementation(projects.feature.startup)
+    implementation(projects.feature.social)
+    implementation(projects.feature.home)
 
     implementation(project(":unityLibrary"))
     implementation("androidx.games:games-activity:3.0.5")

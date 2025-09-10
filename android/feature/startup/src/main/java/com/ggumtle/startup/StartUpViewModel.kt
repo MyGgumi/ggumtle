@@ -79,7 +79,7 @@ class StartUpViewModel @Inject constructor(
     }
 
     private fun startTimeoutTimer() = intent {
-        delay(30_000)
+        delay(30_0000)
         if (state.isLoading && !state.isError) {
             reduce {
                 state.copy(

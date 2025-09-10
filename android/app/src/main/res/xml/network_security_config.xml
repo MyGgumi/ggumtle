@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <domain includeSubdomains="false">10.170.248.41</domain>
+        <domain includeSubdomains="false">j13d103.p.ssafy.io</domain>
+    </domain-config>
+</network-security-config>

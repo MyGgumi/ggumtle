@@ -18,4 +18,4 @@ data object HomeTabRoute
 data object Tab1Route
 
 @Serializable
-data object Tab2Route
+data object SocialTabRoute

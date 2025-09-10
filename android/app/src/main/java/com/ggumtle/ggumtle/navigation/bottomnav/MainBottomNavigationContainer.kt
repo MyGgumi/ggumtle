@@ -3,6 +3,7 @@ package com.ggumtle.ggumtle.navigation.bottomnav
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
@@ -25,7 +26,9 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.ggumtle.ggumtle.navigation.HomeTabRoute
 import com.ggumtle.ggumtle.navigation.Tab1Route
-import com.ggumtle.ggumtle.navigation.Tab2Route
+import com.ggumtle.ggumtle.navigation.SocialTabRoute
+import com.ggumtle.home.HomeRoute
+import com.ggumtle.social.SocialRoute
 import com.unity3d.player.UnityPlayer
 
 /**
@@ -38,6 +41,7 @@ fun MainBottomNavigationContainer(
     val bottomNavController = rememberNavController()
     Scaffold(
         containerColor = Color.Transparent,
+        contentWindowInsets = WindowInsets(0),
         bottomBar = {
             MainBottomNavigationBar(navController = bottomNavController)
         }
@@ -50,51 +54,51 @@ fun MainBottomNavigationContainer(
             composable<Tab1Route> {
                 Tab1Screen()
             }
-            composable<Tab2Route> {
-                Tab2Screen()
-            }
             composable<HomeTabRoute> {
-                HomeScreen()
+                HomeRoute()
+            }
+            composable<SocialTabRoute> {
+                SocialRoute()
             }
         }
     }
 }
 
-@Composable
-fun HomeScreen() {
-    var currentPlayer by remember { mutableStateOf(1) }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Transparent),
-        contentAlignment = Alignment.Center
-    ) {
-
-        Row(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Button(onClick = {
-                if (currentPlayer <= 5) {
-                    UnityPlayer.UnitySendMessage("AndroidUnityController", "AddCharacterByNickname", "player$currentPlayer")
-                    currentPlayer++
-                }
-            }) {
-                Text("추가")
-            }
-            Button(onClick = {
-                if (currentPlayer > 1) {
-                    currentPlayer--
-                    UnityPlayer.UnitySendMessage("AndroidUnityController", "RemoveCharacterByNickname", "player$currentPlayer")
-                }
-            }) {
-                Text("삭제")
-            }
-        }
-    }
-}
+//@Composable
+//fun HomeScreen() {
+//    var currentPlayer by remember { mutableStateOf(1) }
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxSize()
+//            .background(Color.Transparent),
+//        contentAlignment = Alignment.Center
+//    ) {
+//
+//        Row(
+//            modifier = Modifier
+//                .align(Alignment.BottomEnd)
+//                .padding(16.dp)
+//        ) {
+//            Button(onClick = {
+//                if (currentPlayer <= 5) {
+//                    UnityPlayer.UnitySendMessage("AndroidUnityController", "AddCharacterByNickname", "player$currentPlayer")
+//                    currentPlayer++
+//                }
+//            }) {
+//                Text("추가")
+//            }
+//            Button(onClick = {
+//                if (currentPlayer > 1) {
+//                    currentPlayer--
+//                    UnityPlayer.UnitySendMessage("AndroidUnityController", "RemoveCharacterByNickname", "player$currentPlayer")
+//                }
+//            }) {
+//                Text("삭제")
+//            }
+//        }
+//    }
+//}
 
 
 @Composable
@@ -107,24 +111,6 @@ fun Tab1Screen() {
     ) {
         Text(
             text = "탭1",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
-        )
-    }
-}
-
-@Composable
-fun Tab2Screen() {
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF1E1E1E)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "탭2",
             color = Color.White,
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,

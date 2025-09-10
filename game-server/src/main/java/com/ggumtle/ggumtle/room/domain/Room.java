@@ -102,7 +102,7 @@ public class Room {
             isAllChanged = sceneChanger.size() >= playerIds.size();
         }
 
-        SceneChangeResult result = new SceneChangeResult(0);
+        SceneChangeResult result = new SceneChangeResult(1);
         Packet packet = Packet.of(SendPacketType.SCENE_CHANGE_RESULT, System.currentTimeMillis(), result);
         playerSessions.get(playerId).sendPacket(packet);
 

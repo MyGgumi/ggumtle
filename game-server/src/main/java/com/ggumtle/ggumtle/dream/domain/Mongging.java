@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Mongging extends Player {
     private static final int BASE_HP = 100;
+    private static final int REVIVE_HP = 50;
     private static final int BASE_MOVE_SPEED = 100;
     private static final int BASE_HEAL_SPEED = 100;
     private static final int BASE_WORK_SPEED = 100;
@@ -135,6 +136,15 @@ public class Mongging extends Player {
 
     public boolean isDead() {
         return this.status == Status.DEAD;
+    }
+
+    public boolean isKnockout() {
+        return this.status == Status.KNOCKOUT;
+    }
+
+    public synchronized void revive() {
+        this.hp = REVIVE_HP;
+        this.status = Status.ALIVE;
     }
 
     public synchronized void escape() {

@@ -4,6 +4,7 @@ import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
 import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
+import com.ggumtle.ggumtle.dream.application.result.DoneReviveResult;
 import com.ggumtle.ggumtle.dream.application.result.DreamEndResult;
 import com.ggumtle.ggumtle.dream.application.result.ExitOpen;
 import com.ggumtle.ggumtle.dream.application.result.EscapeResult;
@@ -13,6 +14,7 @@ import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.MonggingStatusResult;
 import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
+import com.ggumtle.ggumtle.dream.application.result.StartReviveResult;
 import com.ggumtle.ggumtle.dream.application.result.TakeItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
@@ -43,12 +45,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
@@ -62,8 +64,8 @@ public class DreamManager {
     private static final int GGUMTLE_SPAWN_SIZE = 3;
     private static final int WINNING_MONGGING_COUNT = 2;
 
-    private final ScheduledExecutorService ggumtleWorkerThread;
-    private final ConcurrentLinkedDeque<WorkingGgumtleThread> workingGgumtleThreads;
+    private final ScheduledExecutorService workerThreadPool;
+    private final ConcurrentHashMap<Long, WorkingThread> workingThreads;
 
     // 정적 데이터 캐싱
     private final SpawnCache spawnCache;
@@ -95,8 +97,8 @@ public class DreamManager {
 
         log.info("{}번 게임의 초기화 종료", room.getRoomId());
 
-        ggumtleWorkerThread = Executors.newScheduledThreadPool(players.size());
-        workingGgumtleThreads = new ConcurrentLinkedDeque<>();
+        this.workerThreadPool = Executors.newScheduledThreadPool(players.size());
+        this.workingThreads = new ConcurrentHashMap<>();
     }
 
     public void movePlayer(long id, int x, int y, int z) {
@@ -159,6 +161,51 @@ public class DreamManager {
 
             distributeDroppedItem(targetMongging);
         }
+    }
+
+    public void startRevive(long targetMonggingId, Session session) {
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        Player targetPlayer = players.getOrDefault(targetMonggingId, null);
+        if (player == null || targetPlayer == null) {
+            Result result = new StartReviveResult(StartReviveResult.Status.NOT_FOUND_PLAYER);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (!(targetPlayer instanceof Mongging targetMongging) || !(player instanceof Mongging)) {
+            Result result = new StartReviveResult(StartReviveResult.Status.NOT_MONGGING);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (!targetMongging.isKnockout()) {
+            Result result = new StartReviveResult(StartReviveResult.Status.NOT_KNOCKOUT);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        ScheduledFuture<?> future = workerThreadPool.schedule(
+                () -> {
+                    targetMongging.revive();
+
+                    Result result = new DoneReviveResult(targetMongging.getId());
+                    Packet packet = Packet.of(SendPacketType.DONE_REVIVE_RESULT, System.currentTimeMillis(), result);
+                    session.sendPacket(packet);
+
+                    result = new MonggingStatusResult(targetMongging.getId(), MonggingStatusResult.MonggingStatus.NORMAL);
+                    packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+                    this.room.broadcast(packet);
+
+                    workingThreads.remove(session.getMemberId());
+                }, 3, TimeUnit.SECONDS);
+        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.REVIVE, targetMongging.getId()));
+
+        Result result = new StartReviveResult(StartReviveResult.Status.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
     }
 
     public void showBox(int boxId, Session session) {
@@ -357,14 +404,15 @@ public class DreamManager {
             return;
         }
 
-        ScheduledFuture<?> future = ggumtleWorkerThread.schedule(() -> {
-            workingGgumtleThreads.removeIf(thread -> {
-                boolean isSameWork = thread.ggumtleId == ggumtle.getId() && thread.threadType == WorkingGgumtleThread.ThreadType.DIG_UP;
-                if (isSameWork) {
-                    thread.scheduledFuture.cancel(true);
+        ScheduledFuture<?> future = workerThreadPool.schedule(() -> {
+            Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Long, WorkingThread> entry = iterator.next();
+                if (entry.getValue().threadType == WorkingThread.ThreadType.DIG_UP && entry.getValue().ggumtleId == ggumtle.getId()) {
+                    entry.getValue().scheduledFuture.cancel(true);
+                    iterator.remove();
                 }
-                return isSameWork;
-            });
+            }
 
             // 3초를 기다리는 동안 누군가 파냈으면 무시
             if (!ggumtle.tryDigUp()) {
@@ -375,7 +423,7 @@ public class DreamManager {
             Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
         }, 3, TimeUnit.SECONDS);
-        workingGgumtleThreads.add(new WorkingGgumtleThread(session.getMemberId(), ggumtle.getId(), future, WorkingGgumtleThread.ThreadType.DIG_UP));
+        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.getId()));
 
         DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.START_DIGGING);
         Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
@@ -383,17 +431,12 @@ public class DreamManager {
     }
 
     public void stopDigging(Session session) {
-        boolean isStopped = workingGgumtleThreads.removeIf(thread -> {
-            boolean target = thread.playerId == session.getMemberId();
-            if (target) {
-                thread.scheduledFuture.cancel(true);
-            }
-            return target;
-        });
+        WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
 
         Result result;
-        if (isStopped) {
+        if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.DIG_UP) {
             result = new StopDiggingResult(StopDiggingResult.StopResult.STOP);
+            workingThreads.remove(session.getMemberId());
         } else {
             result = new StopDiggingResult(StopDiggingResult.StopResult.NOT_FOUND_DIGGING);
         }
@@ -439,13 +482,14 @@ public class DreamManager {
 
             // 성불시키면 종료
             if (left <= 0) {
-                this.workingGgumtleThreads.removeIf(thread -> {
-                    boolean isSameWork = thread.ggumtleId == ggumtle.getId();
-                    if (isSameWork) {
-                        thread.scheduledFuture.cancel(true);
+                Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<Long, WorkingThread> entry = iterator.next();
+                    if (entry.getValue().ggumtleId == ggumtle.getId()) {
+                        entry.getValue().scheduledFuture.cancel(true);
+                        iterator.remove();
                     }
-                    return isSameWork;
-                });
+                }
 
                 Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
@@ -467,18 +511,13 @@ public class DreamManager {
                 Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
                 session.sendPacket(packet);
 
-                this.workingGgumtleThreads.removeIf(thread -> {
-                    boolean target = thread.playerId == session.getMemberId();
-                    if (target) {
-                        thread.scheduledFuture.cancel(true);
-                    }
-                    return target;
-                });
+                WorkingThread removedThread = workingThreads.remove(session.getMemberId());
+                removedThread.scheduledFuture.cancel(true);
                 return;
             }
         };
-        ScheduledFuture<?> future = ggumtleWorkerThread.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
-        workingGgumtleThreads.add(new WorkingGgumtleThread(session.getMemberId(), ggumtle.getId(), future, WorkingGgumtleThread.ThreadType.FEED));
+        ScheduledFuture<?> future = workerThreadPool.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
+        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.FEED, ggumtle.getId()));
 
         StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.START_FEEDING);
         Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
@@ -486,20 +525,15 @@ public class DreamManager {
     }
 
     public void stopFeeding(Session session) {
-        boolean isStopped = workingGgumtleThreads.removeIf(thread -> {
-            boolean target = thread.playerId == session.getMemberId();
-            if (target) {
-                thread.scheduledFuture.cancel(true);
-            }
-            return target;
-        });
+        WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
 
         Mongging mongging = (Mongging) players.get(session.getMemberId());
         int leftItemCount = mongging.countItem(Item.GGUMTLE_FEED);
 
         Result result;
-        if (isStopped) {
+        if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.FEED) {
             result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, leftItemCount);
+            workingThreads.remove(session.getMemberId());
         } else {
             result = new StopFeedingResult(StopFeedingResult.StopResult.NOT_FOUND, leftItemCount);
         }

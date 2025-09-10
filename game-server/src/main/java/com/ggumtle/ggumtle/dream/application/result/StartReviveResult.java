@@ -4,27 +4,23 @@ import com.ggumtle.ggumtle.common.dto.Result;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
-public record MonggingStatusResult(
-        long playerId,
-        MonggingStatus status
+public record StartReviveResult(
+        Status result
 ) implements Result {
-
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum MonggingStatus {
-        NORMAL(1),
-        KNOCKOUT(50),
-        DEAD(70),
-        ESCAPE(100)
+    public enum Status {
+        SUCCESS((byte) 1),
+        NOT_FOUND_PLAYER((byte) 2),
+        NOT_MONGGING((byte) 10), NOT_KNOCKOUT((byte) 11),
         ;
 
-        private final int value;
+        private final byte value;
     }
 
     @Override
     public byte[] toBytes(Charset charsets) {
-        return ByteBuffer.allocate(12).putLong(playerId).putInt(status.value).array();
+        return new byte[0];
     }
 }

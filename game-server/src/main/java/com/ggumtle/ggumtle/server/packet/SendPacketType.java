@@ -24,6 +24,8 @@ public enum SendPacketType {
 
     // 플레이어 간 상호작용
     HIT_RESULT((short) 51),
+    START_REVIVE_RESULT((short) 53),
+    DONE_REVIVE_RESULT((short) 54),
 
     // 상자 상호작용
     SHOW_BOX_RESULT((short) 61),

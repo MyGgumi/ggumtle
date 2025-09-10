@@ -19,6 +19,7 @@ public enum ReceivePacketType {
     // 플레이어 간 상호작용
     HIT_MONGGING((short) 50),
     START_REVIVE((short) 52),
+    STOP_REVIVE((short) 55),
 
     // 상자 및 아이템 상호작용
     SHOW_BOX((short) 60),

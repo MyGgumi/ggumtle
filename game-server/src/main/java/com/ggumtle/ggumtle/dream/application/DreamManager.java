@@ -127,8 +127,8 @@ public class DreamManager {
             return;
         }
 
-        Mongging target = (Mongging) players.getOrDefault(command.targetId(), null);
-        if (target == null) {
+        Mongging targetMongging = (Mongging) players.getOrDefault(command.targetId(), null);
+        if (targetMongging == null) {
             Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_FOUND_TARGET, -1);
             Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
@@ -136,7 +136,7 @@ public class DreamManager {
         }
 
         Mongdung mongdung = (Mongdung) requester;
-        boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, target);
+        boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, targetMongging);
 
         if (!isHit) {
             Result result = new HitMonggingResult(HitMonggingResult.HitResult.FAIL, -1);
@@ -146,11 +146,19 @@ public class DreamManager {
         }
 
         int damage = mongdung.getDamage();
-        int leftHp = target.getHit(damage);
+        int leftHp = targetMongging.getHit(damage);
 
         Result result = new HitMonggingResult(HitMonggingResult.HitResult.SUCCESS, leftHp);
         Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
-        room.sendPacket(List.of(mongdung.getId(), target.getId()), packet);
+        room.sendPacket(List.of(mongdung.getId(), targetMongging.getId()), packet);
+
+        if (leftHp == 0) {
+            result = new MonggingStatusResult(targetMongging.getId(), targetMongging.isDead() ? MonggingStatusResult.MonggingStatus.DEAD : MonggingStatusResult.MonggingStatus.KNOCKOUT);
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+            this.room.broadcast(packet);
+
+            distributeDroppedItem(targetMongging);
+        }
     }
 
     public void showBox(int boxId, Session session) {
@@ -559,6 +567,13 @@ public class DreamManager {
             result = new DreamEndResult(DreamEndResult.DreamEndStatus.MONGGING_WIN, escapedMonggings, players.values());
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
+        }
+    }
+
+    private void distributeDroppedItem(Mongging mongging) {
+        Map<Item, Integer> droppedItems = mongging.getDroppedItems();
+        for (Map.Entry<Item, Integer> entry : droppedItems.entrySet()) {
+            ItemDistributor.distribute(entry.getKey(), boxes.values().stream().toList(), entry.getValue());
         }
     }
 

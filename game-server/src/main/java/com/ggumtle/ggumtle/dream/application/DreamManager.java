@@ -159,6 +159,11 @@ public class DreamManager {
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
 
+            WorkingThread removedThread = workingThreads.remove(session.getMemberId());
+            if (removedThread != null) {
+                removedThread.scheduledFuture.cancel(true);
+            }
+
             distributeDroppedItem(targetMongging);
         }
     }

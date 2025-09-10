@@ -7,6 +7,7 @@ import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
 import com.ggumtle.ggumtle.dream.application.command.EscapeCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.PutItemCommand;
+import com.ggumtle.ggumtle.dream.application.command.StartReviveCommand;
 import com.ggumtle.ggumtle.dream.application.command.TakeItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.application.command.ShowBoxCommand;
@@ -66,6 +67,13 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.hitMongging(command, session, timestamp.value);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.START_REVIVE)
+    public void handleStartRevive(StartReviveCommand command, Session session, Timestamp timestamp) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.startRevive(command.targetMonggingId(), session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.SHOW_BOX)

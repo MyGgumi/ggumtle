@@ -1,0 +1,55 @@
+/* Inventory 컴포넌트 전용 스타일 */
+
+.inventory-container {
+    /* position styles moved to main USS file */
+}
+
+.inventory-slot {
+    position: absolute;
+    background-size: contain;
+}
+
+.slot-large {
+    right: 100px;
+    top: 30px;
+    width: 100px;
+    height: 100px;
+}
+
+.slot-small {
+    width: 50px;
+    height: 50px;
+}
+
+.slot-small-top {
+    right: 0px;
+    top: 0px;
+}
+
+.slot-small-bottom {
+    right: 0px;
+    top: 80px;
+}
+
+/* 인벤토리 아이템 개수 표시 */
+.item-counter {
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 28px;
+    height: 28px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    align-items: center;
+}
+
+.item-count-text {
+    color: rgb(0, 0, 0);
+    font-size: 16px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+    margin: 0;
+    padding: 0;
+}

@@ -1,0 +1,21 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/HealthBar.uss" />
+    
+    <!-- 왼쪽 하단: 체력바 -->
+    <ui:VisualElement name="healthBar" class="health-bar-container">
+        <!-- 40HP 슬롯 -->
+        <ui:VisualElement name="bar1" class="health-segment health-segment-40">
+            <ui:VisualElement name="bar1Fill" class="health-fill health-fill-normal" />
+        </ui:VisualElement>
+        <!-- 40HP 슬롯 -->
+        <ui:VisualElement name="bar2" class="health-segment health-segment-40-1">
+            <ui:VisualElement name="bar2Fill" class="health-fill health-fill-normal" />
+        </ui:VisualElement>
+        <!-- 20HP 슬롯 (절반 길이) -->
+        <ui:VisualElement name="bar3" class="health-segment health-segment-20">
+            <ui:VisualElement name="bar3Fill" class="health-fill health-fill-shield" />
+        </ui:VisualElement>
+        <!-- HP 아이콘 (절대 위치로 맨 앞에 배치) -->
+        <ui:VisualElement name="hpIcon" class="hp-icon" />
+    </ui:VisualElement>
+</ui:UXML>

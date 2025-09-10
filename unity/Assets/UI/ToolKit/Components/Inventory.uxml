@@ -1,0 +1,25 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/Inventory.uss" />
+    
+    <!-- 인벤토리 슬롯들 (삼각형 배치) -->
+    <ui:VisualElement name="inventorySlots" class="inventory-container">
+        <!-- 큰 슬롯 (왼쪽) -->
+        <ui:VisualElement name="slot1" class="inventory-slot slot-large">
+            <ui:VisualElement name="slot1Counter" class="item-counter">
+                <ui:Label name="slot1Count" text="1" class="item-count-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- 작은 슬롯 (오른쪽 위) -->
+        <ui:VisualElement name="slot2" class="inventory-slot slot-small slot-small-top">
+            <ui:VisualElement name="slot2Counter" class="item-counter">
+                <ui:Label name="slot2Count" text="2" class="item-count-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <!-- 작은 슬롯 (오른쪽 아래) -->        
+        <ui:VisualElement name="slot3" class="inventory-slot slot-small slot-small-bottom">
+            <ui:VisualElement name="slot3Counter" class="item-counter">
+                <ui:Label name="slot3Count" text="3" class="item-count-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

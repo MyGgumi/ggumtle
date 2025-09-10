@@ -1,0 +1,48 @@
+/* InteractionUI 컴포넌트 전용 스타일 */
+
+.interaction-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.interaction-label {
+    color: rgb(255, 255, 255);
+    font-size: 32px;
+    -unity-font-style: bold;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);
+    margin-bottom: 20px;
+}
+
+/* Sci-Fi UI 프로그레스 바 스타일 */
+.scifi-progress-bar {
+    position: relative;
+    width: 400px;
+    height: 48px;
+    background-image: url('project://database/Assets/Sci-Fi UI/_SciFi_GUISkin_/Skin_Assets/bars/progress_bar_background.png');
+    -unity-background-scale-mode: stretch-to-fill;
+    border-radius: 0;
+    border-width: 0;
+}
+
+.scifi-progress-mask {
+    position: absolute;
+    left: 8px;
+    right: 6px;
+    top: 20px;
+    bottom: 20px;
+    overflow: hidden;
+    border-radius: 0;
+}
+
+.scifi-progress-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    background-color: rgba(44, 140, 255, 0.8);
+    border-radius: 0;
+    box-sizing: content-box;
+}

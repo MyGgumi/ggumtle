@@ -1,0 +1,19 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/GameInfo.uss" />
+    
+    <!-- 상단 중앙 박스: 시간 + 상태 -->
+    <ui:VisualElement name="topCenterBox" class="game-info-container">
+
+    <!-- 남은 시간 라벨 -->
+    <ui:VisualElement class="time-display">
+        <ui:Label name="timeLabel1" text="남은 시간" class="time-label" />
+        <ui:Label name="timeLabel" text="14:59" class="time-value" />
+    </ui:VisualElement>
+
+    <!-- 상태 텍스트 (시간과 분리) -->
+    <ui:VisualElement class="status-container">
+        <ui:Label name="statusText" text="• 꿈 속을 탈출하세요." class="status-text" />
+    </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

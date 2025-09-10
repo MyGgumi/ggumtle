@@ -1,0 +1,6 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/QuickChat.uss" />
+    
+    <!-- 채팅 아이콘 영역 -->
+    <ui:VisualElement name="chatIconArea" class="chat-icon-container" />
+</ui:UXML>

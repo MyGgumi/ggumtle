@@ -1,192 +1,33 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
-    <Style src="project://database/Assets/UI/ToolKit/MonggingHUD.uss?fileID=7433441132597879392&amp;guid=&amp;type=3#MonggingHUD" />
-    <ui:VisualElement name="hudRoot" style="width: 100%; height: 100%; position: absolute; -unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;);">
-        
-        
-        <!-- 왼쪽 상단 박스: 꿈틀 + 빛 소지수 -->
-        <ui:VisualElement name="leftTopBox" style="position: absolute; left: 20px; top: 0px; width: auto; height: auto;  border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 15px; padding: 20px;">
-            
-            <!-- 꿈틀 캐릭터와 원형 진행도 영역 -->
-            <ui:VisualElement name="ggumtleArea" style="position: relative; width: 160px; height: 160px; align-self: center; ">
-                <!-- 원형 진행도 -->
-                <ui:VisualElement name="circleWrap" style="position: absolute; width: 130px; height: 130px;">
-                    <!-- 원형 배경 -->
-                    <ui:VisualElement name="circleBase" style="position: absolute; width: 130px; height: 130px; background-color: rgba(0, 0, 0, 0.4); border-radius: 50%;" />
-                    
-                    <!-- 진행도 채우기 - 1/3 -->
-                    <ui:VisualElement name="fillMask_1of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden;">
-                        <ui:VisualElement name="fill_1of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 33%; background-color: rgba(253, 247, 211, 0.2); border-radius: 0 0 65px 65px;" />
-                    </ui:VisualElement>
-                    
-                    <!-- 진행도 채우기 - 2/3 (숨김) -->
-                    <ui:VisualElement name="fillMask_2of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden; display: none;">
-                        <ui:VisualElement name="fill_2of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 67%; background-color: rgba(253, 247, 211, 0.2); border-radius: 0 0 65px 65px;" />
-                    </ui:VisualElement>
-                    
-                    <!-- 진행도 채우기 - 3/3 -->
-                    <ui:VisualElement name="fillMask_3of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden; display: none;">
-                        <ui:VisualElement name="fill_3of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 100%; background-color: rgba(253, 247, 211, 0.2); border-radius: 65px;" />
-                    </ui:VisualElement>
-                    
-                    <!-- 1/3 텍스트 (원 안에) -->
-                    <ui:VisualElement name="count" style="position: absolute; right: 16px; bottom: 12px;">
-                        <ui:Label text="&lt;size=32&gt;1&lt;/size&gt;&lt;size=20&gt;/3&lt;/size&gt;" style="color: rgb(255, 255, 255); font-size: 32px; text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);" />
-                    </ui:VisualElement>
-                </ui:VisualElement>
-                
-                <!-- 꿈틀 캐릭터 (원 위에 겹침) -->
-                <ui:VisualElement name="ggumtle" style="position: absolute; width: 60px; height: 170px; left: 10px; top: 8px; -unity-background-scale-mode: stretch-to-fill;" />
-            </ui:VisualElement>
-            
-            <!-- 소지한 빛 표시 -->
-            <ui:VisualElement name="LightArea" style="display: flex; flex-direction: row; align-items: center; align-self: left;">
-                <ui:VisualElement name="lightIcon" style="width: 48px; height: 48px; background-size: contain; margin-left:10px; margin-right: 10px;" />
-                <ui:Label text="24" style="color: rgb(255, 255, 255); font-size: 32px; text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8);" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-        
-        <!-- 상단 중앙 박스: 시간 + 상태 -->
-<ui:VisualElement name="topCenterBox" 
-style="position: absolute; left: 200px; top: 0px; 
-       width: auto; height: auto; 
-       display: flex; flex-direction: column; 
-       justify-content: flex-start; align-items: flex-start;">
-
-<!-- 남은 시간 라벨 -->
-<ui:VisualElement 
-    style="background-color: rgba(0, 0, 0, 0.4); 
-           border-radius: 8px; padding: 2px 15px; 
-           margin-top: 20px; margin-bottom: 12px; 
-           display: flex; flex-direction: column; 
-           align-items: center;
-           min-width: 160px; width: 160px;">
-    <ui:Label name="timeLabel1" text="남은 시간" 
-              style="color: rgb(200, 200, 200); font-size: 20px; 
-                     text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8); 
-                     text-align: center;" />
-    <ui:Label name="timeLabel" text="14:59" 
-              style="color: rgb(255, 255, 255); font-size: 36px;  
-                     text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8); 
-                     text-align: center;" />
-</ui:VisualElement>
-
-<!-- 상태 텍스트 (시간과 분리) -->
-<ui:VisualElement 
-    style="margin-top: 5px; padding: 4px 12px; 
-           border-radius: 6px;">
-    <ui:Label name="statusText" text="• 꿈 속을 탈출하세요." 
-              style="color: rgb(255, 255, 255); font-size: 24px; 
-                     text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8); 
-                     text-align: center; white-space: normal;" />
-</ui:VisualElement>
-
-</ui:VisualElement>
-
-        
-        <!-- 상단 중앙: 알림 배너 (박스 없음) -->
-        <ui:VisualElement name="topBanner" style="position: absolute; left: 0; right: 0; top: 3%; width: 100%; height: 80px; display: flex; align-items: center; justify-content: center;">
-            <ui:Label text="[꿈틀 정화 +1] 맵이 조금 밝아집니다. (알림 영역)" style="color: rgb(255, 255, 255); font-size: 32px; text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.84); white-space: nowrap;" />
-        </ui:VisualElement>
-        
-        <!-- 오른쪽 상단: 4개 플레이어 영역 -->
-        <ui:VisualElement name="topRightIcons" style="position: absolute; right: 30px; top: 10px; width: 500px; display: flex; flex-direction: row; justify-content: flex-end;">
-            <!-- 플레이어 1 -->
-            <ui:VisualElement name="player1Area" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-right: 10px;">
-                <ui:VisualElement name="icon1" style="width: 100px; height: 100px; background-size: cover;" />
-                <ui:Label name="player1Name" text="플레이어1" style="color: rgb(255, 255, 255); font-size: 20px; text-align: center;" />
-            </ui:VisualElement>
-            <!-- 플레이어 2 -->
-            <ui:VisualElement name="player2Area" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-right: 10px;">
-                <ui:VisualElement name="icon2" style="width: 100px; height: 100px; background-size: cover;" />
-                <ui:Label name="player2Name" text="플레이어2" style="color: rgb(255, 255, 255); font-size: 20px; text-align: center;" />
-            </ui:VisualElement>
-            <!-- 플레이어 3 -->
-            <ui:VisualElement name="player3Area" style="display: flex; flex-direction: column; align-items: center; gap: 8px; margin-right: 10px;">
-                <ui:VisualElement name="icon3" style="width: 100px; height: 100px; background-size: cover;" />
-                <ui:Label name="player3Name" text="플레이어3" style="color: rgb(255, 255, 255); font-size: 20px; text-align: center;" />
-            </ui:VisualElement>
-            <!-- 플레이어 4 -->
-            <ui:VisualElement name="player4Area" style="display: flex; flex-direction: column; align-items: center; gap: 8px;">
-                <ui:VisualElement name="icon4" style="width: 100px; height: 100px; background-size: cover;" />
-                <ui:Label name="player4Name" text="플레이어4" style="color: rgb(255, 255, 255); font-size: 20px; text-align: center;" />
-            </ui:VisualElement>
-        </ui:VisualElement>
-        
-        <!-- 채팅 아이콘 영역 -->
-        <ui:VisualElement name="chatIconArea" style="position: absolute; right: 30px; top: 200px; width: 80px; height: 80px; background-image: url(&quot;project://database/Assets/UI/ToolKit/Sprites/icon_quick-chat.png?fileID=2800000&amp;guid=&amp;type=3#icon_quick-chat&quot;); background-size: contain; margin-right:20px" />
-        
-        <!-- 하단 중앙: 범용 상호작용 UI -->
-        <ui:VisualElement name="interactionUI" style="position: absolute; left: 0; right: 0; bottom: 5%; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-            <ui:Label name="interactionLabel" text="⊙ 땅 파기" style="color: rgb(255, 255, 255); font-size: 32px; -unity-font-style: bold; text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.8); margin-bottom:20px" />
-            <ui:VisualElement name="progressBar" class="scifi-progress-bar">
-                <ui:VisualElement name="progressMask" class="scifi-progress-mask">
-                    <ui:VisualElement name="progressFill" class="scifi-progress-fill" style="width: 40%;" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
-
-        <!-- 왼쪽 하단: 체력바 -->
-        <ui:VisualElement name="healthBar" style="position: absolute; width: auto; left: 30px; bottom: 30px; display: flex; flex-direction: row; align-items: center; padding: 8px;">
-            <!-- 40HP 슬롯 -->
-            <ui:VisualElement name="bar1" style="width: 120px; height: 16px; background-color: rgba(20, 20, 20, 0.4); border: 3px solid rgba(255, 255, 255, 0.2); border-radius: 3px; margin-right: 15px; position: relative; margin-left: 35px;">
-                <ui:VisualElement name="bar1Fill" style="position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.4); border-radius: 3px;" />
-            </ui:VisualElement>
-            <!-- 40HP 슬롯 -->
-            <ui:VisualElement name="bar2" style="width: 120px; height: 16px; background-color: rgba(20, 20, 20, 0.4); border: 3px solid rgba(255, 255, 255, 0.2); border-radius: 3px; margin-right: 15px; position: relative;">
-                <ui:VisualElement name="bar2Fill" style="position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.4); border-radius: 3px;" />
-            </ui:VisualElement>
-            <!-- 20HP 슬롯 (절반 길이) -->
-            <ui:VisualElement name="bar3" style="width: 60px; height: 16px; background-color: rgba(30, 30, 30, 0.4); border: 3px solid rgba(235, 235, 235, 0.2); border-radius: 3px; position: relative;">
-                <ui:VisualElement name="bar3Fill" style="position: absolute; left: 0; bottom: 0; width: 100%; height: 100%; background-color: rgba(235, 255, 123, 0.4); border-radius: 3px;" />
-            </ui:VisualElement>
-            <!-- HP 아이콘 (절대 위치로 맨 앞에 배치) -->
-            <ui:VisualElement name="hpIcon" style="width: 50px; height: 50px; background-image: url(&quot;project://database/Assets/UI/ToolKit/Sprites/icon_hp.png?fileID=2800000&amp;guid=&amp;type=3#icon_hp&quot;); background-size: contain; position: absolute; left: 8px; top: 50%; translate: 0 -50%;" />
-        </ui:VisualElement>
-        
-        <!-- 오른쪽 하단: 액션 버튼들 (사선 배치) - UI Canvas 터치 시스템 사용으로 주석 처리 -->
-        <!--
-        <ui:VisualElement name="actionButtons" style="position: absolute; right: 0px; bottom: 0px;">
-            상호작용 버튼 (오른쪽 위)
-            <ui:Button name="interactionButton" style="position: absolute; right: 30px; bottom: 240px; width: 100px; height: 100px; background-image: url(&quot;project://database/Assets/UI/ToolKit/Sprites/UI_Circle_Bevel_Base.png?fileID=2800000&amp;guid=ce8c3aac3e3c1a74badd63b5e8f6b0c8&amp;type=3#UI_Circle_Bevel_Base&quot;); border: none; background-color: rgba(0, 0, 0, 0); border-width: 0; border-color: rgba(0, 0, 0, 0); border-radius: 0; display: flex; align-items: center; justify-content: center; background-size: contain;">
-                <ui:Label text="🤚" style="color: rgb(200, 50, 50); font-size: 40px; pointer-events: none;" />
-            </ui:Button>
-            
-            달리기/스프린트 버튼 (중간)
-            <ui:Button name="sprintButton" style="position: absolute; right: 100px; bottom: 140px; width: 100px; height: 100px; background-image: url(&quot;project://database/Assets/UI/ToolKit/Sprites/UI_Circle_Bevel_Base.png?fileID=2800000&amp;guid=ce8c3aac3e3c1a74badd63b5e8f6b0c8&amp;type=3#UI_Circle_Bevel_Base&quot;); border: none; background-color: rgba(0, 0, 0, 0); border-width: 0; border-color: rgba(0, 0, 0, 0); border-radius: 0; display: flex; align-items: center; justify-content: center; background-size: contain;">
-                <ui:Label text="🏃" style="font-size: 40px; pointer-events: none;" />
-            </ui:Button>
-            
-            점프 버튼 (왼쪽 아래)
-            <ui:Button name="jumpButton" style="position: absolute; right: 170px; bottom: 40px; width: 100px; height: 100px; background-image: url(&quot;project://database/Assets/UI/ToolKit/Sprites/UI_Circle_Bevel_Base.png?fileID=2800000&amp;guid=ce8c3aac3e3c1a74badd63b5e8f6b0c8&amp;type=3#UI_Circle_Bevel_Base&quot;); border: none; background-color: rgba(0, 0, 0, 0); border-width: 0; border-color: rgba(0, 0, 0, 0); border-radius: 0; display: flex; align-items: center; justify-content: center; background-size: contain;">
-                <ui:Label text="⬆" style="font-size: 40px; pointer-events: none;" />
-            </ui:Button>
-        </ui:VisualElement>
-        -->
-        
-        <!-- 인벤토리 슬롯들 (삼각형 배치) -->
-        <ui:VisualElement name="inventorySlots" style="position: absolute; right: 30px; top: 340px;">
-            <!-- 큰 슬롯 (왼쪽) -->
-            <ui:VisualElement name="slot1" style="position: absolute; right: 100px; top: 30px; width: 100px; height: 100px; background-size: contain;">
-                <ui:VisualElement name="slot1Counter" class="item-counter">
-                    <ui:Label name="slot1Count" text="1" class="item-count-text" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-            <!-- 작은 슬롯 (오른쪽 위) -->
-            <ui:VisualElement name="slot2" style="position: absolute; right: 0px; top: 0px; width: 50px; height: 50px; background-size: contain;">
-                <ui:VisualElement name="slot2Counter" class="item-counter">
-                    <ui:Label name="slot2Count" text="2" class="item-count-text" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-            <!-- 작은 슬롯 (오른쪽 아래) -->        
-            <ui:VisualElement name="slot3" style="position: absolute; right: 0px; top: 80px; width: 50px; height: 50px; background-size: contain;">
-                <ui:VisualElement name="slot3Counter" class="item-counter">
-                    <ui:Label name="slot3Count" text="3" class="item-count-text" />
-                </ui:VisualElement>
-            </ui:VisualElement>
-        </ui:VisualElement>
-        
-        <!-- 기절 상태 오버레이 -->
-        <ui:VisualElement name="faintOverlay" class="ui-hidden" style="position: absolute; left: 0; right: 0; top: 0; bottom: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.6);">
-        </ui:VisualElement>
+    
+    <ui:Template name="GameInfo" src="project://database/Assets/UI/ToolKit/Components/GameInfo.uxml?fileID=9197481963319205126&amp;guid=e3965d9af08c24f479cc02e118179340&amp;type=3#GameInfo" />
+    <ui:Template name="Inventory" src="project://database/Assets/UI/ToolKit/Components/Inventory.uxml?fileID=9197481963319205126&amp;guid=cfe100478786d1c4ebe2f130a2e650f7&amp;type=3#Inventory" />
+    <ui:Template name="PlayerList" src="project://database/Assets/UI/ToolKit/Components/PlayerList.uxml?fileID=9197481963319205126&amp;guid=7aa3109ab6e14b44fa2802d9154e8d25&amp;type=3#PlayerList" />
+    <ui:Template name="PlayerStatus" src="project://database/Assets/UI/ToolKit/Components/PlayerStatus.uxml?fileID=9197481963319205126&amp;guid=59d966a1aab139b40b92c7330156f815&amp;type=3#PlayerStatus" />
+    <ui:Template name="QuickChat" src="project://database/Assets/UI/ToolKit/Components/QuickChat.uxml?fileID=9197481963319205126&amp;guid=52e3588273804d646ae286547e13e9e5&amp;type=3#QuickChat" />
+    <ui:Template name="NotificationBanner" src="project://database/Assets/UI/ToolKit/Components/NotificationBanner.uxml?fileID=9197481963319205126&amp;guid=1a2f442117d2f9345972d47cd518cbc6&amp;type=3#NotificationBanner" />
+    <ui:Template name="HealthBar" src="project://database/Assets/UI/ToolKit/Components/HealthBar.uxml?fileID=9197481963319205126&amp;guid=1a6b838260d56aa4c8f12cb05565cc16&amp;type=3#HealthBar" />
+    <ui:Template name="InteractionUI" src="project://database/Assets/UI/ToolKit/Components/InteractionUI.uxml?fileID=9197481963319205126&amp;guid=ba92ccd9333ef174db991798bfcf541d&amp;type=3#InteractionUI" />
+    
+    <Style src="project://database/Assets/UI/ToolKit/MonggingHUD_New.uss?fileID=7433441132597879392&amp;guid=7684af9551fd7e140b2f67216bb48364&amp;type=3#MonggingHUD_New" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/PlayerStatus.uss?fileID=7433441132597879392&amp;guid=2b3105edd57cce84195438e43b1ff0fa&amp;type=3#PlayerStatus" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/GameInfo.uss?fileID=7433441132597879392&amp;guid=a0ad01fa0edcb834baee0e09919175db&amp;type=3#GameInfo" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/PlayerList.uss?fileID=7433441132597879392&amp;guid=4c83e41d0cc6c5044b933502cd96ffab&amp;type=3#PlayerList" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/NotificationBanner.uss?fileID=7433441132597879392&amp;guid=003dcb64092ef164093c585b69d784f1&amp;type=3#NotificationBanner" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/InteractionUI.uss?fileID=7433441132597879392&amp;guid=925c7e208781833439030ce1de96c7bb&amp;type=3#InteractionUI" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/HealthBar.uss?fileID=7433441132597879392&amp;guid=7dee1fa434b35a741bad95728a9de109&amp;type=3#HealthBar" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/Inventory.uss?fileID=7433441132597879392&amp;guid=b54ca6f63693fbc4f8372715a500e65c&amp;type=3#Inventory" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/QuickChat.uss?fileID=7433441132597879392&amp;guid=d585259c3cd0e584fb793310da491b25&amp;type=3#QuickChat" />
+    
+    <ui:VisualElement name="hudRoot" class="hudRoot">
+        <ui:Instance template="GameInfo" name="gameInfo"/>
+        <ui:Instance template="Inventory" name="inventory"/>
+        <ui:Instance template="PlayerList" name="playerList"/>
+        <ui:Instance template="PlayerStatus" name="playerStatus"/>
+        <ui:Instance template="QuickChat" name="quickChat"/>
+        <ui:Instance template="NotificationBanner" name="notificationBanner"/>
+        <ui:Instance template="HealthBar" name="healthBar"/>
+        <ui:Instance template="InteractionUI" name="interactionUI"/>
     </ui:VisualElement>
+
 </ui:UXML>

@@ -1,0 +1,56 @@
+/* PlayerList 컴포넌트 전용 스타일 */
+
+.player-list-container {
+    width: 500px;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-end;
+}
+
+.player-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-right: 10px;
+}
+
+.player-area:last-child {
+    margin-right: 0;
+}
+
+.player-icon {
+    width: 100px;
+    height: 100px;
+    background-size: cover;
+}
+
+.player-name {
+    color: rgb(255, 255, 255);
+    font-size: 20px;
+    text-align: center;
+}
+
+/* 플레이어 색상 테마 클래스들 */
+.player-yellow {
+    -unity-background-image-tint-color: rgba(255, 200, 80, 1.0);
+}
+
+.player-mint {
+    -unity-background-image-tint-color: rgba(80, 255, 200, 1.0);
+}
+
+.player-pink {
+    -unity-background-image-tint-color: rgba(255, 150, 200, 1.0);
+}
+
+/* 플레이어 상태 클래스들 */
+.player-online {
+    opacity: 1.0;
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.player-offline {
+    opacity: 0.5;
+    border-color: rgba(128, 128, 128, 0.5);
+}

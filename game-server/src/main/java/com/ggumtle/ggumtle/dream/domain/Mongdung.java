@@ -8,13 +8,13 @@ import lombok.Getter;
 public class Mongdung extends Player {
     private static final int BASE_MOVE_SPEED = 100;
     private static final int BASE_DAMAGE = 40;
-    private static final int BASE_SCARE_COOL_TIME = 3;
-    private static final double HIT_SIZE_X = 0.5;
-    private static final double HIT_SIZE_Y = 1;
-    private static final double HIT_SIZE_Z = 0.5;
-    private static final double TARGET_SIZE_X = 1;
-    private static final double TARGET_SIZE_Y = 2;
-    private static final double TARGET_SIZE_Z = 1;
+    private static final int BASE_SCARE_COOL_TIME = 30 * 1000;
+    private static final double HIT_SIZE_X = 500;
+    private static final double HIT_SIZE_Y = 1000;
+    private static final double HIT_SIZE_Z = 500;
+    private static final double TARGET_SIZE_X = 1000;
+    private static final double TARGET_SIZE_Y = 2000;
+    private static final double TARGET_SIZE_Z = 1000;
 
     protected int moveSpeed;
     private long lastScareTime;

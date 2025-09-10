@@ -12,6 +12,7 @@ import com.ggumtle.ggumtle.dream.application.result.FeedDoneResult;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
+import com.ggumtle.ggumtle.dream.application.result.MongdungSkillResult;
 import com.ggumtle.ggumtle.dream.application.result.MonggingStatusResult;
 import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
 import com.ggumtle.ggumtle.dream.application.result.StartReviveResult;
@@ -73,8 +74,8 @@ public class DreamManager {
 
     // 인게임 캐시
     private final Room room;
-    private Map<Long, Player> players;
-    private Set<Long> escapedMonggings;
+    private final Map<Long, Player> players;
+    private final Set<Long> escapedMonggings;
     private final Map<Integer, Ggumtle> ggumtles;
     private final Map<Integer, Box> boxes;
     private final Map<Integer, Exit> exits;
@@ -85,11 +86,12 @@ public class DreamManager {
 
         this.spawnCache = spawnCache;
         this.room = room;
+        this.players = new HashMap<>();
+        this.escapedMonggings = ConcurrentHashMap.newKeySet();
         this.ggumtles = new HashMap<>();
         this.boxes = new HashMap<>();
         this.exits = new HashMap<>();
         this.isExitOpen = new AtomicBoolean(false);
-        this.escapedMonggings = ConcurrentHashMap.newKeySet();
 
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
 
@@ -123,7 +125,7 @@ public class DreamManager {
             return;
         }
 
-        if (!(requester instanceof Mongdung)) {
+        if (!(requester instanceof Mongdung mongdung)) {
             Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_MONGDUNG, -1);
             Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
@@ -138,7 +140,6 @@ public class DreamManager {
             return;
         }
 
-        Mongdung mongdung = (Mongdung) requester;
         boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, targetMongging);
 
         if (!isHit) {
@@ -226,6 +227,43 @@ public class DreamManager {
         }
         Packet packet = Packet.of(SendPacketType.STOP_REVIVE_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
+    }
+
+    public void doSkill(int skillTypeId, Session session) {
+        Mongdung.SkillType skillType = Mongdung.SkillType.valueById(skillTypeId);
+        if (skillType == null) {
+            Result result = new MongdungSkillResult(skillTypeId, MongdungSkillResult.Status.NOT_FOUND_SKILL);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        if (!(player instanceof Mongdung mongdung)) {
+            Result result = new MongdungSkillResult(skillTypeId, MongdungSkillResult.Status.NOT_FOUND_MONGDUNG);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (skillType == Mongdung.SkillType.SCARE) {
+            makeScare(mongdung, session);
+        }
+    }
+
+    public void makeScare(Mongdung mongdung, Session session) {
+        boolean success = mongdung.scare();
+
+        if (!success) {
+            Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.YET_COOL_TIME);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
     }
 
     public void showBox(int boxId, Session session) {
@@ -671,7 +709,7 @@ public class DreamManager {
 
         int mongdungIndex = pickMongdungIndex(playerIds.size());
 
-        this.players = new HashMap<>();
+        this.players.clear();
         for (int i = 0; i < playerIds.size(); i++) {
             if (i == mongdungIndex) {
                 Mongdung mongdung = new Mongdung(playerIds.get(i), Position.from(playerSpawns.get(i)));

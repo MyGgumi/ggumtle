@@ -1,11 +1,14 @@
 package com.ggumtle.ggumtle.dream.domain;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 public class Mongdung extends Player {
     private static final int BASE_MOVE_SPEED = 100;
     private static final int BASE_DAMAGE = 40;
+    private static final int BASE_SCARE_COOL_TIME = 3;
     private static final double HIT_SIZE_X = 0.5;
     private static final double HIT_SIZE_Y = 1;
     private static final double HIT_SIZE_Z = 0.5;
@@ -14,6 +17,7 @@ public class Mongdung extends Player {
     private static final double TARGET_SIZE_Z = 1;
 
     protected int moveSpeed;
+    private long lastScareTime;
 
     @Getter
     protected int damage;
@@ -23,6 +27,7 @@ public class Mongdung extends Player {
 
         this.moveSpeed = BASE_MOVE_SPEED;
         this.damage = BASE_DAMAGE;
+        this.lastScareTime = 0;
     }
 
     public boolean detectHit(int vx, int vy, int vz, long timestamp, Player target) {
@@ -54,5 +59,34 @@ public class Mongdung extends Player {
         return (hitMinX <= targetMaxX && hitMaxX >= targetMinX) &&
                 (hitMinY <= targetMaxY && hitMaxY >= targetMinY) &&
                 (hitMinZ <= targetMaxZ && hitMaxZ >= targetMinZ);
+    }
+
+    public synchronized boolean scare() {
+        long now = System.currentTimeMillis();
+
+        if (this.lastScareTime + BASE_SCARE_COOL_TIME > now) {
+            return false;
+        }
+
+        this.lastScareTime = now;
+        return true;
+    }
+
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public enum SkillType {
+        SCARE(1), FAKE_GGUMTLE(2);
+
+        @Getter
+        private final int id;
+
+        public static SkillType valueById(int id) {
+            for (SkillType skillType : SkillType.values()) {
+                if (skillType.id == id) {
+                    return skillType;
+                }
+            }
+
+            return null;
+        }
     }
 }

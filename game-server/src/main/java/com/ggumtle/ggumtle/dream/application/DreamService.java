@@ -6,6 +6,7 @@ import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
 import com.ggumtle.ggumtle.dream.application.command.EscapeCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
+import com.ggumtle.ggumtle.dream.application.command.MongdungSkillCommand;
 import com.ggumtle.ggumtle.dream.application.command.PutItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartReviveCommand;
 import com.ggumtle.ggumtle.dream.application.command.TakeItemCommand;
@@ -81,6 +82,13 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.stopRevive(session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.MONGDUNG_SKILL)
+    public void handleMongdungSkill(MongdungSkillCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.doSkill(command.skillTypeId(), session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.SHOW_BOX)

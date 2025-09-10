@@ -15,6 +15,7 @@ import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.MonggingStatusResult;
 import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
 import com.ggumtle.ggumtle.dream.application.result.StartReviveResult;
+import com.ggumtle.ggumtle.dream.application.result.StopReviveResult;
 import com.ggumtle.ggumtle.dream.application.result.TakeItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
 import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
@@ -210,6 +211,20 @@ public class DreamManager {
 
         Result result = new StartReviveResult(StartReviveResult.Status.SUCCESS);
         Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+    }
+
+    public void stopRevive(Session session) {
+        WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
+
+        Result result;
+        if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.REVIVE) {
+            workingThreads.remove(session.getMemberId());
+            result = new StopReviveResult(StopReviveResult.Status.SUCCESS);
+        } else {
+            result = new StopReviveResult(StopReviveResult.Status.FAIL);
+        }
+        Packet packet = Packet.of(SendPacketType.STOP_REVIVE_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
     }
 

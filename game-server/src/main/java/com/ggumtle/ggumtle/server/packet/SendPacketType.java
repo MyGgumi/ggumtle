@@ -26,6 +26,7 @@ public enum SendPacketType {
     HIT_RESULT((short) 51),
     START_REVIVE_RESULT((short) 53),
     DONE_REVIVE_RESULT((short) 54),
+    STOP_REVIVE_RESULT((short) 56),
 
     // 상자 상호작용
     SHOW_BOX_RESULT((short) 61),

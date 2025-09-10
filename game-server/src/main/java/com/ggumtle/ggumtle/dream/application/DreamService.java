@@ -70,10 +70,17 @@ public class DreamService {
     }
 
     @PacketCommandHandler(type = ReceivePacketType.START_REVIVE)
-    public void handleStartRevive(StartReviveCommand command, Session session, Timestamp timestamp) {
+    public void handleStartRevive(StartReviveCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.startRevive(command.targetMonggingId(), session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.STOP_REVIVE)
+    public void handleStopRevive(Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.stopRevive(session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.SHOW_BOX)

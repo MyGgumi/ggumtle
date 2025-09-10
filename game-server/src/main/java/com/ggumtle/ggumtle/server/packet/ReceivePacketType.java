@@ -17,15 +17,16 @@ public enum ReceivePacketType {
     PLAYER_MOVE((short) 40),
 
     // 플레이어 간 상호작용
-    HIT_MONGGING((short) 50),
-    START_REVIVE((short) 52),
-    STOP_REVIVE((short) 55),
+    HIT_MONGGING((short) 60),
+    START_REVIVE((short) 62),
+    STOP_REVIVE((short) 65),
+    MONGDUNG_SKILL((short) 67),
 
     // 상자 및 아이템 상호작용
-    SHOW_BOX((short) 60),
-    CLOSE_BOX((short) 62),
-    TAKE_ITEM_FROM_BOX((short) 64),
-    PUT_ITEM_TO_BOX((short) 64),
+    SHOW_BOX((short) 50),
+    CLOSE_BOX((short) 52),
+    TAKE_ITEM_FROM_BOX((short) 54),
+    PUT_ITEM_TO_BOX((short) 56),
 
     // 꿈틀이 상호작용
     DIG_UP_GGUMTLE((short) 100),

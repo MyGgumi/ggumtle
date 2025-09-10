@@ -23,16 +23,17 @@ public enum SendPacketType {
     MONGGING_STATUS((short) 42),
 
     // 플레이어 간 상호작용
-    HIT_RESULT((short) 51),
-    START_REVIVE_RESULT((short) 53),
-    DONE_REVIVE_RESULT((short) 54),
-    STOP_REVIVE_RESULT((short) 56),
+    HIT_RESULT((short) 61),
+    START_REVIVE_RESULT((short) 63),
+    DONE_REVIVE_RESULT((short) 64),
+    STOP_REVIVE_RESULT((short) 66),
+    MONGDUNG_SKILL_RESULT((short) 68),
 
     // 상자 상호작용
-    SHOW_BOX_RESULT((short) 61),
-    CLOSE_BOX_RESULT((short) 63),
-    TAKE_ITEM_RESULT((short) 65),
-    PUT_ITEM_RESULT((short) 67),
+    SHOW_BOX_RESULT((short) 51),
+    CLOSE_BOX_RESULT((short) 53),
+    TAKE_ITEM_RESULT((short) 55),
+    PUT_ITEM_RESULT((short) 57),
 
     // 꿈틀이 상호작용
     DIG_UP_RECEIVE((short) 101),

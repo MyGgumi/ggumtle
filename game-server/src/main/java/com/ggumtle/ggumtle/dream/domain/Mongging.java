@@ -16,6 +16,7 @@ public class Mongging extends Player {
     private static final int ITEM_COUNT = 1;
 
     protected int hp;
+    protected Status status;
 
     protected int moveSpeed;
     protected int healSpeed;
@@ -23,10 +24,14 @@ public class Mongging extends Player {
 
     private final ConcurrentHashMap <Item, Integer> inventory;
 
+    public enum Status { ALIVE, DEAD, ESCAPED }
+
     public Mongging(long id, Position position) {
         super(id, position);
 
         this.hp = BASE_HP;
+        this.status = Status.ALIVE;
+
         this.moveSpeed = BASE_MOVE_SPEED;
         this.healSpeed = BASE_HEAL_SPEED;
         this.workSpeed = BASE_WORK_SPEED;
@@ -42,6 +47,7 @@ public class Mongging extends Player {
 
         this.hp = 0;
         this.inventory.clear();
+        this.status = Status.DEAD;
         return this.hp;
     }
 
@@ -103,5 +109,13 @@ public class Mongging extends Player {
 
     public synchronized int countItem(Item item) {
         return this.inventory.getOrDefault(item, 0);
+    }
+
+    public boolean isNotDead() {
+        return this.status == Status.ALIVE && this.hp > 0;
+    }
+
+    public synchronized void escape() {
+        this.status = Status.ESCAPED;
     }
 }

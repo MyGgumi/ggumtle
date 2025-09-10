@@ -21,6 +21,7 @@ public enum SendPacketType {
     // 게임 플레이
     PLAYER_MOVE_RELAY((short) 41),
     MONGGING_STATUS((short) 42),
+    NEW_GGUMTLE((short) 43),
 
     // 플레이어 간 상호작용
     HIT_RESULT((short) 61),

@@ -32,8 +32,8 @@ public class Ggumtle {
         return isDugUp.get();
     }
 
-    public boolean tryDigUp() {
-        return this.isDugUp.compareAndSet(false, true);
+    public int tryDigUp() {
+         return this.isDugUp.compareAndSet(false, true) ? 1 : 0;
     }
 
     public boolean isDone() {

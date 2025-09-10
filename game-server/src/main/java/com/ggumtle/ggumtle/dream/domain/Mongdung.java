@@ -9,6 +9,7 @@ public class Mongdung extends Player {
     private static final int BASE_MOVE_SPEED = 100;
     private static final int BASE_DAMAGE = 40;
     private static final int BASE_SCARE_COOL_TIME = 30 * 1000;
+    private static final int MAX_BURY_COUNT = 3;
     private static final double HIT_SIZE_X = 500;
     private static final double HIT_SIZE_Y = 1000;
     private static final double HIT_SIZE_Z = 500;
@@ -18,6 +19,7 @@ public class Mongdung extends Player {
 
     protected int moveSpeed;
     private long lastScareTime;
+    private int buryFakeGgumtleCount;
 
     @Getter
     protected int damage;
@@ -28,6 +30,7 @@ public class Mongdung extends Player {
         this.moveSpeed = BASE_MOVE_SPEED;
         this.damage = BASE_DAMAGE;
         this.lastScareTime = 0;
+        this.buryFakeGgumtleCount = 0;
     }
 
     public boolean detectHit(int vx, int vy, int vz, long timestamp, Player target) {
@@ -70,6 +73,15 @@ public class Mongdung extends Player {
 
         this.lastScareTime = now;
         return true;
+    }
+
+    public synchronized boolean tryBuryFakeGgumtle() {
+        if (this.buryFakeGgumtleCount < MAX_BURY_COUNT) {
+            this.buryFakeGgumtleCount++;
+            return true;
+        }
+
+        return false;
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)

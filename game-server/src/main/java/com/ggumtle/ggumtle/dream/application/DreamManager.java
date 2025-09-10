@@ -14,6 +14,7 @@ import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
 import com.ggumtle.ggumtle.dream.application.result.MongdungSkillResult;
 import com.ggumtle.ggumtle.dream.application.result.MonggingStatusResult;
+import com.ggumtle.ggumtle.dream.application.result.NewGgumtleResult;
 import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
 import com.ggumtle.ggumtle.dream.application.result.StartReviveResult;
 import com.ggumtle.ggumtle.dream.application.result.StopReviveResult;
@@ -25,6 +26,7 @@ import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
 import com.ggumtle.ggumtle.dream.application.result.StopFeedingResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Exit;
+import com.ggumtle.ggumtle.dream.domain.FakeGgumtle;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Mongdung;
 import com.ggumtle.ggumtle.dream.domain.Mongging;
@@ -58,6 +60,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class DreamManager {
@@ -76,7 +79,8 @@ public class DreamManager {
     private final Room room;
     private final Map<Long, Player> players;
     private final Set<Long> escapedMonggings;
-    private final Map<Integer, Ggumtle> ggumtles;
+    private final ConcurrentHashMap<Integer, Ggumtle> ggumtles;
+    private final AtomicInteger ggumtleIdGenerator;
     private final Map<Integer, Box> boxes;
     private final Map<Integer, Exit> exits;
     private final AtomicBoolean isExitOpen;
@@ -88,7 +92,8 @@ public class DreamManager {
         this.room = room;
         this.players = new HashMap<>();
         this.escapedMonggings = ConcurrentHashMap.newKeySet();
-        this.ggumtles = new HashMap<>();
+        this.ggumtles = new ConcurrentHashMap<>();
+        this.ggumtleIdGenerator = new AtomicInteger(0);
         this.boxes = new HashMap<>();
         this.exits = new HashMap<>();
         this.isExitOpen = new AtomicBoolean(false);
@@ -248,6 +253,12 @@ public class DreamManager {
 
         if (skillType == Mongdung.SkillType.SCARE) {
             makeScare(mongdung, session);
+            return;
+        }
+
+        if (skillType == Mongdung.SkillType.FAKE_GGUMTLE) {
+            buryFakeGgumtle(mongdung, session);
+            return;
         }
     }
 
@@ -263,6 +274,32 @@ public class DreamManager {
 
         Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.SUCCESS);
         Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
+    }
+
+    public void buryFakeGgumtle(Mongdung mongdung, Session session) {
+        Position position = mongdung.getPositionAt(System.currentTimeMillis());
+
+        boolean success = mongdung.tryBuryFakeGgumtle();
+
+        if (!success) {
+            Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.LACK_USE_COUNT);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+
+        int id = ggumtleIdGenerator.addAndGet(1);
+        FakeGgumtle fakeGgumtle = new FakeGgumtle(id, position);
+
+        this.ggumtles.put(id, fakeGgumtle);
+
+        result = new NewGgumtleResult(fakeGgumtle.getId(), fakeGgumtle.getPosition());
+        packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
     }
 
@@ -472,14 +509,18 @@ public class DreamManager {
                 }
             }
 
+            int digUpResult = ggumtle.tryDigUp();
+
             // 3초를 기다리는 동안 누군가 파냈으면 무시
-            if (!ggumtle.tryDigUp()) {
+            if (digUpResult == 0) {
                 return;
             }
 
-            DigUpResult result = new DigUpResult(ggumtle.getId(), true);
+            DigUpResult result = new DigUpResult(ggumtle.getId(), digUpResult == 1);
             Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
+
+            // TODO: 스턴 상태 브로드캐스팅
         }, 3, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.getId()));
 
@@ -675,6 +716,7 @@ public class DreamManager {
         for (int i = 0; i < GGUMTLE_SPAWN_SIZE; i++) {
             ggumtles.put(i, new Ggumtle(i, Position.from(ggumtleSpawns.get(i))));
         }
+        ggumtleIdGenerator.set(GGUMTLE_SPAWN_SIZE);
 
         // 상자 위치 초기화
         List<BoxSpawn> boxSpawns = spawnCache.getRandomBoxSpawns(BOX_SPAWN_SIZE);

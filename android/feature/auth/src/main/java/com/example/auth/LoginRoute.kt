@@ -2,6 +2,7 @@ package com.example.auth
 
 import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -17,6 +18,10 @@ fun LoginRoute(
 ) {
     val state by viewModel.collectAsState()
     val context = LocalContext.current
+
+    LaunchedEffect(isLoggedIn) {
+        viewModel.setLoginStatus(isLoggedIn)
+    }
 
     viewModel.collectSideEffect { sideEffect ->
         when (sideEffect) {

@@ -2,11 +2,11 @@ package com.example.domain.websocket.usecase.connection
 
 import com.example.domain.websocket.repository.WebSocketRepository
 import javax.inject.Inject
-import javax.inject.Singleton
 
-@Singleton
 class DisconnectWebSocketUseCase @Inject constructor(
-    private val repository: WebSocketRepository
+    private val webSocketRepository: WebSocketRepository
 ) {
-    operator fun invoke() = repository.disconnect()
+    suspend operator fun invoke() {
+        webSocketRepository.disconnect()
+    }
 }

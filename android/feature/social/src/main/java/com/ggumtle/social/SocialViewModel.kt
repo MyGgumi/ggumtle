@@ -1,0 +1,293 @@
+package com.ggumtle.social
+
+import android.util.Log
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.lifecycle.ViewModel
+import com.example.datastore.AuthManager
+import com.example.domain.websocket.model.Friend
+import com.example.domain.websocket.model.FriendRequest
+import com.example.domain.websocket.usecase.social.GetFriendRequestsUseCase
+import com.example.domain.websocket.usecase.social.ObserveGetFriendRequestsUseCase
+import com.example.domain.websocket.usecase.social.ObserveMemberSearchResultUseCase
+import com.example.domain.websocket.usecase.social.ObserveRequestFriendResultUseCase
+import com.example.domain.websocket.usecase.social.RequestFriendUseCase
+import com.example.domain.websocket.usecase.social.SearchMembersUseCase
+import com.example.domain.websocket.usecase.social.AcceptFriendRequestUseCase
+import com.example.domain.websocket.usecase.social.GetFriendsUseCase
+import com.example.domain.websocket.usecase.social.ObserveAcceptFriendRequestUseCase
+import com.example.domain.websocket.usecase.social.ObserveGetFriendsUseCase
+import com.example.domain.websocket.usecase.social.ObserveRejectFriendRequestUseCase
+import com.example.domain.websocket.usecase.social.RejectFriendRequestUseCase
+import com.ggumtle.social.model.toUsers
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
+import org.orbitmvi.orbit.Container
+import org.orbitmvi.orbit.ContainerHost
+import org.orbitmvi.orbit.syntax.simple.intent
+import org.orbitmvi.orbit.syntax.simple.reduce
+import org.orbitmvi.orbit.viewmodel.container
+import javax.inject.Inject
+import kotlin.collections.plus
+
+@HiltViewModel
+class SocialViewModel @Inject constructor(
+    private val authManager: AuthManager,
+    private val searchMembersUseCase: SearchMembersUseCase,
+    private val observeMemberSearchResultUseCase: ObserveMemberSearchResultUseCase,
+    private val requestFriendUseCase: RequestFriendUseCase,
+    private val observeRequestFriendResultUseCase: ObserveRequestFriendResultUseCase,
+    private val getFriendRequestsUseCase: GetFriendRequestsUseCase,
+    private val observeGetFriendRequestsUseCase: ObserveGetFriendRequestsUseCase,
+    private val getFriendsUseCase: GetFriendsUseCase,
+    private val observeGetFriendsUseCase: ObserveGetFriendsUseCase,
+    private val acceptFriendRequestUseCase: AcceptFriendRequestUseCase,
+    private val observeAcceptFriendRequestUseCase: ObserveAcceptFriendRequestUseCase,
+    private val rejectFriendRequestUseCase: RejectFriendRequestUseCase,
+    private val observeRejectFriendRequestUseCase: ObserveRejectFriendRequestUseCase
+) : ViewModel(), ContainerHost<SocialContract.State, SocialContract.SideEffect> {
+
+    override val container: Container<SocialContract.State, SocialContract.SideEffect> =
+        container(SocialContract.State())
+
+    init {
+        getFriends()
+        getFriendRequests()
+        observeSocialEvent()
+    }
+
+    private fun observeSocialEvent() {
+        val myId = authManager.getMemberId()
+
+        observeRequestFriendEvents(myId)
+        observeAcceptFriendEvents(myId)
+        observeRejectFriendEvents()
+    }
+
+    private fun observeRequestFriendEvents(myId: Long?) = intent {
+        observeRequestFriendResultUseCase.invoke()
+            .collect { result ->
+                if (result.followerId == myId) {
+                    //todo 보낸 친구 요청 추가
+                    Log.d("SocialViewModel", "I sent a friend request")
+                } else {
+                    Log.d(
+                        "SocialViewModel",
+                        "Received friend request from: ${result.followerNickname}"
+                    )
+                    val newFriendRequest = FriendRequest(
+                        friendRequestId = result.friendId,
+                        memberId = result.followerId,
+                        nickname = result.followerNickname
+                    )
+                    reduce {
+                        state.copy(receivedRequests = state.receivedRequests + newFriendRequest)
+                    }
+                }
+            }
+    }
+
+    private fun observeAcceptFriendEvents(myId: Long?) = intent {
+        observeAcceptFriendRequestUseCase.invoke()
+            .collect { result ->
+                Log.d("SocialViewModel", "Friend request accepted: $result")
+
+                val newFriend = if (result.followerId == myId) {
+                    // 내가 보낸 요청이 수락됨
+                    Friend(id = result.followeeId, nickname = result.followeeNickname)
+                } else {
+                    // 내가 받은 요청을 수락함
+                    Friend(id = result.followerId, nickname = result.followerNickname)
+                }
+
+                reduce {
+                    state.copy(friends = state.friends + newFriend)
+                }
+            }
+    }
+
+    private fun observeRejectFriendEvents() = intent {
+        observeRejectFriendRequestUseCase.invoke()
+            .collect { result ->
+                Log.d("SocialViewModel", "Friend request rejected: $result")
+
+                //todo 보낸 친구요청에서 삭제 추가
+                val updatedRequests = state.receivedRequests.filter { request ->
+                    request.friendRequestId != result.rejectedId
+                }
+                reduce {
+                    state.copy(receivedRequests = updatedRequests)
+                }
+            }
+    }
+
+    fun getFriends() = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+
+            getFriendsUseCase.invoke()
+
+            val result = observeGetFriendsUseCase.invoke().first()
+
+            reduce {
+                state.copy(
+                    friends = result.friends,
+                    isLoading = false
+                )
+            }
+
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+
+    fun onAcceptFriendRequest(requestId: Long) = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            acceptFriendRequestUseCase.invoke(requestId)
+            val updatedRequests =
+                state.receivedRequests.filter { request -> request.friendRequestId != requestId }
+            reduce {
+                state.copy(
+                    isLoading = false,
+                    receivedRequests = updatedRequests
+                )
+            }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+
+    fun onRejectFriendRequest(requestId: Long) = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            rejectFriendRequestUseCase.invoke(requestId)
+            val updatedRequests =
+                state.receivedRequests.filter { request -> request.friendRequestId != requestId }
+            reduce {
+                state.copy(
+                    isLoading = false,
+                    receivedRequests = updatedRequests
+                )
+            }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+
+    fun onSendFriendRequest(userId: Long) = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            requestFriendUseCase.invoke(userId)
+            reduce { state.copy(isLoading = false) }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+
+    private fun getFriendRequests() = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+
+            getFriendRequestsUseCase.invoke()
+
+            val result = observeGetFriendRequestsUseCase.invoke().first()
+
+            reduce {
+                state.copy(
+                    receivedRequests = result.friendRequests,
+                    isLoading = false
+                )
+            }
+
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+
+    fun onUpdateAddFriendsSearchQuery(query: TextFieldValue) = intent {
+        reduce { state.copy(addFriendsSearchQuery = query) }
+        if (query.text.isNotEmpty()) {
+            reduce { state.copy(isSearchLoading = true) }
+            try {
+                searchMembersUseCase.invoke(keyword = query.text, page = 0, size = 20)
+
+                val result = observeMemberSearchResultUseCase.invoke().first()
+                val searchResults = result.members.toUsers()
+
+                reduce {
+                    state.copy(
+                        searchResults = searchResults,
+                        isSearchLoading = false
+                    )
+                }
+            } catch (e: Exception) {
+                reduce { state.copy(isSearchLoading = false) }
+            }
+        } else {
+            reduce { state.copy(searchResults = emptyList()) }
+        }
+    }
+
+    fun onTabSelected(tab: SocialContract.SocialTab) = intent {
+        reduce { state.copy(currentTab = tab) }
+    }
+
+    fun onUpdateFriendsSearchQuery(query: TextFieldValue) = intent {
+        reduce { state.copy(friendsSearchQuery = query) }
+    }
+
+    fun onShowSearchDialog() = intent {
+        reduce { state.copy(isSearchDialogVisible = true) }
+    }
+
+    fun onDismissSearchDialog() = intent {
+        reduce {
+            state.copy(
+                isSearchDialogVisible = false,
+                addFriendsSearchQuery = TextFieldValue(""),
+                searchResults = emptyList()
+            )
+        }
+    }
+
+    // todo
+    // TODO: WebSocket - 친구 삭제 API 호출
+    fun onRemoveFriend(friendId: Long) = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            val updatedFriends = state.friends//.filter { it.id != friendId }
+            reduce {
+                state.copy(
+                    friends = updatedFriends,
+                    isLoading = false
+                )
+            }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+
+    //todo 친구 프로필 조회 구현
+    fun onOpenProfile(userId: Long) = intent {
+    }
+
+    //todo 보낸 친구 요청 목록 조회 구현
+    fun getMyFriendRequests() = intent {
+    }
+
+    // TODO: WebSocket - 요청 취소 API 호출
+    fun onCancelSentRequest(requestId: Long) = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            val updatedRequests = state.sentRequests//.filter { it.id != requestId }
+            reduce {
+                state.copy(
+                    sentRequests = updatedRequests,
+                    isLoading = false
+                )
+            }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
+}

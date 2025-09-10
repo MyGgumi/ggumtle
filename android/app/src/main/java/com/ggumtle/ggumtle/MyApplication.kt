@@ -21,5 +21,6 @@ class MyApplication : Application() {
         applicationScope.launch {
             authManager.checkAutoLogin()
         }
+
     }
 }

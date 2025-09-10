@@ -1,0 +1,19 @@
+package com.example.data.websocket.model.common
+
+object WebSocketMessageType {
+    // Send message types
+    const val SEARCH_MEMBER = "SEARCH_MEMBER"
+    const val REQUEST_FRIEND = "REQUEST_FRIEND"
+    const val GET_FRIEND_REQUESTS = "GET_FRIEND_REQUESTS"
+    const val GET_FRIENDS = "GET_FRIENDS"
+    const val ACCEPT_FRIEND_REQUEST = "ACCEPT_FRIEND_REQUEST"
+    const val REJECT_FRIEND_REQUEST = "REJECT_FRIEND_REQUEST"
+
+    // Receive message types
+    const val SEARCH_MEMBER_RESULT = "SEARCH_MEMBER_RESULT"
+    const val REQUEST_FRIEND_RESULT = "REQUEST_FRIEND_RESULT"
+    const val GET_FRIEND_REQUESTS_RESULT = "GET_FRIEND_REQUESTS_RESULT"
+    const val GET_FRIENDS_RESULT = "GET_FRIENDS"
+    const val ACCEPT_FRIEND_REQUEST_RESULT = "ACCEPT_FRIEND_REQUEST_RESULT"
+    const val REJECT_FRIEND_REQUEST_RESULT = "REJECT_FRIEND_REQUEST"
+}

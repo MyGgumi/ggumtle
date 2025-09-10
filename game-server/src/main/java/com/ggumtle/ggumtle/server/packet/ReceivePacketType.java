@@ -30,6 +30,9 @@ public enum ReceivePacketType {
     STOP_DIGGING((short) 102),
     START_FEED((short) 110),
     STOP_FEED((short) 112),
+
+    // 탈출
+    ESCAPE((short) 140),
     ;
 
     private final short value;

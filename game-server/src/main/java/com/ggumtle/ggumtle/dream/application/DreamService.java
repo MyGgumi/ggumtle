@@ -4,6 +4,7 @@ import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
+import com.ggumtle.ggumtle.dream.application.command.EscapeCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.PutItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.TakeItemCommand;
@@ -121,6 +122,13 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.stopFeeding(session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.STOP_FEED)
+    public void handleEscape(EscapeCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.escape(command.exitId(), session);
     }
 
     private DreamManager getDreamManager(Session session) {

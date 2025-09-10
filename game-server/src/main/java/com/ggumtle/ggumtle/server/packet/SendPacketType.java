@@ -20,6 +20,7 @@ public enum SendPacketType {
 
     // 게임 플레이
     PLAYER_MOVE_RELAY((short) 41),
+    MONGGING_STATUS((short) 42),
 
     // 플레이어 간 상호작용
     HIT_RESULT((short) 51),
@@ -40,6 +41,10 @@ public enum SendPacketType {
 
     // 탈출
     OPEN_EXIT((short) 130),
+    ESCAPE_RESULT((short) 141),
+
+    // 게임 종료
+    END((short) 200)
     ;
 
     private final short value;

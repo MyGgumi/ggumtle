@@ -4,11 +4,14 @@ import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
 import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
+import com.ggumtle.ggumtle.dream.application.result.DreamEndResult;
 import com.ggumtle.ggumtle.dream.application.result.ExitOpen;
+import com.ggumtle.ggumtle.dream.application.result.EscapeResult;
 import com.ggumtle.ggumtle.dream.application.result.FeedDoneResult;
 import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
 import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
+import com.ggumtle.ggumtle.dream.application.result.MonggingStatusResult;
 import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
 import com.ggumtle.ggumtle.dream.application.result.TakeItemResult;
 import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
@@ -43,17 +46,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Slf4j
 public class DreamManager {
 
     private static final int BOX_SPAWN_SIZE = 20;
     private static final int GGUMTLE_SPAWN_SIZE = 3;
+    private static final int WINNING_MONGGING_COUNT = 2;
 
     private final ScheduledExecutorService ggumtleWorkerThread;
     private final ConcurrentLinkedDeque<WorkingGgumtleThread> workingGgumtleThreads;
@@ -64,9 +71,11 @@ public class DreamManager {
     // 인게임 캐시
     private final Room room;
     private Map<Long, Player> players;
+    private Set<Long> escapedMonggings;
     private final Map<Integer, Ggumtle> ggumtles;
     private final Map<Integer, Box> boxes;
     private final Map<Integer, Exit> exits;
+    private final AtomicBoolean isExitOpen;
 
     public DreamManager(Room room, SpawnCache spawnCache) {
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
@@ -76,6 +85,8 @@ public class DreamManager {
         this.ggumtles = new HashMap<>();
         this.boxes = new HashMap<>();
         this.exits = new HashMap<>();
+        this.isExitOpen = new AtomicBoolean(false);
+        this.escapedMonggings = ConcurrentHashMap.newKeySet();
 
         log.info("{}번 게임의 초기화 시작", room.getRoomId());
 
@@ -495,9 +506,60 @@ public class DreamManager {
             }
         }
 
+        boolean isExpected = isExitOpen.compareAndSet(false, true);
+        if (!isExpected) {
+            log.warn("{}번 게임의 탈출구 오픈이 다시 이루어졌습니다", this.room.getRoomId());
+            return;
+        }
+
         Result result = new ExitOpen(this.exits.values().stream().toList());
         Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
+    }
+
+    public void escape(int exitId, Session session) {
+        Exit exit = exits.getOrDefault(exitId, null);
+
+        if (exit == null) {
+            Result result = new EscapeResult(EscapeResult.EscapeStatus.NOT_FOUND_EXIT);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Player player = players.get(session.getMemberId());
+        if (!(player instanceof Mongging mongging)) {
+            Result result = new EscapeResult(EscapeResult.EscapeStatus.NOT_MONGGING);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // TODO: 위치 검사
+
+        if (!mongging.isNotDead()) {
+            Result result = new EscapeResult(EscapeResult.EscapeStatus.NOT_ALIVE);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        mongging.escape();
+        escapedMonggings.add(mongging.getId());
+
+        Result result = new EscapeResult(EscapeResult.EscapeStatus.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+
+        result = new MonggingStatusResult(mongging.getId(), MonggingStatusResult.MonggingStatus.ESCAPE);
+        packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
+
+        if (escapedMonggings.size() >= WINNING_MONGGING_COUNT) {
+            result = new DreamEndResult(DreamEndResult.DreamEndStatus.MONGGING_WIN, escapedMonggings, players.values());
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+            this.room.broadcast(packet);
+        }
     }
 
     private void initializeMap() {

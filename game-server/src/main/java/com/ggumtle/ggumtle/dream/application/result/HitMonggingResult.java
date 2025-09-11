@@ -8,7 +8,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public record HitMonggingResult(
-        HitResult result,
+        Status result,
         int leftHp
 ) implements Result {
     @Override
@@ -21,7 +21,7 @@ public record HitMonggingResult(
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum HitResult {
+    public enum Status {
         SUCCESS(1), FAIL(0), NOT_PLAYER(2), NOT_MONGDUNG(3), NOT_FOUND_TARGET(4);
 
         private final int value;

@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public record TakeItemResult(
-    TakeResult result,
+    Status result,
     Item[] items
 ) implements Result {
     private static final int bufferSize = 4 + 4 + 4 * Box.BOX_SIZE;
@@ -21,10 +21,10 @@ public record TakeItemResult(
 
         buffer.putInt(result.value);
 
-        if (result == TakeResult.SUCCESS) {
+        if (result == Status.SUCCESS) {
             buffer.putInt(Box.BOX_SIZE);
             for (int i = 0; i < Box.BOX_SIZE; i++) {
-                buffer.putInt(items[i] == null ? -1 : items[i].getId());
+                buffer.putInt(items[i] == null ? -1 : items[i].id);
             }
 
             return buffer.array();
@@ -39,7 +39,7 @@ public record TakeItemResult(
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum TakeResult {
+    public enum Status {
         SUCCESS(1), FAIL(0),
         INDEX_OUT_OF_RANGE(2), NOT_FOUND_BOX(3), NOT_FOUND_PLAYER(4), NOT_MONGGING(5),
         NOT_FOUND_ITEM(10), FULL_ABOUT_ITEM(11)

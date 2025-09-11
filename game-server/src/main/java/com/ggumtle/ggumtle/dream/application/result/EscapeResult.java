@@ -7,10 +7,10 @@ import lombok.AllArgsConstructor;
 import java.nio.charset.Charset;
 
 public record EscapeResult(
-        EscapeStatus result
+        Status result
 ) implements Result {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum EscapeStatus {
+    public enum Status {
         SUCCESS((byte) 1), FAIL((byte) 0),
         NOT_FOUND_EXIT((byte) 2), NOT_MONGGING((byte) 3),
         NOT_IN_EXIT((byte) 10), NOT_ALIVE((byte) 11)

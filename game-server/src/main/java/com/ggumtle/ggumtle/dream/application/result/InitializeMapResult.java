@@ -32,18 +32,18 @@ public record InitializeMapResult(
 
         buffer.putInt(boxes.size());
         for (Box box : boxes) {
-            buffer.putInt(box.getId());
-            buffer.putInt(box.getPosition().x);
-            buffer.putInt(box.getPosition().y);
-            buffer.putInt(box.getPosition().z);
+            buffer.putInt(box.id);
+            buffer.putInt(box.position.x);
+            buffer.putInt(box.position.y);
+            buffer.putInt(box.position.z);
         }
 
         buffer.putInt(ggumtles.size());
         for (Ggumtle ggumtle : ggumtles) {
-            buffer.putInt(ggumtle.getId());
-            buffer.putInt(ggumtle.getPosition().x);
-            buffer.putInt(ggumtle.getPosition().y);
-            buffer.putInt(ggumtle.getPosition().z);
+            buffer.putInt(ggumtle.id);
+            buffer.putInt(ggumtle.position.x);
+            buffer.putInt(ggumtle.position.y);
+            buffer.putInt(ggumtle.position.z);
         }
 
         buffer.putInt(healPacks.size());

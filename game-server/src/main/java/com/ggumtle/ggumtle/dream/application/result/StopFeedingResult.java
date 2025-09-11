@@ -8,11 +8,11 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 
 public record StopFeedingResult(
-    StopResult result,
+    Status result,
     int leftFeedItemCount
 ) implements Result {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum StopResult {
+    public enum Status {
         FAIL((byte) 1), STOP((byte) 1), NOT_FOUND((byte) 1);
 
         final byte value;

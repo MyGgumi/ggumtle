@@ -7,10 +7,10 @@ import lombok.AllArgsConstructor;
 import java.nio.charset.Charset;
 
 public record StopDiggingResult(
-        StopResult result
+        Status result
 ) implements Result {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum StopResult {
+    public enum Status {
         STOP((byte) 1), NOT_FOUND_DIGGING((byte) 2);
 
         private final byte value;

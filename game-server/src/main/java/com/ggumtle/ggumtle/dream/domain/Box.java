@@ -2,7 +2,6 @@ package com.ggumtle.ggumtle.dream.domain;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.session.Session;
-import lombok.Getter;
 import lombok.ToString;
 
 import java.util.ArrayList;
@@ -16,11 +15,9 @@ import java.util.Map;
 public class Box {
     public static final int BOX_SIZE = 9;
 
-    @Getter
-    private final int id;
+    public final int id;
 
-    @Getter
-    private final Position position;
+    public final Position position;
 
     private final Item[] items;
     private final Map<Item, Integer> itemCount;
@@ -42,7 +39,7 @@ public class Box {
     public synchronized boolean addItemBySystem(Item item, int count) {
         int nextItemCount = this.itemCount.getOrDefault(item, 0) + count;
 
-        if (this.totalCount + count > BOX_SIZE || item.getMaxCapacityForBox() < nextItemCount) {
+        if (this.totalCount + count > BOX_SIZE || item.maxCapacityForBox < nextItemCount) {
             return false;
         }
 

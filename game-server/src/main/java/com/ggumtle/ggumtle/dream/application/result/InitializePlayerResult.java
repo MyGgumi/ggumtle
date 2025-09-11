@@ -1,6 +1,8 @@
 package com.ggumtle.ggumtle.dream.application.result;
 
 import com.ggumtle.ggumtle.common.dto.Result;
+import com.ggumtle.ggumtle.dream.domain.Mongdung;
+import com.ggumtle.ggumtle.dream.domain.Mongging;
 import com.ggumtle.ggumtle.dream.domain.Player;
 
 import java.nio.ByteBuffer;
@@ -13,6 +15,7 @@ public record InitializePlayerResult(
 ) implements Result {
     private static final int PLAYER_INFO_SIZE = 8 + 1 + 1 + 4 * 3 + 4 + 4 * 3;
 
+    // TODO: HP로 수정
     @Override
     public byte[] toBytes(Charset charsets) {
         ByteBuffer buffer = ByteBuffer.allocate(4 + PLAYER_INFO_SIZE * players.size());
@@ -28,10 +31,20 @@ public record InitializePlayerResult(
             buffer.putInt(player.getPositions()[player.getCurr()].y);
             buffer.putInt(player.getPositions()[player.getCurr()].z);
 
-            buffer.putInt(0);
-            buffer.putInt(0);
-            buffer.putInt(0);
-            buffer.putInt(0);
+            if (player instanceof Mongging mongging) {
+                buffer.putInt(mongging.maxHp);
+                buffer.putInt(mongging.moveSpeed);
+                buffer.putInt(mongging.healSpeed);
+                buffer.putInt(mongging.workSpeed);
+            }
+
+            if (player instanceof Mongdung mongdung) {
+                buffer.putInt(-1);
+                buffer.putInt(mongdung.moveSpeed);
+                buffer.putInt(-1);
+                buffer.putInt(-1);
+
+            }
         }
 
         return buffer.array();

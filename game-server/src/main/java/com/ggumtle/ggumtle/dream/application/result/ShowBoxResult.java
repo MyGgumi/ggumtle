@@ -31,7 +31,7 @@ public record ShowBoxResult(
         byteBuffer.putInt(boxId);
         byteBuffer.putInt(items.length);
         for (Item item : items) {
-            byteBuffer.putInt(item == null ? -1 : item.getId());
+            byteBuffer.putInt(item == null ? -1 : item.id);
         }
 
         return byteBuffer.array();

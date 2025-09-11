@@ -7,10 +7,11 @@ import lombok.AllArgsConstructor;
 import java.nio.charset.Charset;
 
 public record DigUpReceiveResult(
-        DigUpResult result
+        Status result
 ) implements Result {
+
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum DigUpResult {
+    public enum Status {
         FAIL((byte) 0), START_DIGGING((byte) 1), NOT_FOUND((byte) 2), ALREADY_DIG_UP((byte) 3);
 
         private final byte value;

@@ -1,6 +1,5 @@
 package com.ggumtle.ggumtle.dream.domain;
 
-import com.ggumtle.ggumtle.dream.vo.Item;
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.Getter;

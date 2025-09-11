@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.dream.vo;
+package com.ggumtle.ggumtle.dream.domain;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

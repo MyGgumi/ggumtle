@@ -2,7 +2,7 @@ package com.ggumtle.ggumtle.dream.application.result;
 
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.vo.Item;
+import com.ggumtle.ggumtle.dream.domain.Item;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

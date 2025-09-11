@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.dream.persistence;
 
 import com.ggumtle.ggumtle.dream.vo.BoxSpawn;
 import com.ggumtle.ggumtle.dream.vo.ExitSpawn;
+import com.ggumtle.ggumtle.dream.vo.FieldItemSpawn;
 import com.ggumtle.ggumtle.dream.vo.GgumtleSpawn;
 import com.ggumtle.ggumtle.dream.vo.PlayerSpawn;
 import lombok.AccessLevel;
@@ -20,17 +21,20 @@ public class SpawnCache {
     private final List<GgumtleSpawn> ggumtleSpawns;
     private final List<PlayerSpawn> playerSpawns;
     private final List<ExitSpawn> exitSpawns;
+    private final List<FieldItemSpawn> fieldItemSpawns;
 
     @Autowired
     public SpawnCache(
             BoxSpawnRepository boxSpawnRepository,
             GgumtleSpawnRepository ggumtleSpawnRepository,
             PlayerSpawnRepository playerSpawnRepository,
-            ExitSpawnRepository exitSpawnRepository) {
+            ExitSpawnRepository exitSpawnRepository,
+            FieldItemSpawnRepository fieldItemSpawnRepository) {
         this.boxSpawns = boxSpawnRepository.findAll();
         this.ggumtleSpawns = ggumtleSpawnRepository.findAll();
         this.playerSpawns = playerSpawnRepository.findAll();
         this.exitSpawns = exitSpawnRepository.findAll();
+        this.fieldItemSpawns = fieldItemSpawnRepository.findAll();
     }
 
     public List<BoxSpawn> getRandomBoxSpawns(int size) {
@@ -59,5 +63,9 @@ public class SpawnCache {
 
     public List<ExitSpawn> getRandomExitSpawns() {
         return List.copyOf(this.exitSpawns);
+    }
+
+    public List<FieldItemSpawn> getFieldItemSpawns() {
+        return List.copyOf(fieldItemSpawns);
     }
 }

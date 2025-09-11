@@ -29,6 +29,7 @@ import com.ggumtle.ggumtle.dream.application.result.UseMonggingItemResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Exit;
 import com.ggumtle.ggumtle.dream.domain.FakeGgumtle;
+import com.ggumtle.ggumtle.dream.domain.FieldItem;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 import com.ggumtle.ggumtle.dream.domain.Mongdung;
 import com.ggumtle.ggumtle.dream.domain.Mongging;
@@ -37,8 +38,9 @@ import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.dream.util.ItemDistributor;
 import com.ggumtle.ggumtle.dream.vo.BoxSpawn;
 import com.ggumtle.ggumtle.dream.vo.ExitSpawn;
+import com.ggumtle.ggumtle.dream.vo.FieldItemSpawn;
 import com.ggumtle.ggumtle.dream.vo.GgumtleSpawn;
-import com.ggumtle.ggumtle.dream.vo.Item;
+import com.ggumtle.ggumtle.dream.domain.Item;
 import com.ggumtle.ggumtle.dream.vo.PlayerSpawn;
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.room.domain.Room;
@@ -84,6 +86,7 @@ public class DreamManager {
     private final ConcurrentHashMap<Integer, Ggumtle> ggumtles;
     private final AtomicInteger ggumtleIdGenerator;
     private final Map<Integer, Box> boxes;
+    private final Map<Integer, FieldItem> fieldItems;
     private final Map<Integer, Exit> exits;
     private final AtomicBoolean isExitOpen;
 
@@ -97,6 +100,7 @@ public class DreamManager {
         this.ggumtles = new ConcurrentHashMap<>();
         this.ggumtleIdGenerator = new AtomicInteger(0);
         this.boxes = new HashMap<>();
+        this.fieldItems = new HashMap<>();
         this.exits = new HashMap<>();
         this.isExitOpen = new AtomicBoolean(false);
 
@@ -782,16 +786,39 @@ public class DreamManager {
             ItemDistributor.distribute(item, boxes, item.getInitialCount());
         }
 
+        // 필드 아이템 초기화
+        List<FieldItemSpawn> fieldItemSpawns = spawnCache.getFieldItemSpawns();
+        for (FieldItemSpawn spawn : fieldItemSpawns) {
+            FieldItem fieldItem = new FieldItem(spawn);
+            fieldItems.put(fieldItem.id, fieldItem);
+        }
+
+        // 출구 초기화
         List<ExitSpawn> exitSpawns = spawnCache.getRandomExitSpawns();
         for (int i = 0; i < exitSpawns.size(); i++) {
             exits.put(i, new Exit(i, Position.from(exitSpawns.get(i))));
         }
 
-        // TODO: 필드템 초기화
-
         log.info("{}번 게임의 맵 초기화 종료", room.getRoomId());
 
-        Result result = new InitializeMapResult(new ArrayList<>(this.boxes.values()), new ArrayList<>(this.ggumtles.values()), List.of(), List.of());
+        List<FieldItem> healPacks = new ArrayList<>();
+        List<FieldItem> speedPacks = new ArrayList<>();
+        fieldItems.values().forEach(fieldItem -> {
+            if (fieldItem.type == FieldItem.Type.HEAL) {
+                healPacks.add(fieldItem);
+                return;
+            }
+            if (fieldItem.type == FieldItem.Type.SPEED) {
+                speedPacks.add(fieldItem);
+                return;
+            }
+        });
+
+        Result result = new InitializeMapResult(
+                new ArrayList<>(this.boxes.values()),
+                new ArrayList<>(this.ggumtles.values()),
+                healPacks,
+                speedPacks);
         Packet packet = Packet.of(SendPacketType.INITIALIZE_MAP, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
     }

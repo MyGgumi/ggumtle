@@ -128,13 +128,13 @@ public class ChestBoxUI : MonoBehaviour
 
         ChestItem item = chestItems[index];
 
-        // Mushroom인 경우 FeedingInventory로, 다른 아이템은 PlayerInventory로
+        // Light(빛)인 경우 ResourceManager로, 다른 아이템은 PlayerInventory로  
         bool canAdd = false;
-        if (item.itemName == "Mushroom")
+        if (item.itemName == "Light" || item.itemName == "Mushroom") // Mushroom도 Light로 처리
         {
-            // Mushroom은 FeedingInventory로 (제한 없음)
+            // Light는 ResourceManager로 (제한 없음)
             canAdd = true;
-            Debug.Log($"[ChestBoxUI] Mushroom {item.quantity}개 - 먹이 인벤토리로 이동");
+            Debug.Log($"[ChestBoxUI] {item.itemName} {item.quantity}개 - Light로 ResourceManager에 추가될 예정");
         }
         else
         {
@@ -304,8 +304,28 @@ public class ChestBoxUI : MonoBehaviour
                     // Take 액션 - 상자→인벤토리 이동
                     RefreshItemList();
 
-                    // PlayerInventory가 서버 응답에서 자동으로 인벤토리 동기화하므로
-                    // ChestBoxUI에서는 상자 UI만 갱신
+                    // 서버 응답에서 아이템 정보 추출 후 ResourceManager에 Light 추가
+                    Debug.Log($"[ChestBoxUI] Take 액션 처리 시작 - dataField: {dataField != null}");
+                    
+                    if (dataField != null)
+                    {
+                        var dataValue = dataField.GetValue(responseObj);
+                        Debug.Log($"[ChestBoxUI] dataValue 추출됨: {dataValue != null}");
+                        
+                        if (dataValue != null)
+                        {
+                            ProcessTakenItem(dataValue);
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[ChestBoxUI] dataValue가 null입니다!");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[ChestBoxUI] dataField가 null입니다!");
+                    }
+                    
                     Debug.Log($"[ChestBoxUI] Take 액션 - 상자에서 아이템 획득: {messageValue}");
                 }
                 else if (actionType == "Put")
@@ -407,6 +427,80 @@ public class ChestBoxUI : MonoBehaviour
     //         Debug.LogError($"[ChestBoxUI] 플레이어 인벤토리 아이템 추가 중 오류: {ex.Message}");
     //     }
     // }
+
+    /// <summary>
+    /// Take 액션에서 획득한 아이템 처리 - Light/Mushroom인 경우 ResourceManager에 추가
+    /// </summary>
+    private void ProcessTakenItem(object dataValue)
+    {
+        Debug.Log($"[ChestBoxUI] ProcessTakenItem 시작 - dataValue 타입: {dataValue?.GetType().Name}");
+        
+        try
+        {
+            // 리플렉션으로 서버 응답 데이터에서 아이템 정보 추출
+            var dataType = dataValue.GetType();
+            Debug.Log($"[ChestBoxUI] dataType: {dataType.Name}");
+            
+            // 모든 필드 출력해서 구조 확인
+            var allFields = dataType.GetFields();
+            Debug.Log($"[ChestBoxUI] ItemActionData 필드들: {string.Join(", ", System.Array.ConvertAll(allFields, f => f.Name))}");
+            
+            var takenItemField = dataType.GetField("takenItem");
+            Debug.Log($"[ChestBoxUI] takenItemField 찾음: {takenItemField != null}");
+            
+            // takenItem이 없으면 다른 가능한 필드명들 시도
+            if (takenItemField == null)
+            {
+                // 가능한 다른 필드명들 시도
+                takenItemField = dataType.GetField("item") ?? 
+                                dataType.GetField("itemData") ?? 
+                                dataType.GetField("actionItem");
+                Debug.Log($"[ChestBoxUI] 대체 필드 찾음: {takenItemField?.Name ?? "없음"}");
+            }
+            
+            if (takenItemField != null)
+            {
+                var takenItemValue = takenItemField.GetValue(dataValue);
+                if (takenItemValue != null)
+                {
+                    var takenItemType = takenItemValue.GetType();
+                    var itemNameField = takenItemType.GetField("itemName");
+                    var quantityField = takenItemType.GetField("quantity");
+                    
+                    if (itemNameField != null && quantityField != null)
+                    {
+                        string itemName = itemNameField.GetValue(takenItemValue)?.ToString();
+                        int quantity = (int)quantityField.GetValue(takenItemValue);
+                        
+                        // Light 또는 Mushroom인 경우 Light로 처리
+                        if (itemName == "Light" || itemName == "Mushroom")
+                        {
+                            Debug.Log($"[ChestBoxUI] {itemName} {quantity}개를 Light로 처리 시작 - ResourceManager.Instance: {ResourceManager.Instance != null}");
+                            
+                            if (ResourceManager.Instance != null)
+                            {
+                                int addedAmount = ResourceManager.Instance.AddLight(quantity);
+                                Debug.Log($"[ChestBoxUI] ResourceManager에 Light {addedAmount}개 추가 완료 (원본 아이템: {itemName})");
+                            }
+                            else
+                            {
+                                Debug.LogError("[ChestBoxUI] ResourceManager.Instance가 null입니다! UniversalHUDController가 제대로 초기화되지 않았을 가능성");
+                            }
+                        }
+                        else
+                        {
+                            // 다른 아이템은 PlayerInventory가 서버 응답에서 자동으로 처리
+                            Debug.Log($"[ChestBoxUI] 일반 아이템 {itemName} x{quantity}는 PlayerInventory에서 처리됨");
+                        }
+                    }
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogWarning($"[ChestBoxUI] 서버 응답 데이터 파싱 실패: {ex.Message}");
+        }
+    }
 
     /// <summary>
     /// 현재 열린 상자의 ID 반환

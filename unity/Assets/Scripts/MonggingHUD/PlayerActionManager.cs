@@ -116,9 +116,9 @@ public class PlayerActionManager : MonoBehaviour
         
         _isInteractPressed = true;
         AnimateButtonPress(_interactButton, true);
-        SendInteractionInput(true);
+        SendInteractionHoldStart();
         
-        Debug.Log("[PlayerActionManager] 상호작용 버튼 눌림");
+        Debug.Log("[PlayerActionManager] 상호작용 버튼 홀드 시작");
     }
     
     private void OnInteractButtonUp(PointerUpEvent evt)
@@ -127,9 +127,9 @@ public class PlayerActionManager : MonoBehaviour
         
         _isInteractPressed = false;
         AnimateButtonPress(_interactButton, false);
-        SendInteractionInput(false);
+        SendInteractionHoldEnd();
         
-        Debug.Log("[PlayerActionManager] 상호작용 버튼 뗌");
+        Debug.Log("[PlayerActionManager] 상호작용 버튼 홀드 종료");
     }
     
     private void OnInteractButtonLeave(PointerLeaveEvent evt)
@@ -138,9 +138,9 @@ public class PlayerActionManager : MonoBehaviour
         
         _isInteractPressed = false;
         AnimateButtonPress(_interactButton, false);
-        SendInteractionInput(false);
+        SendInteractionHoldEnd();
         
-        Debug.Log("[PlayerActionManager] 상호작용 버튼에서 벗어남");
+        Debug.Log("[PlayerActionManager] 상호작용 버튼에서 벗어남 (홀드 종료)");
     }
     
     #endregion
@@ -176,6 +176,36 @@ public class PlayerActionManager : MonoBehaviour
         }
     }
     
+    private void SendInteractionHoldStart()
+    {
+        Debug.Log("[PlayerActionManager] 상호작용 홀드 시작 - InteractionManager 호출");
+        
+        // InteractionManager에게 홀드 시작 알림
+        if (InteractionManager.Instance != null)
+        {
+            InteractionManager.Instance.OnInteractionHoldStart();
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerActionManager] InteractionManager.Instance가 null입니다!");
+        }
+    }
+    
+    private void SendInteractionHoldEnd()
+    {
+        Debug.Log("[PlayerActionManager] 상호작용 홀드 종료 - InteractionManager 호출");
+        
+        // InteractionManager에게 홀드 종료 알림
+        if (InteractionManager.Instance != null)
+        {
+            InteractionManager.Instance.OnInteractionHoldEnd();
+        }
+        else
+        {
+            Debug.LogWarning("[PlayerActionManager] InteractionManager.Instance가 null입니다!");
+        }
+    }
+    
     private void SendInteractionInput(bool interactionState)
     {
         if (interactionState)
@@ -198,6 +228,27 @@ public class PlayerActionManager : MonoBehaviour
     #endregion
     
     #region Public Methods
+    
+    /// <summary>
+    /// 상호작용 버튼 가시성 업데이트 (InteractionManager에서 호출)
+    /// </summary>
+    public void UpdateInteractionButtonVisibility(bool visible)
+    {
+        if (_interactButton != null)
+        {
+            _interactButton.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+            Debug.Log($"[PlayerActionManager] 상호작용 버튼 {(visible ? "표시" : "숨김")}");
+        }
+    }
+    
+    /// <summary>
+    /// 상호작용 버튼이 표시되어 있는지 확인
+    /// </summary>
+    public bool IsInteractionButtonVisible()
+    {
+        if (_interactButton == null) return false;
+        return _interactButton.style.display == DisplayStyle.Flex;
+    }
     
     /// <summary>
     /// 버튼 활성화/비활성화

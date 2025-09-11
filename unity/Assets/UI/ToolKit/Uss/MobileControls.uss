@@ -4,7 +4,7 @@
     --joystick-icon: resource('UI/UI_Icon_Move');
     --button-bg: resource('UI/UI_Circle_Bevel_Base');
     --jump-icon: resource('UI/UI_Icon_Jump');
-    --interact-icon: resource('UI/UI_Icon_Sprint');
+    --interact-icon: resource('UI/UI_Icon_Interaction');
 }
 
 .mobile-controls-root {
@@ -54,13 +54,13 @@
     height: 110px;
     left: 50%;
     top: 50%;
-    margin-left: -55px; /* width의 절반 */
-    margin-top: -55px;  /* height의 절반 */
+    margin-left: -55px;
+    margin-top: -55px;
     background-image: var(--joystick-knob);
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
-    opacity: 0.9;
+    opacity: 0.2;
 }
 
 .joystick-icon {
@@ -88,20 +88,17 @@
 
 .action-buttons {
     position: absolute;
-    right: 30px;
-    bottom: 30px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
+    right: 0;
+    bottom: 0;
+    width: 300px;
+    height: 300px;
     pointer-events: none;
-    align-items: center;
-    justify-content: flex-end;
 }
 
 .action-button {
-    position: relative;
-    width: 80px;
-    height: 80px;
+    position: absolute;
+    width: 120px;
+    height: 120px;
     pointer-events: auto;
     picking-mode: position;
     transition-duration: 0.1s;
@@ -127,23 +124,29 @@
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+    opacity: 0.2;
 }
 
 .button-icon {
     position: absolute;
-    top: 15px;
-    left: 15px;
-    right: 15px;
-    bottom: 15px;
+    top: 20px;
+    left: 20px;
+    right: 20px;
+    bottom: 20px;
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
+    opacity: 1;
 }
 
 .jump-button {
+    right: 130px;
+    bottom: 60px;
 }
 
 .interact-button {
+    right: 36px;
+    bottom: 186px;
 }
 
 .jump-icon {

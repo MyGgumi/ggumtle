@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.dream.application.result;
 
 import com.ggumtle.ggumtle.common.dto.Result;
 import com.ggumtle.ggumtle.dream.domain.Box;
+import com.ggumtle.ggumtle.dream.domain.FieldItem;
 import com.ggumtle.ggumtle.dream.domain.Ggumtle;
 
 import java.nio.ByteBuffer;
@@ -11,8 +12,8 @@ import java.util.List;
 public record InitializeMapResult(
         List<Box> boxes,
         List<Ggumtle> ggumtles,
-        List<Object> healPacks,
-        List<Object> speedPacks
+        List<FieldItem> healPacks,
+        List<FieldItem> speedPacks
 ) implements Result {
     private static final int countInfoSize = 4;
     private static final int boxInfoSize = 4 + 4 + 4 + 4;
@@ -25,8 +26,8 @@ public record InitializeMapResult(
         ByteBuffer buffer = ByteBuffer.allocate(
                 countInfoSize + boxInfoSize * boxes.size()
                         + countInfoSize + ggumtleInfoSize * ggumtles.size()
-                        + countInfoSize + healPackInfoSize * 3
-                        + countInfoSize + speedPackInfoSize * 5
+                        + countInfoSize + healPackInfoSize * healPacks.size()
+                        + countInfoSize + speedPackInfoSize * speedPacks.size()
         );
 
         buffer.putInt(boxes.size());
@@ -45,21 +46,20 @@ public record InitializeMapResult(
             buffer.putInt(ggumtle.getPosition().z);
         }
 
-        // TODO: 힐팩과 스피드팩 초기화 구현 후 실제 데이터로 수정
-        buffer.putInt(3);
-        for (int i = 0; i < 3; i++) {
-            buffer.putInt(0);
-            buffer.putInt(0);
-            buffer.putInt(0);
-            buffer.putInt(0);
+        buffer.putInt(healPacks.size());
+        for (FieldItem healPack : healPacks) {
+            buffer.putInt(healPack.id);
+            buffer.putInt(healPack.position.x);
+            buffer.putInt(healPack.position.y);
+            buffer.putInt(healPack.position.z);
         }
 
-        buffer.putInt(5);
-        for (int i = 0; i < 5; i++) {
-            buffer.putInt(0);
-            buffer.putInt(0);
-            buffer.putInt(0);
-            buffer.putInt(0);
+        buffer.putInt(speedPacks.size());
+        for (FieldItem speedPack : speedPacks) {
+            buffer.putInt(speedPack.id);
+            buffer.putInt(speedPack.position.x);
+            buffer.putInt(speedPack.position.y);
+            buffer.putInt(speedPack.position.z);
         }
 
         return buffer.array();

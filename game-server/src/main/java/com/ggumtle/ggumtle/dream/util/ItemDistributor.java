@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.dream.util;
 
 import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.vo.Item;
+import com.ggumtle.ggumtle.dream.domain.Item;
 
 import java.util.List;
 import java.util.Random;

@@ -12,10 +12,26 @@ public final class FieldItem {
 
     public final Position position;
 
+    private boolean isUsed;
+
     public FieldItem(FieldItemSpawn spawn) {
         this.id = spawn.getId();
         this.type = Type.valueOf(spawn.getTypeId());
         this.position = Position.from(spawn);
+        this.isUsed = false;
+    }
+
+    public synchronized boolean isUsed() {
+        return isUsed;
+    }
+
+    public synchronized boolean use() {
+        if (this.isUsed) {
+            return false;
+        }
+
+        this.isUsed = true;
+        return true;
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)

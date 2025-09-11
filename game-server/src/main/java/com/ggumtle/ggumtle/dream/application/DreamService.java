@@ -16,6 +16,7 @@ import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.application.command.ShowBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartFeedCommand;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
+import com.ggumtle.ggumtle.dream.application.command.UseFieldItemCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.RoomManager;
@@ -116,6 +117,13 @@ public class DreamService {
         DreamManager dreamManager = getDreamManager(session);
 
         dreamManager.attackWithItem(command, session);
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.ATTACK_WITH_ITEM)
+    public void handleUseFieldItem(UseFieldItemCommand command, Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.useFieldItem(command.itemId(), session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.SHOW_BOX)

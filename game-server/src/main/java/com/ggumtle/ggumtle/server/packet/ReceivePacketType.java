@@ -22,6 +22,7 @@ public enum ReceivePacketType {
     STOP_REVIVE((short) 65),
     MONGDUNG_SKILL((short) 67),
     ATTACK_WITH_ITEM((short) 69),
+    USE_FIELD_ITEM((short) 71),
 
     // 상자 및 아이템 상호작용
     SHOW_BOX((short) 50),

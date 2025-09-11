@@ -1,39 +1,39 @@
 package com.ggumtle.ggumtle.room.domain;
 
-import com.ggumtle.ggumtle.event.DreamStartEvent;
-import com.ggumtle.ggumtle.room.application.result.SceneChangeResult;
 import com.ggumtle.ggumtle.server.packet.Packet;
-import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-@Getter
 @Slf4j
 public class Room {
 
-    private final long roomId;
+    public final long id;
     private final Set<Long> playerIds;
     private final ConcurrentHashMap<Long, Session> playerSessions;
     private final CopyOnWriteArraySet<Long> sceneChanger;
-    private final ApplicationEventPublisher applicationEventPublisher;
 
-    public Room(long roomId, List<Long> playerIds, ApplicationEventPublisher applicationEventPublisher) {
-        this.roomId = roomId;
+    public Room(long id, List<Long> playerIds) {
+        this.id = id;
         this.playerIds = Set.of(playerIds.toArray(new Long[0]));
         this.playerSessions = new ConcurrentHashMap<>(playerIds.size());
         this.sceneChanger = new CopyOnWriteArraySet<>();
-        this.applicationEventPublisher = applicationEventPublisher;
     }
 
     public int getConnectedPlayerCount() {
         return playerSessions.size();
+    }
+
+    public List<Long> getPlayerIds() {
+        return List.copyOf(playerIds);
+    }
+
+    public synchronized List<Session> getPlayerSessions() {
+        return List.copyOf(playerSessions.values());
     }
 
     public int getPlayerSize() {
@@ -42,7 +42,8 @@ public class Room {
 
     public int addSession(Session session) {
         if (!playerIds.contains(session.getMemberId())) {
-            throw new RuntimeException("입장할 수 없는 방입니다");
+            log.error("[{}] {}번 사용자는 {}번 방에 들어올 수 없습니다", session.getChannel().id(), session.getMemberId(), this.id);
+            return -1;
         }
 
         final int connectedSessionCount;
@@ -50,7 +51,7 @@ public class Room {
             if (playerSessions.containsKey(session.getMemberId())) {
                 log.debug(
                         "[{}] {}번 방의 {}번 사용자의 세션 업데이트: {} -> {}",
-                        session.getChannel().id(), roomId, session.getMemberId(), playerSessions.get(session.getMemberId()), session);
+                        session.getChannel().id(), id, session.getMemberId(), playerSessions.get(session.getMemberId()), session);
             }
 
             playerSessions.put(session.getMemberId(), session);
@@ -66,35 +67,26 @@ public class Room {
         return removedSession == null;
     }
 
-    public boolean addSceneChanger(Long playerId) {
+    public int addSceneChanger(long playerId) {
         if (!playerSessions.containsKey(playerId)) {
-            log.debug("{}번 방에 {}번 사용자가 연결되지 않아 씬 체인지 기록 불가", this.roomId, playerId);
-            return false;
+            log.debug("{}번 방에 {}번 사용자가 연결되지 않아 씬 체인지 기록 불가", this.id, playerId);
+            return -1;
         }
 
         if (sceneChanger.contains(playerId)) {
-            log.debug("{}번 방에 {}번 사용자는 이미 씬 체인지 완료함", this.roomId, playerId);
-            return false;
+            log.debug("{}번 방에 {}번 사용자는 이미 씬 체인지 완료함", this.id, playerId);
+            return 0;
         }
 
-        final boolean isAllChanged;
+        int sceneChangerCount;
         synchronized (sceneChanger) {
             sceneChanger.add(playerId);
-            log.info("{}번 방에 {}번 사용자 씬 체인지 완료", this.roomId, playerId);
+            log.info("{}번 방에 {}번 사용자 씬 체인지 완료", this.id, playerId);
 
-            isAllChanged = sceneChanger.size() >= playerIds.size();
+            sceneChangerCount = sceneChanger.size();
         }
 
-        SceneChangeResult result = new SceneChangeResult(1);
-        Packet packet = Packet.of(SendPacketType.SCENE_CHANGE_RESULT, System.currentTimeMillis(), result);
-        playerSessions.get(playerId).sendPacket(packet);
-
-        if (isAllChanged) {
-            DreamStartEvent dreamStartEvent = new DreamStartEvent(this.roomId);
-            applicationEventPublisher.publishEvent(dreamStartEvent);
-        }
-
-        return true;
+        return sceneChangerCount;
     }
 
     public void broadcast(Packet packet) {

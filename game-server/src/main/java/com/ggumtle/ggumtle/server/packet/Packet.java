@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.server.packet;
 
-import com.ggumtle.ggumtle.common.dto.Result;
+import com.ggumtle.ggumtle.common.dto.Body;
 
 import java.nio.charset.StandardCharsets;
 
@@ -12,9 +12,9 @@ public record Packet(
         PacketHeader header,
         byte[] data
 ) {
-    public static Packet of(SendPacketType sendPacketType, long timestamp, Result result) {
-        if (result != null) {
-            byte[] data = result.toBytes(StandardCharsets.UTF_8);
+    public static Packet of(SendPacketType sendPacketType, long timestamp, Body body) {
+        if (body != null) {
+            byte[] data = body.toBytes(StandardCharsets.UTF_8);
 
             PacketHeader packetHeader = new PacketHeader(sendPacketType.getValue(), data.length, timestamp);
             return new Packet(packetHeader, data);

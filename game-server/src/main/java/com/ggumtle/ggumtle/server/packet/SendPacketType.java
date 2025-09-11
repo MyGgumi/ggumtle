@@ -7,16 +7,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum SendPacketType {
     // 인증
-    VERIFY_TOKEN_RESULT((short) 2),
+    VERIFY_TOKEN((short) 2),
 
     // 방 관리
-    ROOM_JOIN_RESULT((short) 11),
-    ROOM_JOIN_DONE((short) 12),
-    SCENE_CHANGE_RESULT((short) 21),
+    ROOM_JOIN((short) 11),
 
     // 게임 초기화
-    INITIALIZE_MAP((short) 30),
-    INITIALIZE_PLAYER((short) 31),
+    INITIALIZE_MAP((short) 20),
+    INITIALIZE_PLAYER((short) 21),
+    SCENE_CHANGE((short) 31),
+    GAME_START((short) 35),
 
     // 게임 플레이
     PLAYER_MOVE_RELAY((short) 41),
@@ -24,26 +24,26 @@ public enum SendPacketType {
     NEW_GGUMTLE((short) 43),
 
     // 플레이어 간 상호작용
-    HIT_RESULT((short) 61),
-    START_REVIVE_RESULT((short) 63),
-    DONE_REVIVE_RESULT((short) 64),
-    STOP_REVIVE_RESULT((short) 66),
-    MONGDUNG_SKILL_RESULT((short) 68),
-    ATTACK_WITH_ITEM_RESULT((short) 70),
-    USE_FIELD_ITEM_RESULT((short) 72),
+    HIT((short) 61),
+    START_REVIVE((short) 63),
+    DONE_REVIVE((short) 64),
+    STOP_REVIVE((short) 66),
+    MONGDUNG_SKILL((short) 68),
+    ATTACK_WITH_ITEM((short) 70),
+    USE_FIELD_ITEM((short) 72),
 
     // 상자 상호작용
-    SHOW_BOX_RESULT((short) 51),
-    CLOSE_BOX_RESULT((short) 53),
-    TAKE_ITEM_RESULT((short) 55),
-    PUT_ITEM_RESULT((short) 57),
+    SHOW_BOX((short) 51),
+    CLOSE_BOX((short) 53),
+    TAKE_ITEM((short) 55),
+    PUT_ITEM((short) 57),
 
     // 꿈틀이 상호작용
     DIG_UP_RECEIVE((short) 101),
     STOP_DIGGING((short) 103),
     DIG_UP_DONE((short) 104),
-    START_FEED_RESULT((short) 111),
-    STOP_FEED_RESULT((short) 113),
+    START_FEED((short) 111),
+    STOP_FEED((short) 113),
     FEED_DONE((short) 120),
 
     // 탈출

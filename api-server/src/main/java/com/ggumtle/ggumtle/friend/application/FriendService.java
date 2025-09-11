@@ -140,7 +140,7 @@ public class FriendService {
         String nickname = friend.getFollower().getNickname();
 
         friendRepository.delete(friend);
-        return RejectFriendRequestResult.of(followerId,nickname);
+        return RejectFriendRequestResult.of(friendId, followerId,nickname);
     }
 
     @Transactional(readOnly = true)

@@ -13,7 +13,7 @@
                 <!-- 조이스틱 손잡이 -->
                 <ui:VisualElement name="joystickKnob" class="joystick-knob">
                     <!-- 조이스틱 아이콘 -->
-                    <ui:VisualElement name="joystickIcon" class="joystick-icon" />
+                    <!-- <ui:VisualElement name="joystickIcon" class="joystick-icon" /> -->
                 </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>

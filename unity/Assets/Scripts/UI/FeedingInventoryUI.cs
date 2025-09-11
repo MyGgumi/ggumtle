@@ -3,12 +3,12 @@ using UnityEngine.UI;
 
 /// <summary>
 /// 먹이 인벤토리 전용 UI 관리
-/// Mushroom 개수만 표시하는 간단한 UI
+/// Light(빛) 개수를 표시하는 간단한 UI - ResourceManager와 연동
 /// </summary>
 public class FeedingInventoryUI : MonoBehaviour
 {
     [Header("먹이 인벤토리 UI")]
-    public Text mushroomCountText;
+    public Text mushroomCountText; // Light 개수 표시용 (이름은 mushroom이지만 Light 사용)
 
     private int displayedCount = 0;
 

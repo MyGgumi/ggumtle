@@ -124,6 +124,17 @@ public class UniversalHUDController : MonoBehaviour
         if (playerActionManager != null)
             playerActionManager.starterAssetsInputs = starterAssetsInputs;
         
+        // InteractionManager와 PlayerActionManager 연결
+        if (playerActionManager != null && InteractionManager.Instance != null)
+        {
+            InteractionManager.Instance.SetPlayerActionManager(playerActionManager);
+            Debug.Log("[UniversalHUDController] InteractionManager와 PlayerActionManager 연결 완료");
+        }
+        else if (InteractionManager.Instance == null)
+        {
+            Debug.LogWarning("[UniversalHUDController] InteractionManager.Instance를 찾을 수 없습니다!");
+        }
+        
         // 체력바 강제 표시 (CSS 클래스 충돌 해결)
         healthBarManager?.SetHealthBarVisibility(true);
         

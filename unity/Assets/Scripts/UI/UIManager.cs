@@ -5,6 +5,10 @@ using UnityEngine;
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
+    
+    [Header("테스트 설정")]
+    [SerializeField]
+    private bool enableKeyboardTesting = false; // ESC 키 테스트 활성화/비활성화
 
     [Header("오버레이 UI들")]
     public ChestBoxUI chestBoxUI;
@@ -42,7 +46,7 @@ public class UIManager : MonoBehaviour
     {
         // ESC 키로 최상단 오버레이 닫기
 #if UNITY_EDITOR || UNITY_STANDALONE
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (enableKeyboardTesting && Input.GetKeyDown(KeyCode.Escape))
         {
             CloseTopOverlay();
         }

@@ -9,6 +9,8 @@ public class MonggingHUDExample : MonoBehaviour
     public UniversalHUDController hudController;
     
     [Header("Test Settings")]
+    [SerializeField]
+    private bool enableKeyboardTesting = false; // 키보드 테스트 활성화/비활성화
     private int currentTestHP = 100;
     private int currentGgumtleLevel = 0;
     private bool playersInitialized = false;
@@ -75,6 +77,8 @@ public class MonggingHUDExample : MonoBehaviour
     
     private void ShowKeyboardGuide()
     {
+        if (!enableKeyboardTesting) return;
+        
         Debug.Log("=== MonggingHUD 키보드 테스트 가이드 ===");
         Debug.Log("1~3키: 꿈틀 진행도 | 4~7키: 상호작용 테스트 | 8키: UI 숨김 | 9키: 땅파기 | 0키: 상호작용시작");
         Debug.Log("Q키: 땅파기애니메이션 | W키: 동료구조상호작용 | E키: 먹이주기상호작용");
@@ -82,7 +86,7 @@ public class MonggingHUDExample : MonoBehaviour
         Debug.Log("H키: 체력감소 | U키: 체력회복 | R키: 역할변경 | T키: 시간변경 | L키: 빛변경");
         Debug.Log("M키: 플레이어참가 | X키: 플레이어리셋 | Space키: 타이머정지/재개");
         Debug.Log("=== 이벤트 트리거 테스트 ===");
-        Debug.Log("A키: 꿈틀진행도 | S키: 빛획득 | D키: 플레이어기절 | Y키: 플레이어사망");
+        Debug.Log("A키: 꿈틀진행도 | S키: 빛획득(추가) | D키: 플레이어기절 | Y키: 플레이어사망");
         Debug.Log("I키: 플레이어부활 | K키: 시간경고 | J키: 상호작용완료 | B키: 랜덤배너");
         Debug.Log("=== 직접 상호작용 트리거 테스트 (숫자패드) ===");
         Debug.Log("NumPad1: 땅파기(3초) | NumPad2: 동료구조(5초) | NumPad3: 먹이주기(2초) | NumPad0: 취소");
@@ -90,7 +94,7 @@ public class MonggingHUDExample : MonoBehaviour
     
     void Update()
     {
-        if (hudController == null || Keyboard.current == null) return;
+        if (hudController == null || Keyboard.current == null || !enableKeyboardTesting) return;
         
         // 꿈틀 진행도 테스트
         if (Keyboard.current.digit1Key.wasPressedThisFrame) SetGgumtleLevel(1);
@@ -180,8 +184,18 @@ public class MonggingHUDExample : MonoBehaviour
     private void ChangeLightCount()
     {
         int newLight = UnityEngine.Random.Range(0, 50);
-        hudController.SetLightCount(newLight);
-        Debug.Log($"[MonggingHUDExample] 빛 개수: {newLight}개");
+        
+        // ResourceManager에서 직접 빛 설정
+        if (ResourceManager.Instance != null)
+        {
+            ResourceManager.Instance.SetLightCount(newLight);
+            Debug.Log($"[MonggingHUDExample] 빛 개수 설정: {newLight}개 (ResourceManager)");
+        }
+        else
+        {
+            hudController.SetLightCount(newLight);
+            Debug.Log($"[MonggingHUDExample] 빛 개수 설정: {newLight}개 (HUDController)");
+        }
     }
     
     // === 이벤트 트리거 메서드들 ===
@@ -195,8 +209,20 @@ public class MonggingHUDExample : MonoBehaviour
     private void TriggerLightEvent()
     {
         int randomCount = UnityEngine.Random.Range(1, 10);
-        HUDEvents.TriggerLightGain(randomCount);
-        Debug.Log($"[MonggingHUDExample] 빛 {randomCount}개 획득 이벤트");
+        
+        // ResourceManager에서 직접 빛 추가 (UI 업데이트 포함)
+        if (ResourceManager.Instance != null)
+        {
+            ResourceManager.Instance.AddLight(randomCount);
+            Debug.Log($"[MonggingHUDExample] 빛 {randomCount}개 추가됨 (총: {ResourceManager.Instance.GetCurrentLightCount()}개)");
+        }
+        else
+        {
+            // ResourceManager가 없으면 HUDController를 통해 추가
+            hudController.SetLightCount(hudController.GetCurrentRole() == PlayerRole.Mongging ? 
+                UnityEngine.Random.Range(5, 30) : 0);
+            Debug.Log($"[MonggingHUDExample] ResourceManager 없음 - HUDController로 빛 개수 설정");
+        }
     }
     
     private void TriggerFaintEvent()

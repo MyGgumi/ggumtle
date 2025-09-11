@@ -21,6 +21,9 @@ public class InteractionManager : MonoBehaviour
     [Header("모바일 UI")]
     public Button mobileInteractionButton;
     
+    [Header("UI Toolkit 연결")]
+    private PlayerActionManager playerActionManager;
+    
     // 홀드 상호작용 상태
     private bool isHoldingInteraction = false;
     private IInteractable currentHoldInteractable;
@@ -366,22 +369,24 @@ public class InteractionManager : MonoBehaviour
     /// </summary>
     private void UpdateInteractionButtonVisibility()
     {
-        if (mobileInteractionButton == null)
-        {
-            Debug.LogWarning(
-                "[InteractionManager] mobileInteractionButton이 null입니다! Inspector에서 VirtualButton_Open을 할당해주세요."
-            );
-            return;
-        }
-
         // 상호작용 가능한 객체가 근처에 있을 때만 버튼 표시
         bool shouldShow =
             currentNearbyInteractable != null && currentNearbyInteractable.CanInteract();
 
-        if (mobileInteractionButton.gameObject.activeInHierarchy != shouldShow)
+        // UGUI 버튼 제어 (기존 시스템)
+        if (mobileInteractionButton != null)
         {
-            mobileInteractionButton.gameObject.SetActive(shouldShow);
-            Debug.Log($"[InteractionManager] 상호작용 버튼 {(shouldShow ? "표시" : "숨김")}");
+            if (mobileInteractionButton.gameObject.activeInHierarchy != shouldShow)
+            {
+                mobileInteractionButton.gameObject.SetActive(shouldShow);
+                Debug.Log($"[InteractionManager] UGUI 상호작용 버튼 {(shouldShow ? "표시" : "숨김")}");
+            }
+        }
+        
+        // UI Toolkit 버튼 제어 (새로운 시스템)
+        if (playerActionManager != null)
+        {
+            playerActionManager.UpdateInteractionButtonVisibility(shouldShow);
         }
     }
 
@@ -464,6 +469,18 @@ public class InteractionManager : MonoBehaviour
     #endregion
 
     #region 공개 메서드 (다른 스크립트에서 호출)
+    /// <summary>
+    /// UI Toolkit PlayerActionManager 연결
+    /// </summary>
+    public void SetPlayerActionManager(PlayerActionManager actionManager)
+    {
+        playerActionManager = actionManager;
+        Debug.Log("[InteractionManager] PlayerActionManager 연결 완료");
+        
+        // 즉시 버튼 상태 업데이트
+        UpdateInteractionButtonVisibility();
+    }
+    
     /// <summary>
     /// 모바일용 닫기 버튼에서 호출
     /// </summary>

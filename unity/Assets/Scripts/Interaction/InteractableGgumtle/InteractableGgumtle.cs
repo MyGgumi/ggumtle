@@ -22,9 +22,9 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     
     [Header("먹이 설정")]
     public int maxFoodRequired = 30; // 정화에 필요한 총 먹이량
-    public int feedingRate = 1; // 0.5초당 먹이 개수 (먹이 인벤토리에서 소모)
+    public int feedingRate = 1; // 0.5초당 먹이 개수 (빛 자원에서 소모)
     public int currentFoodAmount = 0; // 현재 먹은 먹이량
-    public string acceptableFoodType = "Mushroom"; // 받을 수 있는 먹이 종류
+    public string acceptableFoodType = "Light"; // 받을 수 있는 먹이 종류 (이제 빛)
 
     [Header("애니메이션")]
     public Animator ggumtleAnimator;
@@ -291,7 +291,7 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         // 플레이어가 먹이를 가지고 있는지 확인
         if (!CanPlayerFeed())
         {
-            Debug.Log($"[InteractableGgumtle] 플레이어가 Mushroom을(를) 가지고 있지 않습니다");
+            Debug.Log($"[InteractableGgumtle] 플레이어가 Light를 가지고 있지 않습니다");
             return;
         }
 
@@ -335,7 +335,7 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
             // 플레이어가 먹이를 가지고 있는지 확인
             if (!CanPlayerFeed())
             {
-                Debug.Log($"[InteractableGgumtle] 플레이어의 Mushroom이 모두 소모됨 - 먹이주기 중단");
+                Debug.Log($"[InteractableGgumtle] 플레이어의 Light가 모두 소모됨 - 먹이주기 중단");
                 StopFeeding();
                 yield break;
             }
@@ -361,7 +361,7 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
                 }
                 else
                 {
-                    Debug.Log($"[InteractableGgumtle] 플레이어 인벤토리에서 Mushroom 소모 실패");
+                    Debug.Log($"[InteractableGgumtle] 플레이어 인벤토리에서 Light 소모 실패");
                     StopFeeding();
                     yield break;
                 }
@@ -413,28 +413,23 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     /// </summary>
     private bool CanPlayerFeed()
     {
-        if (FeedingInventory.Instance == null) return false;
-        return FeedingInventory.Instance.GetMushroomCount() > 0;
+        if (ResourceManager.Instance == null) return false;
+        return ResourceManager.Instance.CanPlayerFeed();
     }
 
     /// <summary>
-    /// 먹이 인벤토리에서 먹이 소모 시도
+    /// 빛 자원에서 먹이 소모 시도
     /// </summary>
     private bool TryConsumeFoodFromPlayer(int amount)
     {
-        if (FeedingInventory.Instance == null) return false;
+        if (ResourceManager.Instance == null) return false;
 
-        if (FeedingInventory.Instance.HasEnoughMushrooms(amount))
+        bool success = ResourceManager.Instance.TryConsumeLightForFeeding(amount);
+        if (success)
         {
-            bool success = FeedingInventory.Instance.RemoveMushrooms(amount);
-            if (success)
-            {
-                Debug.Log($"[InteractableGgumtle] 먹이 인벤토리에서 Mushroom {amount}개 소모");
-            }
-            return success;
+            Debug.Log($"[InteractableGgumtle] 빛 자원에서 Light {amount}개 소모");
         }
-
-        return false;
+        return success;
     }
 
     void OnDrawGizmosSelected()

@@ -42,7 +42,7 @@ public class FeedingInventory : MonoBehaviour
     }
 
     /// <summary>
-    /// 버섯 추가
+    /// 버섯 추가 - ResourceManager에도 Light로 추가
     /// </summary>
     public int AddMushrooms(int amount)
     {
@@ -50,6 +50,18 @@ public class FeedingInventory : MonoBehaviour
 
         int oldAmount = currentMushrooms;
         currentMushrooms += amount;
+
+        // ResourceManager UI 업데이트 (데이터는 여기서만 관리)
+        if (ResourceManager.Instance != null)
+        {
+            ResourceManager.Instance.UpdateLightUI(currentMushrooms);
+            if (showDebugLogs)
+                Debug.Log($"[FeedingInventory] ResourceManager UI를 {currentMushrooms}개로 업데이트");
+        }
+        else if (showDebugLogs)
+        {
+            Debug.LogWarning("[FeedingInventory] ResourceManager.Instance가 null입니다!");
+        }
 
         OnFeedingInventoryChanged?.Invoke(currentMushrooms);
         OnFeedingMessage?.Invoke($"버섯 {amount}개 획득! (총 {currentMushrooms}개)");
@@ -71,6 +83,14 @@ public class FeedingInventory : MonoBehaviour
         {
             int oldAmount = currentMushrooms;
             currentMushrooms -= amount;
+
+            // ResourceManager UI 업데이트
+            if (ResourceManager.Instance != null)
+            {
+                ResourceManager.Instance.UpdateLightUI(currentMushrooms);
+                if (showDebugLogs)
+                    Debug.Log($"[FeedingInventory] ResourceManager UI를 {currentMushrooms}개로 업데이트");
+            }
 
             OnFeedingInventoryChanged?.Invoke(currentMushrooms);
 

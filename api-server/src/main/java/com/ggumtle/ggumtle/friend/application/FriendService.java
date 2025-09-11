@@ -16,6 +16,7 @@ import com.ggumtle.ggumtle.friend.application.result.RejectFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.SearchMemberResult;
 import com.ggumtle.ggumtle.friend.domain.Friend;
+import com.ggumtle.ggumtle.friend.domain.MemberState;
 import com.ggumtle.ggumtle.friend.domain.Status;
 import com.ggumtle.ggumtle.friend.persistence.FriendRepository;
 import com.ggumtle.ggumtle.friend.persistence.po.MemberPo;
@@ -30,6 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -37,6 +40,7 @@ import java.util.List;
 public class FriendService {
     private final FriendRepository friendRepository;
     private final MemberRepository memberRepository;
+    private final MemberStateService memberStateService;
 
     @Transactional
     public RequestFriendsResult requestFriend(RequestFriendCommand command) {
@@ -80,11 +84,24 @@ public class FriendService {
         List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndStatus(memberId, Status.ACCEPTED);
 
         List<Member> friends = new ArrayList<>();
-
         asFollower.forEach(f -> friends.add(f.getFollowee()));
         asFollowee.forEach(f -> friends.add(f.getFollower()));
 
-        return GetFriendsResult.of(friends);
+        List<Long> friendIds = friends.stream()
+                .map(Member::getId)
+                .toList();
+
+        Map<Long, MemberStateService.State> states = memberStateService.getStates(friendIds);
+
+        List<GetFriendsResult.Friend> items = friends.stream()
+                .map(m -> new GetFriendsResult.Friend(
+                        m.getId(),
+                        m.getNickname(),
+                        states.getOrDefault(m.getId(), MemberStateService.State.OFFLINE).name()
+                ))
+                .collect(Collectors.toList());
+
+        return new GetFriendsResult(items);
     }
 
     @Transactional(readOnly = true)

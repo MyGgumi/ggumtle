@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.common.SocketType;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.FriendService;
+import com.ggumtle.ggumtle.friend.application.MemberStateService;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
@@ -41,6 +42,7 @@ import java.util.List;
 public class FriendController {
     private final FriendService friendService;
     private final ApplicationEventPublisher applicationEventPublisher;
+    private final MemberStateService memberStateService;
 
     @SocketCommandHandler(type = SocketType.REQUEST_FRIEND)
     public void requestFriend(RequestFriendRequest request, WebSocketSession session) {

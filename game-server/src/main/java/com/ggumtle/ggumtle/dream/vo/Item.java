@@ -24,4 +24,12 @@ public enum Item {
         }
         return null;
     }
+
+    public boolean isAttackItem() {
+        if (id == 1) {
+            return false;
+        }
+
+        return true;
+    }
 }

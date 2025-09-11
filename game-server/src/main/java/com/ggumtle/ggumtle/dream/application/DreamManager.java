@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Result;
+import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
 import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
@@ -24,6 +25,7 @@ import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
 import com.ggumtle.ggumtle.dream.application.result.StartFeedResult;
 import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
 import com.ggumtle.ggumtle.dream.application.result.StopFeedingResult;
+import com.ggumtle.ggumtle.dream.application.result.UseMonggingItemResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Exit;
 import com.ggumtle.ggumtle.dream.domain.FakeGgumtle;
@@ -260,6 +262,56 @@ public class DreamManager {
             buryFakeGgumtle(mongdung, session);
             return;
         }
+    }
+
+    public void attackWithItem(AttackWithItemCommand command, Session session) {
+        Item item = Item.valueOf(command.itemId());
+        if (item == null) {
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM_ID, command.itemId());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        if (item.isAttackItem()) {
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_ATTACK_ITEM, item.getId());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        if (!(player instanceof Mongging mongging)) {
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_MONGGING, item.getId());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
+        if (mongdungPlayer == null) {
+            log.error("%d번 게임의 몽둥이를 찾을 수 없습니다.");
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.getId());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Item usedItem = mongging.popItem(item);
+        if (usedItem == null) {
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.getId());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // TODO: 히트 판정
+        Mongdung mongdung = (Mongdung) mongdungPlayer;
+
+        Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.SUCCESS, item.getId());
+        Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+        this.room.sendPacket(mongdung.getId(), packet);
     }
 
     public void makeScare(Mongdung mongdung, Session session) {

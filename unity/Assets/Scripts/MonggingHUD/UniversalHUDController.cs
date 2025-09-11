@@ -18,6 +18,7 @@ public class UniversalHUDController : MonoBehaviour
     public Sprite iconHp;
     public Sprite backgroundItemSlot;
     
+    
     [Header("Player Role Configuration")]
     public PlayerRole currentPlayerRole = PlayerRole.Mongging;
     
@@ -36,6 +37,10 @@ public class UniversalHUDController : MonoBehaviour
     public NotificationBannerManager notificationManager;
     public ChatManager chatManager;
     public PlayerInventoryUI_UIToolkit playerInventoryUI;
+    
+    [Header("Mobile Control Managers")]
+    public MobileInputManager mobileInputManager;
+    public PlayerActionManager playerActionManager;
     
 
     void Awake()
@@ -79,6 +84,10 @@ public class UniversalHUDController : MonoBehaviour
             chatManager = gameObject.GetComponent<ChatManager>() ?? gameObject.AddComponent<ChatManager>();
         if (playerInventoryUI == null)
             playerInventoryUI = gameObject.GetComponent<PlayerInventoryUI_UIToolkit>() ?? gameObject.AddComponent<PlayerInventoryUI_UIToolkit>();
+        if (mobileInputManager == null)
+            mobileInputManager = gameObject.GetComponent<MobileInputManager>() ?? gameObject.AddComponent<MobileInputManager>();
+        if (playerActionManager == null)
+            playerActionManager = gameObject.GetComponent<PlayerActionManager>() ?? gameObject.AddComponent<PlayerActionManager>();
     }
     
     private void InitializeManagers()
@@ -91,6 +100,29 @@ public class UniversalHUDController : MonoBehaviour
         notificationManager?.Initialize(_root);
         chatManager?.Initialize(_root);
         playerInventoryUI?.Initialize(_root);
+        
+        // 모바일 컨트롤 매니저 초기화
+        mobileInputManager?.Initialize(_root);
+        playerActionManager?.Initialize(_root);
+        
+        // StarterAssetsInputs 연결
+        if (mobileInputManager != null)
+        {
+            mobileInputManager.starterAssetsInputs = starterAssetsInputs;
+            // UICanvasControllerInput 연결 (기존 UGUI 시스템과 호환)
+            var canvasControllerInput = FindObjectOfType<StarterAssets.UICanvasControllerInput>();
+            if (canvasControllerInput != null)
+            {
+                mobileInputManager.canvasControllerInput = canvasControllerInput;
+                Debug.Log("[UniversalHUDController] UICanvasControllerInput 연결 완료");
+            }
+            else
+            {
+                Debug.LogWarning("[UniversalHUDController] UICanvasControllerInput를 찾을 수 없습니다!");
+            }
+        }
+        if (playerActionManager != null)
+            playerActionManager.starterAssetsInputs = starterAssetsInputs;
         
         // 체력바 강제 표시 (CSS 클래스 충돌 해결)
         healthBarManager?.SetHealthBarVisibility(true);
@@ -376,4 +408,5 @@ public class UniversalHUDController : MonoBehaviour
     {
         Debug.Log($"[UniversalHUD] 슬롯 교체: {slot1} ↔ {slot2}");
     }
+    
 }

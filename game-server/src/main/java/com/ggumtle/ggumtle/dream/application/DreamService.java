@@ -2,6 +2,8 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.common.dto.Timestamp;
+import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
+import com.ggumtle.ggumtle.common.event.JoinRoomEvent;
 import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
 import com.ggumtle.ggumtle.dream.application.command.EscapeCommand;
@@ -55,6 +57,23 @@ public class DreamService {
         room.getPlayerSessions()
                 .forEach((sessionId, session) -> sessionIdToDreamManagers.put(sessionId, dreamManager));
         log.debug(sessionIdToDreamManagers.toString());
+    }
+
+    @EventListener
+    public void joinRoom(JoinRoomEvent event) {
+        DreamManager dreamManager = dreamManagers.getOrDefault(event.roomId(), null);
+
+        if (dreamManager == null) {
+            log.info("[{}] {}번 방에 입장했지만 방에 해당하는 Dream Manager가 없어 Dream에 등록되지 않았습니다", event.session().getChannel().id(), event.roomId());
+            return;
+        }
+
+        sessionIdToDreamManagers.put(event.session().getSessionId(), dreamManager);
+    }
+
+    @EventListener
+    public void leaveRoom(DisconnectSessionEvent event) {
+        sessionIdToDreamManagers.remove(event.session().getSessionId());
     }
 
     @PacketCommandHandler(type = ReceivePacketType.PLAYER_MOVE)

@@ -91,7 +91,7 @@ public class DreamManager {
     private final AtomicBoolean isExitOpen;
 
     public DreamManager(Room room, SpawnCache spawnCache) {
-        log.info("{}번 게임의 초기화 시작", room.getRoomId());
+        log.info("{}번 게임 생성 시작", room.getRoomId());
 
         this.spawnCache = spawnCache;
         this.room = room;

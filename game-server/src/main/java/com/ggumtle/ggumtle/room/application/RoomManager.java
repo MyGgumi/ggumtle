@@ -1,7 +1,10 @@
 package com.ggumtle.ggumtle.room.application;
 
 import com.ggumtle.ggumtle.common.event.JoinRoomEvent;
+import com.ggumtle.ggumtle.room.application.result.JoinRoomResult;
 import com.ggumtle.ggumtle.room.domain.Room;
+import com.ggumtle.ggumtle.server.packet.Packet;
+import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -48,11 +51,6 @@ public class RoomManager {
         return Optional.of(room);
     }
 
-    /**
-     * 새로운 방을 생성합니다.
-     *
-     * @return 생성된 방 ID
-     */
     public Room createRoom(List<Long> players) {
         long roomId = roomIdGenerator.incrementAndGet();
 
@@ -84,33 +82,31 @@ public class RoomManager {
         playerIdToRoom.remove(session.getMemberId());
     }
 
-    public boolean joinRoom(Long roomId, Session session) {
-        Room existingRoom = playerIdToRoom.getOrDefault(session.getMemberId(), null);
-        if (existingRoom != null) {
-            log.error("{}번 사용자는 이미 {}번 방에 들어와있습니다", session.getMemberId(), existingRoom.getRoomId());
-            return false;
-        }
+    public List<Room> getRooms() {
+        return idToRoom.values().stream().toList();
+    }
 
+    public boolean joinRoom(Long roomId, Session session) {
         Room room = idToRoom.getOrDefault(roomId, null);
         if (room == null) {
-            log.error("{}번 방을 찾을 수 없습니다", roomId);
+            log.error("[{}] {}번 방을 찾을 수 없습니다", session.getChannel().id(), roomId);
             return false;
         }
 
-        room.addSession(session);
+        int connectedSessionCount = room.addSession(session);
         playerIdToRoom.put(session.getMemberId(), room);
-        log.debug("{}번 방에 세션 추가 결과: 현재 인원 {}인", roomId, idToRoom.get(roomId).getConnectedPlayerCount());
+        log.debug("[{}] {}번 방에 세션 추가 결과: 현재 인원 {}인", session.getChannel().id(), roomId, connectedSessionCount);
+
+        JoinRoomResult result = new JoinRoomResult(1);
+        Packet packet = Packet.of(SendPacketType.ROOM_JOIN_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+
+        if (connectedSessionCount == room.getPlayerSize()) {
+            Packet donePacket = Packet.of(SendPacketType.ROOM_JOIN_DONE, System.currentTimeMillis(), null);
+            room.broadcast(donePacket);
+        }
 
         applicationEventPublisher.publishEvent(new JoinRoomEvent(roomId, session));
         return true;
-    }
-
-    /**
-     * 모든 방 리스트를 반환합니다.
-     *
-     * @return 방 리스트
-     */
-    public List<Room> getRooms() {
-        return idToRoom.values().stream().toList();
     }
 }

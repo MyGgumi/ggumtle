@@ -16,28 +16,15 @@ import java.util.concurrent.atomic.AtomicLong;
 @Component
 public class SessionManager {
 
-    // 세션 ID 생성을 위한 시퀀스
     private final AtomicLong sessionIdGenerator = new AtomicLong(0);
-
-    // Session 관리를 위한 맵
     private final ConcurrentHashMap<Channel, Session> sessionMap = new ConcurrentHashMap<>();
 
-    /**
-     * 모든 세션에 패킷을 브로드캐스트합니다.
-     *
-     * @param packet 브로드캐스트할 패킷
-     */
     public void broadcast(Packet packet) {
         log.debug("모든 세션에 패킷 브로드캐스트: {}", SendPacketType.fromValue(packet.header().packetType()));
 
         sessionMap.values().forEach(session -> session.sendPacket(packet));
     }
 
-    /**
-     * 새로운 세션을 생성합니다.
-     *
-     * @param channel 세션에 연결된 채널
-     */
     public void createSession(Channel channel, long memberId) {
         long sessionId = sessionIdGenerator.incrementAndGet();
 
@@ -80,11 +67,6 @@ public class SessionManager {
         }
     }
 
-    /**
-     * 모든 세션 리스트를 반환합니다.
-     *
-     * @return 세션 리스트
-     */
     public List<Session> getSessions() {
         log.debug("모든 세션 리스트 반환: {}", sessionMap.values().stream().map(Session::getSessionId).toList());
 

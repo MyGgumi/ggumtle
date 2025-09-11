@@ -1,7 +1,6 @@
 package com.ggumtle.ggumtle.room.domain;
 
 import com.ggumtle.ggumtle.event.DreamStartEvent;
-import com.ggumtle.ggumtle.room.application.result.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.result.SceneChangeResult;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
@@ -37,52 +36,36 @@ public class Room {
         return playerSessions.size();
     }
 
-    /**
-     * 세션을 추가한다.
-     * 세션 추가 후 모두 접속된 경우 브로드캐스팅한다.
-     * @param session 추가할 세션
-     */
-    public void addSession(Session session) {
+    public int getPlayerSize() {
+        return playerIds.size();
+    }
+
+    public int addSession(Session session) {
         if (!playerIds.contains(session.getMemberId())) {
             throw new RuntimeException("입장할 수 없는 방입니다");
         }
 
-        final boolean isFull;
+        final int connectedSessionCount;
         synchronized (playerSessions) {
             if (playerSessions.containsKey(session.getMemberId())) {
-                log.debug("{}번 방에 재입장: {}", this.roomId, session);
+                log.debug(
+                        "[{}] {}번 방의 {}번 사용자의 세션 업데이트: {} -> {}",
+                        session.getChannel().id(), roomId, session.getMemberId(), playerSessions.get(session.getMemberId()), session);
             }
 
             playerSessions.put(session.getMemberId(), session);
-
-            isFull = playerSessions.size() >= playerIds.size();
+            connectedSessionCount = playerSessions.size();
         }
 
-        JoinRoomResult result = new JoinRoomResult(1);
-        Packet packet = Packet.of(SendPacketType.ROOM_JOIN_RESULT, System.currentTimeMillis(), result);
-        session.sendPacket(packet);
-
-        if (isFull) {
-            Packet donePacket = Packet.of(SendPacketType.ROOM_JOIN_DONE, System.currentTimeMillis(), null);
-            broadcast(donePacket);
-        }
+        return connectedSessionCount;
     }
 
     public boolean removeSession(Session session) {
         Session removedSession = playerSessions.remove(session.getMemberId());
-        if (removedSession == null) {
-            return false;
-        }
 
-        sceneChanger.remove(removedSession.getMemberId());
-        return true;
+        return removedSession == null;
     }
 
-    /**
-     * 씬 체인지가 완료된 사용자를 추가한다.
-     * @param playerId 씬 체인지를 완료한 사용자
-     * @return
-     */
     public boolean addSceneChanger(Long playerId) {
         if (!playerSessions.containsKey(playerId)) {
             log.debug("{}번 방에 {}번 사용자가 연결되지 않아 씬 체인지 기록 불가", this.roomId, playerId);
@@ -130,10 +113,10 @@ public class Room {
     public int sendPacket(List<Long> memberIds, Packet packet) {
         int count = 0;
 
-        for (int i = 0; i < memberIds.size(); i++) {
-            Session session = playerSessions.getOrDefault(memberIds.get(i), null);
+        for (Long memberId : memberIds) {
+            Session session = playerSessions.getOrDefault(memberId, null);
             if (session == null) {
-                log.warn("{}번 사용자의 세션이 없어 {} 패킷을 전송하지 못했습니다", memberIds.get(i), packet);
+                log.warn("{}번 사용자의 세션이 없어 {} 패킷을 전송하지 못했습니다", memberId, packet);
                 continue;
             }
             session.sendPacket(packet);

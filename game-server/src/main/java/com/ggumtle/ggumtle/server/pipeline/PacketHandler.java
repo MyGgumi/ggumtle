@@ -31,7 +31,7 @@ public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
     public void channelActive(ChannelHandlerContext ctx) {
         channelManager.addChannel(ctx.channel());
 
-        log.info("클라이언트 연결됨: {}, 전체 채널 수: {}", ctx.channel().remoteAddress(), channelManager.getChannelCount());
+        log.info("[{}] 클라이언트 연결됨: {}, 전체 채널 수: {}", ctx.channel().id(), ctx.channel().remoteAddress(), channelManager.getChannelCount());
     }
 
     @Override
@@ -41,12 +41,12 @@ public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
 
         channelManager.removeChannel(ctx.channel());
 
-        log.info("클라이언트 연결 해제됨: {}", ctx.channel().remoteAddress());
+        log.info("[{}] 클라이언트 연결 해제됨: {}", ctx.channel().id(), ctx.channel().remoteAddress());
     }
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
-        log.error("채널 예외 발생", cause);
+        log.error("[{}] 채널 예외 발생", ctx.channel().id(), cause);
         ctx.close();
     }
 }

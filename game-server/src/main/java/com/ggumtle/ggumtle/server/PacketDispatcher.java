@@ -68,6 +68,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         }
 
         if (!channelManager.isAuthorized(ctx.channel())) {
+            log.error("[{}] 채널 인증 전에 인증 요청이 아닌 다른 요청을 수신함: {}", ctx.channel().id(), packet.data());
             throw new RuntimeException("채널 인증 전입니다");
         }
 

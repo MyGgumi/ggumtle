@@ -30,6 +30,7 @@ public enum SendPacketType {
     STOP_REVIVE_RESULT((short) 66),
     MONGDUNG_SKILL_RESULT((short) 68),
     ATTACK_WITH_ITEM_RESULT((short) 70),
+    USE_FIELD_ITEM_RESULT((short) 72),
 
     // 상자 상호작용
     SHOW_BOX_RESULT((short) 51),

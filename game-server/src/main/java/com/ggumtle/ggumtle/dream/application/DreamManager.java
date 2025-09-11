@@ -25,6 +25,7 @@ import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
 import com.ggumtle.ggumtle.dream.application.result.StartFeedResult;
 import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
 import com.ggumtle.ggumtle.dream.application.result.StopFeedingResult;
+import com.ggumtle.ggumtle.dream.application.result.UseFieldItemResult;
 import com.ggumtle.ggumtle.dream.application.result.UseMonggingItemResult;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Exit;
@@ -318,44 +319,36 @@ public class DreamManager {
         this.room.sendPacket(mongdung.getId(), packet);
     }
 
-    public void makeScare(Mongdung mongdung, Session session) {
-        boolean success = mongdung.scare();
-
-        if (!success) {
-            Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.YET_COOL_TIME);
-            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+    public void useFieldItem(int itemId, Session session) {
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        if (!(player instanceof Mongging mongging)) {
+            Result result = new UseFieldItemResult(UseFieldItemResult.Status.NOT_MONGGING, itemId);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
-        Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.SUCCESS);
-        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
-        this.room.broadcast(packet);
-    }
-
-    public void buryFakeGgumtle(Mongdung mongdung, Session session) {
-        Position position = mongdung.getPositionAt(System.currentTimeMillis());
-
-        boolean success = mongdung.tryBuryFakeGgumtle();
-
-        if (!success) {
-            Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.LACK_USE_COUNT);
-            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        FieldItem fieldItem = fieldItems.getOrDefault(itemId, null);
+        if (fieldItem == null) {
+            Result result = new UseFieldItemResult(UseFieldItemResult.Status.NOT_FOUND_FIELD_ITEM, itemId);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
-        Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.SUCCESS);
-        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
-        session.sendPacket(packet);
+        if (fieldItem.isUsed()) {
+            Result result = new UseFieldItemResult(UseFieldItemResult.Status.ALREADY_USED, fieldItem.id);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
 
-        int id = ggumtleIdGenerator.addAndGet(1);
-        FakeGgumtle fakeGgumtle = new FakeGgumtle(id, position);
+        // TODO: 필드템 인근인지 확인
 
-        this.ggumtles.put(id, fakeGgumtle);
+        fieldItem.use();
 
-        result = new NewGgumtleResult(fakeGgumtle.getId(), fakeGgumtle.getPosition());
-        packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), result);
+        Result result = new UseFieldItemResult(UseFieldItemResult.Status.SUCCESS, fieldItem.id);
+        Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
     }
 
@@ -757,6 +750,47 @@ public class DreamManager {
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
         }
+    }
+
+    private void makeScare(Mongdung mongdung, Session session) {
+        boolean success = mongdung.scare();
+
+        if (!success) {
+            Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.YET_COOL_TIME);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
+    }
+
+    private void buryFakeGgumtle(Mongdung mongdung, Session session) {
+        Position position = mongdung.getPositionAt(System.currentTimeMillis());
+
+        boolean success = mongdung.tryBuryFakeGgumtle();
+
+        if (!success) {
+            Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.LACK_USE_COUNT);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            session.sendPacket(packet);
+            return;
+        }
+
+        Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        session.sendPacket(packet);
+
+        int id = ggumtleIdGenerator.addAndGet(1);
+        FakeGgumtle fakeGgumtle = new FakeGgumtle(id, position);
+
+        this.ggumtles.put(id, fakeGgumtle);
+
+        result = new NewGgumtleResult(fakeGgumtle.getId(), fakeGgumtle.getPosition());
+        packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), result);
+        this.room.broadcast(packet);
     }
 
     private void distributeDroppedItem(Mongging mongging) {

@@ -35,6 +35,7 @@ public class UniversalHUDController : MonoBehaviour
     public HUDInteractionManager interactionManager;
     public NotificationBannerManager notificationManager;
     public ChatManager chatManager;
+    public PlayerInventoryUI_UIToolkit playerInventoryUI;
     
 
     void Awake()
@@ -76,6 +77,8 @@ public class UniversalHUDController : MonoBehaviour
             notificationManager = gameObject.GetComponent<NotificationBannerManager>() ?? gameObject.AddComponent<NotificationBannerManager>();
         if (chatManager == null)
             chatManager = gameObject.GetComponent<ChatManager>() ?? gameObject.AddComponent<ChatManager>();
+        if (playerInventoryUI == null)
+            playerInventoryUI = gameObject.GetComponent<PlayerInventoryUI_UIToolkit>() ?? gameObject.AddComponent<PlayerInventoryUI_UIToolkit>();
     }
     
     private void InitializeManagers()
@@ -87,6 +90,7 @@ public class UniversalHUDController : MonoBehaviour
         interactionManager?.Initialize(_root);
         notificationManager?.Initialize(_root);
         chatManager?.Initialize(_root);
+        playerInventoryUI?.Initialize(_root);
         
         // 체력바 강제 표시 (CSS 클래스 충돌 해결)
         healthBarManager?.SetHealthBarVisibility(true);
@@ -104,6 +108,11 @@ public class UniversalHUDController : MonoBehaviour
         HUDEvents.OnPlayerDeath += OnPlayerDeath;
         HUDEvents.OnPlayerRevived += OnPlayerRevived;
         HUDEvents.OnInteractionCompleted += OnInteractionCompleted;
+        
+        // 인벤토리 이벤트 구독
+        HUDEvents.OnItemObtained += OnItemObtained;
+        HUDEvents.OnItemUsed += OnItemUsed;
+        HUDEvents.OnSlotSwapped += OnSlotSwapped;
     }
     
     private void UnsubscribeFromEvents()
@@ -116,6 +125,11 @@ public class UniversalHUDController : MonoBehaviour
         HUDEvents.OnPlayerDeath -= OnPlayerDeath;
         HUDEvents.OnPlayerRevived -= OnPlayerRevived;
         HUDEvents.OnInteractionCompleted -= OnInteractionCompleted;
+        
+        // 인벤토리 이벤트 구독 해제
+        HUDEvents.OnItemObtained -= OnItemObtained;
+        HUDEvents.OnItemUsed -= OnItemUsed;
+        HUDEvents.OnSlotSwapped -= OnSlotSwapped;
     }
     
     private void InitializeSprites()
@@ -126,6 +140,7 @@ public class UniversalHUDController : MonoBehaviour
         
         resourceManager?.SetSprites(lightJelly, backgroundItemSlot);
         playerListManager?.SetSprites(iconMongingDefault, iconMongingFaint, iconMongingDead, iconMongingEscape);
+        playerInventoryUI?.SetSprites(backgroundItemSlot);
     }
     
     private void SetSpriteToElement(string elementName, Sprite sprite)
@@ -342,5 +357,23 @@ public class UniversalHUDController : MonoBehaviour
     {
         notificationManager?.ShowBanner("사망하였습니다.");
         Debug.Log("[UniversalHUD] 시간 종료");
+    }
+    
+    // ====== 인벤토리 이벤트 핸들러들 ======
+    private void OnItemObtained(string itemName, int quantity)
+    {
+        notificationManager?.ShowBanner($"[아이템 획득] {itemName} {quantity}개를 얻었습니다!");
+        Debug.Log($"[UniversalHUD] 아이템 획득: {itemName} x{quantity}");
+    }
+    
+    private void OnItemUsed(string itemName, int quantity)
+    {
+        notificationManager?.ShowBanner($"[아이템 사용] {itemName} 사용");
+        Debug.Log($"[UniversalHUD] 아이템 사용: {itemName} x{quantity}");
+    }
+    
+    private void OnSlotSwapped(int slot1, int slot2)
+    {
+        Debug.Log($"[UniversalHUD] 슬롯 교체: {slot1} ↔ {slot2}");
     }
 }

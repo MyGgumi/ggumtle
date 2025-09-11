@@ -16,6 +16,11 @@ public static class HUDEvents
     public static event Action<int, int> OnInventorySlotUsed;
     public static event Action<int, int> OnInventorySlotUpdated;
     
+    // ==== 인벤토리 아이템 이벤트 ====
+    public static event Action<string, int> OnItemObtained;
+    public static event Action<string, int> OnItemUsed;
+    public static event Action<int, int> OnSlotSwapped;
+    
     // ==== 체력/상태 이벤트 ====
     public static event Action<int, int> OnHealthChanged;
     public static event Action<bool> OnFaintStateChanged;
@@ -40,6 +45,10 @@ public static class HUDEvents
     public static void TriggerLightGain(int count) => OnLightCountChanged?.Invoke(count);
     public static void TriggerInventoryUse(int slot, int count) => OnInventorySlotUsed?.Invoke(slot, count);
     public static void TriggerInventoryUpdate(int slot, int count) => OnInventorySlotUpdated?.Invoke(slot, count);
+    
+    public static void TriggerItemObtained(string itemName, int quantity) => OnItemObtained?.Invoke(itemName, quantity);
+    public static void TriggerItemUsed(string itemName, int quantity) => OnItemUsed?.Invoke(itemName, quantity);
+    public static void TriggerSlotSwapped(int slot1, int slot2) => OnSlotSwapped?.Invoke(slot1, slot2);
     
     public static void TriggerHealthChange(int current, int max) => OnHealthChanged?.Invoke(current, max);
     public static void TriggerFaintState(bool isFainted) => OnFaintStateChanged?.Invoke(isFainted);

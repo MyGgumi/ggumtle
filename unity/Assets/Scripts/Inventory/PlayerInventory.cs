@@ -142,6 +142,9 @@ public class PlayerInventory : MonoBehaviour
         if (totalAdded > 0)
         {
             OnInventoryMessage?.Invoke($"{item.itemName} {totalAdded}개 획득!");
+            
+            // HUD 이벤트 트리거
+            HUDEvents.TriggerItemObtained(item.itemName, totalAdded);
 
             if (remainingAmount > 0)
             {
@@ -305,6 +308,9 @@ public class PlayerInventory : MonoBehaviour
         var item = items[0];
         Debug.Log($"[PlayerInventory] 슬롯 0 아이템 사용: {item.itemName}");
 
+        // HUD 이벤트 트리거
+        HUDEvents.TriggerItemUsed(item.itemName, 1);
+        
         // 서버에 아이템 사용 요청
         if (ServerSimulator.Instance != null)
         {
@@ -344,6 +350,9 @@ public class PlayerInventory : MonoBehaviour
         // UI 업데이트
         OnInventoryChanged?.Invoke(0);
         OnInventoryChanged?.Invoke(slotIndex);
+        
+        // HUD 이벤트 트리거
+        HUDEvents.TriggerSlotSwapped(0, slotIndex);
 
         string message = items[0].IsEmpty()
             ? "빈 슬롯과 교체됨"

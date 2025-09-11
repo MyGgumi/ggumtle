@@ -1,0 +1,46 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/MobileControls.uss" />
+    
+    <!-- 모바일 컨트롤 루트 컨테이너 -->
+    <ui:VisualElement name="mobileControls" class="mobile-controls-root">
+        
+        <!-- 조이스틱 영역 (왼쪽 하단) -->
+        <ui:VisualElement name="joystickArea" class="joystick-area">
+            <!-- 조이스틱 베이스 -->
+            <ui:VisualElement name="joystickBase" class="joystick-base">
+                <!-- 조이스틱 배경 -->
+                <ui:VisualElement name="joystickBackground" class="joystick-bg" />
+                <!-- 조이스틱 손잡이 -->
+                <ui:VisualElement name="joystickKnob" class="joystick-knob">
+                    <!-- 조이스틱 아이콘 -->
+                    <ui:VisualElement name="joystickIcon" class="joystick-icon" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        
+        <!-- 카메라 터치존 (중앙 전체) -->
+        <ui:VisualElement name="cameraТouchZone" class="camera-touch-zone" />
+        
+        <!-- 액션 버튼들 (오른쪽 하단) -->
+        <ui:VisualElement name="actionButtons" class="action-buttons">
+            
+            <!-- 점프 버튼 -->
+            <ui:VisualElement name="jumpButton" class="action-button jump-button">
+                <!-- 버튼 배경 이미지 -->
+                <ui:VisualElement name="jumpButtonBG" class="button-background" />
+                <!-- 버튼 아이콘 이미지 -->
+                <ui:VisualElement name="jumpButtonIcon" class="button-icon jump-icon" />
+            </ui:VisualElement>
+            
+            <!-- 상호작용 버튼 -->
+            <ui:VisualElement name="interactButton" class="action-button interact-button">
+                <!-- 버튼 배경 이미지 -->
+                <ui:VisualElement name="interactButtonBG" class="button-background" />
+                <!-- 버튼 아이콘 이미지 -->
+                <ui:VisualElement name="interactButtonIcon" class="button-icon interact-icon" />
+            </ui:VisualElement>
+            
+        </ui:VisualElement>
+        
+    </ui:VisualElement>
+</ui:UXML>

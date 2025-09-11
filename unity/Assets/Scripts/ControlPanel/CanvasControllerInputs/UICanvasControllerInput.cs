@@ -12,7 +12,7 @@ namespace StarterAssets
         public CinemachineFreeLook freeLookCamera;
 
         [SerializeField]
-        private float cameraSensitivity = 1.5f;
+        private float cameraSensitivity = 0.3f; // 기존 1.5f에서 0.3f로 대폭 감소
 
         [SerializeField]
         private bool invertY = false;
@@ -74,8 +74,8 @@ namespace StarterAssets
                 // 터치 시작 위치와 현재 위치의 차이 계산
                 Vector2 touchDelta = currentTouchPosition - touchStartPosition;
 
-                // 감도 적용
-                Vector2 targetInput = touchDelta * cameraSensitivity * 0.01f;
+                // 감도 적용 (더 작은 승수 사용)
+                Vector2 targetInput = touchDelta * cameraSensitivity * 0.005f; // 0.01f에서 0.005f로 감소
                 if (invertY)
                     targetInput.y = -targetInput.y;
 

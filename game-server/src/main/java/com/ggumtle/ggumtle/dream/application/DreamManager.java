@@ -1,32 +1,32 @@
 package com.ggumtle.ggumtle.dream.application;
 
-import com.ggumtle.ggumtle.common.dto.Result;
+import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
-import com.ggumtle.ggumtle.dream.application.result.DigUpReceiveResult;
-import com.ggumtle.ggumtle.dream.application.result.DigUpResult;
-import com.ggumtle.ggumtle.dream.application.result.DoneReviveResult;
-import com.ggumtle.ggumtle.dream.application.result.DreamEndResult;
-import com.ggumtle.ggumtle.dream.application.result.ExitOpen;
-import com.ggumtle.ggumtle.dream.application.result.EscapeResult;
-import com.ggumtle.ggumtle.dream.application.result.FeedDoneResult;
-import com.ggumtle.ggumtle.dream.application.result.HitMonggingResult;
-import com.ggumtle.ggumtle.dream.application.result.InitializeMapResult;
-import com.ggumtle.ggumtle.dream.application.result.InitializePlayerResult;
-import com.ggumtle.ggumtle.dream.application.result.MongdungSkillResult;
-import com.ggumtle.ggumtle.dream.application.result.MonggingStatusResult;
-import com.ggumtle.ggumtle.dream.application.result.NewGgumtleResult;
-import com.ggumtle.ggumtle.dream.application.result.PutItemResult;
-import com.ggumtle.ggumtle.dream.application.result.StartReviveResult;
-import com.ggumtle.ggumtle.dream.application.result.StopReviveResult;
-import com.ggumtle.ggumtle.dream.application.result.TakeItemResult;
-import com.ggumtle.ggumtle.dream.application.result.PlayerMoveResult;
-import com.ggumtle.ggumtle.dream.application.result.ShowBoxResult;
-import com.ggumtle.ggumtle.dream.application.result.StartFeedResult;
-import com.ggumtle.ggumtle.dream.application.result.StopDiggingResult;
-import com.ggumtle.ggumtle.dream.application.result.StopFeedingResult;
-import com.ggumtle.ggumtle.dream.application.result.UseFieldItemResult;
-import com.ggumtle.ggumtle.dream.application.result.UseMonggingItemResult;
+import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
+import com.ggumtle.ggumtle.dream.application.body.DigUpBody;
+import com.ggumtle.ggumtle.dream.application.body.DoneReviveBody;
+import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
+import com.ggumtle.ggumtle.dream.application.body.ExitOpen;
+import com.ggumtle.ggumtle.dream.application.body.EscapeBody;
+import com.ggumtle.ggumtle.dream.application.body.FeedDoneBody;
+import com.ggumtle.ggumtle.dream.application.body.HitMonggingBody;
+import com.ggumtle.ggumtle.dream.application.body.InitializeMapBody;
+import com.ggumtle.ggumtle.dream.application.body.InitializePlayerBody;
+import com.ggumtle.ggumtle.dream.application.body.MongdungSkillBody;
+import com.ggumtle.ggumtle.dream.application.body.MonggingStatusBody;
+import com.ggumtle.ggumtle.dream.application.body.NewGgumtleBody;
+import com.ggumtle.ggumtle.dream.application.body.PutItemBody;
+import com.ggumtle.ggumtle.dream.application.body.StartReviveBody;
+import com.ggumtle.ggumtle.dream.application.body.StopReviveBody;
+import com.ggumtle.ggumtle.dream.application.body.TakeItemBody;
+import com.ggumtle.ggumtle.dream.application.body.PlayerMoveBody;
+import com.ggumtle.ggumtle.dream.application.body.ShowBoxBody;
+import com.ggumtle.ggumtle.dream.application.body.StartFeedBody;
+import com.ggumtle.ggumtle.dream.application.body.StopDiggingBody;
+import com.ggumtle.ggumtle.dream.application.body.StopFeedingBody;
+import com.ggumtle.ggumtle.dream.application.body.UseFieldItemBody;
+import com.ggumtle.ggumtle.dream.application.body.UseMonggingItemBody;
 import com.ggumtle.ggumtle.dream.domain.Box;
 import com.ggumtle.ggumtle.dream.domain.Exit;
 import com.ggumtle.ggumtle.dream.domain.FakeGgumtle;
@@ -92,7 +92,7 @@ public class DreamManager {
     private final AtomicBoolean isExitOpen;
 
     public DreamManager(Room room, SpawnCache spawnCache) {
-        log.info("{}번 게임 생성 시작", room.getRoomId());
+        log.info("{}번 게임 생성 시작", room.id);
 
         this.spawnCache = spawnCache;
         this.room = room;
@@ -105,12 +105,12 @@ public class DreamManager {
         this.exits = new HashMap<>();
         this.isExitOpen = new AtomicBoolean(false);
 
-        log.info("{}번 게임의 초기화 시작", room.getRoomId());
+        log.info("{}번 게임의 초기화 시작", room.id);
 
         initializeMap();
         initializePlayers();
 
-        log.info("{}번 게임의 초기화 종료", room.getRoomId());
+        log.info("{}번 게임의 초기화 종료", room.id);
 
         this.workerThreadPool = Executors.newScheduledThreadPool(players.size());
         this.workingThreads = new ConcurrentHashMap<>();
@@ -122,8 +122,8 @@ public class DreamManager {
         Player player = players.get(id);
         player.addPosition(position);
 
-        Result result = new PlayerMoveResult(player.getId(), x, y, z);
-        Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), result);
+        Body body = new PlayerMoveBody(player.getId(), x, y, z);
+        Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
     }
 
@@ -131,23 +131,23 @@ public class DreamManager {
         Player requester = players.getOrDefault(session.getMemberId(), null);
 
         if (requester == null) {
-            Result result = new HitMonggingResult(HitMonggingResult.Status.NOT_PLAYER, -1);
-            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_PLAYER, -1);
+            Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (!(requester instanceof Mongdung mongdung)) {
-            Result result = new HitMonggingResult(HitMonggingResult.Status.NOT_MONGDUNG, -1);
-            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_MONGDUNG, -1);
+            Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Mongging targetMongging = (Mongging) players.getOrDefault(command.targetId(), null);
         if (targetMongging == null) {
-            Result result = new HitMonggingResult(HitMonggingResult.Status.NOT_FOUND_TARGET, -1);
-            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_FOUND_TARGET, -1);
+            Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -155,8 +155,8 @@ public class DreamManager {
         boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, targetMongging);
 
         if (!isHit) {
-            Result result = new HitMonggingResult(HitMonggingResult.Status.FAIL, -1);
-            Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+            Body body = new HitMonggingBody(HitMonggingBody.Result.FAIL, -1);
+            Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -164,13 +164,13 @@ public class DreamManager {
         int damage = mongdung.getDamage();
         int leftHp = targetMongging.getHit(damage);
 
-        Result result = new HitMonggingResult(HitMonggingResult.Status.SUCCESS, leftHp);
-        Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
+        Body body = new HitMonggingBody(HitMonggingBody.Result.SUCCESS, leftHp);
+        Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
         room.sendPacket(List.of(mongdung.getId(), targetMongging.getId()), packet);
 
         if (leftHp == 0) {
-            result = new MonggingStatusResult(targetMongging.getId(), targetMongging.isDead() ? MonggingStatusResult.Status.DEAD : MonggingStatusResult.Status.KNOCKOUT);
-            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+            body = new MonggingStatusBody(targetMongging.getId(), targetMongging.isDead() ? MonggingStatusBody.Result.DEAD : MonggingStatusBody.Result.KNOCKOUT);
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
 
             WorkingThread removedThread = workingThreads.remove(session.getMemberId());
@@ -186,22 +186,22 @@ public class DreamManager {
         Player player = players.getOrDefault(session.getMemberId(), null);
         Player targetPlayer = players.getOrDefault(targetMonggingId, null);
         if (player == null || targetPlayer == null) {
-            Result result = new StartReviveResult(StartReviveResult.Status.NOT_FOUND_PLAYER);
-            Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartReviveBody(StartReviveBody.Result.NOT_FOUND_PLAYER);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (!(targetPlayer instanceof Mongging targetMongging) || !(player instanceof Mongging)) {
-            Result result = new StartReviveResult(StartReviveResult.Status.NOT_MONGGING);
-            Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartReviveBody(StartReviveBody.Result.NOT_MONGGING);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (!targetMongging.isKnockout()) {
-            Result result = new StartReviveResult(StartReviveResult.Status.NOT_KNOCKOUT);
-            Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartReviveBody(StartReviveBody.Result.NOT_KNOCKOUT);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -210,50 +210,50 @@ public class DreamManager {
                 () -> {
                     targetMongging.revive();
 
-                    Result result = new DoneReviveResult(targetMongging.getId());
-                    Packet packet = Packet.of(SendPacketType.DONE_REVIVE_RESULT, System.currentTimeMillis(), result);
+                    Body body = new DoneReviveBody(targetMongging.getId());
+                    Packet packet = Packet.of(SendPacketType.DONE_REVIVE, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
 
-                    result = new MonggingStatusResult(targetMongging.getId(), MonggingStatusResult.Status.NORMAL);
-                    packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+                    body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.NORMAL);
+                    packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
                     this.room.broadcast(packet);
 
                     workingThreads.remove(session.getMemberId());
                 }, 3, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.REVIVE, targetMongging.getId()));
 
-        Result result = new StartReviveResult(StartReviveResult.Status.SUCCESS);
-        Packet packet = Packet.of(SendPacketType.START_REVIVE_RESULT, System.currentTimeMillis(), result);
+        Body body = new StartReviveBody(StartReviveBody.Result.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
     public void stopRevive(Session session) {
         WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
 
-        Result result;
+        Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.REVIVE) {
             workingThreads.remove(session.getMemberId());
-            result = new StopReviveResult(StopReviveResult.Status.SUCCESS);
+            body = new StopReviveBody(StopReviveBody.Result.SUCCESS);
         } else {
-            result = new StopReviveResult(StopReviveResult.Status.FAIL);
+            body = new StopReviveBody(StopReviveBody.Result.FAIL);
         }
-        Packet packet = Packet.of(SendPacketType.STOP_REVIVE_RESULT, System.currentTimeMillis(), result);
+        Packet packet = Packet.of(SendPacketType.STOP_REVIVE, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
     public void doSkill(int skillTypeId, Session session) {
         Mongdung.SkillType skillType = Mongdung.SkillType.valueById(skillTypeId);
         if (skillType == null) {
-            Result result = new MongdungSkillResult(skillTypeId, MongdungSkillResult.Status.NOT_FOUND_SKILL);
-            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            Body body = new MongdungSkillBody(skillTypeId, MongdungSkillBody.Result.NOT_FOUND_SKILL);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (!(player instanceof Mongdung mongdung)) {
-            Result result = new MongdungSkillResult(skillTypeId, MongdungSkillResult.Status.NOT_FOUND_MONGDUNG);
-            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            Body body = new MongdungSkillBody(skillTypeId, MongdungSkillBody.Result.NOT_FOUND_MONGDUNG);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -272,23 +272,23 @@ public class DreamManager {
     public void attackWithItem(AttackWithItemCommand command, Session session) {
         Item item = Item.valueOf(command.itemId());
         if (item == null) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM_ID, command.itemId());
-            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM_ID, command.itemId());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (item.isAttackItem()) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_ATTACK_ITEM, item.id);
-            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_ATTACK_ITEM, item.id);
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (!(player instanceof Mongging mongging)) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_MONGGING, item.id);
-            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_MONGGING, item.id);
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -296,16 +296,16 @@ public class DreamManager {
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
             log.error("%d번 게임의 몽둥이를 찾을 수 없습니다.");
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.id);
-            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id);
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Item usedItem = mongging.popItem(item);
         if (usedItem == null) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.id);
-            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id);
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -313,8 +313,8 @@ public class DreamManager {
         // TODO: 히트 판정
         Mongdung mongdung = (Mongdung) mongdungPlayer;
 
-        Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.SUCCESS, item.id);
-        Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
+        Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.SUCCESS, item.id);
+        Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
         session.sendPacket(packet);
         this.room.sendPacket(mongdung.getId(), packet);
     }
@@ -322,23 +322,23 @@ public class DreamManager {
     public void useFieldItem(int itemId, Session session) {
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (!(player instanceof Mongging mongging)) {
-            Result result = new UseFieldItemResult(UseFieldItemResult.Status.NOT_MONGGING, itemId);
-            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_MONGGING, itemId);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         FieldItem fieldItem = fieldItems.getOrDefault(itemId, null);
         if (fieldItem == null) {
-            Result result = new UseFieldItemResult(UseFieldItemResult.Status.NOT_FOUND_FIELD_ITEM, itemId);
-            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_FOUND_FIELD_ITEM, itemId);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (fieldItem.isUsed()) {
-            Result result = new UseFieldItemResult(UseFieldItemResult.Status.ALREADY_USED, fieldItem.id);
-            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new UseFieldItemBody(UseFieldItemBody.Result.ALREADY_USED, fieldItem.id);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -347,15 +347,15 @@ public class DreamManager {
 
         fieldItem.use();
 
-        Result result = new UseFieldItemResult(UseFieldItemResult.Status.SUCCESS, fieldItem.id);
-        Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM_RESULT, System.currentTimeMillis(), result);
+        Body body = new UseFieldItemBody(UseFieldItemBody.Result.SUCCESS, fieldItem.id);
+        Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
     }
 
     public void showBox(int boxId, Session session) {
         if (!boxes.containsKey(boxId)) {
-            ShowBoxResult showBoxResult = new ShowBoxResult(false, -1, null);
-            Packet packet = Packet.of(SendPacketType.SHOW_BOX_RESULT, System.currentTimeMillis(), showBoxResult);
+            Body body = new ShowBoxBody(false, -1, null);
+            Packet packet = Packet.of(SendPacketType.SHOW_BOX, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -364,8 +364,8 @@ public class DreamManager {
         Item[] items = box.getItems();
         box.addViewer(session);
 
-        ShowBoxResult showBoxResult = new ShowBoxResult(true, boxId, items);
-        Packet packet = Packet.of(SendPacketType.SHOW_BOX_RESULT, System.currentTimeMillis(), showBoxResult);
+        Body body = new ShowBoxBody(true, boxId, items);
+        Packet packet = Packet.of(SendPacketType.SHOW_BOX, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
@@ -382,8 +382,8 @@ public class DreamManager {
     public void takeItem(int boxId, int index, Session session) {
         // 인덱스 검사
         if (index < 0 || index >= Box.BOX_SIZE) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.INDEX_OUT_OF_RANGE, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new TakeItemBody(TakeItemBody.Result.INDEX_OUT_OF_RANGE, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -391,8 +391,8 @@ public class DreamManager {
         // 박스 존재 검사
         Box box = boxes.getOrDefault(boxId, null);
         if (box == null) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.NOT_FOUND_BOX, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -400,15 +400,15 @@ public class DreamManager {
         // 플레이어 검사
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (player == null) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.NOT_FOUND_PLAYER, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_PLAYER, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (!(player instanceof Mongging mongging)) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.NOT_MONGGING, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_MONGGING, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -421,15 +421,15 @@ public class DreamManager {
             synchronized (lockOrder.get(1)) {
                 Item targetItem = box.getItemAt(index);
                 if (targetItem == null) {
-                    Result result = new TakeItemResult(TakeItemResult.Status.NOT_FOUND_BOX, null);
-                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, null);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
 
                 if (!mongging.canAddItem(targetItem)) {
-                    Result result = new TakeItemResult(TakeItemResult.Status.FULL_ABOUT_ITEM, null);
-                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    Body body = new TakeItemBody(TakeItemBody.Result.FULL_ABOUT_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
@@ -443,14 +443,14 @@ public class DreamManager {
                             popResult[Box.BOX_SIZE],
                             Arrays.deepToString(mongging.getItems()));
 
-                    Result result = new TakeItemResult(TakeItemResult.Status.FAIL, null);
-                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                    Body body = new TakeItemBody(TakeItemBody.Result.FAIL, null);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
 
-                Result result = new TakeItemResult(TakeItemResult.Status.SUCCESS, popResult);
-                Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+                Body body = new TakeItemBody(TakeItemBody.Result.SUCCESS, popResult);
+                Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
             }
         }
@@ -459,8 +459,8 @@ public class DreamManager {
     public void putItem(int itemId, int boxId, Session session) {
         Item targetItem = Item.valueOf(itemId);
         if (targetItem == null) {
-            Result result = new PutItemResult(PutItemResult.Status.ILLEGAL_ITEM_ID, null);
-            Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new PutItemBody(PutItemBody.Result.ILLEGAL_ITEM_ID, null);
+            Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -468,8 +468,8 @@ public class DreamManager {
         // 박스 존재 검사
         Box box = boxes.getOrDefault(boxId, null);
         if (box == null) {
-            Result result = new PutItemResult(PutItemResult.Status.NOT_FOUND_BOX, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new PutItemBody(PutItemBody.Result.NOT_FOUND_BOX, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -477,15 +477,15 @@ public class DreamManager {
         // 플레이어 검사
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (player == null) {
-            Result result = new PutItemResult(PutItemResult.Status.NOT_FOUND_PLAYER, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new PutItemBody(PutItemBody.Result.NOT_FOUND_PLAYER, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (!(player instanceof Mongging mongging)) {
-            Result result = new PutItemResult(PutItemResult.Status.NOT_MONGGING, null);
-            Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
+            Body body = new PutItemBody(PutItemBody.Result.NOT_MONGGING, null);
+            Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -496,15 +496,15 @@ public class DreamManager {
             synchronized (lockOrder.get(1)) {
                 int count = mongging.countItem(targetItem);
                 if (count == 0) {
-                    Result result = new PutItemResult(PutItemResult.Status.NOT_FOUND_ITEM, null);
-                    Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                    Body body = new PutItemBody(PutItemBody.Result.NOT_FOUND_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
 
                 if (!box.canAddItem(targetItem)) {
-                    Result result = new PutItemResult(PutItemResult.Status.FULL_ABOUT_ITEM, null);
-                    Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                    Body body = new PutItemBody(PutItemBody.Result.FULL_ABOUT_ITEM, null);
+                    Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
@@ -518,14 +518,14 @@ public class DreamManager {
                             poppedItem,
                             Arrays.deepToString(mongging.getItems()));
 
-                    Result result = new PutItemResult(PutItemResult.Status.FAIL, null);
-                    Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                    Body body = new PutItemBody(PutItemBody.Result.FAIL, null);
+                    Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
 
-                Result result = new PutItemResult(PutItemResult.Status.SUCCESS, box.getItems());
-                Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
+                Body body = new PutItemBody(PutItemBody.Result.SUCCESS, box.getItems());
+                Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
                 return;
             }
@@ -534,16 +534,16 @@ public class DreamManager {
 
     public void digUpGgumtle(int ggumtleId, Session session) {
         if (!ggumtles.containsKey(ggumtleId)) {
-            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.Status.NOT_FOUND);
-            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
+            Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Ggumtle ggumtle = ggumtles.get(ggumtleId);
         if (ggumtle.isDugUp()) {
-            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.Status.ALREADY_DIG_UP);
-            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
+            Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.ALREADY_DIG_UP);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -565,52 +565,52 @@ public class DreamManager {
                 return;
             }
 
-            DigUpResult result = new DigUpResult(ggumtle.id, digUpResult == 1);
-            Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), result);
+            Body body = new DigUpBody(ggumtle.id, digUpResult == 1);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
 
             // TODO: 스턴 상태 브로드캐스팅
         }, 3, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.id));
 
-        DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.Status.START_DIGGING);
-        Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
+        Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.START_DIGGING);
+        Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
     public void stopDigging(Session session) {
         WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
 
-        Result result;
+        Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.DIG_UP) {
-            result = new StopDiggingResult(StopDiggingResult.Status.STOP);
+            body = new StopDiggingBody(StopDiggingBody.Result.STOP);
             workingThreads.remove(session.getMemberId());
         } else {
-            result = new StopDiggingResult(StopDiggingResult.Status.NOT_FOUND_DIGGING);
+            body = new StopDiggingBody(StopDiggingBody.Result.NOT_FOUND_DIGGING);
         }
-        Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
+        Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
     public void startFeed(int ggumtleId, Session session) {
         if (!ggumtles.containsKey(ggumtleId)) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.NOT_FOUND);
-            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartFeedBody(StartFeedBody.Result.NOT_FOUND);
+            Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Ggumtle ggumtle = ggumtles.get(ggumtleId);
         if (!ggumtle.isDugUp()) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.YET_DIG_UP);
-            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartFeedBody(StartFeedBody.Result.YET_DIG_UP);
+            Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         if (ggumtle.isDone()) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.ALREADY_DONE);
-            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartFeedBody(StartFeedBody.Result.ALREADY_DONE);
+            Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -618,8 +618,8 @@ public class DreamManager {
         Mongging mongging = (Mongging) players.get(session.getMemberId());
         int count = mongging.countItem(Item.GGUMTLE_FEED);
         if (count == 0) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.LACK_OF_FEED_ITEM);
-            Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+            Body body = new StartFeedBody(StartFeedBody.Result.LACK_OF_FEED_ITEM);
+            Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -639,12 +639,12 @@ public class DreamManager {
                     }
                 }
 
-                Result result = new StopFeedingResult(StopFeedingResult.Status.STOP, mongging.countItem(Item.GGUMTLE_FEED));
-                Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
+                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
-                result = new FeedDoneResult(ggumtle.id);
-                packet = Packet.of(SendPacketType.FEED_DONE, System.currentTimeMillis(), result);
+                body = new FeedDoneBody(ggumtle.id);
+                packet = Packet.of(SendPacketType.FEED_DONE, System.currentTimeMillis(), body);
                 this.room.broadcast(packet);
 
                 tryOpenExit();
@@ -655,8 +655,8 @@ public class DreamManager {
             // 남은 아이템이 없으면 종료
             int leftFeedItem = mongging.countItem(Item.GGUMTLE_FEED);
             if (leftFeedItem == 0) {
-                Result result = new StopFeedingResult(StopFeedingResult.Status.STOP, mongging.countItem(Item.GGUMTLE_FEED));
-                Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
+                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
                 WorkingThread removedThread = workingThreads.remove(session.getMemberId());
@@ -667,8 +667,8 @@ public class DreamManager {
         ScheduledFuture<?> future = workerThreadPool.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.FEED, ggumtle.id));
 
-        StartFeedResult result = new StartFeedResult(StartFeedResult.Status.START_FEEDING);
-        Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
+        Body body = new StartFeedBody(StartFeedBody.Result.START_FEEDING);
+        Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
@@ -678,14 +678,14 @@ public class DreamManager {
         Mongging mongging = (Mongging) players.get(session.getMemberId());
         int leftItemCount = mongging.countItem(Item.GGUMTLE_FEED);
 
-        Result result;
+        Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.FEED) {
-            result = new StopFeedingResult(StopFeedingResult.Status.STOP, leftItemCount);
+            body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftItemCount);
             workingThreads.remove(session.getMemberId());
         } else {
-            result = new StopFeedingResult(StopFeedingResult.Status.NOT_FOUND, leftItemCount);
+            body = new StopFeedingBody(StopFeedingBody.Result.NOT_FOUND, leftItemCount);
         }
-        Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
+        Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
         session.sendPacket(packet);
     }
 
@@ -698,12 +698,12 @@ public class DreamManager {
 
         boolean isExpected = isExitOpen.compareAndSet(false, true);
         if (!isExpected) {
-            log.warn("{}번 게임의 탈출구 오픈이 다시 이루어졌습니다", this.room.getRoomId());
+            log.warn("{}번 게임의 탈출구 오픈이 다시 이루어졌습니다", this.room.id);
             return;
         }
 
-        Result result = new ExitOpen(this.exits.values().stream().toList());
-        Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), result);
+        Body body = new ExitOpen(this.exits.values().stream().toList());
+        Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
     }
 
@@ -711,16 +711,16 @@ public class DreamManager {
         Exit exit = exits.getOrDefault(exitId, null);
 
         if (exit == null) {
-            Result result = new EscapeResult(EscapeResult.Status.NOT_FOUND_EXIT);
-            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+            Body body = new EscapeBody(EscapeBody.Result.NOT_FOUND_EXIT);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
         Player player = players.get(session.getMemberId());
         if (!(player instanceof Mongging mongging)) {
-            Result result = new EscapeResult(EscapeResult.Status.NOT_MONGGING);
-            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+            Body body = new EscapeBody(EscapeBody.Result.NOT_MONGGING);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -728,8 +728,8 @@ public class DreamManager {
         // TODO: 위치 검사
 
         if (!mongging.isNotDead()) {
-            Result result = new EscapeResult(EscapeResult.Status.NOT_ALIVE);
-            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+            Body body = new EscapeBody(EscapeBody.Result.NOT_ALIVE);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
@@ -737,17 +737,17 @@ public class DreamManager {
         mongging.escape();
         escapedMonggings.add(mongging.getId());
 
-        Result result = new EscapeResult(EscapeResult.Status.SUCCESS);
-        Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
+        Body body = new EscapeBody(EscapeBody.Result.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
         session.sendPacket(packet);
 
-        result = new MonggingStatusResult(mongging.getId(), MonggingStatusResult.Status.ESCAPE);
-        packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+        body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.ESCAPE);
+        packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
 
         if (escapedMonggings.size() >= WINNING_MONGGING_COUNT) {
-            result = new DreamEndResult(DreamEndResult.Status.MONGGING_WIN, escapedMonggings, players.values());
-            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
+            body = new DreamEndBody(DreamEndBody.Result.MONGGING_WIN, escapedMonggings, players.values());
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
         }
     }
@@ -756,14 +756,14 @@ public class DreamManager {
         boolean success = mongdung.scare();
 
         if (!success) {
-            Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.YET_COOL_TIME);
-            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            Body body = new MongdungSkillBody(Mongdung.SkillType.SCARE, MongdungSkillBody.Result.YET_COOL_TIME);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
-        Result result = new MongdungSkillResult(Mongdung.SkillType.SCARE, MongdungSkillResult.Status.SUCCESS);
-        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        Body body = new MongdungSkillBody(Mongdung.SkillType.SCARE, MongdungSkillBody.Result.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
     }
 
@@ -773,14 +773,14 @@ public class DreamManager {
         boolean success = mongdung.tryBuryFakeGgumtle();
 
         if (!success) {
-            Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.LACK_USE_COUNT);
-            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+            Body body = new MongdungSkillBody(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillBody.Result.LACK_USE_COUNT);
+            Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
             session.sendPacket(packet);
             return;
         }
 
-        Result result = new MongdungSkillResult(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillResult.Status.SUCCESS);
-        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL_RESULT, System.currentTimeMillis(), result);
+        Body body = new MongdungSkillBody(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillBody.Result.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
         session.sendPacket(packet);
 
         int id = ggumtleIdGenerator.addAndGet(1);
@@ -788,8 +788,8 @@ public class DreamManager {
 
         this.ggumtles.put(id, fakeGgumtle);
 
-        result = new NewGgumtleResult(fakeGgumtle.id, fakeGgumtle.position);
-        packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), result);
+        body = new NewGgumtleBody(fakeGgumtle.id, fakeGgumtle.position);
+        packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
     }
 
@@ -833,7 +833,7 @@ public class DreamManager {
             exits.put(i, new Exit(i, Position.from(exitSpawns.get(i))));
         }
 
-        log.info("{}번 게임의 맵 초기화 종료", room.getRoomId());
+        log.info("{}번 게임의 맵 초기화 종료", room.id);
 
         List<FieldItem> healPacks = new ArrayList<>();
         List<FieldItem> speedPacks = new ArrayList<>();
@@ -848,12 +848,12 @@ public class DreamManager {
             }
         });
 
-        Result result = new InitializeMapResult(
+        Body body = new InitializeMapBody(
                 new ArrayList<>(this.boxes.values()),
                 new ArrayList<>(this.ggumtles.values()),
                 healPacks,
                 speedPacks);
-        Packet packet = Packet.of(SendPacketType.INITIALIZE_MAP, System.currentTimeMillis(), result);
+        Packet packet = Packet.of(SendPacketType.INITIALIZE_MAP, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
     }
 
@@ -876,16 +876,16 @@ public class DreamManager {
             this.players.put(mongging.getId(), mongging);
         }
 
-        log.info("{}번 게임의 플레이어 초기화 종료", room.getRoomId());
-        log.debug("{}번 게임의 플레이어: {}", room.getRoomId(), this.players.values());
+        log.info("{}번 게임의 플레이어 초기화 종료", room.id);
+        log.debug("{}번 게임의 플레이어: {}", room.id, this.players.values());
 
         List<Player> players = this.players.values().stream().toList();
         for (long playerId : playerIds) {
-            Result result = new InitializePlayerResult(players, playerId);
-            Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), result);
+            Body body = new InitializePlayerBody(players, playerId);
+            Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), body);
             boolean success = room.sendPacket(playerId, packet);
             if (!success) {
-                log.error("{}번 사용자에게 {}번 게임의 플레이어 초기 정보를 전송하지 못했습니다", playerId, this.room.getRoomId());
+                log.error("{}번 사용자에게 {}번 게임의 플레이어 초기 정보를 전송하지 못했습니다", playerId, this.room.id);
             }
         }
     }

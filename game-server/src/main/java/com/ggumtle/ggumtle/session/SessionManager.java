@@ -2,7 +2,7 @@ package com.ggumtle.ggumtle.session;
 
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
-import com.ggumtle.ggumtle.session.result.SessionResult;
+import com.ggumtle.ggumtle.session.result.SessionBody;
 import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -39,8 +39,8 @@ public class SessionManager {
         sessionMap.put(channel, session);
         log.debug("세션 맵에 추가: {}", sessionId);
 
-        SessionResult sessionResult = new SessionResult(true, sessionId);
-        Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
+        SessionBody sessionResult = new SessionBody(true, sessionId);
+        Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN, System.currentTimeMillis(), sessionResult);
         channel.writeAndFlush(packet);
     }
 

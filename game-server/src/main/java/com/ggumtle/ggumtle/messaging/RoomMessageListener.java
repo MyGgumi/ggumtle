@@ -42,7 +42,7 @@ public class RoomMessageListener implements MessageListener {
 
             Room room = roomManager.createRoom(requestRoom.playerIds());
 
-            CreatedRoomMessage createdRoomMessage = new CreatedRoomMessage(room.getRoomId(), requestRoom.requestId(), this.gameServerId);
+            CreatedRoomMessage createdRoomMessage = new CreatedRoomMessage(room.id, requestRoom.requestId(), this.gameServerId);
             String json =  objectMapper.writeValueAsString(createdRoomMessage);
 
             redisTemplate.convertAndSend(CREATED_ROOM_CHANNEL, json);

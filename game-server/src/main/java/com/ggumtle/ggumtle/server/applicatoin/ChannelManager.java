@@ -5,7 +5,7 @@ import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
 import com.ggumtle.ggumtle.session.SessionManager;
-import com.ggumtle.ggumtle.session.result.SessionResult;
+import com.ggumtle.ggumtle.session.result.SessionBody;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
@@ -45,8 +45,8 @@ public class ChannelManager {
             Session existingSession = optionalSession.get();
             log.warn("[{}] 이미 {}번 사용자의 {}번 세션이 존재합니다", channel.id(), existingSession.getMemberId(), existingSession.getSessionId());
 
-            SessionResult sessionResult = new SessionResult(false, -1L);
-            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
+            SessionBody sessionResult = new SessionBody(false, -1L);
+            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN, System.currentTimeMillis(), sessionResult);
             channel.writeAndFlush(packet);
 
             return;
@@ -55,8 +55,8 @@ public class ChannelManager {
         if (!jwtService.verifyToken(accessToken)) {
             log.info("[{}] 토큰이 유효하지 않습니다", channel.id());
 
-            SessionResult sessionResult = new SessionResult(false, -1L);
-            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN_RESULT, System.currentTimeMillis(), sessionResult);
+            SessionBody sessionResult = new SessionBody(false, -1L);
+            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN, System.currentTimeMillis(), sessionResult);
             channel.writeAndFlush(packet);
 
             return;

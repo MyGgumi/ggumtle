@@ -1,15 +1,13 @@
 package com.ggumtle.ggumtle.room.application;
 
-import com.ggumtle.ggumtle.common.event.JoinRoomEvent;
-import com.ggumtle.ggumtle.room.application.result.JoinRoomResult;
+import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
+import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.Packet;
-import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -25,7 +23,6 @@ public class RoomManager {
     private final AtomicLong roomIdGenerator = new AtomicLong(0);
     private final ConcurrentHashMap<Long, Room> idToRoom = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Room> playerIdToRoom = new ConcurrentHashMap<>();
-    private final ApplicationEventPublisher applicationEventPublisher;
 
     public Optional<Room> getRoomById(Long roomId) {
         Room room = idToRoom.getOrDefault(roomId, null);
@@ -35,7 +32,7 @@ public class RoomManager {
             return  Optional.empty();
         }
 
-        log.debug("{}번 방 조회", room.getRoomId());
+        log.debug("{}번 방 조회", room.id);
         return Optional.of(room);
     }
 
@@ -47,7 +44,7 @@ public class RoomManager {
             return  Optional.empty();
         }
 
-        log.debug("{}번 사용자의 방 조회: {}", playerId, room.getRoomId());
+        log.debug("{}번 사용자의 방 조회: {}", playerId, room.id);
         return Optional.of(room);
     }
 
@@ -56,14 +53,14 @@ public class RoomManager {
 
         log.debug("{}번 방 생성: {}", roomId, players);
 
-        Room room = new Room(roomId, players, applicationEventPublisher);
+        Room room = new Room(roomId, players);
         idToRoom.put(roomId, room);
 
         return room;
     }
 
     public void insertRoom(Room room) {
-        idToRoom.put(room.getRoomId(), room);
+        idToRoom.put(room.id, room);
     }
 
     public void removeRoom(Long roomId) {
@@ -86,27 +83,45 @@ public class RoomManager {
         return idToRoom.values().stream().toList();
     }
 
-    public boolean joinRoom(Long roomId, Session session) {
+    public JoinRoomResult joinRoom(Long roomId, Session session) {
         Room room = idToRoom.getOrDefault(roomId, null);
         if (room == null) {
             log.error("[{}] {}번 방을 찾을 수 없습니다", session.getChannel().id(), roomId);
-            return false;
+            return JoinRoomResult.FAIL;
         }
 
         int connectedSessionCount = room.addSession(session);
+        if (connectedSessionCount == -1) {
+            return JoinRoomResult.FAIL;
+        }
+
         playerIdToRoom.put(session.getMemberId(), room);
         log.debug("[{}] {}번 방에 세션 추가 결과: 현재 인원 {}인", session.getChannel().id(), roomId, connectedSessionCount);
 
-        JoinRoomResult result = new JoinRoomResult(1);
-        Packet packet = Packet.of(SendPacketType.ROOM_JOIN_RESULT, System.currentTimeMillis(), result);
-        session.sendPacket(packet);
+        return connectedSessionCount >= room.getPlayerSize() ? JoinRoomResult.DONE : JoinRoomResult.SUCCESS;
+    }
 
-        if (connectedSessionCount == room.getPlayerSize()) {
-            Packet donePacket = Packet.of(SendPacketType.ROOM_JOIN_DONE, System.currentTimeMillis(), null);
-            room.broadcast(donePacket);
+    public SceneChangeResult changeScene(Session session) {
+        Room room = playerIdToRoom.getOrDefault(session.getMemberId(), null);
+        if (room == null) {
+            log.error("[{}] {}번 사용자에 연결된 방을 찾을 수 없음", session.getChannel().id(), session.getMemberId());
+            return new SceneChangeResult(SceneChangeResult.Status.FAIL, null);
         }
 
-        applicationEventPublisher.publishEvent(new JoinRoomEvent(roomId, session));
-        return true;
+        int sceneChangerCount = room.addSceneChanger(session.getMemberId());
+        if (sceneChangerCount == -1) {
+            return new SceneChangeResult(SceneChangeResult.Status.FAIL, null);
+        }
+
+        playerIdToRoom.put(session.getMemberId(), room);
+        log.debug("[{}] {}번 방에 씬 체인저 추가 결과: 현재 인원 {}인", session.getChannel().id(), room.id, sceneChangerCount);
+
+        return new SceneChangeResult(
+                sceneChangerCount >= room.getPlayerSize() ? SceneChangeResult.Status.DONE : SceneChangeResult.Status.SUCCESS,
+                room.id);
+    }
+
+    public void broadcast(long roomId, Packet packet) {
+        this.idToRoom.get(roomId).broadcast(packet);
     }
 }

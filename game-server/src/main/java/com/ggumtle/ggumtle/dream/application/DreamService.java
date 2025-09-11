@@ -18,7 +18,7 @@ import com.ggumtle.ggumtle.dream.application.command.StartFeedCommand;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.UseFieldItemCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
-import com.ggumtle.ggumtle.event.DreamStartEvent;
+import com.ggumtle.ggumtle.common.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.RoomManager;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
@@ -54,9 +54,9 @@ public class DreamService {
         Room room = optionalRoom.get();
         DreamManager dreamManager = new DreamManager(room, spawnCache);
 
-        dreamManagers.put(room.getRoomId(), dreamManager);
+        dreamManagers.put(room.id, dreamManager);
         room.getPlayerSessions()
-                .forEach((sessionId, session) -> sessionIdToDreamManagers.put(sessionId, dreamManager));
+                .forEach(session -> sessionIdToDreamManagers.put(session.getSessionId(), dreamManager));
         log.debug(sessionIdToDreamManagers.toString());
     }
 

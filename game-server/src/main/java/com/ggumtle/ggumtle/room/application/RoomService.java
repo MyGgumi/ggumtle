@@ -1,21 +1,23 @@
 package com.ggumtle.ggumtle.room.application;
 
+import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
+import com.ggumtle.ggumtle.common.event.DreamStartEvent;
 import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
-import com.ggumtle.ggumtle.room.application.result.JoinRoomResult;
-import com.ggumtle.ggumtle.room.application.result.SceneChangeResult;
-import com.ggumtle.ggumtle.room.domain.Room;
+import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
+import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
+import com.ggumtle.ggumtle.room.application.body.JoinRoomBody;
+import com.ggumtle.ggumtle.room.application.body.SceneChangeBody;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
-
-import java.util.Optional;
 
 @Slf4j
 @Service
@@ -23,17 +25,27 @@ import java.util.Optional;
 public class RoomService {
 
     private final RoomManager roomManager;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @PacketCommandHandler(type = ReceivePacketType.ROOM_JOIN)
     public void joinRoom(JoinRoomCommand command, Session session) {
         log.info("[{}] 방 입장 요청 - Type: {}, Session: {}", session.getChannel().id(), command.roomId(), session);
 
-        boolean success = roomManager.joinRoom(command.roomId(), session);
+        JoinRoomResult result = roomManager.joinRoom(command.roomId(), session);
 
-        if (!success) {
-            JoinRoomResult result = new JoinRoomResult(0);
-            Packet packet = Packet.of(SendPacketType.ROOM_JOIN_RESULT, System.currentTimeMillis(), result);
+        if (result == JoinRoomResult.FAIL) {
+            Body body = new JoinRoomBody(JoinRoomBody.Result.FAIL);
+            Packet packet = Packet.of(SendPacketType.ROOM_JOIN, System.currentTimeMillis(), body);
             session.sendPacket(packet);
+            return;
+        }
+
+        Body body = new JoinRoomBody(JoinRoomBody.Result.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.ROOM_JOIN, System.currentTimeMillis(), body);
+        session.sendPacket(packet);
+
+        if (result == JoinRoomResult.DONE) {
+            applicationEventPublisher.publishEvent(new DreamStartEvent(command.roomId()));
         }
     }
 
@@ -41,25 +53,22 @@ public class RoomService {
     public void changeScene(Session session) {
         log.info("[{}] 씬 변경 요청 - Session: {}", session.getChannel().id(), session);
 
-        Optional<Room> optionalRoom = roomManager.getRoomByPlayerId(session.getMemberId());
-        if (optionalRoom.isEmpty()) {
-            log.error("[{}] {}번 사용자가 속한 방을 찾을 수 없어 씬 변경에 실패", session.getChannel().id(), session.getMemberId());
+        SceneChangeResult result = roomManager.changeScene(session);
 
-            SceneChangeResult result = new SceneChangeResult(0);
-            Packet packet = Packet.of(SendPacketType.SCENE_CHANGE_RESULT, System.currentTimeMillis(), result);
+        if (result.status() == SceneChangeResult.Status.FAIL) {
+            Body body = new SceneChangeBody(SceneChangeBody.Result.FAIL);
+            Packet packet = Packet.of(SendPacketType.SCENE_CHANGE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
-
             return;
         }
 
-        Room room = optionalRoom.get();
+        Body body = new SceneChangeBody(SceneChangeBody.Result.SUCCESS);
+        Packet packet = Packet.of(SendPacketType.SCENE_CHANGE, System.currentTimeMillis(), body);
+        session.sendPacket(packet);
 
-        boolean success = room.addSceneChanger(session.getMemberId());
-
-        if (!success) {
-            SceneChangeResult result = new SceneChangeResult(0);
-            Packet packet = Packet.of(SendPacketType.SCENE_CHANGE_RESULT, System.currentTimeMillis(), result);
-            session.sendPacket(packet);
+        if (result.status() == SceneChangeResult.Status.DONE) {
+            packet = Packet.of(SendPacketType.GAME_START, System.currentTimeMillis(), null);
+            roomManager.broadcast(result.roomId(), packet);
         }
     }
 

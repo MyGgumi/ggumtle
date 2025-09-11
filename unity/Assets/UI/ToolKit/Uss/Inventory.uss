@@ -1,12 +1,20 @@
 /* Inventory 컴포넌트 전용 스타일 */
 
-.inventory-container {
-    /* position styles moved to main USS file */
-}
-
 .inventory-slot {
     position: absolute;
     background-size: contain;
+    picking-mode: position;
+}
+
+.item-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
 }
 
 .slot-large {

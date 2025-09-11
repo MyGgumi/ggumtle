@@ -202,4 +202,17 @@ public class DreamPartyService {
 
         return new GetInvitationsResult(invitationInfos);
     }
+
+    public List<Long> getPartyMemberIds(Long memberId) {
+        PartyParticipant participant = partyParticipantRepository.findById(memberId)
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        String partyId = participant.getPartyId();
+
+        List<PartyParticipant> partyMembers = partyParticipantRepository.findAllByPartyId(partyId);
+
+        return partyMembers.stream()
+                .map(PartyParticipant::getMemberId)
+                .toList();
+    }
 }

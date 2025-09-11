@@ -26,6 +26,7 @@ import com.ggumtle.ggumtle.dream.presentation.response.GetInvitationsResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.InvitePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.LeavePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.ReadyDreamResponse;
+import com.ggumtle.ggumtle.friend.application.MemberStateService;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -43,6 +44,7 @@ public class DreamController {
     private final ApplicationEventPublisher applicationEventPublisher;
     private final DreamService dreamService;
     private final DreamPartyService dreamPartyService;
+    private final MemberStateService memberStateService;
 
     @SocketCommandHandler(type = SocketType.CREATE_PARTY)
     public void createParty(WebSocketSession session) {
@@ -82,6 +84,10 @@ public class DreamController {
 
         StartDreamCommand command = new StartDreamCommand(requesterId);
         dreamService.startDream(command);
+        List<Long> partyMemberIds = dreamPartyService.getPartyMemberIds(requesterId);
+        partyMemberIds.forEach(memberId -> {
+            memberStateService.setInGame(memberId);
+        });
     }
 
     @SocketCommandHandler(type = SocketType.READY_DREAM)

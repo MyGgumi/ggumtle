@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.presentation;
 
 import com.ggumtle.ggumtle.common.SocketType;
+import com.ggumtle.ggumtle.friend.application.MemberStateService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,12 +21,14 @@ public class SocketHandler extends TextWebSocketHandler {
     private final SocketRequestDispatcher socketRequestDispatcher;
     private final SocketResponseDispatcher socketResponseDispatcher;
     private final ApplicationEventPublisher applicationEventPublisher;
-
+    private final MemberStateService memberStateService;
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         socketResponseDispatcher.registerSession(session);
 
         Long memberId = Long.parseLong(session.getPrincipal().getName());
+
+        memberStateService.setOnline(memberId);
 
         log.info("WS CONNECT: memberId = {}", memberId);
         SendSocketEvent sendSocketEvent = new SendSocketEvent(SocketType.CONNECT, List.of(memberId), "API 서버와 연결 완료");
@@ -34,6 +37,8 @@ public class SocketHandler extends TextWebSocketHandler {
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+        memberStateService.setOffline(memberId);
         socketResponseDispatcher.removeSession(session);
     }
 

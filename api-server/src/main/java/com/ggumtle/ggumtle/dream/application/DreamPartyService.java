@@ -33,6 +33,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -72,12 +73,10 @@ public class DreamPartyService {
                 .build();
         partyInvitationRepository.save(partyInvitation);
 
-        List<Long> memberIds = new ArrayList<>();
-        memberIds.add(partyInvitation.getInviteeId());
-        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(inviter.getPartyId());
-        participants.forEach(participant -> memberIds.add(participant.getMemberId()));
-
-        return new InvitePartyResult(memberIds, partyInvitation.getId());
+        Long inviteeId = command.inviteeId();
+        Optional<Member> invitee = memberRepository.findById(inviteeId);
+        String inviteeNickname = invitee.get().getNickname();
+        return new InvitePartyResult(inviteeId, partyInvitation.getId(), inviteeNickname);
     }
 
     public AcceptPartyInvitationResult acceptPartyInvitation(AcceptPartyInvitationCommand command) {

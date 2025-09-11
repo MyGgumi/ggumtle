@@ -131,14 +131,14 @@ public class DreamManager {
         Player requester = players.getOrDefault(session.getMemberId(), null);
 
         if (requester == null) {
-            Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_PLAYER, -1);
+            Result result = new HitMonggingResult(HitMonggingResult.Status.NOT_PLAYER, -1);
             Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         if (!(requester instanceof Mongdung mongdung)) {
-            Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_MONGDUNG, -1);
+            Result result = new HitMonggingResult(HitMonggingResult.Status.NOT_MONGDUNG, -1);
             Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -146,7 +146,7 @@ public class DreamManager {
 
         Mongging targetMongging = (Mongging) players.getOrDefault(command.targetId(), null);
         if (targetMongging == null) {
-            Result result = new HitMonggingResult(HitMonggingResult.HitResult.NOT_FOUND_TARGET, -1);
+            Result result = new HitMonggingResult(HitMonggingResult.Status.NOT_FOUND_TARGET, -1);
             Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -155,7 +155,7 @@ public class DreamManager {
         boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, targetMongging);
 
         if (!isHit) {
-            Result result = new HitMonggingResult(HitMonggingResult.HitResult.FAIL, -1);
+            Result result = new HitMonggingResult(HitMonggingResult.Status.FAIL, -1);
             Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -164,12 +164,12 @@ public class DreamManager {
         int damage = mongdung.getDamage();
         int leftHp = targetMongging.getHit(damage);
 
-        Result result = new HitMonggingResult(HitMonggingResult.HitResult.SUCCESS, leftHp);
+        Result result = new HitMonggingResult(HitMonggingResult.Status.SUCCESS, leftHp);
         Packet packet = Packet.of(SendPacketType.HIT_RESULT, System.currentTimeMillis(), result);
         room.sendPacket(List.of(mongdung.getId(), targetMongging.getId()), packet);
 
         if (leftHp == 0) {
-            result = new MonggingStatusResult(targetMongging.getId(), targetMongging.isDead() ? MonggingStatusResult.MonggingStatus.DEAD : MonggingStatusResult.MonggingStatus.KNOCKOUT);
+            result = new MonggingStatusResult(targetMongging.getId(), targetMongging.isDead() ? MonggingStatusResult.Status.DEAD : MonggingStatusResult.Status.KNOCKOUT);
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
 
@@ -214,7 +214,7 @@ public class DreamManager {
                     Packet packet = Packet.of(SendPacketType.DONE_REVIVE_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
 
-                    result = new MonggingStatusResult(targetMongging.getId(), MonggingStatusResult.MonggingStatus.NORMAL);
+                    result = new MonggingStatusResult(targetMongging.getId(), MonggingStatusResult.Status.NORMAL);
                     packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
                     this.room.broadcast(packet);
 
@@ -279,7 +279,7 @@ public class DreamManager {
         }
 
         if (item.isAttackItem()) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_ATTACK_ITEM, item.getId());
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_ATTACK_ITEM, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -287,7 +287,7 @@ public class DreamManager {
 
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (!(player instanceof Mongging mongging)) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_MONGGING, item.getId());
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_MONGGING, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -296,7 +296,7 @@ public class DreamManager {
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
             log.error("%d번 게임의 몽둥이를 찾을 수 없습니다.");
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.getId());
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -304,7 +304,7 @@ public class DreamManager {
 
         Item usedItem = mongging.popItem(item);
         if (usedItem == null) {
-            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.getId());
+            Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.NOT_FOUND_ITEM, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -313,7 +313,7 @@ public class DreamManager {
         // TODO: 히트 판정
         Mongdung mongdung = (Mongdung) mongdungPlayer;
 
-        Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.SUCCESS, item.getId());
+        Result result = new UseMonggingItemResult(UseMonggingItemResult.Status.SUCCESS, item.id);
         Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
         this.room.sendPacket(mongdung.getId(), packet);
@@ -382,7 +382,7 @@ public class DreamManager {
     public void takeItem(int boxId, int index, Session session) {
         // 인덱스 검사
         if (index < 0 || index >= Box.BOX_SIZE) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.INDEX_OUT_OF_RANGE, null);
+            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.INDEX_OUT_OF_RANGE, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -391,7 +391,7 @@ public class DreamManager {
         // 박스 존재 검사
         Box box = boxes.getOrDefault(boxId, null);
         if (box == null) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.NOT_FOUND_BOX, null);
+            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.NOT_FOUND_BOX, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -400,14 +400,14 @@ public class DreamManager {
         // 플레이어 검사
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (player == null) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.NOT_FOUND_PLAYER, null);
+            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.NOT_FOUND_PLAYER, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         if (!(player instanceof Mongging mongging)) {
-            TakeItemResult result = new TakeItemResult(TakeItemResult.TakeResult.NOT_MONGGING, null);
+            TakeItemResult result = new TakeItemResult(TakeItemResult.Status.NOT_MONGGING, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -421,14 +421,14 @@ public class DreamManager {
             synchronized (lockOrder.get(1)) {
                 Item targetItem = box.getItemAt(index);
                 if (targetItem == null) {
-                    Result result = new TakeItemResult(TakeItemResult.TakeResult.NOT_FOUND_BOX, null);
+                    Result result = new TakeItemResult(TakeItemResult.Status.NOT_FOUND_BOX, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
                     return;
                 }
 
                 if (!mongging.canAddItem(targetItem)) {
-                    Result result = new TakeItemResult(TakeItemResult.TakeResult.FULL_ABOUT_ITEM, null);
+                    Result result = new TakeItemResult(TakeItemResult.Status.FULL_ABOUT_ITEM, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
                     return;
@@ -443,13 +443,13 @@ public class DreamManager {
                             popResult[Box.BOX_SIZE],
                             Arrays.deepToString(mongging.getItems()));
 
-                    Result result = new TakeItemResult(TakeItemResult.TakeResult.FAIL, null);
+                    Result result = new TakeItemResult(TakeItemResult.Status.FAIL, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
                     return;
                 }
 
-                Result result = new TakeItemResult(TakeItemResult.TakeResult.SUCCESS, popResult);
+                Result result = new TakeItemResult(TakeItemResult.Status.SUCCESS, popResult);
                 Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
                 session.sendPacket(packet);
             }
@@ -459,7 +459,7 @@ public class DreamManager {
     public void putItem(int itemId, int boxId, Session session) {
         Item targetItem = Item.valueOf(itemId);
         if (targetItem == null) {
-            Result result = new PutItemResult(PutItemResult.PutResult.ILLEGAL_ITEM_ID, null);
+            Result result = new PutItemResult(PutItemResult.Status.ILLEGAL_ITEM_ID, null);
             Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -468,7 +468,7 @@ public class DreamManager {
         // 박스 존재 검사
         Box box = boxes.getOrDefault(boxId, null);
         if (box == null) {
-            Result result = new PutItemResult(PutItemResult.PutResult.NOT_FOUND_BOX, null);
+            Result result = new PutItemResult(PutItemResult.Status.NOT_FOUND_BOX, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -477,14 +477,14 @@ public class DreamManager {
         // 플레이어 검사
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (player == null) {
-            Result result = new PutItemResult(PutItemResult.PutResult.NOT_FOUND_PLAYER, null);
+            Result result = new PutItemResult(PutItemResult.Status.NOT_FOUND_PLAYER, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         if (!(player instanceof Mongging mongging)) {
-            Result result = new PutItemResult(PutItemResult.PutResult.NOT_MONGGING, null);
+            Result result = new PutItemResult(PutItemResult.Status.NOT_MONGGING, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -496,14 +496,14 @@ public class DreamManager {
             synchronized (lockOrder.get(1)) {
                 int count = mongging.countItem(targetItem);
                 if (count == 0) {
-                    Result result = new PutItemResult(PutItemResult.PutResult.NOT_FOUND_ITEM, null);
+                    Result result = new PutItemResult(PutItemResult.Status.NOT_FOUND_ITEM, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
                     return;
                 }
 
                 if (!box.canAddItem(targetItem)) {
-                    Result result = new PutItemResult(PutItemResult.PutResult.FULL_ABOUT_ITEM, null);
+                    Result result = new PutItemResult(PutItemResult.Status.FULL_ABOUT_ITEM, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
                     return;
@@ -518,13 +518,13 @@ public class DreamManager {
                             poppedItem,
                             Arrays.deepToString(mongging.getItems()));
 
-                    Result result = new PutItemResult(PutItemResult.PutResult.FAIL, null);
+                    Result result = new PutItemResult(PutItemResult.Status.FAIL, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
                     session.sendPacket(packet);
                     return;
                 }
 
-                Result result = new PutItemResult(PutItemResult.PutResult.SUCCESS, box.getItems());
+                Result result = new PutItemResult(PutItemResult.Status.SUCCESS, box.getItems());
                 Packet packet = Packet.of(SendPacketType.PUT_ITEM_RESULT, System.currentTimeMillis(), result);
                 session.sendPacket(packet);
                 return;
@@ -534,7 +534,7 @@ public class DreamManager {
 
     public void digUpGgumtle(int ggumtleId, Session session) {
         if (!ggumtles.containsKey(ggumtleId)) {
-            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.NOT_FOUND);
+            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.Status.NOT_FOUND);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -542,7 +542,7 @@ public class DreamManager {
 
         Ggumtle ggumtle = ggumtles.get(ggumtleId);
         if (ggumtle.isDugUp()) {
-            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.ALREADY_DIG_UP);
+            DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.Status.ALREADY_DIG_UP);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -552,7 +552,7 @@ public class DreamManager {
             Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();
             while (iterator.hasNext()) {
                 Map.Entry<Long, WorkingThread> entry = iterator.next();
-                if (entry.getValue().threadType == WorkingThread.ThreadType.DIG_UP && entry.getValue().ggumtleId == ggumtle.getId()) {
+                if (entry.getValue().threadType == WorkingThread.ThreadType.DIG_UP && entry.getValue().ggumtleId == ggumtle.id) {
                     entry.getValue().scheduledFuture.cancel(true);
                     iterator.remove();
                 }
@@ -565,15 +565,15 @@ public class DreamManager {
                 return;
             }
 
-            DigUpResult result = new DigUpResult(ggumtle.getId(), digUpResult == 1);
+            DigUpResult result = new DigUpResult(ggumtle.id, digUpResult == 1);
             Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
 
             // TODO: 스턴 상태 브로드캐스팅
         }, 3, TimeUnit.SECONDS);
-        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.getId()));
+        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.id));
 
-        DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.DigUpResult.START_DIGGING);
+        DigUpReceiveResult result = new DigUpReceiveResult(DigUpReceiveResult.Status.START_DIGGING);
         Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), result);
         session.sendPacket(packet);
     }
@@ -583,10 +583,10 @@ public class DreamManager {
 
         Result result;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.DIG_UP) {
-            result = new StopDiggingResult(StopDiggingResult.StopResult.STOP);
+            result = new StopDiggingResult(StopDiggingResult.Status.STOP);
             workingThreads.remove(session.getMemberId());
         } else {
-            result = new StopDiggingResult(StopDiggingResult.StopResult.NOT_FOUND_DIGGING);
+            result = new StopDiggingResult(StopDiggingResult.Status.NOT_FOUND_DIGGING);
         }
         Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), result);
         session.sendPacket(packet);
@@ -594,7 +594,7 @@ public class DreamManager {
 
     public void startFeed(int ggumtleId, Session session) {
         if (!ggumtles.containsKey(ggumtleId)) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.NOT_FOUND);
+            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.NOT_FOUND);
             Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -602,14 +602,14 @@ public class DreamManager {
 
         Ggumtle ggumtle = ggumtles.get(ggumtleId);
         if (!ggumtle.isDugUp()) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.YET_DIG_UP);
+            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.YET_DIG_UP);
             Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
         }
 
         if (ggumtle.isDone()) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.ALREADY_DONE);
+            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.ALREADY_DONE);
             Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -618,7 +618,7 @@ public class DreamManager {
         Mongging mongging = (Mongging) players.get(session.getMemberId());
         int count = mongging.countItem(Item.GGUMTLE_FEED);
         if (count == 0) {
-            StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.LACK_OF_FEED_ITEM);
+            StartFeedResult result = new StartFeedResult(StartFeedResult.Status.LACK_OF_FEED_ITEM);
             Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -633,17 +633,17 @@ public class DreamManager {
                 Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<Long, WorkingThread> entry = iterator.next();
-                    if (entry.getValue().ggumtleId == ggumtle.getId()) {
+                    if (entry.getValue().ggumtleId == ggumtle.id) {
                         entry.getValue().scheduledFuture.cancel(true);
                         iterator.remove();
                     }
                 }
 
-                Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Result result = new StopFeedingResult(StopFeedingResult.Status.STOP, mongging.countItem(Item.GGUMTLE_FEED));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
                 session.sendPacket(packet);
 
-                result = new FeedDoneResult(ggumtle.getId());
+                result = new FeedDoneResult(ggumtle.id);
                 packet = Packet.of(SendPacketType.FEED_DONE, System.currentTimeMillis(), result);
                 this.room.broadcast(packet);
 
@@ -655,7 +655,7 @@ public class DreamManager {
             // 남은 아이템이 없으면 종료
             int leftFeedItem = mongging.countItem(Item.GGUMTLE_FEED);
             if (leftFeedItem == 0) {
-                Result result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, mongging.countItem(Item.GGUMTLE_FEED));
+                Result result = new StopFeedingResult(StopFeedingResult.Status.STOP, mongging.countItem(Item.GGUMTLE_FEED));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
                 session.sendPacket(packet);
 
@@ -665,9 +665,9 @@ public class DreamManager {
             }
         };
         ScheduledFuture<?> future = workerThreadPool.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
-        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.FEED, ggumtle.getId()));
+        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.FEED, ggumtle.id));
 
-        StartFeedResult result = new StartFeedResult(StartFeedResult.FeedResult.START_FEEDING);
+        StartFeedResult result = new StartFeedResult(StartFeedResult.Status.START_FEEDING);
         Packet packet = Packet.of(SendPacketType.START_FEED_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
     }
@@ -680,10 +680,10 @@ public class DreamManager {
 
         Result result;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.FEED) {
-            result = new StopFeedingResult(StopFeedingResult.StopResult.STOP, leftItemCount);
+            result = new StopFeedingResult(StopFeedingResult.Status.STOP, leftItemCount);
             workingThreads.remove(session.getMemberId());
         } else {
-            result = new StopFeedingResult(StopFeedingResult.StopResult.NOT_FOUND, leftItemCount);
+            result = new StopFeedingResult(StopFeedingResult.Status.NOT_FOUND, leftItemCount);
         }
         Packet packet = Packet.of(SendPacketType.STOP_FEED_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
@@ -711,7 +711,7 @@ public class DreamManager {
         Exit exit = exits.getOrDefault(exitId, null);
 
         if (exit == null) {
-            Result result = new EscapeResult(EscapeResult.EscapeStatus.NOT_FOUND_EXIT);
+            Result result = new EscapeResult(EscapeResult.Status.NOT_FOUND_EXIT);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -719,7 +719,7 @@ public class DreamManager {
 
         Player player = players.get(session.getMemberId());
         if (!(player instanceof Mongging mongging)) {
-            Result result = new EscapeResult(EscapeResult.EscapeStatus.NOT_MONGGING);
+            Result result = new EscapeResult(EscapeResult.Status.NOT_MONGGING);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -728,7 +728,7 @@ public class DreamManager {
         // TODO: 위치 검사
 
         if (!mongging.isNotDead()) {
-            Result result = new EscapeResult(EscapeResult.EscapeStatus.NOT_ALIVE);
+            Result result = new EscapeResult(EscapeResult.Status.NOT_ALIVE);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
             session.sendPacket(packet);
             return;
@@ -737,16 +737,16 @@ public class DreamManager {
         mongging.escape();
         escapedMonggings.add(mongging.getId());
 
-        Result result = new EscapeResult(EscapeResult.EscapeStatus.SUCCESS);
+        Result result = new EscapeResult(EscapeResult.Status.SUCCESS);
         Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), result);
         session.sendPacket(packet);
 
-        result = new MonggingStatusResult(mongging.getId(), MonggingStatusResult.MonggingStatus.ESCAPE);
+        result = new MonggingStatusResult(mongging.getId(), MonggingStatusResult.Status.ESCAPE);
         packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
 
         if (escapedMonggings.size() >= WINNING_MONGGING_COUNT) {
-            result = new DreamEndResult(DreamEndResult.DreamEndStatus.MONGGING_WIN, escapedMonggings, players.values());
+            result = new DreamEndResult(DreamEndResult.Status.MONGGING_WIN, escapedMonggings, players.values());
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), result);
             this.room.broadcast(packet);
         }
@@ -788,7 +788,7 @@ public class DreamManager {
 
         this.ggumtles.put(id, fakeGgumtle);
 
-        result = new NewGgumtleResult(fakeGgumtle.getId(), fakeGgumtle.getPosition());
+        result = new NewGgumtleResult(fakeGgumtle.id, fakeGgumtle.position);
         packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), result);
         this.room.broadcast(packet);
     }
@@ -817,7 +817,7 @@ public class DreamManager {
         // 상자 아이템 초기화
         List<Box> boxes = this.boxes.values().stream().toList();
         for (Item item : Item.values()) {
-            ItemDistributor.distribute(item, boxes, item.getInitialCount());
+            ItemDistributor.distribute(item, boxes, item.initialCount);
         }
 
         // 필드 아이템 초기화

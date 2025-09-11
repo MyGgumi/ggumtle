@@ -1,21 +1,19 @@
 package com.ggumtle.ggumtle.dream.domain;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
-import lombok.Getter;
 import lombok.ToString;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-@Getter
 @ToString
 public class Ggumtle {
 
-    private final static int INIT_LEFT_FEED_COUNT = 30;
+    public final static int INIT_LEFT_FEED_COUNT = 30;
 
-    private final int id;
+    public final int id;
 
-    private final Position position;
+    public final Position position;
 
     private AtomicInteger leftFeedCount;
 

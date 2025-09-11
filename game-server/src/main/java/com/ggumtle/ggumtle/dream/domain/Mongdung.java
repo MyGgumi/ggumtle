@@ -17,7 +17,8 @@ public class Mongdung extends Player {
     private static final double TARGET_SIZE_Y = 2000;
     private static final double TARGET_SIZE_Z = 1000;
 
-    protected int moveSpeed;
+    public final int moveSpeed;
+
     private long lastScareTime;
     private int buryFakeGgumtleCount;
 

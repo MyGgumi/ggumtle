@@ -12,12 +12,13 @@ import java.util.Collection;
 import java.util.Set;
 
 public record DreamEndResult(
-        DreamEndStatus result,
+        Status result,
         Set<Long> escapedMonggings,
         Collection<Player> players
 ) implements Result {
+
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum DreamEndStatus {
+    public enum Status {
         MONGGING_WIN((byte) 1), MONGDUNG_WIN((byte) 2);
 
         private final byte value;

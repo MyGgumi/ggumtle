@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.dream.domain;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
+import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -17,14 +18,15 @@ public class Mongging extends Player {
     private static final int ITEM_COUNT = 1;
     private static final int MAX_KNOCKOUT_COUNT = 3;
 
-    protected int hp;
-    protected Status status;
+    public final int maxHp;
+    public final int moveSpeed;
+    public final int healSpeed;
+    public final int workSpeed;
 
-    protected int moveSpeed;
-    protected int healSpeed;
-    protected int workSpeed;
+    private int hp;
+    private Status status;
 
-    protected int knockOutCount = 0;
+    private int knockOutCount = 0;
 
     private final ConcurrentHashMap <Item, Integer> inventory;
     private final ConcurrentHashMap<Item, Integer> droppedItems;
@@ -34,7 +36,8 @@ public class Mongging extends Player {
     public Mongging(long id, Position position) {
         super(id, position);
 
-        this.hp = BASE_HP;
+        this.maxHp = BASE_HP;
+        this.hp = maxHp;
         this.status = Status.ALIVE;
 
         this.moveSpeed = BASE_MOVE_SPEED;
@@ -67,7 +70,7 @@ public class Mongging extends Player {
 
     public synchronized boolean canAddItem(Item item) {
         if (this.inventory.containsKey(item)) {
-            return this.inventory.get(item) + 1 <= item.getMaxCapacityForMongging();
+            return this.inventory.get(item) + 1 <= item.maxCapacityForMongging;
         }
 
         return this.inventory.size() < INVENTORY_SIZE;
@@ -76,7 +79,7 @@ public class Mongging extends Player {
     public synchronized boolean addItem(Item item) {
         if (this.inventory.containsKey(item)) {
             int nextCount = this.inventory.get(item) + 1;
-            if (nextCount > item.getMaxCapacityForMongging()) {
+            if (nextCount > item.maxCapacityForMongging) {
                 return false;
             }
 
@@ -97,7 +100,7 @@ public class Mongging extends Player {
         int top = 0;
 
         for (Map.Entry<Item, Integer> entry : this.inventory.entrySet()) {
-            items[top][ITEM_ID] = entry.getKey().getId();
+            items[top][ITEM_ID] = entry.getKey().id;
             items[top][ITEM_COUNT] = entry.getValue();
             top++;
         }

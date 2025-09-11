@@ -7,11 +7,11 @@ import lombok.AllArgsConstructor;
 import java.nio.charset.Charset;
 
 public record StartFeedResult(
-        FeedResult result
+        Status result
 ) implements Result {
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum FeedResult {
+    public enum Status {
         FAIL((byte) 0), START_FEEDING((byte) 1),
         NOT_FOUND((byte) 2), YET_DIG_UP((byte) 3), ALREADY_DONE((byte) 4), LACK_OF_FEED_ITEM((byte) 5);
 

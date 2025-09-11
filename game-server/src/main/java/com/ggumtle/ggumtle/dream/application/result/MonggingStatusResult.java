@@ -9,11 +9,11 @@ import java.nio.charset.Charset;
 
 public record MonggingStatusResult(
         long playerId,
-        MonggingStatus status
+        Status status
 ) implements Result {
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum MonggingStatus {
+    public enum Status {
         NORMAL(1),
         KNOCKOUT(50),
         DEAD(70),

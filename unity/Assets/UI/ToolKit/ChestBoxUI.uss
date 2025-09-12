@@ -1,0 +1,86 @@
+/* 상자 UI 스타일 - PNG 9-slice 사용 */
+
+/* 메인 상자 패널 (PNG 9-slice 배경) */
+.chest-panel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    width: 328px;
+    height: 340px;
+    background-image: url('project://database/Assets/UI/Images/chest_panel_bg.png');
+    -unity-background-scale-mode: stretch-to-fill;
+    -unity-slice-left: 12;
+    -unity-slice-top: 0;
+    -unity-slice-right: 12;
+    -unity-slice-bottom: 24;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 20 0 8 0 px;
+}
+
+/* 3x3 아이템 그리드 */
+.items-grid {
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* 행 (가로 3개씩) */
+.item-row {
+    flex-direction: row;
+    justify-content: center;
+}
+
+/* 개별 아이템 슬롯 */
+.item-slot {
+    width: 90px;
+    height: 90px;
+    margin: 3px;
+    background-color: rgba(30, 35, 40, 0.9);
+    border-width: 2px;
+    border-color: rgba(18, 79, 107, 1);
+    border-radius: 4px;
+    position: relative;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 아이템 아이콘 */
+.item-icon {
+    width: 80px;
+    height: 80px;
+    -unity-background-scale-mode: scale-to-fit;
+}
+
+/* 투명한 클릭 버튼 (전체 슬롯 덮음) */
+.take-button {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: transparent;
+    background-color: transparent;
+    border-width: 0;
+    border-radius: 4px;
+}
+
+/* 닫기 버튼 - 단색 배경 */
+.close-button {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% 180px; 
+    width: 160px;
+    height: 70px;
+    background-color: rgba(51, 81, 94, 0.7);
+    border-width: 1px;
+    border-color: rgba(51, 81, 94, 1);
+    border-radius: 2px;
+    font-size: 28px;
+    color: rgba(255, 255, 255, 1);
+}

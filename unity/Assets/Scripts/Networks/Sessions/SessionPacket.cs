@@ -25,10 +25,12 @@ namespace Networks.Sessions
     {
         public override PacketType Type => PacketType.VerifyTokenResponse;
         
+        public bool Success { get; set; }
         public long SessionId { get; private set; }
         
-        public VerifyTokenCommand(long sessionId)
+        public VerifyTokenCommand(bool success, long sessionId)
         {
+            Success = success;
             SessionId = sessionId;
         }
 

@@ -8,18 +8,14 @@ namespace Networks.Factories
     [CommandFactory(PacketType.VerifyTokenResponse)]
     public class VerifyTokenFactory
     {
-        public VerifyTokenFactory()
-        {
-            
-        }
-
-        public VerifyTokenCommand Create(byte[] bytes)
+        public static VerifyTokenCommand Create(byte[] bytes)
         {
             var buffer = Unpooled.WrappedBuffer(bytes);
             
+            var success = buffer.ReadBoolean();
             var sessionId = buffer.ReadLong();
             
-            return new VerifyTokenCommand(sessionId);
+            return new VerifyTokenCommand(success, sessionId);
         }
     }
 }

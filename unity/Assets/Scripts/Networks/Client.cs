@@ -9,42 +9,71 @@ using UnityEngine;
 
 namespace Networks
 {
-    public class Client
+    public class Client : MonoBehaviour
     {
-        private readonly string _host;
-        private readonly int _port;
-        
         private IEventLoopGroup _group;
         private IChannel _channel;
-        private readonly PacketHandler _packetHandler;
+        private PacketHandler _packetHandler;
+        
+        public bool IsConnected => _channel != null && _channel.Active;
 
-        public Client(string host, int port)
+        private void Awake()
         {
-            _host = host;
-            _port = port;
-            _packetHandler = new PacketHandler();
+            Debug.Log("Client Awake");
+            
+            DontDestroyOnLoad(gameObject);
         }
 
-        public async Task ConnectAsync()
+        private void Start()
         {
-            _group = new MultithreadEventLoopGroup();
+            Debug.Log("Client Start");
+        }
 
-            var bootstrap = new Bootstrap();
-            bootstrap
-                .Group(_group)
-                .Channel<TcpSocketChannel>()
-                .Option(ChannelOption.TcpNodelay, true)
-                .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
+        public async Task ConnectAsync(string host, int port)
+        {
+            try
+            {
+                Debug.Log($"Client 연결 시도: {host}:{port}");
+                
+                if (string.IsNullOrEmpty(host))
                 {
-                    channel.Pipeline
-                        .AddLast(new PacketDecoder())
-                        .AddLast(new PacketEncoder())
-                        .AddLast(_packetHandler);
-                }));
-            
-            _channel = await bootstrap.ConnectAsync(_host, _port);
-            
-            Debug.Log($"{_host}:{_port} 서버에 연결되었습니다.");
+                    Debug.LogError("Host가 설정되지 않았습니다. Inspector에서 Host를 설정해주세요.");
+                    return;
+                }
+                
+                if (port <= 0)
+                {
+                    Debug.LogError($"Port가 올바르지 않습니다: {port}. Inspector에서 Port를 설정해주세요.");
+                    return;
+                }
+                
+                _group = new MultithreadEventLoopGroup();
+                _packetHandler = new PacketHandler();
+
+                var bootstrap = new Bootstrap();
+                bootstrap
+                    .Group(_group)
+                    .Channel<TcpSocketChannel>()
+                    .Option(ChannelOption.TcpNodelay, true)
+                    .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
+                    {
+                        channel.Pipeline
+                            .AddLast(new PacketDecoder())
+                            .AddLast(new PacketEncoder())
+                            .AddLast(_packetHandler);
+                    }));
+                
+                Debug.Log($"서버 연결 중... {host}:{port}");
+                _channel = await bootstrap.ConnectAsync(host, port);
+                
+                Debug.Log($"{host}:{port} 서버에 연결되었습니다.");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"Client 연결 실패: {ex.Message}");
+                Debug.LogError($"연결 시도한 주소: {host}:{port}");
+                throw;
+            }
         }
 
         public void Disconnect()

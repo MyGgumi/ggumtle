@@ -46,3 +46,4 @@ project(":unityLibrary").projectDir = file("C:\\Users\\SSAFY\\Documents\\unity\\
 include(":feature:startup")
 include(":feature:social")
 include(":feature:home")
+include(":feature:growth")

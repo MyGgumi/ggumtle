@@ -1,4 +1,4 @@
-package com.example.domain.rest.model.auth.request
+package com.ggumtle.domain.rest.model.auth.request
 
 data class GoogleLoginRequest(
     val idToken: String

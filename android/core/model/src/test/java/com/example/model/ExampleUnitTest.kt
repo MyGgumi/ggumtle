@@ -1,4 +1,4 @@
-package com.example.model
+package com.ggumtle.model
 
 import org.junit.Test
 

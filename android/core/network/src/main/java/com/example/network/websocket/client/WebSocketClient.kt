@@ -1,8 +1,8 @@
-package com.example.network.websocket.client
+package com.ggumtle.network.websocket.client
 
-import com.example.network.websocket.model.WebSocketConnectionState
-import com.example.network.websocket.model.WebSocketReceiveMessageDto
-import com.example.network.websocket.model.WebSocketSendMessageDto
+import com.ggumtle.network.websocket.model.WebSocketConnectionState
+import com.ggumtle.network.websocket.model.WebSocketReceiveMessageDto
+import com.ggumtle.network.websocket.model.WebSocketSendMessageDto
 import kotlinx.coroutines.flow.Flow
 
 interface WebSocketClient {

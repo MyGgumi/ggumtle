@@ -1,6 +1,6 @@
-package com.example.data.rest.model.auth.request
+package com.ggumtle.data.rest.model.auth.request
 
-import com.example.domain.rest.model.auth.request.GoogleLoginRequest
+import com.ggumtle.domain.rest.model.auth.request.GoogleLoginRequest
 import kotlinx.serialization.Serializable
 
 @Serializable

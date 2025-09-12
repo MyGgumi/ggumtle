@@ -1,6 +1,6 @@
-package com.example.network.rest.util.calladapter
+package com.ggumtle.network.rest.util.calladapter
 
-import com.example.network.rest.model.NetworkResult
+import com.ggumtle.network.rest.model.NetworkResult
 import retrofit2.Call
 import retrofit2.CallAdapter
 import java.lang.reflect.Type

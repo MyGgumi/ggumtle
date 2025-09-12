@@ -32,7 +32,9 @@ fun HomeContent(
     onLeaveParty: () -> Unit,
     onDismissInviteRequestsDialog: () -> Unit,
     onAcceptInvite: (String) -> Unit,
-    onDeclineInvite: (String) -> Unit
+    onDeclineInvite: (String) -> Unit,
+    onSocialClick: () -> Unit,
+    onGrowthClick: () -> Unit
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -45,11 +47,19 @@ fun HomeContent(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top
         ) {
-            // 왼쪽 상단 - 프로필
-            ProfileSection(
-                userProfile = state.userProfile,
-                onClick = onProfileClick
-            )
+            // 왼쪽 상단 - 프로필과 성장 버튼 섹션
+            Column {
+                ProfileSection(
+                    userProfile = state.userProfile,
+                    onClick = onProfileClick
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                GrowthButton(
+                    onClick = onGrowthClick
+                )
+            }
 
             // 오른쪽 상단 - 메뉴 탭
             MenuTab(
@@ -58,7 +68,8 @@ fun HomeContent(
                 onTabClick = onMenuTabClick,
                 onSettingsClick = onSettingsClick,
                 onInviteListClick = onInviteListClick,
-                onLeavePartyClick = onLeaveParty
+                onLeavePartyClick = onLeaveParty,
+                onSocialClick = onSocialClick
             )
         }
 

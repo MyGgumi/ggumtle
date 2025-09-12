@@ -1,4 +1,4 @@
-package com.example.domain.unity.model
+package com.ggumtle.domain.unity.model
 
 data class UnityMessage(
     val target: String,

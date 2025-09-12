@@ -1,4 +1,4 @@
-package com.example.data.websocket.model.common
+package com.ggumtle.data.websocket.model.common
 
 object WebSocketMessageType {
 

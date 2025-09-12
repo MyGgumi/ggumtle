@@ -1,8 +1,8 @@
-package com.example.data.rest.remote.service
+package com.ggumtle.data.rest.remote.service
 
-import com.example.data.rest.model.auth.request.GoogleLoginRequestDto
-import com.example.data.rest.model.auth.response.LoginResponseDto
-import com.example.network.rest.model.NetworkResult
+import com.ggumtle.data.rest.model.auth.request.GoogleLoginRequestDto
+import com.ggumtle.data.rest.model.auth.response.LoginResponseDto
+import com.ggumtle.network.rest.model.NetworkResult
 import retrofit2.http.*
 
 interface AuthService {

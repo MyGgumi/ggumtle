@@ -10,11 +10,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.designsystem.component.GameCard
-import com.example.designsystem.component.GameSearchBar
-import com.example.designsystem.theme.GameColors
-import com.example.domain.model.MemberConnectionState
-import com.example.domain.websocket.model.Friend
+import com.ggumtle.designsystem.component.GameCard
+import com.ggumtle.designsystem.component.GameSearchBar
+import com.ggumtle.designsystem.theme.GameColors
+import com.ggumtle.domain.model.MemberConnectionState
+import com.ggumtle.domain.websocket.model.Friend
 
 @Composable
 fun FriendsTabContent(

@@ -6,10 +6,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.social.component.SocialTabBar
 import com.ggumtle.social.component.FriendsTabContent
 import com.ggumtle.social.component.AddFriendsTabContent
+import com.ggumtle.social.component.SocialHeader
 import com.ggumtle.social.component.UserSearchDialog
 
 @Composable
@@ -25,7 +26,8 @@ fun SocialContent(
     onCancelSentRequest: (Long) -> Unit,
     onSendFriendRequest: (Long) -> Unit,
     onOpenProfile: (Long) -> Unit,
-    onRemoveFriend: (Long) -> Unit
+    onRemoveFriend: (Long) -> Unit,
+    onClickBack: () -> Unit
 ) {
     var addFriendsSearchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
@@ -40,6 +42,11 @@ fun SocialContent(
                 .fillMaxSize()
                 .padding(20.dp)
         ) {
+            SocialHeader(
+                title = "친구",
+                onBackClick = onClickBack
+            )
+
             SocialTabBar(
                 currentTab = state.currentTab,
                 onTabSelected = onTabSelected

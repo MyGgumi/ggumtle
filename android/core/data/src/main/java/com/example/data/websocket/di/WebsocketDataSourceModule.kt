@@ -1,7 +1,7 @@
-package com.example.data.websocket.di
+package com.ggumtle.data.websocket.di
 
-import com.example.data.websocket.remote.datasource.WebSocketRemoteDataSource
-import com.example.data.websocket.remote.datasource.WebSocketRemoteDataSourceImpl
+import com.ggumtle.data.websocket.remote.datasource.WebSocketRemoteDataSource
+import com.ggumtle.data.websocket.remote.datasource.WebSocketRemoteDataSourceImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

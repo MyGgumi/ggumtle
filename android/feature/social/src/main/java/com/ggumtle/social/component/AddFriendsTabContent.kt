@@ -11,11 +11,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.designsystem.component.GameCard
-import com.example.designsystem.component.GameSearchBar
-import com.example.designsystem.component.GameSearchBarClickable
-import com.example.designsystem.theme.GameColors
-import com.example.domain.websocket.model.FriendRequest
+import com.ggumtle.designsystem.component.GameCard
+import com.ggumtle.designsystem.component.GameSearchBar
+import com.ggumtle.designsystem.component.GameSearchBarClickable
+import com.ggumtle.designsystem.theme.GameColors
+import com.ggumtle.domain.websocket.model.FriendRequest
 import com.ggumtle.social.model.SentRequest
 
 @Composable

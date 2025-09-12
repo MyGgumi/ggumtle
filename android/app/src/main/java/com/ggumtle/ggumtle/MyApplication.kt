@@ -1,8 +1,8 @@
 package com.ggumtle.ggumtle
 
 import android.app.Application
-import com.example.datastore.AuthManager
-import com.example.domain.manager.GlobalInviteManager
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.domain.manager.GlobalInviteManager
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

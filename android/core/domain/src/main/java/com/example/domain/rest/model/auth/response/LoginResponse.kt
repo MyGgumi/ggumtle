@@ -1,4 +1,4 @@
-package com.example.domain.rest.model.auth.response
+package com.ggumtle.domain.rest.model.auth.response
 
 data class LoginResponse(
     val memberId: Long,

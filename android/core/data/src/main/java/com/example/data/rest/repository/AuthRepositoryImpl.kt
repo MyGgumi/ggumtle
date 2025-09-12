@@ -1,15 +1,15 @@
-package com.example.data.rest.repository
+package com.ggumtle.data.rest.repository
 
 import android.util.Log
-import com.example.common.constant.HttpStatus
-import com.example.data.rest.model.auth.request.toDto
-import com.example.data.rest.model.auth.response.toDomain
-import com.example.data.rest.remote.datasource.AuthRemoteDataSource
-import com.example.domain.rest.model.Resource
-import com.example.domain.rest.model.auth.request.GoogleLoginRequest
-import com.example.domain.rest.model.auth.response.LoginResponse
-import com.example.domain.rest.repository.AuthRepository
-import com.example.network.rest.model.NetworkResult
+import com.ggumtle.common.constant.HttpStatus
+import com.ggumtle.data.rest.model.auth.request.toDto
+import com.ggumtle.data.rest.model.auth.response.toDomain
+import com.ggumtle.data.rest.remote.datasource.AuthRemoteDataSource
+import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.rest.model.auth.request.GoogleLoginRequest
+import com.ggumtle.domain.rest.model.auth.response.LoginResponse
+import com.ggumtle.domain.rest.repository.AuthRepository
+import com.ggumtle.network.rest.model.NetworkResult
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow

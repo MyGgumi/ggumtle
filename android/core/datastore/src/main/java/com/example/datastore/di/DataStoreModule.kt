@@ -1,12 +1,12 @@
-package com.example.datastore.di
+package com.ggumtle.datastore.di
 
 import android.content.Context
 import androidx.datastore.core.DataStore
-import com.example.common.network.di.ApplicationScope
-import com.example.datastore.AuthDataStore
-import com.example.datastore.AuthManager
-import com.example.datastore.GoogleAuthManager
-import com.example.datastore.dataStore
+import com.ggumtle.common.network.di.ApplicationScope
+import com.ggumtle.datastore.AuthDataStore
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.datastore.GoogleAuthManager
+import com.ggumtle.datastore.dataStore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

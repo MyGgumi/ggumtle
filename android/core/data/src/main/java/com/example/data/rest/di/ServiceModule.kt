@@ -1,6 +1,6 @@
-package com.example.data.rest.di
+package com.ggumtle.data.rest.di
 
-import com.example.data.rest.remote.service.AuthService
+import com.ggumtle.data.rest.remote.service.AuthService
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

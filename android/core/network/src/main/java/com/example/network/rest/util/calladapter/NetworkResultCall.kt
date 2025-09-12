@@ -1,6 +1,6 @@
-package com.example.network.rest.util.calladapter
+package com.ggumtle.network.rest.util.calladapter
 
-import com.example.network.rest.model.NetworkResult
+import com.ggumtle.network.rest.model.NetworkResult
 import okhttp3.Request
 import okio.Timeout
 import retrofit2.Call

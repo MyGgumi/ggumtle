@@ -1,4 +1,4 @@
-package com.example.domain.unity
+package com.ggumtle.domain.unity
 
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow

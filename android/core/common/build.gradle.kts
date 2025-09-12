@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.multimodulebase.jvm.library)
-    alias(libs.plugins.multimodulebase.hilt)
+    alias(libs.plugins.ggumtle.jvm.library)
+    alias(libs.plugins.ggumtle.hilt)
 }
 
 dependencies {

@@ -1,7 +1,7 @@
-package com.example.data.websocket.di
+package com.ggumtle.data.websocket.di
 
-import com.example.data.websocket.event.EventBusImpl
-import com.example.domain.websocket.event.EventBus
+import com.ggumtle.data.websocket.event.EventBusImpl
+import com.ggumtle.domain.websocket.event.EventBus
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

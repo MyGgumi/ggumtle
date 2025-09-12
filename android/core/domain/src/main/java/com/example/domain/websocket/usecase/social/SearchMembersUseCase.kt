@@ -1,6 +1,6 @@
-package com.example.domain.websocket.usecase.social
+package com.ggumtle.domain.websocket.usecase.social
 
-import com.example.domain.websocket.repository.WebSocketRepository
+import com.ggumtle.domain.websocket.repository.WebSocketRepository
 import javax.inject.Inject
 
 class SearchMembersUseCase @Inject constructor(

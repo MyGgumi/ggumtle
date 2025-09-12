@@ -1,4 +1,4 @@
-package com.example.database
+package com.ggumtle.database
 
 import org.junit.Test
 

@@ -20,8 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.designsystem.component.button.GameIconButton
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.component.button.GameIconButton
+import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.home.model.PartyMember
 import kotlin.invoke
 

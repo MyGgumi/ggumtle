@@ -1,10 +1,10 @@
-package com.example.domain.manager
+package com.ggumtle.domain.manager
 
-import com.example.datastore.AuthManager
-import com.example.domain.model.InviteNotification
-import com.example.domain.model.NotificationType
-import com.example.domain.websocket.usecase.home.ObserveInvitePartyUseCase
-import com.example.domain.websocket.usecase.social.ObserveRequestFriendResultUseCase
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.domain.model.InviteNotification
+import com.ggumtle.domain.model.NotificationType
+import com.ggumtle.domain.websocket.usecase.home.ObserveInvitePartyUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveRequestFriendResultUseCase
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

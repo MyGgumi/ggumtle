@@ -1,10 +1,10 @@
-package com.example.network.websocket.client
+package com.ggumtle.network.websocket.client
 
 import android.util.Log
-import com.example.datastore.AuthManager
-import com.example.network.websocket.model.WebSocketConnectionState
-import com.example.network.websocket.model.WebSocketReceiveMessageDto
-import com.example.network.websocket.model.WebSocketSendMessageDto
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.network.websocket.model.WebSocketConnectionState
+import com.ggumtle.network.websocket.model.WebSocketReceiveMessageDto
+import com.ggumtle.network.websocket.model.WebSocketSendMessageDto
 import com.ggumtle.core.network.BuildConfig
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow

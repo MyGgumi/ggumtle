@@ -1,35 +1,35 @@
 package com.ggumtle.home
 
 import androidx.lifecycle.ViewModel
-import com.example.datastore.AuthManager
-import com.example.domain.model.MemberConnectionState
-import com.example.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
-import com.example.domain.websocket.usecase.home.CreatePartyUseCase
-import com.example.domain.websocket.usecase.home.InvitePartyUseCase
-import com.example.domain.websocket.usecase.home.LeavePartyUseCase
-import com.example.domain.websocket.usecase.home.ObserveAcceptPartyInvitationUseCase
-import com.example.domain.websocket.usecase.home.ObserveCreatePartyUseCase
-import com.example.domain.websocket.usecase.home.ObserveInvitePartyUseCase
-import com.example.domain.websocket.usecase.home.ObserveLeavePartyUseCase
-import com.example.domain.websocket.usecase.social.GetFriendsUseCase
-import com.example.domain.websocket.usecase.social.ObserveGetFriendsUseCase
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.domain.model.MemberConnectionState
+import com.ggumtle.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
+import com.ggumtle.domain.websocket.usecase.home.CreatePartyUseCase
+import com.ggumtle.domain.websocket.usecase.home.InvitePartyUseCase
+import com.ggumtle.domain.websocket.usecase.home.LeavePartyUseCase
+import com.ggumtle.domain.websocket.usecase.home.ObserveAcceptPartyInvitationUseCase
+import com.ggumtle.domain.websocket.usecase.home.ObserveCreatePartyUseCase
+import com.ggumtle.domain.websocket.usecase.home.ObserveInvitePartyUseCase
+import com.ggumtle.domain.websocket.usecase.home.ObserveLeavePartyUseCase
+import com.ggumtle.domain.websocket.usecase.social.GetFriendsUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveGetFriendsUseCase
 import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.home.model.PartyMember
 import com.ggumtle.home.model.UserProfile
-import com.example.designsystem.dialog.DialogState
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.model.UnityMethod
-import com.example.domain.unity.model.UnityTarget
-import com.example.domain.websocket.usecase.home.ObserveReadyGameUseCase
-import com.example.domain.websocket.usecase.home.ReadyGameUseCase
-import com.example.domain.websocket.usecase.home.UnReadyGameUseCase
+import com.ggumtle.designsystem.dialog.DialogState
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.model.UnityMethod
+import com.ggumtle.domain.unity.model.UnityTarget
+import com.ggumtle.domain.websocket.usecase.home.ObserveReadyGameUseCase
+import com.ggumtle.domain.websocket.usecase.home.ReadyGameUseCase
+import com.ggumtle.domain.websocket.usecase.home.UnReadyGameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import android.util.Log
 import androidx.lifecycle.viewModelScope
-import com.example.datastore.LogoutReason
-import com.example.domain.websocket.model.DreamStatus
-import com.example.domain.websocket.usecase.home.ObserveStartGameUseCase
-import com.example.domain.websocket.usecase.home.StartGameUseCase
+import com.ggumtle.datastore.LogoutReason
+import com.ggumtle.domain.websocket.model.DreamStatus
+import com.ggumtle.domain.websocket.usecase.home.ObserveStartGameUseCase
+import com.ggumtle.domain.websocket.usecase.home.StartGameUseCase
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -65,7 +65,7 @@ class HomeViewModel @Inject constructor(
 
     override val container: Container<HomeContract.State, HomeContract.SideEffect> =
         container(HomeContract.State())
-        
+
     // 매칭 타이머 Job
     private var matchmakingTimerJob: Job? = null
 
@@ -93,7 +93,10 @@ class HomeViewModel @Inject constructor(
                     // TODO: Unity 통신 -> 파티 현황에 맞게 플레이어 업데이트
                 } else {
                     // TODO: Unity 통신 -> 입장한 플레이어 추가
-                    val newPartyMember = PartyMember(id = result.joinedMemberId, nickname = result.joinedMemberNickname)
+                    val newPartyMember = PartyMember(
+                        id = result.joinedMemberId,
+                        nickname = result.joinedMemberNickname
+                    )
                     reduce { state.copy(partyMembers = state.partyMembers + newPartyMember) }
                 }
             }
@@ -241,7 +244,7 @@ class HomeViewModel @Inject constructor(
         if (state.isPartyLeader) return@intent
         reduce { state.copy(isLoading = true) }
         try {
-            if(!state.isReady) readyGameUseCase.invoke()
+            if (!state.isReady) readyGameUseCase.invoke()
             else unReadyGameUseCase.invoke()
 
             reduce { state.copy(isLoading = false) }
@@ -259,8 +262,8 @@ class HomeViewModel @Inject constructor(
                     } else member
                 }
                 reduce { state.copy(partyMembers = updatedMembers) }
-                if(state.isReady) updateGameStartAvailability()
-                else if(myId == result.memberId) reduce { state.copy(isReady = result.isReady) }
+                if (state.isReady) updateGameStartAvailability()
+                else if (myId == result.memberId) reduce { state.copy(isReady = result.isReady) }
             }
     }
 
@@ -284,11 +287,12 @@ class HomeViewModel @Inject constructor(
     // TODO: 게임 시작 observe
     fun observeGameStart() = intent {
         observeStartGameUseCase.invoke().collect { result ->
-            when(result.status){
+            when (result.status) {
                 DreamStatus.RECEIVED -> {}
                 DreamStatus.START_MATCH -> {
                     startMatchmakingTimer()
                 }
+
                 DreamStatus.WAITING -> {}
                 DreamStatus.MATCHED -> {}
                 DreamStatus.CREATE_ROOM -> {}
@@ -429,17 +433,10 @@ class HomeViewModel @Inject constructor(
     fun onLogout() = intent {
         // TODO: 로그아웃 API 호출
         authManager.logout(LogoutReason.UserLogout)
-        unitySendManager.sendToUnity(
-            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-            UnityMethod.START_REVERSE.value
-        )
-        delay(2000)
-        postSideEffect(HomeContract.SideEffect.NavigateToLogin)
     }
 
     fun onDeleteAccount() = intent {
         // TODO: 회원탈퇴 API 호출
-        postSideEffect(HomeContract.SideEffect.NavigateToLogin)
     }
 
     // 파티 나가기 확인 다이얼 로그 표시
@@ -460,9 +457,15 @@ class HomeViewModel @Inject constructor(
     //다이얼 로그 숨기기
     fun hideDialog() = intent { reduce { state.copy(dialogState = DialogState.Hidden) } }
 
+    // 소셜 화면 열기
+    fun onSocialClick() = intent { postSideEffect(HomeContract.SideEffect.NavigateToSocial) }
+
+    // 성장 화면 열기
+    fun onGrowthClick() = intent { postSideEffect(HomeContract.SideEffect.NavigateToGrowth) }
+
     override fun onCleared() {
         super.onCleared()
-//        onLeaveParty(false)
+        onLeaveParty(false)
         stopMatchmakingTimer()
     }
 }

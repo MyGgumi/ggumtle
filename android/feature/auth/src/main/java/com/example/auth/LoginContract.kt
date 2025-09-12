@@ -1,6 +1,6 @@
-package com.example.auth
+package com.ggumtle.auth
 
-import com.example.designsystem.dialog.DialogState
+import com.ggumtle.designsystem.dialog.DialogState
 
 object LoginContract {
 

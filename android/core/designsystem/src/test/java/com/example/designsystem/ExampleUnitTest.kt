@@ -1,4 +1,4 @@
-package com.example.designsystem
+package com.ggumtle.designsystem
 
 import org.junit.Test
 

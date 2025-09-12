@@ -1,8 +1,8 @@
-package com.example.network.websocket.di
+package com.ggumtle.network.websocket.di
 
-import com.example.datastore.AuthManager
-import com.example.network.websocket.client.WebSocketClient
-import com.example.network.websocket.client.WebSocketClientImpl
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.network.websocket.client.WebSocketClient
+import com.ggumtle.network.websocket.client.WebSocketClientImpl
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

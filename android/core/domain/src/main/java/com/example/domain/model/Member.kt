@@ -1,4 +1,4 @@
-package com.example.domain.model
+package com.ggumtle.domain.model
 
 data class Member(
     val memberId: Long,

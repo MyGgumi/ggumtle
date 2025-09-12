@@ -1,4 +1,4 @@
-package com.example.designsystem.dialog
+package com.ggumtle.designsystem.dialog
 
 sealed class DialogState {
     data object Hidden : DialogState()

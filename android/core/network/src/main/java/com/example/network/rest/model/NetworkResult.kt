@@ -1,6 +1,6 @@
-package com.example.network.rest.model
+package com.ggumtle.network.rest.model
 
-import com.example.common.constant.HttpStatus
+import com.ggumtle.common.constant.HttpStatus
 
 
 /**

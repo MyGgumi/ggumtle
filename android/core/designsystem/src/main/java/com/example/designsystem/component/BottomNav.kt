@@ -1,5 +1,5 @@
 // designsystem/component/GameBottomNavBar.kt
-package com.example.designsystem.component
+package com.ggumtle.designsystem.component
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
@@ -23,7 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.theme.GameColors
 import kotlin.collections.forEach
 import kotlin.text.isNotEmpty
 

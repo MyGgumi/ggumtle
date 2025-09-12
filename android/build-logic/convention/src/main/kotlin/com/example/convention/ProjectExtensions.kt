@@ -1,4 +1,4 @@
-package com.example.convention
+package com.ggumtle.convention
 
 import org.gradle.api.Project
 import org.gradle.api.artifacts.VersionCatalog

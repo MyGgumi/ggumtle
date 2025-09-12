@@ -1,4 +1,4 @@
-package com.example.auth
+package com.ggumtle.auth
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -14,8 +14,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import com.example.auth.component.button.GoogleLoginButton
-import com.example.auth.component.text.BlinkingText
+import com.ggumtle.auth.component.button.GoogleLoginButton
+import com.ggumtle.auth.component.text.BlinkingText
 import com.ggumtle.core.designsystem.R
 
 @Composable

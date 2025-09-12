@@ -20,7 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.theme.GameColors
 
 @Composable
 fun MenuTab(
@@ -30,6 +30,7 @@ fun MenuTab(
     onSettingsClick: () -> Unit,
     onInviteListClick: () -> Unit,
     onLeavePartyClick: () -> Unit,
+    onSocialClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -90,6 +91,12 @@ fun MenuTab(
                                 icon = Icons.Default.Settings,
                                 contentDescription = "설정",
                                 onClick = onSettingsClick
+                            )
+
+                            MenuButton(
+                                icon = Icons.Default.SocialDistance,
+                                contentDescription = "설정",
+                                onClick = onSocialClick
                             )
 
                             MenuButton(

@@ -1,4 +1,4 @@
-package com.example.data
+package com.ggumtle.data
 
 import org.junit.Test
 

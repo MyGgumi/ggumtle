@@ -1,4 +1,4 @@
-package com.example.designsystem.component
+package com.ggumtle.designsystem.component
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -19,9 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
-import com.example.designsystem.theme.GameColors
-import com.example.domain.model.InviteNotification
-import com.example.domain.model.NotificationType
+import com.ggumtle.designsystem.theme.GameColors
+import com.ggumtle.domain.model.InviteNotification
+import com.ggumtle.domain.model.NotificationType
 
 @Composable
 fun TopNotificationBanner(

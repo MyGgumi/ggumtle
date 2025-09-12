@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.multimodulebase.jvm.library)
+    alias(libs.plugins.ggumtle.jvm.library)
 }
 
 dependencies {

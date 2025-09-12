@@ -1,11 +1,11 @@
 package com.ggumtle.home
 
-import com.example.domain.websocket.model.Friend
+import com.ggumtle.domain.websocket.model.Friend
 import com.ggumtle.home.model.PartyMember
 import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.home.model.InviteRequest
-import com.example.designsystem.dialog.DialogState
+import com.ggumtle.designsystem.dialog.DialogState
 
 object HomeContract {
 
@@ -49,7 +49,8 @@ object HomeContract {
 
     sealed interface SideEffect {
         data class ShowToast(val message: String) : SideEffect
-        data object NavigateToLogin : SideEffect
+        data object NavigateToSocial : SideEffect
+        data object NavigateToGrowth : SideEffect
         data object StartGame : SideEffect
     }
 }

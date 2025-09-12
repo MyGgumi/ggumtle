@@ -1,4 +1,4 @@
-package com.example.auth.component.button
+package com.ggumtle.auth.component.button
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Spacer

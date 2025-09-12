@@ -1,7 +1,7 @@
-package com.example.data.rest.di
+package com.ggumtle.data.rest.di
 
-import com.example.data.rest.repository.AuthRepositoryImpl
-import com.example.domain.rest.repository.AuthRepository
+import com.ggumtle.data.rest.repository.AuthRepositoryImpl
+import com.ggumtle.domain.rest.repository.AuthRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

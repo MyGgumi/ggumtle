@@ -1,6 +1,6 @@
-package com.example.domain.websocket.model
+package com.ggumtle.domain.websocket.model
 
-import com.example.domain.model.MemberConnectionState
+import com.ggumtle.domain.model.MemberConnectionState
 
 data class Friend(
     val id: Long,

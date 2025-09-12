@@ -1,4 +1,4 @@
-package com.example.common.constant
+package com.ggumtle.common.constant
 
 object HttpStatus {
     // Success : 2xx

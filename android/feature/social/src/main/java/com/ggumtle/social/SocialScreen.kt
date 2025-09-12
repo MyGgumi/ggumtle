@@ -16,7 +16,8 @@ fun SocialScreen(
     onCancelSentRequest: (Long) -> Unit,
     onSendFriendRequest: (Long) -> Unit,
     onOpenProfile: (Long) -> Unit,
-    onRemoveFriend: (Long) -> Unit
+    onRemoveFriend: (Long) -> Unit,
+    onClickBack: () -> Unit
 ) {
     SocialContent(
         state = state,
@@ -30,6 +31,7 @@ fun SocialScreen(
         onCancelSentRequest = onCancelSentRequest,
         onSendFriendRequest = onSendFriendRequest,
         onOpenProfile = onOpenProfile,
-        onRemoveFriend = onRemoveFriend
+        onRemoveFriend = onRemoveFriend,
+        onClickBack = onClickBack
     )
 }

@@ -1,4 +1,4 @@
-package com.example.domain.websocket.repository
+package com.ggumtle.domain.websocket.repository
 
 interface WebSocketRepository {
     suspend fun connect()

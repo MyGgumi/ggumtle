@@ -19,9 +19,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.designsystem.component.button.GameIconButton
-import com.example.designsystem.theme.GameColors
-import com.example.domain.websocket.model.Friend
+import com.ggumtle.designsystem.component.button.GameIconButton
+import com.ggumtle.designsystem.theme.GameColors
+import com.ggumtle.domain.websocket.model.Friend
 
 @Composable
 fun InviteFriendsDialog(

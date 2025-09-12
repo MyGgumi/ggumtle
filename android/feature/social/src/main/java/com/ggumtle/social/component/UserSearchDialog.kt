@@ -15,8 +15,8 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.designsystem.component.GameSearchBar
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.component.GameSearchBar
+import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.social.model.User
 
 @Composable

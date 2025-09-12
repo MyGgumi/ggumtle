@@ -2,9 +2,9 @@ package com.ggumtle.startup
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.designsystem.dialog.DialogState
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.UnityStartupManager
+import com.ggumtle.designsystem.dialog.DialogState
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.UnityStartupManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine

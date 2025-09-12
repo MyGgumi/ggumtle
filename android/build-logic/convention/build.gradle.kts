@@ -29,35 +29,35 @@ dependencies{
 gradlePlugin{
     plugins{
         register("androidApplicationCompose") {
-            id = libs.plugins.multimodulebase.android.application.compose.get().pluginId
+            id = libs.plugins.ggumtle.android.application.compose.get().pluginId
             implementationClass = "AndroidApplicationComposeConventionPlugin"
         }
         register("androidApplication") {
-            id = libs.plugins.multimodulebase.android.application.asProvider().get().pluginId
+            id = libs.plugins.ggumtle.android.application.asProvider().get().pluginId
             implementationClass = "AndroidApplicationConventionPlugin"
         }
         register("androidLibraryCompose") {
-            id = libs.plugins.multimodulebase.android.library.compose.get().pluginId
+            id = libs.plugins.ggumtle.android.library.compose.get().pluginId
             implementationClass = "AndroidLibraryComposeConventionPlugin"
         }
         register("androidLibrary") {
-            id = libs.plugins.multimodulebase.android.library.asProvider().get().pluginId
+            id = libs.plugins.ggumtle.android.library.asProvider().get().pluginId
             implementationClass = "AndroidLibraryConventionPlugin"
         }
         register("androidFeature") {
-            id = libs.plugins.multimodulebase.android.feature.get().pluginId
+            id = libs.plugins.ggumtle.android.feature.get().pluginId
             implementationClass = "AndroidFeatureConventionPlugin"
         }
         register("hilt") {
-            id = libs.plugins.multimodulebase.hilt.get().pluginId
+            id = libs.plugins.ggumtle.hilt.get().pluginId
             implementationClass = "HiltConventionPlugin"
         }
         register("jvmLibrary") {
-            id = libs.plugins.multimodulebase.jvm.library.get().pluginId
+            id = libs.plugins.ggumtle.jvm.library.get().pluginId
             implementationClass = "JvmLibraryConventionPlugin"
         }
         register("androidRoom") {
-            id = libs.plugins.multimodulebase.android.room.get().pluginId
+            id = libs.plugins.ggumtle.android.room.get().pluginId
             implementationClass = "AndroidRoomConventionPlugin"
         }
     }

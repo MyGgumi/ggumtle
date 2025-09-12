@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.unity
 
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.model.UnityMessage
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.model.UnityMessage
 import com.unity3d.player.UnityPlayer
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow

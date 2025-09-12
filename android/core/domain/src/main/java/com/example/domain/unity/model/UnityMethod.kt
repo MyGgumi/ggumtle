@@ -1,4 +1,4 @@
-package com.example.domain.unity.model
+package com.ggumtle.domain.unity.model
 
 enum class UnityMethod(val value: String) {
     START_TRANSITION("StartTransition"),

@@ -1,8 +1,8 @@
-package com.example.domain.rest.repository
+package com.ggumtle.domain.rest.repository
 
-import com.example.domain.rest.model.Resource
-import com.example.domain.rest.model.auth.request.GoogleLoginRequest
-import com.example.domain.rest.model.auth.response.LoginResponse
+import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.rest.model.auth.request.GoogleLoginRequest
+import com.ggumtle.domain.rest.model.auth.response.LoginResponse
 import kotlinx.coroutines.flow.Flow
 
 interface AuthRepository {

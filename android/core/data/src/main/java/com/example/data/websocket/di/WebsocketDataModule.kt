@@ -1,7 +1,7 @@
-package com.example.data.websocket.di
+package com.ggumtle.data.websocket.di
 
-import com.example.data.websocket.repository.WebSocketRepositoryImpl
-import com.example.domain.websocket.repository.WebSocketRepository
+import com.ggumtle.data.websocket.repository.WebSocketRepositoryImpl
+import com.ggumtle.domain.websocket.repository.WebSocketRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

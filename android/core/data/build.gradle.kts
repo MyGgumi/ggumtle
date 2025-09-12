@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.multimodulebase.android.library)
-    alias(libs.plugins.multimodulebase.hilt)
+    alias(libs.plugins.ggumtle.android.library)
+    alias(libs.plugins.ggumtle.hilt)
     alias(libs.plugins.kotlin.serialization)
 }
 

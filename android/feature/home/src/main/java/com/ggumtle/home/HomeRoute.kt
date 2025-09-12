@@ -2,14 +2,16 @@ package com.ggumtle.home
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
-import com.example.designsystem.dialog.DialogContainer
+import com.ggumtle.designsystem.dialog.DialogContainer
 
 @Composable
 fun HomeRoute(
-    onNavigateToAuth: () -> Unit = {},
+    onNavigateToSocial: () -> Unit = {},
+    onNavigateToGrowth: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -19,12 +21,11 @@ fun HomeRoute(
             is HomeContract.SideEffect.ShowToast -> {
                 // TODO: Toast 표시
             }
-            is HomeContract.SideEffect.NavigateToLogin -> {
-                onNavigateToAuth
-            }
             is HomeContract.SideEffect.StartGame -> {
                 // TODO: 게임 시작 로직
             }
+            is HomeContract.SideEffect.NavigateToSocial -> onNavigateToSocial()
+            is HomeContract.SideEffect.NavigateToGrowth -> onNavigateToGrowth()
         }
     }
 
@@ -51,7 +52,9 @@ fun HomeRoute(
         onLeaveParty = viewModel::onShowLeavePartyDialog,
         onDismissInviteRequestsDialog = viewModel::onDismissInviteRequestsDialog,
         onAcceptInvite = viewModel::onAcceptInvite,
-        onDeclineInvite = viewModel::onDeclineInvite
+        onDeclineInvite = viewModel::onDeclineInvite,
+        onSocialClick = viewModel::onSocialClick,
+        onGrowthClick = viewModel::onGrowthClick
     )
 
     DialogContainer(

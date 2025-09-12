@@ -1,9 +1,9 @@
-//package com.example.network.rest.util.authenticator
+//package com.ggumtle.network.rest.util.authenticator
 //
 //import android.util.Log
-//import com.example.datastore.AuthManager
-//import com.example.datastore.LogoutReason
-//import com.example.network.rest.util.authenticator.model.request.RefreshReissueRequest
+//import com.ggumtle.datastore.AuthManager
+//import com.ggumtle.datastore.LogoutReason
+//import com.ggumtle.network.rest.util.authenticator.model.request.RefreshReissueRequest
 //import kotlinx.coroutines.runBlocking
 //import okhttp3.Authenticator
 //import okhttp3.Request

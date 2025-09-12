@@ -1,4 +1,4 @@
-package com.example.network.websocket.model
+package com.ggumtle.network.websocket.model
 
 enum class WebSocketConnectionState {
     DISCONNECTED,

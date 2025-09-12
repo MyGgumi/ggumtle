@@ -1,8 +1,8 @@
-package com.example.data.websocket.remote.datasource
+package com.ggumtle.data.websocket.remote.datasource
 
-import com.example.network.websocket.model.WebSocketConnectionState
-import com.example.network.websocket.model.WebSocketReceiveMessageDto
-import com.example.network.websocket.model.WebSocketSendMessageDto
+import com.ggumtle.network.websocket.model.WebSocketConnectionState
+import com.ggumtle.network.websocket.model.WebSocketReceiveMessageDto
+import com.ggumtle.network.websocket.model.WebSocketSendMessageDto
 import kotlinx.coroutines.flow.Flow
 
 interface WebSocketRemoteDataSource {

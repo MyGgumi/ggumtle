@@ -3,27 +3,29 @@ package com.ggumtle.social
 import android.util.Log
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
-import com.example.datastore.AuthManager
-import com.example.domain.websocket.model.Friend
-import com.example.domain.websocket.model.FriendRequest
-import com.example.domain.websocket.usecase.social.GetFriendRequestsUseCase
-import com.example.domain.websocket.usecase.social.ObserveGetFriendRequestsUseCase
-import com.example.domain.websocket.usecase.social.ObserveMemberSearchResultUseCase
-import com.example.domain.websocket.usecase.social.ObserveRequestFriendResultUseCase
-import com.example.domain.websocket.usecase.social.RequestFriendUseCase
-import com.example.domain.websocket.usecase.social.SearchMembersUseCase
-import com.example.domain.websocket.usecase.social.AcceptFriendRequestUseCase
-import com.example.domain.websocket.usecase.social.GetFriendsUseCase
-import com.example.domain.websocket.usecase.social.ObserveAcceptFriendRequestUseCase
-import com.example.domain.websocket.usecase.social.ObserveGetFriendsUseCase
-import com.example.domain.websocket.usecase.social.ObserveRejectFriendRequestUseCase
-import com.example.domain.websocket.usecase.social.RejectFriendRequestUseCase
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.domain.model.MemberConnectionState
+import com.ggumtle.domain.websocket.model.Friend
+import com.ggumtle.domain.websocket.model.FriendRequest
+import com.ggumtle.domain.websocket.usecase.social.GetFriendRequestsUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveGetFriendRequestsUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveMemberSearchResultUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveRequestFriendResultUseCase
+import com.ggumtle.domain.websocket.usecase.social.RequestFriendUseCase
+import com.ggumtle.domain.websocket.usecase.social.SearchMembersUseCase
+import com.ggumtle.domain.websocket.usecase.social.AcceptFriendRequestUseCase
+import com.ggumtle.domain.websocket.usecase.social.GetFriendsUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveAcceptFriendRequestUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveGetFriendsUseCase
+import com.ggumtle.domain.websocket.usecase.social.ObserveRejectFriendRequestUseCase
+import com.ggumtle.domain.websocket.usecase.social.RejectFriendRequestUseCase
 import com.ggumtle.social.model.toUsers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.first
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.simple.intent
+import org.orbitmvi.orbit.syntax.simple.postSideEffect
 import org.orbitmvi.orbit.syntax.simple.reduce
 import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
@@ -131,9 +133,16 @@ class SocialViewModel @Inject constructor(
             getFriendsUseCase.invoke()
 
             val result = observeGetFriendsUseCase.invoke().first()
-            Log.d("qwer", "getFriends: ${result.friends}")
+//            val modifiedFriends = result.friends.map { friend ->
+//                when (friend.id) {
+//                    1L, 2L -> friend.copy(connectionState = MemberConnectionState.ONLINE)
+//                    3L, 4L -> friend.copy(connectionState = MemberConnectionState.INGAME)
+//                    else -> friend
+//                }
+//            }
             reduce {
                 state.copy(
+                    //friends = modifiedFriends,
                     friends = result.friends,
                     isLoading = false
                 )
@@ -264,6 +273,8 @@ class SocialViewModel @Inject constructor(
             )
         }
     }
+
+    fun onClickBack() = intent { postSideEffect(SocialContract.SideEffect.NavigateToHome) }
 
     // TODO: 친구 삭제
     fun onRemoveFriend(friendId: Long) = intent {

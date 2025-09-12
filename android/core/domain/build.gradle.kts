@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.multimodulebase.android.library)
+    alias(libs.plugins.ggumtle.android.library)
     alias(libs.plugins.ksp)
 }
 android {

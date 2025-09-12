@@ -28,6 +28,8 @@ game-server:
     max-players-per-room: 6
     tick-rate: 30
     id: 1
+metric-server:
+  port: ${METRIC_SERVER_PORT}
 
 jwt:
   access:

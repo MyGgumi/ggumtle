@@ -53,6 +53,9 @@ dependencies {
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
 
+    // Metric
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
     // Env
     implementation "me.paulschwarz:spring-dotenv:3.0.0"
 }

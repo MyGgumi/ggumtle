@@ -227,6 +227,12 @@ MonoBehaviour:
   buttonClickOutputEvent:
     m_PersistentCalls:
       m_Calls: []
+  buttonHoldStartEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  buttonHoldEndEvent:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &2606755326441529510
 GameObject:
   m_ObjectHideFlags: 0
@@ -529,15 +535,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.dll::UnityEngine.UIElements.UIDocument
   m_PanelSettings: {fileID: 11400000, guid: 02ce744549850f947b05645f20db580b, type: 2}
   m_ParentUI: {fileID: 0}
-  sourceAsset: {fileID: 9197481963319205126, guid: a4f4696e583b2df4db9c188a011922a8, type: 3}
+  sourceAsset: {fileID: 0}
   m_SortingOrder: 0
-  m_Position: 0
   m_WorldSpaceSizeMode: 1
   m_WorldSpaceWidth: 1920
   m_WorldSpaceHeight: 1080
-  m_PivotReferenceSize: 0
-  m_Pivot: 0
-  m_WorldSpaceCollider: {fileID: 0}
 --- !u!114 &5694359144568984336
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -551,6 +553,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MonggingHUDExample
   hudController: {fileID: 0}
+  enableKeyboardTesting: 0
 --- !u!114 &2264320398610632709
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -581,6 +584,9 @@ MonoBehaviour:
   interactionManager: {fileID: 0}
   notificationManager: {fileID: 0}
   chatManager: {fileID: 0}
+  playerInventoryUI: {fileID: 0}
+  mobileInputManager: {fileID: 0}
+  playerActionManager: {fileID: 0}
 --- !u!1 &3526968732199136513
 GameObject:
   m_ObjectHideFlags: 0
@@ -731,6 +737,12 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   buttonClickOutputEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  buttonHoldStartEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  buttonHoldEndEvent:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &3960433976543665111
@@ -1498,6 +1510,12 @@ MonoBehaviour:
           m_BoolArgument: 0
         m_CallState: 2
   buttonClickOutputEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  buttonHoldStartEvent:
+    m_PersistentCalls:
+      m_Calls: []
+  buttonHoldEndEvent:
     m_PersistentCalls:
       m_Calls: []
 --- !u!1 &5493785704769416405

@@ -1,11 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class UIManager : MonoBehaviour
 {
     public static UIManager Instance;
-    
+
     [Header("테스트 설정")]
     [SerializeField]
     private bool enableKeyboardTesting = false; // ESC 키 테스트 활성화/비활성화
@@ -24,6 +25,7 @@ public class UIManager : MonoBehaviour
 
     void Awake()
     {
+        DebugManager.instance.enableRuntimeUI = false;
         if (Instance == null)
         {
             Instance = this;

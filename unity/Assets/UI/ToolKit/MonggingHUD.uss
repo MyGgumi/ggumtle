@@ -1,5 +1,3 @@
-/* MonggingHUD.uss */
-
 #hudRoot {
     position: absolute;
     top: 0;
@@ -13,7 +11,7 @@
 #gameInfo {
     position: absolute;
     left: 200px;
-    top: 0px;
+    top: 0;
 }
 
 #inventory {
@@ -31,7 +29,7 @@
 #playerStatus {
     position: absolute;
     left: 20px;
-    top: 0px;
+    top: 0;
 }
 
 #quickChat {
@@ -49,15 +47,15 @@
 
 #healthBar {
     position: absolute;
-    left: 30px;
-    bottom: 30px;
+    left: 7px;
+    bottom: 12px;
 }
 
 #interactionUI {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 5%;
+    bottom: 8px;
 }
 
 #mobileControls {
@@ -66,5 +64,4 @@
     left: 0;
     right: 0;
     bottom: 0;
-    /* UI Builder에서 모바일 컨트롤 위치 조정 시 여기서 수정하세요 */
 }

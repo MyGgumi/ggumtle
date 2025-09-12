@@ -1,6 +1,7 @@
 package com.example.auth
 
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import com.example.datastore.AuthManager
 import com.example.datastore.GoogleSignInResult
@@ -24,9 +25,9 @@ import javax.inject.Inject
 class LoginViewModel @Inject constructor(
     private val googleLoginUseCase: GoogleLoginUseCase,
     private val authManager: AuthManager,
-    private val unitySendManager: UnitySendManager,
     private val connectWebSocketUseCase: ConnectWebSocketUseCase,
-) : ViewModel(), ContainerHost<LoginContract.State, LoginContract.SideEffect> {
+    private val unitySendManager: UnitySendManager,
+    ) : ViewModel(), ContainerHost<LoginContract.State, LoginContract.SideEffect> {
 
     override val container = container<LoginContract.State, LoginContract.SideEffect>(
         initialState = LoginContract.State()
@@ -52,11 +53,12 @@ class LoginViewModel @Inject constructor(
                             }
 
                             is Resource.Failure -> {
+                                Log.d("performGoogleLogin", "performGoogleLogin: ${resource.errorMessage}")
                                 reduce {
                                     state.copy(
                                         isLoading = false,
                                         dialogState = DialogState.SingleButtonDialog(
-                                            content = resource.errorMessage
+                                            content = "Google 로그인에 실패했습니다."
                                         )
                                     )
                                 }
@@ -90,6 +92,7 @@ class LoginViewModel @Inject constructor(
     }
 
     fun navigateToMain() = intent {
+        Log.d("LoginViewModel", "navigateToMain 호출됨")
         reduce {
             state.copy(
                 isNavigating = true,
@@ -97,11 +100,13 @@ class LoginViewModel @Inject constructor(
             )
         }
         connectWebSocketUseCase.invoke()
+        Log.d("LoginViewModel", "START_TRANSITION 유니티로 전송")
         unitySendManager.sendToUnity(
             UnityTarget.ANDROID_UNITY_CONTROLLER.value,
             UnityMethod.START_TRANSITION.value
         )
         delay(2000)
+        Log.d("LoginViewModel", "메인으로 네비게이션 시작")
         postSideEffect(LoginContract.SideEffect.NavigateToMain)
     }
 

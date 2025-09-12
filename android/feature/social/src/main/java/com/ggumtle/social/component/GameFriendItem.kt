@@ -17,6 +17,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.designsystem.component.GameCard
 import com.example.designsystem.theme.GameColors
+import com.example.domain.model.MemberConnectionState
 import com.example.domain.websocket.model.Friend
 
 @Composable
@@ -54,7 +55,7 @@ fun GameFriendItem(
                     )
                 }
 
-                if (friend.isOnline) {
+                if (friend.connectionState!= MemberConnectionState.OFFLINE) {
                     Box(
                         modifier = Modifier
                             .size(16.dp)

@@ -19,10 +19,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.designsystem.theme.GameColors
 import com.ggumtle.home.HomeContract
+import com.ggumtle.home.model.UserProfile
 
 @Composable
 fun ProfileSection(
-    userProfile: HomeContract.UserProfile,
+    userProfile: UserProfile,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {

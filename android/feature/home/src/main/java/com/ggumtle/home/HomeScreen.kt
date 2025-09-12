@@ -17,9 +17,16 @@ fun HomeScreen(
     onDeleteAccount: () -> Unit,
     onInviteFriendsClick: () -> Unit,
     onDismissInviteFriendsDialog: () -> Unit,
-    onInviteFriend: (String) -> Unit,
+    onInviteFriend: (Long) -> Unit,
     onToggleReady: () -> Unit,
-    onStartGame: () -> Unit
+    onStartGame: () -> Unit,
+    onCancelGameSearch: () -> Unit,
+    onMenuTabClick: () -> Unit,
+    onInviteListClick: () -> Unit,
+    onLeaveParty: () -> Unit,
+    onDismissInviteRequestsDialog: () -> Unit,
+    onAcceptInvite: (String) -> Unit,
+    onDeclineInvite: (String) -> Unit
 ) {
     HomeContent(
         state = state,
@@ -37,6 +44,13 @@ fun HomeScreen(
         onDismissInviteFriendsDialog = onDismissInviteFriendsDialog,
         onInviteFriend = onInviteFriend,
         onToggleReady = onToggleReady,
-        onStartGame = onStartGame
+        onStartGame = onStartGame,
+        onCancelGameSearch = onCancelGameSearch,
+        onMenuTabClick = onMenuTabClick,
+        onInviteListClick = onInviteListClick,
+        onLeaveParty = onLeaveParty,
+        onDismissInviteRequestsDialog = onDismissInviteRequestsDialog,
+        onAcceptInvite = onAcceptInvite,
+        onDeclineInvite = onDeclineInvite
     )
 }

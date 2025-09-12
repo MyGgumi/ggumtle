@@ -3,12 +3,13 @@ package com.ggumtle.home
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavController
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
+import com.example.designsystem.dialog.DialogContainer
 
 @Composable
 fun HomeRoute(
+    onNavigateToAuth: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -19,7 +20,7 @@ fun HomeRoute(
                 // TODO: Toast 표시
             }
             is HomeContract.SideEffect.NavigateToLogin -> {
-                // TODO: 로그인 화면으로 네비게이션
+                onNavigateToAuth
             }
             is HomeContract.SideEffect.StartGame -> {
                 // TODO: 게임 시작 로직
@@ -33,7 +34,7 @@ fun HomeRoute(
         onDismissProfileDialog = viewModel::onDismissProfileDialog,
         onEditNicknameClick = viewModel::onEditNicknameClick,
         onNicknameTextChange = viewModel::onNicknameTextChange,
-        onSaveNickname = viewModel::onSaveNickname,
+        onSaveNickname = viewModel::onChangeNickname,
         onCancelNicknameEdit = viewModel::onCancelNicknameEdit,
         onSettingsClick = viewModel::onSettingsClick,
         onDismissSettingsDialog = viewModel::onDismissSettingsDialog,
@@ -43,6 +44,18 @@ fun HomeRoute(
         onDismissInviteFriendsDialog = viewModel::onDismissInviteFriendsDialog,
         onInviteFriend = viewModel::onInviteFriend,
         onToggleReady = viewModel::onToggleReady,
-        onStartGame = viewModel::onStartGame
+        onStartGame = viewModel::onStartGame,
+        onCancelGameSearch = viewModel::onCancelGameSearch,
+        onMenuTabClick = viewModel::onMenuTabClick,
+        onInviteListClick = viewModel::onInviteListClick,
+        onLeaveParty = viewModel::onShowLeavePartyDialog,
+        onDismissInviteRequestsDialog = viewModel::onDismissInviteRequestsDialog,
+        onAcceptInvite = viewModel::onAcceptInvite,
+        onDeclineInvite = viewModel::onDeclineInvite
+    )
+
+    DialogContainer(
+        dialogState = state.dialogState,
+        onDismiss = { viewModel.hideDialog() }
     )
 }

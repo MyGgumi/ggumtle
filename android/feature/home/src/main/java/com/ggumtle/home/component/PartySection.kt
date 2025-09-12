@@ -1,6 +1,5 @@
 package com.ggumtle.home.component
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -35,6 +34,10 @@ fun PartySection(
     onInviteFriendsClick: () -> Unit,
     onToggleReady: () -> Unit,
     onStartGame: () -> Unit,
+    onCancelGameSearch: () -> Unit,
+    isReady: Boolean,
+    isSearchingGame: Boolean,
+    matchmakingTimeSeconds: Int,
     modifier: Modifier = Modifier
 ) {
     var isPartyExpanded by remember { mutableStateOf(false) }
@@ -48,7 +51,66 @@ fun PartySection(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 16.dp)
         ) {
-            if (isPartyLeader) {
+            if (isSearchingGame) {
+                // 게임 찾는 중일 때 - 리더/멤버 상관없이 모든 사람에게 표시
+                Box {
+                    // 게임 찾는 중 버튼 (비활성화) - 센터 고정
+                    Button(
+                        onClick = { }, // 클릭 불가
+                        enabled = false,
+                        colors = ButtonDefaults.buttonColors(
+                            disabledContainerColor = GameColors.textSecondary
+                        ),
+                        shape = RoundedCornerShape(16.dp),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 32.dp)
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                "게임 찾는 중...",
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 14.sp,
+                                color = Color.White
+                            )
+                            Text(
+                                formatTime(matchmakingTimeSeconds),
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 12.sp,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
+                    }
+                    
+                    // X 취소 버튼 (버튼 오른쪽에 4dp 간격)
+                    Box(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .background(
+                                color = Color.Gray.copy(alpha = 0.3f),
+                                shape = CircleShape
+                            )
+                            .clickable { onCancelGameSearch() }
+                            .align(Alignment.CenterEnd),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "취소",
+                            tint = Color.Gray,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    }
+                }
+            } else if (isPartyLeader) {
                 Button(
                     onClick = onStartGame,
                     enabled = canStartGame && !isLoading,
@@ -73,9 +135,6 @@ fun PartySection(
                     )
                 }
             } else {
-                val currentMember = partyMembers.find { !it.isLeader }
-                val isReady = currentMember?.isReady ?: false
-
                 Button(
                     onClick = onToggleReady,
                     colors = ButtonDefaults.buttonColors(
@@ -93,19 +152,27 @@ fun PartySection(
             }
         }
 
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            contentAlignment = if (isPartyExpanded) Alignment.BottomCenter else Alignment.BottomEnd
-        ) {
-            if (isPartyExpanded) {
+        // 파티 카드 위치 조정
+        if (isPartyExpanded) {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(bottom = 80.dp), // 버튼 위로 간격 확보
+                contentAlignment = Alignment.Center
+            ) {
                 PartyDetailCard(
                     partyMembers = partyMembers,
                     onInviteFriendsClick = onInviteFriendsClick,
                     onCollapse = { isPartyExpanded = false }
                 )
-            } else {
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 16.dp, bottom = 72.dp), // 게임 시작 버튼 오른쪽 위 (8dp 간격)
+                contentAlignment = Alignment.Center
+            ) {
                 PartyCompactCard(
                     partyMembers = partyMembers,
                     onClick = { isPartyExpanded = true }
@@ -357,4 +424,11 @@ private fun InviteSlot(
             fontWeight = FontWeight.Medium
         )
     }
+}
+
+// 시간을 MM:SS 형식으로 포맷팅
+private fun formatTime(seconds: Int): String {
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    return String.format("%02d:%02d", minutes, remainingSeconds)
 }

@@ -22,12 +22,12 @@ object SocialContract {
         val errorMessage: String? = null
     )
 
-    enum class SocialTab {
-        FRIENDS, ADD_FRIENDS
-    }
-
     sealed interface SideEffect {
         data class ShowToast(val message: String) : SideEffect
         data class NavigateToProfile(val userId: String) : SideEffect
+    }
+
+    enum class SocialTab {
+        FRIENDS, ADD_FRIENDS
     }
 }

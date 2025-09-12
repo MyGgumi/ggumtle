@@ -20,12 +20,12 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.designsystem.component.button.GameIconButton
 import com.example.designsystem.theme.GameColors
-import com.ggumtle.home.HomeContract
+import com.ggumtle.home.model.UserProfile
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileDialog(
-    userProfile: HomeContract.UserProfile,
+    userProfile: UserProfile,
     isNicknameEditMode: Boolean,
     tempNickname: String,
     onDismiss: () -> Unit,
@@ -176,25 +176,6 @@ fun ProfileDialog(
                             size = 40
                         )
                     }
-                }
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // 사용자 ID (읽기 전용)
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        text = "사용자 ID",
-                        color = GameColors.textSecondary,
-                        fontSize = 12.sp
-                    )
-                    Text(
-                        text = userProfile.id.ifEmpty { "user_${System.currentTimeMillis() % 10000}" },
-                        color = GameColors.textSecondary,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium
-                    )
                 }
             }
         }

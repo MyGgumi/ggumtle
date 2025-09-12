@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import com.example.designsystem.component.GameCard
 import com.example.designsystem.component.GameSearchBar
 import com.example.designsystem.theme.GameColors
+import com.example.domain.model.MemberConnectionState
 import com.example.domain.websocket.model.Friend
 
 @Composable
@@ -35,10 +36,10 @@ fun FriendsTabContent(
     }
 
     val onlineFriends = remember(filteredFriends) {
-        filteredFriends.filter { it.isOnline }
+        filteredFriends.filter { it.connectionState != MemberConnectionState.OFFLINE }
     }
     val offlineFriends = remember(filteredFriends) {
-        filteredFriends.filter { !it.isOnline }
+        filteredFriends.filter { it.connectionState == MemberConnectionState.OFFLINE }
     }
 
     Column(

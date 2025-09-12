@@ -51,5 +51,16 @@ namespace Networks.Pipelines
                 }
             }
         }
+        
+        public Command CreateCommand(PacketType packetType, byte[] data)
+        {
+            if (_commandMap.TryGetValue(packetType, out var factory))
+            {
+                return factory(data);
+            }
+            
+            Debug.LogWarning($"CommandFactory를 찾을 수 없습니다: {packetType}");
+            return null;
+        }
     }
 }

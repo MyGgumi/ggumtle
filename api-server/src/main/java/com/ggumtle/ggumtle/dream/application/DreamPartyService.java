@@ -2,12 +2,14 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
+import com.ggumtle.ggumtle.dream.application.command.GetPartyParticipantsCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetInvitationsCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
+import com.ggumtle.ggumtle.dream.application.result.GetPartyParticipantsResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.GetInvitationsResult;
@@ -27,6 +29,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -202,6 +205,40 @@ public class DreamPartyService {
         return new GetInvitationsResult(invitationInfos);
     }
 
+    public GetPartyParticipantsResult getPartyParticipants(GetPartyParticipantsCommand command) {
+        Long memberId = command.memberId();
+
+        PartyParticipant requester = partyParticipantRepository.findById(memberId)
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+        String partyId = requester.getPartyId();
+
+        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyId);
+
+        List<Long> memberIds = participants.stream()
+                .map(PartyParticipant::getMemberId)
+                .toList();
+
+        Map<Long, Member> memberMap = memberRepository.findAllByIdIn(memberIds).stream()
+                .collect(Collectors.toMap(Member::getId, m -> m));
+
+        List<GetPartyParticipantsResult.Participant> participantDetails = participants.stream()
+                .map(p -> {
+                    Member memberInfo = memberMap.get(p.getMemberId());
+                    String nickname = memberInfo.getNickname();
+
+                    return new GetPartyParticipantsResult.Participant(
+                            p.getMemberId(),
+                            nickname,
+                            p.isLeader(),
+                            p.isReady()
+                    );
+                })
+                .toList();
+
+        return new GetPartyParticipantsResult(participantDetails);
+    }
+
+
     public List<Long> getPartyMemberIds(Long memberId) {
         PartyParticipant participant = partyParticipantRepository.findById(memberId)
                 .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
@@ -214,4 +251,5 @@ public class DreamPartyService {
                 .map(PartyParticipant::getMemberId)
                 .toList();
     }
+
 }

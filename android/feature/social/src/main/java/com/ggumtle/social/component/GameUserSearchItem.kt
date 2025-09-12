@@ -16,9 +16,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.designsystem.component.GameCard
-import com.example.designsystem.component.button.GameIconButton
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.component.GameCard
+import com.ggumtle.designsystem.component.button.GameIconButton
+import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.social.model.User
 
 @Composable

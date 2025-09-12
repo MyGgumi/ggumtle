@@ -1,6 +1,6 @@
 package com.ggumtle.startup
 
-import com.example.designsystem.dialog.DialogState
+import com.ggumtle.designsystem.dialog.DialogState
 
 object StartUpContract {
     data class State(

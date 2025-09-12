@@ -1,4 +1,4 @@
-package com.example.domain.websocket.model
+package com.ggumtle.domain.websocket.model
 
 data class Invitation(
     val invitationId: String,

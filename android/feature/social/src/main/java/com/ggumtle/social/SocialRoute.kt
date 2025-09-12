@@ -9,6 +9,7 @@ import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
 fun SocialRoute(
+    onNavigateToHome: () -> Unit = {},
     viewModel: SocialViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -21,6 +22,8 @@ fun SocialRoute(
             is SocialContract.SideEffect.NavigateToProfile -> {
                 // TODO: 프로필 화면으로 네비게이션
             }
+
+            is SocialContract.SideEffect.NavigateToHome -> onNavigateToHome()
         }
     }
 
@@ -36,6 +39,7 @@ fun SocialRoute(
         onCancelSentRequest = viewModel::onCancelSentRequest,
         onSendFriendRequest = viewModel::onSendFriendRequest,
         onOpenProfile = viewModel::onOpenProfile,
-        onRemoveFriend = viewModel::onRemoveFriend
+        onRemoveFriend = viewModel::onRemoveFriend,
+        onClickBack = viewModel::onClickBack
     )
 }

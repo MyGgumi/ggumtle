@@ -1,9 +1,9 @@
-package com.example.datastore
+package com.ggumtle.datastore
 
 import android.content.Context
 import android.util.Base64
 import android.util.Log
-import com.example.common.network.di.ApplicationScope
+import com.ggumtle.common.network.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow

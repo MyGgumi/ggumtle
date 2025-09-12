@@ -6,7 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.ActivityCompat.finishAffinity
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.designsystem.dialog.DialogContainer
+import com.ggumtle.designsystem.dialog.DialogContainer
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 import kotlin.system.exitProcess

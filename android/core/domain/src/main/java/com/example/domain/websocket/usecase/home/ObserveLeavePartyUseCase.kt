@@ -1,7 +1,7 @@
-package com.example.domain.websocket.usecase.home
+package com.ggumtle.domain.websocket.usecase.home
 
-import com.example.domain.websocket.event.EventBus
-import com.example.domain.websocket.model.WebSocketEvent
+import com.ggumtle.domain.websocket.event.EventBus
+import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map

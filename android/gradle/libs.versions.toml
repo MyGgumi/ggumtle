@@ -180,11 +180,11 @@ room = { id = "androidx.room", version.ref = "room" }
 google-oss-licenses = { id = "com.google.android.gms.oss-licenses-plugin", version.ref = "googleOssPlugin" }
 
 # ───── 커스텀 플러그인 (이 프로젝트에서 정의) ─────
-multimodulebase-android-application = { id = "multimodulebase.android.application" }
-multimodulebase-android-application-compose = { id = "multimodulebase.android.application.compose" }
-multimodulebase-android-feature = { id = "multimodulebase.android.feature" }
-multimodulebase-android-library = { id = "multimodulebase.android.library" }
-multimodulebase-android-library-compose = { id = "multimodulebase.android.library.compose" }
-multimodulebase-hilt = { id = "multimodulebase.hilt" }
-multimodulebase-jvm-library = { id = "multimodulebase.jvm.library" }
-multimodulebase-android-room = { id = "multimodulebase.android.room" }
+ggumtle-android-application = { id = "ggumtle.android.application" }
+ggumtle-android-application-compose = { id = "ggumtle.android.application.compose" }
+ggumtle-android-feature = { id = "ggumtle.android.feature" }
+ggumtle-android-library = { id = "ggumtle.android.library" }
+ggumtle-android-library-compose = { id = "ggumtle.android.library.compose" }
+ggumtle-hilt = { id = "ggumtle.hilt" }
+ggumtle-jvm-library = { id = "ggumtle.jvm.library" }
+ggumtle-android-room = { id = "ggumtle.android.room" }

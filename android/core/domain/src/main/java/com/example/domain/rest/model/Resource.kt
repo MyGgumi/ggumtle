@@ -1,6 +1,6 @@
-package com.example.domain.rest.model
+package com.ggumtle.domain.rest.model
 
-import com.example.common.constant.HttpStatus
+import com.ggumtle.common.constant.HttpStatus
 
 sealed class Resource<out R> {
     data object Loading : Resource<Nothing>()

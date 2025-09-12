@@ -1,6 +1,6 @@
-package com.example.domain.websocket.usecase.home
+package com.ggumtle.domain.websocket.usecase.home
 
-import com.example.domain.websocket.repository.WebSocketRepository
+import com.ggumtle.domain.websocket.repository.WebSocketRepository
 import javax.inject.Inject
 
 class UnReadyGameUseCase @Inject constructor(

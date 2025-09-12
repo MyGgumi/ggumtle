@@ -1,17 +1,17 @@
-package com.example.auth
+package com.ggumtle.auth
 
 import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
-import com.example.datastore.AuthManager
-import com.example.datastore.GoogleSignInResult
-import com.example.designsystem.dialog.DialogState
-import com.example.domain.rest.model.Resource
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.model.UnityMethod
-import com.example.domain.unity.model.UnityTarget
-import com.example.domain.rest.usecase.auth.GoogleLoginUseCase
-import com.example.domain.websocket.usecase.connection.ConnectWebSocketUseCase
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.datastore.GoogleSignInResult
+import com.ggumtle.designsystem.dialog.DialogState
+import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.model.UnityMethod
+import com.ggumtle.domain.unity.model.UnityTarget
+import com.ggumtle.domain.rest.usecase.auth.GoogleLoginUseCase
+import com.ggumtle.domain.websocket.usecase.connection.ConnectWebSocketUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import org.orbitmvi.orbit.ContainerHost

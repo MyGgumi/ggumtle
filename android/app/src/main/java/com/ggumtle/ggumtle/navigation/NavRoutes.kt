@@ -9,13 +9,13 @@ data object LoginRoute
 data object StartUpRoute
 
 @Serializable
-data object MainRoute
+data object HomeRoute
+
+@Serializable
+data object SocialRoute
+
+@Serializable
+data object GrowthRoute
 
 @Serializable
 data object HomeTabRoute
-
-@Serializable
-data object Tab1Route
-
-@Serializable
-data object SocialTabRoute

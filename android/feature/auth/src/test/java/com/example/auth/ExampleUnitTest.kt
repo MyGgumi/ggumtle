@@ -1,4 +1,4 @@
-package com.example.auth
+package com.ggumtle.auth
 
 import org.junit.Test
 

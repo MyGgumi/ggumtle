@@ -1,7 +1,7 @@
 plugins {
-    alias(libs.plugins.multimodulebase.android.application)
-    alias(libs.plugins.multimodulebase.android.application.compose)
-    alias(libs.plugins.multimodulebase.hilt)
+    alias(libs.plugins.ggumtle.android.application)
+    alias(libs.plugins.ggumtle.android.application.compose)
+    alias(libs.plugins.ggumtle.hilt)
     id("com.google.android.gms.oss-licenses-plugin")
     alias(libs.plugins.baselineprofile)
     alias(libs.plugins.kotlin.serialization)
@@ -39,6 +39,7 @@ dependencies {
     implementation(projects.feature.startup)
     implementation(projects.feature.social)
     implementation(projects.feature.home)
+    implementation(projects.feature.growth)
 
     implementation(project(":unityLibrary"))
     implementation("androidx.games:games-activity:3.0.5")

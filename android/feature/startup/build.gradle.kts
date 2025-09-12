@@ -1,6 +1,6 @@
 plugins {
-    alias(libs.plugins.multimodulebase.android.feature)
-    alias(libs.plugins.multimodulebase.android.library.compose)
+    alias(libs.plugins.ggumtle.android.feature)
+    alias(libs.plugins.ggumtle.android.library.compose)
 }
 
 android {

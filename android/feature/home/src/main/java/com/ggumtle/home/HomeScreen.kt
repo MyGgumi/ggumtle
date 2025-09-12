@@ -26,7 +26,9 @@ fun HomeScreen(
     onLeaveParty: () -> Unit,
     onDismissInviteRequestsDialog: () -> Unit,
     onAcceptInvite: (String) -> Unit,
-    onDeclineInvite: (String) -> Unit
+    onDeclineInvite: (String) -> Unit,
+    onSocialClick: () -> Unit,
+    onGrowthClick: () -> Unit
 ) {
     HomeContent(
         state = state,
@@ -51,6 +53,8 @@ fun HomeScreen(
         onLeaveParty = onLeaveParty,
         onDismissInviteRequestsDialog = onDismissInviteRequestsDialog,
         onAcceptInvite = onAcceptInvite,
-        onDeclineInvite = onDeclineInvite
+        onDeclineInvite = onDeclineInvite,
+        onSocialClick = onSocialClick,
+        onGrowthClick = onGrowthClick
     )
 }

@@ -1,4 +1,4 @@
-package com.example.designsystem.dialog
+package com.ggumtle.designsystem.dialog
 
 import androidx.compose.runtime.Composable
 

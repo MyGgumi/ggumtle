@@ -1,4 +1,4 @@
-package com.example.network.rest.util.convertor
+package com.ggumtle.network.rest.util.convertor
 
 import okhttp3.ResponseBody
 import retrofit2.Converter

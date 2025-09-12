@@ -1,4 +1,4 @@
-package com.example.network.rest.util.authenticator.model.response
+package com.ggumtle.network.rest.util.authenticator.model.response
 
 import kotlinx.serialization.Serializable
 

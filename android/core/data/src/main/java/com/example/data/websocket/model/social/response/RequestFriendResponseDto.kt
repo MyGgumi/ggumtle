@@ -1,6 +1,6 @@
-package com.example.data.websocket.model.social.response
+package com.ggumtle.data.websocket.model.social.response
 
-import com.example.domain.websocket.model.WebSocketEvent
+import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.serialization.Serializable
 
 @Serializable

@@ -1,8 +1,8 @@
-package com.example.data.websocket.model.social.response
+package com.ggumtle.data.websocket.model.social.response
 
-import com.example.domain.model.MemberConnectionState
-import com.example.domain.websocket.model.Friend
-import com.example.domain.websocket.model.WebSocketEvent
+import com.ggumtle.domain.model.MemberConnectionState
+import com.ggumtle.domain.websocket.model.Friend
+import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.serialization.Serializable
 
 @Serializable

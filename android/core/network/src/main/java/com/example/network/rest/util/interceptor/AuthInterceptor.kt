@@ -1,7 +1,7 @@
-package com.example.network.rest.util.interceptor
+package com.ggumtle.network.rest.util.interceptor
 
 import android.util.Log
-import com.example.datastore.AuthManager
+import com.ggumtle.datastore.AuthManager
 import jakarta.inject.Inject
 import okhttp3.Interceptor
 import okhttp3.Response

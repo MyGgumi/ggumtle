@@ -1,4 +1,4 @@
-package com.example.data.websocket.model.social.request
+package com.ggumtle.data.websocket.model.social.request
 
 import kotlinx.serialization.Serializable
 

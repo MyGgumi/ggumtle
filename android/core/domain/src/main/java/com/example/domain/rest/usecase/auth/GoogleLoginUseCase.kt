@@ -1,11 +1,11 @@
-package com.example.domain.rest.usecase.auth
+package com.ggumtle.domain.rest.usecase.auth
 
 import android.util.Log
-import com.example.datastore.AuthManager
-import com.example.domain.rest.model.Resource
-import com.example.domain.rest.model.auth.request.GoogleLoginRequest
-import com.example.domain.rest.model.auth.response.LoginResponse
-import com.example.domain.rest.repository.AuthRepository
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.rest.model.auth.request.GoogleLoginRequest
+import com.ggumtle.domain.rest.model.auth.response.LoginResponse
+import com.ggumtle.domain.rest.repository.AuthRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.onEach

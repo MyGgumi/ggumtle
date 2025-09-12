@@ -18,8 +18,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.designsystem.component.button.GameIconButton
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.component.button.GameIconButton
+import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.home.model.UserProfile
 
 @OptIn(ExperimentalMaterial3Api::class)

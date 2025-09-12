@@ -1,4 +1,4 @@
-package com.example.designsystem.dialog
+package com.ggumtle.designsystem.dialog
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -15,7 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.theme.GameColors
 
 @Composable
 internal fun TwoButtonDialog(

@@ -1,4 +1,4 @@
-package com.example.network
+package com.ggumtle.network
 
 import org.junit.Test
 

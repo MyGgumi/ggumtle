@@ -1,6 +1,6 @@
-package com.example.domain.unity
+package com.ggumtle.domain.unity
 
-import com.example.domain.unity.model.UnityMessage
+import com.ggumtle.domain.unity.model.UnityMessage
 import kotlinx.coroutines.flow.SharedFlow
 
 interface UnitySendManager {

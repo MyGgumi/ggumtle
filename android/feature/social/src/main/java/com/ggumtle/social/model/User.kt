@@ -1,7 +1,7 @@
 package com.ggumtle.social.model
 
-import com.example.domain.model.Member
-import com.example.domain.model.MemberStatus
+import com.ggumtle.domain.model.Member
+import com.ggumtle.domain.model.MemberStatus
 
 data class User(
     val id: Long,

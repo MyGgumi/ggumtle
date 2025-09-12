@@ -1,4 +1,4 @@
-package com.example.designsystem.component
+package com.ggumtle.designsystem.component
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.theme.GameColors
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

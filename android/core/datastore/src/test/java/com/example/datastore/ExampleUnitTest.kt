@@ -1,4 +1,4 @@
-package com.example.datastore
+package com.ggumtle.datastore
 
 import org.junit.Test
 

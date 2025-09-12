@@ -6,14 +6,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.auth.LoginRoute
-import com.example.datastore.AuthManager
-import com.example.datastore.LogoutReason
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.model.UnityMethod
-import com.example.domain.unity.model.UnityTarget
+import com.ggumtle.auth.LoginRoute
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.datastore.LogoutReason
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.model.UnityMethod
+import com.ggumtle.domain.unity.model.UnityTarget
 import com.ggumtle.startup.StartUpRoute
-import com.ggumtle.ggumtle.navigation.bottomnav.MainBottomNavigationContainer
+import com.ggumtle.home.HomeRoute
+import com.ggumtle.social.SocialRoute
+import com.ggumtle.growth.GrowthRoute
+import kotlinx.coroutines.delay
 
 @Composable
 fun AppNavigation(
@@ -37,6 +40,7 @@ fun AppNavigation(
                 UnityTarget.ANDROID_UNITY_CONTROLLER.value,
                 UnityMethod.START_REVERSE.value
             )
+            delay(2000)
             navController.navigate(LoginRoute) {
                 popUpTo(0) { inclusive = true }
             }
@@ -50,7 +54,7 @@ fun AppNavigation(
         composable<StartUpRoute> {
             StartUpRoute(
                 onNavigateToLogin = {
-                    navController.navigate(LoginRoute){
+                    navController.navigate(LoginRoute) {
                         popUpTo(StartUpRoute) { inclusive = true }
                     }
                 }
@@ -60,7 +64,7 @@ fun AppNavigation(
         composable<LoginRoute> {
             LoginRoute(
                 onNavigateToMain = {
-                    navController.navigate(MainRoute) {
+                    navController.navigate(HomeRoute) {
                         popUpTo(LoginRoute) { inclusive = true }
                     }
                 },
@@ -68,13 +72,34 @@ fun AppNavigation(
             )
         }
 
-        composable<MainRoute> {
-            MainBottomNavigationContainer(
-                onNavigateToAuth = {
-                    navController.navigate(LoginRoute) {
-                        popUpTo(MainRoute) { inclusive = true }
-                    }
+        composable<HomeRoute> {
+            HomeRoute(
+                onNavigateToSocial = {
+                    navController.navigate(SocialRoute){}
                 },
+                onNavigateToGrowth = {
+                    navController.navigate(GrowthRoute){}
+                }
+            )
+        }
+
+        composable<SocialRoute> {
+            SocialRoute(
+                onNavigateToHome = {
+                    navController.navigate(HomeRoute) {
+                        popUpTo(SocialRoute) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable<GrowthRoute>{
+            GrowthRoute(
+                onNavigateToHome = {
+                    navController.navigate(HomeRoute) {
+                        popUpTo(GrowthRoute) { inclusive = true }
+                    }
+                }
             )
         }
     }

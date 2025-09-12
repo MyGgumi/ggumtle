@@ -1,4 +1,4 @@
-package com.example.data.websocket.model.home.request
+package com.ggumtle.data.websocket.model.home.request
 
 import kotlinx.serialization.Serializable
 

@@ -1,8 +1,8 @@
-package com.example.data.websocket.event
+package com.ggumtle.data.websocket.event
 
 import android.util.Log
-import com.example.domain.websocket.event.EventBus
-import com.example.domain.websocket.model.WebSocketEvent
+import com.ggumtle.domain.websocket.event.EventBus
+import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow

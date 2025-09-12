@@ -1,4 +1,4 @@
-package com.example.designsystem.component
+package com.ggumtle.designsystem.component
 
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -6,7 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.theme.DarkGray
+import com.ggumtle.designsystem.theme.DarkGray
 
 @Composable
 fun AppLoading(

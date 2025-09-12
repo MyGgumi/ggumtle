@@ -1,4 +1,4 @@
-package com.example.common.network.di
+package com.ggumtle.common.network.di
 
 import dagger.Module
 import dagger.Provides

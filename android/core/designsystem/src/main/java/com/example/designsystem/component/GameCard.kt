@@ -1,4 +1,4 @@
-package com.example.designsystem.component
+package com.ggumtle.designsystem.component
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -6,7 +6,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.designsystem.theme.GameColors
+import com.ggumtle.designsystem.theme.GameColors
 
 @Composable
 fun GameCard(

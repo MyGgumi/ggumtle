@@ -1,4 +1,4 @@
-package com.example.auth.component.text
+package com.ggumtle.auth.component.text
 
 import androidx.compose.animation.core.*
 import androidx.compose.material3.Text

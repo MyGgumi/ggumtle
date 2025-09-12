@@ -1,8 +1,8 @@
-package com.example.data.websocket.model.home.response
+package com.ggumtle.data.websocket.model.home.response
 
-import com.example.domain.websocket.model.Dream
-import com.example.domain.websocket.model.DreamStatus
-import com.example.domain.websocket.model.WebSocketEvent
+import com.ggumtle.domain.websocket.model.Dream
+import com.ggumtle.domain.websocket.model.DreamStatus
+import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.serialization.Serializable
 
 @Serializable

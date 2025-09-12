@@ -1,10 +1,10 @@
-package com.example.network.rest.di
+package com.ggumtle.network.rest.di
 
-import com.example.datastore.AuthManager
-import com.example.network.rest.util.calladapter.NetworkResultCallAdapterFactory
-import com.example.network.rest.util.convertor.NullOnEmptyConverterFactory
+import com.ggumtle.datastore.AuthManager
+import com.ggumtle.network.rest.util.calladapter.NetworkResultCallAdapterFactory
+import com.ggumtle.network.rest.util.convertor.NullOnEmptyConverterFactory
 import com.ggumtle.core.network.BuildConfig
-import com.example.network.rest.util.interceptor.AuthInterceptor
+import com.ggumtle.network.rest.util.interceptor.AuthInterceptor
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

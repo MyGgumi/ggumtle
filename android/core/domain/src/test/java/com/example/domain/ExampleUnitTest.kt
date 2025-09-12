@@ -1,4 +1,4 @@
-package com.example.domain
+package com.ggumtle.domain
 
 import org.junit.Test
 

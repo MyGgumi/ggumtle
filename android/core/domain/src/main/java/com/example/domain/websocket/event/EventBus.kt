@@ -1,6 +1,6 @@
-package com.example.domain.websocket.event
+package com.ggumtle.domain.websocket.event
 
-import com.example.domain.websocket.model.WebSocketEvent
+import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.coroutines.flow.Flow
 
 interface EventBus {

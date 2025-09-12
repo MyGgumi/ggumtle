@@ -1,4 +1,4 @@
-package com.example.network.rest.util.authenticator
+package com.ggumtle.network.rest.util.authenticator
 
 import com.ggumtle.core.network.BuildConfig
 import dagger.Module

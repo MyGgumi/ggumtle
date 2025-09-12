@@ -1,7 +1,7 @@
-package com.example.network.rest.util.authenticator
+package com.ggumtle.network.rest.util.authenticator
 
-import com.example.network.rest.util.authenticator.model.request.RefreshReissueRequest
-import com.example.network.rest.util.authenticator.model.response.RefreshTokenResponse
+import com.ggumtle.network.rest.util.authenticator.model.request.RefreshReissueRequest
+import com.ggumtle.network.rest.util.authenticator.model.response.RefreshTokenResponse
 import retrofit2.Call
 import retrofit2.http.Body
 import retrofit2.http.POST

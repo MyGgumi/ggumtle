@@ -1,4 +1,4 @@
-package com.example.designsystem.theme
+package com.ggumtle.designsystem.theme
 
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme

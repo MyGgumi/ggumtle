@@ -1,7 +1,7 @@
-package com.example.network.rest.util.calladapter
+package com.ggumtle.network.rest.util.calladapter
 
-import com.example.common.constant.HttpStatus
-import com.example.network.rest.model.NetworkResult
+import com.ggumtle.common.constant.HttpStatus
+import com.ggumtle.network.rest.model.NetworkResult
 import org.json.JSONObject
 import retrofit2.HttpException
 import retrofit2.Response

@@ -7,6 +7,8 @@
         RoomJoin = 10,
         SceneChange = 30,
         PlayerMove = 40,
+        ChestOpen = 50,
+        ChestClose = 52,
         
         // Receive
         VerifyTokenResponse = 2,
@@ -15,7 +17,8 @@
         InitializeMapResponse = 20,
         InitializePlayerResponse = 21,
         GameStart = 35,
-        
         PlayerMoveResponse = 41,
+        ChestOpenResponse = 51,
+        ChestCloseResponse = 53,
     }
 }

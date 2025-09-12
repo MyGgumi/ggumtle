@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Network;
+using Networks.chests;
 using Networks.Packets;
 using Networks.Rooms;
 using Networks.Scenes;
@@ -236,6 +237,87 @@ namespace Networks
             finally
             {
                 _pendingRequests.TryRemove(PacketType.SceneChangeResponse, out _);
+            }
+        }
+
+        public async Task<ChestOpenResult> ChestOpen(int chestId)
+        {
+            try
+            {
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.ChestOpenResponse] = tcs;
+
+                var send = new ChestOpenSend(chestId);
+                client.Send(send);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is ChestOpenCommand chestOpenResponse)
+                {
+                    if (chestOpenResponse.Success == 1)
+                    {
+                        return new ChestOpenResult(chestOpenResponse.Items);
+                    }
+                    else
+                    {
+                        Debug.LogError($"상자 열기 패킷은 받았지만 실패했습니다. : {chestOpenResponse.Success}");
+                    }
+                }
+
+                throw new InvalidOperationException("상자 열기에 실패했습니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("ChestOpen 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"상자 열기에 실패했습니다. {e.Message}");
+                throw;
+            }
+        }
+
+        public async Task<bool> ChestClose(int chestId)
+        {
+            try
+            {
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.ChestCloseResponse] = tcs;
+
+                var send = new ChestCloseSend(chestId);
+                client.Send(send);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is ChestCloseCommand chestCloseCommand)
+                {
+                    return chestCloseCommand.Result == 1;
+                }
+
+                throw new InvalidOperationException("상자 닫기에 실패했습니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("ChestClose 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"상자 닫기에 실패했습니다. {e.Message}");
+                throw;
             }
         }
         

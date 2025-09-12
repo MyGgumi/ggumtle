@@ -1,0 +1,52 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/ToolKit/ChestBoxUI.uss?fileID=7433441132597879392&amp;guid=9fdb10ee194d6ea4ab574482ab439ca5&amp;type=3#ChestBoxUI" />
+    <ui:VisualElement name="root" style="flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;); justify-content: flex-end;">
+        <ui:VisualElement name="chestBoxPanel" class="chest-panel" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;);">
+            <ui:VisualElement name="itemsGrid" class="items-grid">
+                <ui:VisualElement name="row0" class="item-row">
+                    <ui:VisualElement name="slot0" class="item-slot">
+                        <ui:VisualElement name="itemIcon0" class="item-icon" />
+                        <ui:Button name="takeButton0" class="take-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="slot1" class="item-slot">
+                        <ui:VisualElement name="itemIcon1" class="item-icon" />
+                        <ui:Button name="takeButton1" class="take-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="slot2" class="item-slot">
+                        <ui:VisualElement name="itemIcon2" class="item-icon" />
+                        <ui:Button name="takeButton2" class="take-button" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="row1" class="item-row">
+                    <ui:VisualElement name="slot3" class="item-slot">
+                        <ui:VisualElement name="itemIcon3" class="item-icon" />
+                        <ui:Button name="takeButton3" class="take-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="slot4" class="item-slot">
+                        <ui:VisualElement name="itemIcon4" class="item-icon" />
+                        <ui:Button name="takeButton4" class="take-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="slot5" class="item-slot">
+                        <ui:VisualElement name="itemIcon5" class="item-icon" />
+                        <ui:Button name="takeButton5" class="take-button" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:VisualElement name="row2" class="item-row">
+                    <ui:VisualElement name="slot6" class="item-slot">
+                        <ui:VisualElement name="itemIcon6" class="item-icon" />
+                        <ui:Button name="takeButton6" class="take-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="slot7" class="item-slot">
+                        <ui:VisualElement name="itemIcon7" class="item-icon" />
+                        <ui:Button name="takeButton7" class="take-button" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="slot8" class="item-slot">
+                        <ui:VisualElement name="itemIcon8" class="item-icon" />
+                        <ui:Button name="takeButton8" class="take-button" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:Button name="closeButton" text="닫기" class="close-button" style="align-self: center; justify-content: flex-start; align-content: auto;" />
+    </ui:VisualElement>
+</ui:UXML>

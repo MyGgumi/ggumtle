@@ -9,6 +9,7 @@
     <ui:Template name="InteractionUI" src="project://database/Assets/UI/ToolKit/Components/InteractionUI.uxml?fileID=9197481963319205126&amp;guid=ba92ccd9333ef174db991798bfcf541d&amp;type=3#InteractionUI" />
     <ui:Template name="MobileControls" src="project://database/Assets/UI/ToolKit/Components/MobileControls.uxml?fileID=9197481963319205126&amp;guid=55eeb72b49ebee84e84551000feeef9f&amp;type=3#MobileControls" />
     <Style src="project://database/Assets/UI/ToolKit/MonggingHUD.uss?fileID=7433441132597879392&amp;guid=7684af9551fd7e140b2f67216bb48364&amp;type=3#MonggingHUD" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/MobileControls.uss?fileID=7433441132597879392&amp;guid=c4127c60205d49e44abddf981a40b5e4&amp;type=3#MobileControls" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/PlayerStatus.uss?fileID=7433441132597879392&amp;guid=2b3105edd57cce84195438e43b1ff0fa&amp;type=3#PlayerStatus" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/GameInfo.uss?fileID=7433441132597879392&amp;guid=a0ad01fa0edcb834baee0e09919175db&amp;type=3#GameInfo" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/PlayerList.uss?fileID=7433441132597879392&amp;guid=4c83e41d0cc6c5044b933502cd96ffab&amp;type=3#PlayerList" />
@@ -17,8 +18,8 @@
     <Style src="project://database/Assets/UI/ToolKit/Uss/HealthBar.uss?fileID=7433441132597879392&amp;guid=7dee1fa434b35a741bad95728a9de109&amp;type=3#HealthBar" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/Inventory.uss?fileID=7433441132597879392&amp;guid=b54ca6f63693fbc4f8372715a500e65c&amp;type=3#Inventory" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/QuickChat.uss?fileID=7433441132597879392&amp;guid=d585259c3cd0e584fb793310da491b25&amp;type=3#QuickChat" />
-    <Style src="project://database/Assets/UI/ToolKit/Uss/MobileControls.uss?fileID=7433441132597879392&amp;guid=c4127c60205d49e44abddf981a40b5e4&amp;type=3#MobileControls" />
     <ui:VisualElement name="hudRoot" class="hudRoot">
+        <ui:Instance template="MobileControls" name="mobileControls" />
         <ui:Instance template="GameInfo" name="gameInfo" />
         <ui:Instance template="Inventory" name="inventory" />
         <ui:Instance template="PlayerList" name="playerList" />
@@ -27,6 +28,5 @@
         <ui:Instance template="NotificationBanner" name="notificationBanner" />
         <ui:Instance template="HealthBar" name="healthBar" />
         <ui:Instance template="InteractionUI" name="interactionUI" />
-        <ui:Instance template="MobileControls" name="mobileControls" />
     </ui:VisualElement>
 </ui:UXML>

@@ -21,6 +21,17 @@ import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import com.example.data.websocket.remote.datasource.WebSocketRemoteDataSource
 import com.example.data.websocket.model.common.WebSocketMessageType
+import com.example.data.websocket.model.home.request.AcceptPartyInvitationRequestDto
+import com.example.data.websocket.model.home.request.InvitePartyRequestDto
+import com.example.data.websocket.model.home.response.AcceptPartyInvitationResponseDto
+import com.example.data.websocket.model.home.response.CreatePartyResponseDto
+import com.example.data.websocket.model.home.response.GetInvitationsResponseDto
+import com.example.data.websocket.model.home.response.InvitePartyResponseDto
+import com.example.data.websocket.model.home.response.LeavePartyResponseDto
+import com.example.data.websocket.model.home.response.MatchingCancelledResponseDto
+import com.example.data.websocket.model.home.response.ReadyGameResponseDto
+import com.example.data.websocket.model.home.response.StartGameResponseDto
+import com.example.data.websocket.model.home.response.toEvent
 import com.example.domain.websocket.event.EventBus
 import com.example.domain.websocket.model.WebSocketEvent
 import com.example.domain.websocket.repository.WebSocketRepository
@@ -76,6 +87,14 @@ class WebSocketRepositoryImpl @Inject constructor(
                 WebSocketMessageType.GET_FRIENDS_RESULT -> handleMessage<GetFriendsResponseDto>(message) { it.toEvent() }
                 WebSocketMessageType.ACCEPT_FRIEND_REQUEST_RESULT -> handleMessage<AcceptFriendResponseDto>(message) { it.toEvent() }
                 WebSocketMessageType.REJECT_FRIEND_REQUEST_RESULT -> handleMessage<RejectFriendResponseDto>(message) { it.toEvent() }
+                WebSocketMessageType.CREATE_PARTY_RESULT -> handleMessage<CreatePartyResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.INVITE_PARTY_RESULT -> handleMessage<InvitePartyResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.GET_INVITATIONS_RESULT -> handleMessage<GetInvitationsResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.ACCEPT_PARTY_INVITATION_RESULT -> handleMessage<AcceptPartyInvitationResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.LEAVE_PARTY_RESULT -> handleMessage<LeavePartyResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.START_DREAM_RESULT -> handleMessage<StartGameResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.READY_DREAM_RESULT -> handleMessage<ReadyGameResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.MATCHING_CANCELLED_RESULT -> handleMessage<MatchingCancelledResponseDto>(message){ it.toEvent() }
                 else -> {
                     Log.d("WebSocketRepository", "Ignored message type: ${message.type}")
                 }
@@ -155,6 +174,80 @@ class WebSocketRepositoryImpl @Inject constructor(
         val message = WebSocketSendMessageDto(
             type = WebSocketMessageType.REJECT_FRIEND_REQUEST,
             data = json.encodeToJsonElement(data)
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun createParty() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.CREATE_PARTY,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun inviteParty(inviteeId: Long){
+        val data = InvitePartyRequestDto(inviteeId)
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.INVITE_PARTY,
+            data = json.encodeToJsonElement(data)
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun getInvitations() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.GET_INVITATIONS,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun acceptPartyInvitation(invitationId: String){
+        val data = AcceptPartyInvitationRequestDto(invitationId)
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.ACCEPT_PARTY_INVITATION,
+            data = json.encodeToJsonElement(data)
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun leaveParty() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.LEAVE_PARTY,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun startGame() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.START_DREAM,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun readyGame() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.READY_DREAM,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun unReadyGame() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.UNREADY_DREAM,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun matchingCancelled() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.MATCHING_CANCELLED,
+            data = null
         )
         remoteDataSource.sendMessage(message)
     }

@@ -9,4 +9,13 @@ interface WebSocketRepository {
     suspend fun getFriends()
     suspend fun acceptFriend(friendId: Long)
     suspend fun rejectFriend(friendId: Long)
+    suspend fun createParty()
+    suspend fun inviteParty(inviteeId: Long)
+    suspend fun getInvitations()
+    suspend fun acceptPartyInvitation(invitationId: String)
+    suspend fun leaveParty()
+    suspend fun startGame()
+    suspend fun readyGame()
+    suspend fun unReadyGame()
+    suspend fun matchingCancelled()
 }

@@ -21,15 +21,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.designsystem.component.button.GameIconButton
 import com.example.designsystem.theme.GameColors
-import com.ggumtle.home.model.Friend
+import com.example.domain.websocket.model.Friend
 
 @Composable
 fun InviteFriendsDialog(
     friends: List<Friend>,
-    partyMemberIds: List<String>,
+    partyMemberIds: List<Long>,
     isLoading: Boolean,
     onDismiss: () -> Unit,
-    onInviteFriend: (String) -> Unit
+    onInviteFriend: (Long) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -161,16 +161,13 @@ private fun FriendInviteItem(
                     )
                 }
 
-                // 온라인 상태 표시
-                if (friend.isOnline) {
-                    Box(
-                        modifier = Modifier
-                            .size(14.dp)
-                            .clip(CircleShape)
-                            .background(GameColors.online)
-                            .align(Alignment.BottomEnd)
-                    )
-                }
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .background(GameColors.online)
+                        .align(Alignment.BottomEnd)
+                )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
@@ -186,34 +183,23 @@ private fun FriendInviteItem(
                     fontWeight = FontWeight.Medium
                 )
                 Text(
-                    text = if (friend.isOnline) "온라인" else "오프라인",
-                    color = if (friend.isOnline) GameColors.online else GameColors.textSecondary,
+                    text = "온라인",
+                    color = GameColors.online,
                     fontSize = 12.sp
                 )
             }
 
             // 초대 버튼
-            if (friend.isOnline) {
-                GameIconButton(
-                    onClick = onInvite,
-                    icon = Icons.Default.PersonAdd,
-                    contentDescription = "초대",
-                    backgroundColor = GameColors.primary,
-                    size = 40,
-                    modifier = Modifier.then(
-                        if (isLoading) Modifier else Modifier
-                    )
+            GameIconButton(
+                onClick = onInvite,
+                icon = Icons.Default.PersonAdd,
+                contentDescription = "초대",
+                backgroundColor = GameColors.primary,
+                size = 40,
+                modifier = Modifier.then(
+                    if (isLoading) Modifier else Modifier
                 )
-            } else {
-                GameIconButton(
-                    onClick = { },
-                    icon = Icons.Default.PersonAdd,
-                    contentDescription = "초대 불가",
-                    backgroundColor = GameColors.textSecondary,
-                    iconColor = GameColors.surface,
-                    size = 40
-                )
-            }
+            )
         }
     }
 }

@@ -9,6 +9,7 @@ sealed class WebSocketEvent {
     data object Connecting : WebSocketEvent()
     data class Failed(val error: Throwable?) : WebSocketEvent()
 
+    // 소셜 이벤트
     data class MemberSearchSuccess(
         val hasNext: Boolean,
         val members: List<Member>
@@ -40,5 +41,43 @@ sealed class WebSocketEvent {
     data class RejectFriendRequestSuccess(
         val rejectedId: Long,
         val nickname: String
+    ) : WebSocketEvent()
+
+    // 대기방 이벤트
+    data class CreatePartySuccess(
+        val partyId: String
+    ) : WebSocketEvent()
+
+    data class InvitePartySuccess(
+        val invitationId: String,
+        val inviterNickname: String
+    ) : WebSocketEvent()
+
+    data class GetInvitationsSuccess(
+        val invitations: List<Invitation>
+    ) : WebSocketEvent()
+
+    data class AcceptPartyInvitationSuccess(
+        val joinedMemberId: Long,
+        val joinedMemberNickname: String
+    ) : WebSocketEvent()
+
+    data class LeavePartySuccess(
+        val leftMemberId: Long,
+        val newLeaderId: Long?
+    ) : WebSocketEvent()
+
+    data class StartGameSuccess(
+        val status: DreamStatus,
+        val dream: Dream?
+    ) : WebSocketEvent()
+
+    data class ReadyGameSuccess(
+        val memberId: Long,
+        val isReady: Boolean
+    ) : WebSocketEvent()
+
+    data class MatchingCancelledSuccess(
+        val message: String
     ) : WebSocketEvent()
 }

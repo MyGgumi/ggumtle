@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.designsystem.theme.GameColors
 
 @Composable
 internal fun TwoButtonDialog(
@@ -31,116 +32,90 @@ internal fun TwoButtonDialog(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
+                .padding(horizontal = 24.dp)
                 .wrapContentHeight(),
-            shape = RoundedCornerShape(20.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = GameColors.surface),
+            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            border = BorderStroke(1.dp, GameColors.surfaceVariant)
         ) {
             Column(
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                // 상단 제목 영역 (검정색)
+                // 제목
                 if (dialogState.title != null) {
-                    Box(
+                    Text(
+                        text = dialogState.title,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GameColors.textPrimary,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                // 컨텐츠
+                Text(
+                    text = dialogState.content,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Normal,
+                    color = GameColors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 20.sp
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // 버튼들
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // 취소 버튼
+                    OutlinedButton(
+                        onClick = {
+                            dialogState.onCancel()
+                            onDismiss()
+                        },
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                color = Color(0xFF1A1A1A),
-                                shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-                            )
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, GameColors.surfaceVariant),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = Color.Transparent,
+                            contentColor = GameColors.textSecondary
+                        )
                     ) {
                         Text(
-                            text = dialogState.title,
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White,
-                            textAlign = TextAlign.Center
+                            text = dialogState.cancelText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium
                         )
                     }
-                }
 
-                // 하단 컨텐츠 + 버튼 영역 (흰색)
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(
-                            color = Color.White,
-                            shape = if (dialogState.title != null) {
-                                RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
-                            } else {
-                                RoundedCornerShape(20.dp)
-                            }
+                    // 확인 버튼
+                    Button(
+                        onClick = {
+                            dialogState.onConfirm()
+                            onDismiss()
+                        },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(44.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = GameColors.primary
                         )
-                        .padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // 컨텐츠 텍스트
-                    Text(
-                        text = dialogState.content,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Normal,
-                        color = Color(0xFF333333),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 22.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    // 버튼들 - 가로로 배치
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        // 취소 버튼 (회색)
-                        OutlinedButton(
-                            onClick = {
-                                dialogState.onCancel()
-                                onDismiss()
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            border = BorderStroke(1.dp, Color(0xFFE0E0E0)),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = Color.White,
-                                contentColor = Color(0xFF666666)
-                            )
-                        ) {
-                            Text(
-                                text = dialogState.cancelText,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
-
-                        // 확인 버튼 (파란색)
-                        Button(
-                            onClick = {
-                                dialogState.onConfirm()
-                                onDismiss()
-                            },
-                            modifier = Modifier
-                                .weight(1f)
-                                .height(48.dp),
-                            shape = RoundedCornerShape(24.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF007AFF)
-                            ),
-                            elevation = ButtonDefaults.buttonElevation(
-                                defaultElevation = 2.dp,
-                                pressedElevation = 8.dp
-                            )
-                        ) {
-                            Text(
-                                text = dialogState.confirmText,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Color.White
-                            )
-                        }
+                        Text(
+                            text = dialogState.confirmText,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = Color.Black
+                        )
                     }
                 }
             }

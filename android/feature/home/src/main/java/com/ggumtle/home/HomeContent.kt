@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ggumtle.home.component.*
 
@@ -22,9 +23,16 @@ fun HomeContent(
     onDeleteAccount: () -> Unit,
     onInviteFriendsClick: () -> Unit,
     onDismissInviteFriendsDialog: () -> Unit,
-    onInviteFriend: (String) -> Unit,
+    onInviteFriend: (Long) -> Unit,
     onToggleReady: () -> Unit,
-    onStartGame: () -> Unit
+    onStartGame: () -> Unit,
+    onCancelGameSearch: () -> Unit,
+    onMenuTabClick: () -> Unit,
+    onInviteListClick: () -> Unit,
+    onLeaveParty: () -> Unit,
+    onDismissInviteRequestsDialog: () -> Unit,
+    onAcceptInvite: (String) -> Unit,
+    onDeclineInvite: (String) -> Unit
 ) {
     Box(
         modifier = Modifier.fillMaxSize()
@@ -43,9 +51,14 @@ fun HomeContent(
                 onClick = onProfileClick
             )
 
-            // 오른쪽 상단 - 설정 버튼
-            SettingsButton(
-                onClick = onSettingsClick
+            // 오른쪽 상단 - 메뉴 탭
+            MenuTab(
+                isExpanded = state.isMenuExpanded,
+                isInParty = state.partyMembers.size >= 2,
+                onTabClick = onMenuTabClick,
+                onSettingsClick = onSettingsClick,
+                onInviteListClick = onInviteListClick,
+                onLeavePartyClick = onLeaveParty
             )
         }
 
@@ -58,6 +71,10 @@ fun HomeContent(
             onInviteFriendsClick = onInviteFriendsClick,
             onToggleReady = onToggleReady,
             onStartGame = onStartGame,
+            onCancelGameSearch = onCancelGameSearch,
+            isReady = state.isReady,
+            isSearchingGame = state.isSearchingGame,
+            matchmakingTimeSeconds = state.matchmakingTimeSeconds,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(16.dp)
@@ -94,6 +111,16 @@ fun HomeContent(
                 isLoading = state.isLoading,
                 onDismiss = onDismissInviteFriendsDialog,
                 onInviteFriend = onInviteFriend
+            )
+        }
+
+        // 초대 요청 목록 다이얼로그
+        if (state.isInviteRequestsDialogVisible) {
+            InviteRequestsDialog(
+                inviteRequests = state.inviteRequests,
+                onDismiss = onDismissInviteRequestsDialog,
+                onAcceptInvite = onAcceptInvite,
+                onDeclineInvite = onDeclineInvite
             )
         }
     }

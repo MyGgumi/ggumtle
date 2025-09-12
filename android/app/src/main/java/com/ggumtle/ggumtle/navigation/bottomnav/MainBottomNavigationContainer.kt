@@ -55,7 +55,7 @@ fun MainBottomNavigationContainer(
                 Tab1Screen()
             }
             composable<HomeTabRoute> {
-                HomeRoute()
+                HomeRoute(onNavigateToAuth = onNavigateToAuth)
             }
             composable<SocialTabRoute> {
                 SocialRoute()

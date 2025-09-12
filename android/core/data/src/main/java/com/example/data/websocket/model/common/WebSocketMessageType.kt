@@ -1,6 +1,9 @@
 package com.example.data.websocket.model.common
 
 object WebSocketMessageType {
+
+    // Social
+
     // Send message types
     const val SEARCH_MEMBER = "SEARCH_MEMBER"
     const val REQUEST_FRIEND = "REQUEST_FRIEND"
@@ -16,4 +19,31 @@ object WebSocketMessageType {
     const val GET_FRIENDS_RESULT = "GET_FRIENDS"
     const val ACCEPT_FRIEND_REQUEST_RESULT = "ACCEPT_FRIEND_REQUEST_RESULT"
     const val REJECT_FRIEND_REQUEST_RESULT = "REJECT_FRIEND_REQUEST"
+
+    // Home
+
+    // Send message types
+
+    const val CREATE_PARTY = "CREATE_PARTY"
+    const val INVITE_PARTY = "INVITE_PARTY"
+    const val GET_INVITATIONS = "GET_INVITATIONS"
+    const val ACCEPT_PARTY_INVITATION = "ACCEPT_PARTY_INVITATION"
+    const val LEAVE_PARTY = "LEAVE_PARTY"
+    const val START_DREAM = "START_DREAM"
+    const val READY_DREAM = "READY_DREAM"
+    const val UNREADY_DREAM = "UNREADY_DREAM"
+    const val MATCHING_CANCELLED = "MATCHING_CANCELLED"
+
+
+    // Receive message types
+
+    const val CREATE_PARTY_RESULT = "CREATE_PARTY_RESULT"
+    const val INVITE_PARTY_RESULT = "INVITE_PARTY_RESULT"
+    const val GET_INVITATIONS_RESULT = "GET_INVITATIONS_RESULT"
+    const val ACCEPT_PARTY_INVITATION_RESULT = "ACCEPT_PARTY_INVITATION_RESULT"
+    const val LEAVE_PARTY_RESULT = "LEAVE_PARTY_RESULT"
+    const val START_DREAM_RESULT = "START_DREAM_RESULT"
+    const val READY_DREAM_RESULT = "READY_DREAM_RESULT"
+    const val MATCHING_CANCELLED_RESULT = "MATCHING_CANCELLED_RESULT"
+
 }

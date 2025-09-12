@@ -5,6 +5,7 @@ import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,10 +45,10 @@ fun LoginContent(
             Image(
                 painter = painterResource(id = R.drawable.ic_login_header),
                 contentDescription = "로그인 헤더",
-                colorFilter = ColorFilter.tint(Color(0xFF0D3D73)),
                 modifier = Modifier
                     .align(Alignment.TopCenter)
-                    .padding(top = 50.dp)
+                    .padding(top = 60.dp)
+                    .size(200.dp)
             )
 
             if (isLoginSuccess) {

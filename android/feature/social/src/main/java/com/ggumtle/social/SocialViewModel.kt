@@ -63,11 +63,12 @@ class SocialViewModel @Inject constructor(
         observeRejectFriendEvents()
     }
 
+    // 친구 요청 결과 관찰
     private fun observeRequestFriendEvents(myId: Long?) = intent {
         observeRequestFriendResultUseCase.invoke()
             .collect { result ->
                 if (result.followerId == myId) {
-                    //todo 보낸 친구 요청 추가
+                    //todo 보낸 친구 요청 목록에 추가
                     Log.d("SocialViewModel", "I sent a friend request")
                 } else {
                     Log.d(
@@ -86,6 +87,7 @@ class SocialViewModel @Inject constructor(
             }
     }
 
+    // 친구 요청 수락 관찰
     private fun observeAcceptFriendEvents(myId: Long?) = intent {
         observeAcceptFriendRequestUseCase.invoke()
             .collect { result ->
@@ -105,6 +107,7 @@ class SocialViewModel @Inject constructor(
             }
     }
 
+    // 친구 요청 거절 관찰
     private fun observeRejectFriendEvents() = intent {
         observeRejectFriendRequestUseCase.invoke()
             .collect { result ->
@@ -120,6 +123,7 @@ class SocialViewModel @Inject constructor(
             }
     }
 
+    // 친구 목록 조회
     fun getFriends() = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -127,7 +131,7 @@ class SocialViewModel @Inject constructor(
             getFriendsUseCase.invoke()
 
             val result = observeGetFriendsUseCase.invoke().first()
-
+            Log.d("qwer", "getFriends: ${result.friends}")
             reduce {
                 state.copy(
                     friends = result.friends,
@@ -140,6 +144,7 @@ class SocialViewModel @Inject constructor(
         }
     }
 
+    // 친구 요청 수락
     fun onAcceptFriendRequest(requestId: Long) = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -157,6 +162,7 @@ class SocialViewModel @Inject constructor(
         }
     }
 
+    // 친구 요청 거절
     fun onRejectFriendRequest(requestId: Long) = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -174,6 +180,7 @@ class SocialViewModel @Inject constructor(
         }
     }
 
+    // 친구 요청
     fun onSendFriendRequest(userId: Long) = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -184,6 +191,7 @@ class SocialViewModel @Inject constructor(
         }
     }
 
+    // 친구 요청 목록 확인
     private fun getFriendRequests() = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -204,6 +212,7 @@ class SocialViewModel @Inject constructor(
         }
     }
 
+    // 친구 추가를 위한 사용자 검색 필드 업데이트 시
     fun onUpdateAddFriendsSearchQuery(query: TextFieldValue) = intent {
         reduce { state.copy(addFriendsSearchQuery = query) }
         if (query.text.isNotEmpty()) {
@@ -228,18 +237,24 @@ class SocialViewModel @Inject constructor(
         }
     }
 
+    // 탭 전환
     fun onTabSelected(tab: SocialContract.SocialTab) = intent {
+        getFriends()
+        getFriendRequests()
         reduce { state.copy(currentTab = tab) }
     }
 
+    // 친구 목록에서 검색
     fun onUpdateFriendsSearchQuery(query: TextFieldValue) = intent {
         reduce { state.copy(friendsSearchQuery = query) }
     }
 
+    // 사용자 검색 다이얼로그 열기
     fun onShowSearchDialog() = intent {
         reduce { state.copy(isSearchDialogVisible = true) }
     }
 
+    // 사용자 검색 다이얼로그 닫기
     fun onDismissSearchDialog() = intent {
         reduce {
             state.copy(
@@ -250,8 +265,7 @@ class SocialViewModel @Inject constructor(
         }
     }
 
-    // todo
-    // TODO: WebSocket - 친구 삭제 API 호출
+    // TODO: 친구 삭제
     fun onRemoveFriend(friendId: Long) = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -267,15 +281,10 @@ class SocialViewModel @Inject constructor(
         }
     }
 
-    //todo 친구 프로필 조회 구현
-    fun onOpenProfile(userId: Long) = intent {
-    }
+    // TODO: 보낸 친구 요청 목록 조회 구현
+    fun getMyFriendRequests() = intent {}
 
-    //todo 보낸 친구 요청 목록 조회 구현
-    fun getMyFriendRequests() = intent {
-    }
-
-    // TODO: WebSocket - 요청 취소 API 호출
+    // TODO: 친구 요청 취소
     fun onCancelSentRequest(requestId: Long) = intent {
         reduce { state.copy(isLoading = true) }
         try {
@@ -289,5 +298,9 @@ class SocialViewModel @Inject constructor(
         } catch (e: Exception) {
             reduce { state.copy(isLoading = false) }
         }
+    }
+
+    // TODO: 친구 프로필 조회 구현
+    fun onOpenProfile(userId: Long) = intent {
     }
 }

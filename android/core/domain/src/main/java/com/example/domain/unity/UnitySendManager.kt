@@ -1,5 +1,6 @@
 package com.example.domain.unity
 
+import com.example.domain.unity.model.UnityMessage
 import kotlinx.coroutines.flow.SharedFlow
 
 interface UnitySendManager {
@@ -8,4 +9,5 @@ interface UnitySendManager {
     val paramsFlow: SharedFlow<List<Any>>
 
     fun sendToUnity(target: String, methodName: String, params: List<Any> = emptyList())
+    val unityMessageFlow: SharedFlow<UnityMessage>
 }

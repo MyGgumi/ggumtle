@@ -6,6 +6,7 @@
         VerifyToken = 1,
         RoomJoin = 10,
         SceneChange = 30,
+        PlayerMove = 40,
         
         // Receive
         VerifyTokenResponse = 2,
@@ -14,5 +15,7 @@
         InitializeMapResponse = 20,
         InitializePlayerResponse = 21,
         GameStart = 35,
+        
+        PlayerMoveResponse = 41,
     }
 }

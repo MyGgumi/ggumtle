@@ -6,12 +6,14 @@ import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
+import com.ggumtle.ggumtle.friend.application.command.GetSentFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.SearchMemberCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
+import com.ggumtle.ggumtle.friend.application.result.GetSentFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.RejectFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.SearchMemberResult;
@@ -113,6 +115,15 @@ public class FriendService {
         return  GetFriendRequestsResult.of(asFollowee);
     }
 
+    @Transactional(readOnly = true)
+    public GetSentFriendRequestsResult getSentFriendRequests(GetSentFriendRequestsCommand command) {
+        Long memberId = command.memberId();
+
+        List<Friend> asFollower = friendRepository.findAllByFollower_IdAndStatus(memberId, Status.PENDING);
+
+        return  GetSentFriendRequestsResult.of(asFollower);
+    }
+
     @Transactional
     public AcceptFriendRequestResult acceptFriendRequest(AcceptFriendRequestCommand command) {
         Long friendId = command.friendId();
@@ -142,6 +153,7 @@ public class FriendService {
         friendRepository.delete(friend);
         return RejectFriendRequestResult.of(friendId, followerId,nickname);
     }
+
 
     @Transactional(readOnly = true)
     public SearchMemberResult searchMember(SearchMemberCommand command) {

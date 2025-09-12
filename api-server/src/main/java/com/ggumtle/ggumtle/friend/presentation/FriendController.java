@@ -9,12 +9,14 @@ import com.ggumtle.ggumtle.friend.application.MemberStateService;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
+import com.ggumtle.ggumtle.friend.application.command.GetSentFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.SearchMemberCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
+import com.ggumtle.ggumtle.friend.application.result.GetSentFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.RejectFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.SearchMemberResult;
@@ -25,6 +27,7 @@ import com.ggumtle.ggumtle.friend.presentation.request.SearchMemberRequest;
 import com.ggumtle.ggumtle.friend.presentation.response.AcceptFriendRequestResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendRequestsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendsResponse;
+import com.ggumtle.ggumtle.friend.presentation.response.GetSentFriendRequestsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.RejectFriendRequestResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.RequestFriendResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.SearchMemberResponse;
@@ -81,6 +84,18 @@ public class FriendController {
 
         GetFriendRequestsResponse response = GetFriendRequestsResponse.from(result);
         SendSocketEvent event = new SendSocketEvent(SocketType.GET_FRIEND_REQUESTS, List.of(memberId), response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketType.GET_SENT_FRIEND_REQUESTS)
+    public void getSentFriendRequests(WebSocketSession session) {
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+        GetSentFriendRequestsCommand command = new GetSentFriendRequestsCommand(memberId);
+
+        GetSentFriendRequestsResult result = friendService.getSentFriendRequests(command);
+
+        GetSentFriendRequestsResponse response = GetSentFriendRequestsResponse.from(result);
+        SendSocketEvent event = new SendSocketEvent(SocketType.GET_SENT_FRIEND_REQUESTS, List.of(memberId), response);
         applicationEventPublisher.publishEvent(event);
     }
 

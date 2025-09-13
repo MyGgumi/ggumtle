@@ -9,6 +9,8 @@
         PlayerMove = 40,
         ChestOpen = 50,
         ChestClose = 52,
+        DiggingStart = 100,
+        DiggingQuit = 102,
         
         // Receive
         VerifyTokenResponse = 2,
@@ -20,5 +22,7 @@
         PlayerMoveResponse = 41,
         ChestOpenResponse = 51,
         ChestCloseResponse = 53,
+        DiggingStartResponse = 101,
+        DiggingQuitResponse = 103,
     }
 }

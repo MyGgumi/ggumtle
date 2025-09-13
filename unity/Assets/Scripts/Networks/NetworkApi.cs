@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Network;
 using Networks.chests;
+using Networks.Digging;
 using Networks.Packets;
 using Networks.Rooms;
 using Networks.Scenes;
@@ -51,6 +52,101 @@ namespace Networks
             Debug.Log("NetworkApi InitializeNetwork");
 
             await client.ConnectAsync(host, port);
+        }
+
+        public async Task<bool> DiggingStart(int ggumtleId)
+        {
+            try
+            {
+                Debug.Log($"DiggingStart 시작");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.DiggingStartResponse] = tcs;
+
+                var diggingStartRequest = new DiggingStartSend(ggumtleId);
+                client.Send(diggingStartRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("DiggingStart 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is DiggingStartCommand command)
+                {
+                    return command.Result == 1;
+                }
+
+                throw new InvalidOperationException("DiggingStart에서 예상치 못 한 응답 타입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("DiggingStart 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"DiggingStart 패킷 전송 실패");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.DiggingStartResponse, out _);
+            }
+        }
+
+        public async Task<bool> DiggingQuit()
+        {
+            try
+            {
+                Debug.Log($"DiggingQuit 시작");
+                
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.DiggingQuitResponse] = tcs;
+
+                var diggingQuitRequest = new DiggingQuitSend();
+                client.Send(diggingQuitRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("DiggingQuit 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is DiggingQuitCommand command)
+                {
+                    return command.Result == 1;
+                }
+
+                throw new InvalidOperationException("DiggingQuit에서 예상치 못 한 응답 타입니다.");
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"DiggingQuit 패킷 전송 실패");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.DiggingQuitResponse, out _);
+            }
         }
 
         public async Task<RoomJoinCommand> RoomJoin(long roomId)
@@ -295,10 +391,7 @@ namespace Networks
                 client.Send(send);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                cts.Token.Register(() =>
-                {
-                    tcs.TrySetCanceled();
-                });
+                cts.Token.Register(() => { tcs.TrySetCanceled(); });
 
                 var response = await tcs.Task;
 
@@ -318,6 +411,10 @@ namespace Networks
             {
                 Debug.LogError($"상자 닫기에 실패했습니다. {e.Message}");
                 throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.ChestCloseResponse, out _);
             }
         }
         

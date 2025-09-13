@@ -4,6 +4,7 @@ package com.ggumtle.ggumtle.friend.application;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
+import com.ggumtle.ggumtle.friend.application.command.DeleteFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetSentFriendRequestsCommand;
@@ -11,6 +12,7 @@ import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.SearchMemberCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
+import com.ggumtle.ggumtle.friend.application.result.DeleteFriendResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetSentFriendRequestsResult;
@@ -164,5 +166,29 @@ public class FriendService {
         );
 
         return SearchMemberResult.fromPoSlice(poSlice);
+    }
+
+    @Transactional
+    public DeleteFriendResult deleteFriend(DeleteFriendCommand command) {
+        Long friendId = command.friendId();
+        Long loginMemberId = command.requesterId();
+
+        Friend friend = friendRepository.findById(friendId)
+                .orElseThrow(() -> new GgumtleException(FriendErrorCode.FRIEND_NOT_FOUND));
+
+        if (!friend.getStatus().equals(Status.ACCEPTED)) {
+            throw new GgumtleException(FriendErrorCode.FRIEND_NOT_FOUND);
+        }
+        if (!friend.getFollower().getId().equals(loginMemberId) && !friend.getFollowee().getId().equals(loginMemberId)) {
+            throw new  GgumtleException(FriendErrorCode.DELETE_FRIEND_FORBIDDEN);
+        }
+
+        Long followerId = friend.getFollower().getId();
+        String followerNickname = friend.getFollower().getNickname();
+        Long followeeId = friend.getFollowee().getId();
+        String followeeNickname = friend.getFollowee().getNickname();
+
+        friendRepository.deleteById(friendId);
+        return new DeleteFriendResult(followerId,followerNickname,followeeId,followeeNickname);
     }
 }

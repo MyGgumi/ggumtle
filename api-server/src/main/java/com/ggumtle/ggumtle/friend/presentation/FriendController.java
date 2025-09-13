@@ -7,6 +7,7 @@ import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.FriendService;
 import com.ggumtle.ggumtle.friend.application.MemberStateService;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
+import com.ggumtle.ggumtle.friend.application.command.DeleteFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetSentFriendRequestsCommand;
@@ -14,6 +15,7 @@ import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.SearchMemberCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
+import com.ggumtle.ggumtle.friend.application.result.DeleteFriendResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetSentFriendRequestsResult;
@@ -21,10 +23,12 @@ import com.ggumtle.ggumtle.friend.application.result.RejectFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.RequestFriendsResult;
 import com.ggumtle.ggumtle.friend.application.result.SearchMemberResult;
 import com.ggumtle.ggumtle.friend.presentation.request.AcceptFriendRequestRequest;
+import com.ggumtle.ggumtle.friend.presentation.request.DeleteFriendRequest;
 import com.ggumtle.ggumtle.friend.presentation.request.RejectFriendRequestRequest;
 import com.ggumtle.ggumtle.friend.presentation.request.RequestFriendRequest;
 import com.ggumtle.ggumtle.friend.presentation.request.SearchMemberRequest;
 import com.ggumtle.ggumtle.friend.presentation.response.AcceptFriendRequestResponse;
+import com.ggumtle.ggumtle.friend.presentation.response.DeleteFriendResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendRequestsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetFriendsResponse;
 import com.ggumtle.ggumtle.friend.presentation.response.GetSentFriendRequestsResponse;
@@ -133,6 +137,18 @@ public class FriendController {
         SearchMemberResponse response = SearchMemberResponse.from(result);
 
         SendSocketEvent event = new SendSocketEvent(SocketType.SEARCH_MEMBER, List.of(requesterId), response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketType.DELETE_FRIEND)
+    public void deleteFriend(DeleteFriendRequest request, WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+        DeleteFriendCommand command = request.toCommand(requesterId);
+
+        DeleteFriendResult result = friendService.deleteFriend(command);
+        DeleteFriendResponse response = new DeleteFriendResponse(result.followerId(), result.followerNickname(), result.followeeId(), result.follweeNickname());
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.DELETE_FRIEND, List.of(result.followeeId(),result.followerId()), response);
         applicationEventPublisher.publishEvent(event);
     }
 }

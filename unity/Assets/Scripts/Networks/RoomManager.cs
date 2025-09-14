@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DotNetty.Transport.Channels;
 using Network;
 using Networks.Attributes;
+using Networks.Ggumtle;
 using Networks.Packets;
 using Networks.Players;
 using Networks.Rooms;
@@ -99,6 +100,18 @@ namespace Networks
         public async void PlayerMove(PlayerMoveCommand command, IChannelHandlerContext ctx)
         {
             Debug.Log($"PlayerMoveCommand: [{command.PlayerId}] : {command.Position.ToString()}");
+        }
+
+        [CommandHandler(PacketType.DiggingDoneResponse)]
+        public async void DiggingDone(DiggingDoneCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"DiggingDoneCommand: [{command.Id}] : {command.IsRealGgumtle}");
+        }
+
+        [CommandHandler(PacketType.FeedForceQuitResponse)]
+        public async void FeedForceQuit(FeedForceQuitCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"FeedForceQuitCommand: GgumtleId [{command.GgumtleId}] - LeftFeedCount: {command.LeftFeedCount}");
         }
     }
 }

@@ -3,7 +3,7 @@ using DotNetty.Buffers;
 using Network;
 using Networks.Packets;
 
-namespace Networks.Digging
+namespace Networks.Ggumtle
 {
     public class DiggingStartSend : Sendable
     {
@@ -56,6 +56,20 @@ namespace Networks.Digging
         public DiggingQuitCommand(byte result)
         {
             Result = result;
+        }
+    }
+
+    public class DiggingDoneCommand : Command
+    {
+        public override PacketType Type => PacketType.DiggingDoneResponse;
+
+        public int Id { get; set; }
+        public bool IsRealGgumtle { get; set; }
+        
+        public DiggingDoneCommand(int id, bool isRealGgumtle)
+        {
+            Id = id;
+            IsRealGgumtle = isRealGgumtle;
         }
     }
 }

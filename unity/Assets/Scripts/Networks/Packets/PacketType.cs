@@ -11,6 +11,8 @@
         ChestClose = 52,
         DiggingStart = 100,
         DiggingQuit = 102,
+        FeedStart = 110,
+        FeedQuit = 112,
         
         // Receive
         VerifyTokenResponse = 2,
@@ -24,5 +26,9 @@
         ChestCloseResponse = 53,
         DiggingStartResponse = 101,
         DiggingQuitResponse = 103,
+        DiggingDoneResponse = 104,
+        FeedStartResponse = 111,
+        FeedQuitResponse = 113,
+        FeedForceQuitResponse = 114,
     }
 }

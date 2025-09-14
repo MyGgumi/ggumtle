@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Network;
 using Networks.chests;
-using Networks.Digging;
+using Networks.Ggumtle;
 using Networks.Packets;
 using Networks.Rooms;
 using Networks.Scenes;
@@ -54,7 +54,7 @@ namespace Networks
             await client.ConnectAsync(host, port);
         }
 
-        public async Task<bool> DiggingStart(int ggumtleId)
+        public async Task<DiggingStartCommand> DiggingStart(int ggumtleId)
         {
             try
             {
@@ -83,7 +83,7 @@ namespace Networks
 
                 if (response is DiggingStartCommand command)
                 {
-                    return command.Result == 1;
+                    return command;
                 }
 
                 throw new InvalidOperationException("DiggingStart에서 예상치 못 한 응답 타입니다.");
@@ -104,7 +104,107 @@ namespace Networks
             }
         }
 
-        public async Task<bool> DiggingQuit()
+        public async Task<FeedStartCommand> FeedStart(int ggumtleId)
+        {
+            try
+            {
+                Debug.Log($"FeedStart 시작: {ggumtleId}");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.FeedStartResponse] = tcs;
+
+                var feedStartRequest = new FeedStartSend(ggumtleId);
+                client.Send(feedStartRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("FeedStart 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is FeedStartCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("FeedStart에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("FeedStart 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"FeedStart 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.FeedStartResponse, out _);
+            }
+        }
+
+        public async Task<FeedQuitCommand> FeedQuit()
+        {
+            try
+            {
+                Debug.Log("FeedQuit 시작");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.FeedQuitResponse] = tcs;
+
+                var feedQuitRequest = new FeedQuitSend();
+                client.Send(feedQuitRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("FeedQuit 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is FeedQuitCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("FeedQuit에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("FeedQuit 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"FeedQuit 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.FeedQuitResponse, out _);
+            }
+        }
+
+        public async Task<DiggingQuitCommand> DiggingQuit()
         {
             try
             {
@@ -133,7 +233,7 @@ namespace Networks
 
                 if (response is DiggingQuitCommand command)
                 {
-                    return command.Result == 1;
+                    return command;
                 }
 
                 throw new InvalidOperationException("DiggingQuit에서 예상치 못 한 응답 타입니다.");
@@ -336,7 +436,7 @@ namespace Networks
             }
         }
 
-        public async Task<ChestOpenResult> ChestOpen(int chestId)
+        public async Task<ChestOpenCommand> ChestOpen(int chestId)
         {
             try
             {
@@ -356,14 +456,7 @@ namespace Networks
 
                 if (response is ChestOpenCommand chestOpenResponse)
                 {
-                    if (chestOpenResponse.Success == 1)
-                    {
-                        return new ChestOpenResult(chestOpenResponse.Items);
-                    }
-                    else
-                    {
-                        Debug.LogError($"상자 열기 패킷은 받았지만 실패했습니다. : {chestOpenResponse.Success}");
-                    }
+                    return chestOpenResponse;
                 }
 
                 throw new InvalidOperationException("상자 열기에 실패했습니다.");
@@ -380,7 +473,7 @@ namespace Networks
             }
         }
 
-        public async Task<bool> ChestClose(int chestId)
+        public async Task<ChestCloseCommand> ChestClose(int chestId)
         {
             try
             {
@@ -397,7 +490,7 @@ namespace Networks
 
                 if (response is ChestCloseCommand chestCloseCommand)
                 {
-                    return chestCloseCommand.Result == 1;
+                    return chestCloseCommand;
                 }
 
                 throw new InvalidOperationException("상자 닫기에 실패했습니다.");

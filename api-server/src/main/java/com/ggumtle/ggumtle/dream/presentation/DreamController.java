@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.common.SocketType;
 import com.ggumtle.ggumtle.dream.application.DreamPartyService;
 import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
+import com.ggumtle.ggumtle.dream.application.command.CancelMatchingCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetInvitationsCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetPartyParticipantsCommand;
@@ -13,6 +14,7 @@ import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
+import com.ggumtle.ggumtle.dream.application.result.CancelMatchingResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.GetInvitationsResult;
 import com.ggumtle.ggumtle.dream.application.result.GetPartyParticipantsResult;
@@ -23,6 +25,7 @@ import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.presentation.request.AcceptPartyInvitationRequest;
 import com.ggumtle.ggumtle.dream.presentation.request.InvitePartyRequest;
 import com.ggumtle.ggumtle.dream.presentation.response.AcceptPartyInvitationResponse;
+import com.ggumtle.ggumtle.dream.presentation.response.CancelMatchingResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.CreatePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.GetInvitationsResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.GetPartyParticipantsResponse;
@@ -152,6 +155,16 @@ public class DreamController {
 
         SendSocketEvent event = new SendSocketEvent(SocketType.GET_PARTY_PARTICIPANTS, List.of(memberId), response);
         applicationEventPublisher.publishEvent(event);
+    }
 
+    @SocketCommandHandler(type = SocketType.CANCELLED_MATCHING)
+    public void cancelMatching(WebSocketSession session) {
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+        CancelMatchingCommand command = new CancelMatchingCommand(memberId);
+        CancelMatchingResult result = dreamService.cancelMatching(command);
+        CancelMatchingResponse response = new CancelMatchingResponse(result.message());
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.CANCELLED_MATCHING, result.participantsIds(), response);
+        applicationEventPublisher.publishEvent(event);
     }
 }

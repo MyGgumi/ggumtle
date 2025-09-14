@@ -3,9 +3,10 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Network;
-using Networks.chests;
+using Networks.Chests;
 using Networks.Ggumtle;
 using Networks.Packets;
+using Networks.Players;
 using Networks.Rooms;
 using Networks.Scenes;
 using Networks.Sessions;
@@ -515,6 +516,69 @@ namespace Networks
         /// CommandDispatcher에서 호출되는 응답 처리 메서드
         /// </summary>
         /// <param name="command">수신된 명령어</param>
+        public void MongdungAttack(Vector3 direction, long targetId)
+        {
+            try
+            {
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    return;
+                }
+
+                var attackRequest = new MongdungAttackSend(direction, targetId);
+                client.Send(attackRequest);
+                
+                Debug.Log($"몽둥이 공격 전송: direction={direction}, targetId={targetId}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"몽둥이 공격 패킷 전송 실패: {e.Message}");
+            }
+        }
+
+        public void GetItem(int chestId, int index)
+        {
+            try
+            {
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    return;
+                }
+
+                var getItemRequest = new GetItemSend(chestId, index);
+                client.Send(getItemRequest);
+                
+                Debug.Log($"아이템 획득 요청 전송: chestId={chestId}, index={index}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"아이템 획득 패킷 전송 실패: {e.Message}");
+            }
+        }
+
+        public void PutItem(int itemId)
+        {
+            try
+            {
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    return;
+                }
+
+                var putItemRequest = new PutItemSend(itemId);
+                client.Send(putItemRequest);
+                
+                Debug.Log($"아이템 넣기 요청 전송: itemId={itemId}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"아이템 넣기 패킷 전송 실패: {e.Message}");
+            }
+        }
+
         public void HandleResponse(Command command)
         {
             Debug.Log($"HandleResponse 호출됨: {command.Type}");

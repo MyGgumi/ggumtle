@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using DotNetty.Transport.Channels;
 using Network;
 using Networks.Attributes;
+using Networks.Chests;
 using Networks.Ggumtle;
 using Networks.Packets;
 using Networks.Players;
@@ -112,6 +113,24 @@ namespace Networks
         public async void FeedForceQuit(FeedForceQuitCommand command, IChannelHandlerContext ctx)
         {
             Debug.Log($"FeedForceQuitCommand: GgumtleId [{command.GgumtleId}] - LeftFeedCount: {command.LeftFeedCount}");
+        }
+
+        [CommandHandler(PacketType.MongdungAttackResponse)]
+        public async void MongdungAttackResult(MongdungAttackCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"MongdungAttackResult: Result [{command.result}] - LeftHp: {command.leftHp}");
+        }
+
+        [CommandHandler(PacketType.GetItemResponse)]
+        public async void GetItemResult(GetItemCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"GetItemResult: Result [{command.Result}] - Items: [{string.Join(", ", command.Items)}]");
+        }
+
+        [CommandHandler(PacketType.PutItemResponse)]
+        public async void PutItemResult(PutItemCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"PutItemResult: Result [{command.Result}] - Items: [{string.Join(", ", command.Items)}]");
         }
     }
 }

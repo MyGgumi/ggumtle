@@ -1,7 +1,9 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.SocketType;
+import com.ggumtle.ggumtle.dream.application.command.CancelMatchingCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
+import com.ggumtle.ggumtle.dream.application.result.CancelMatchingResult;
 import com.ggumtle.ggumtle.dream.application.result.StartDreamResult;
 import com.ggumtle.ggumtle.dream.domain.Dream;
 import com.ggumtle.ggumtle.dream.domain.DreamServer;
@@ -27,6 +29,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -101,7 +104,7 @@ public class DreamService {
         // 매칭 실패 시 대기열에 추가해 매칭 기다리기
         if (matchedParties.isEmpty()) {
             WaitingParty waitingParty = new WaitingParty(participants.getFirst().getPartyId(), participants.size());
-            waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis() + 60000);
+            waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis());
 
             publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
             return;
@@ -204,5 +207,29 @@ public class DreamService {
     private void publishEvent(SocketType socketType, List<Long> memberIds, Object data) {
         SendSocketEvent event = new SendSocketEvent(socketType, memberIds, data);
         applicationEventPublisher.publishEvent(event);
+    }
+
+    public CancelMatchingResult cancelMatching(CancelMatchingCommand command) {
+        Long requesterId = command.requesterId();
+
+        PartyParticipant requester = partyParticipantRepository.findById(requesterId)
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        String partyId = requester.getPartyId();
+
+        List<PartyParticipant> allParticipants = partyParticipantRepository.findAllByPartyId(partyId);
+        WaitingParty waitingParty = new WaitingParty(partyId, allParticipants.size());
+
+        Long removedCount = waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, waitingParty);
+
+        if (removedCount == null || removedCount == 0) {
+            throw new GgumtleException(DreamErrorCode.NOT_FOUND_MATCHING);
+        }
+
+        List<Long> participantIds = allParticipants.stream().
+                map(PartyParticipant::getMemberId).
+                collect(Collectors.toList());
+        String message = "매칭이 취소되었습니다";
+        return new CancelMatchingResult(participantIds, message);
     }
 }

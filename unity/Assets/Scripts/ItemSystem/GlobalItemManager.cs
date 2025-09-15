@@ -75,23 +75,39 @@ public class GlobalItemManager : MonoBehaviour
     /// </summary>
     public void SetGlobalItemCount(string itemName, int count)
     {
+        // 기존 가명을 실제 ID로 변환 (호환성)
+        string actualItemName = Models.ItemTypeHelper.ConvertLegacyId(itemName);
+
         var database = FindItemDatabase();
-        if (database != null && !database.HasItem(itemName))
+        if (database != null)
         {
-            Debug.LogWarning($"[GlobalItemManager] 존재하지 않는 아이템: {itemName}");
-            return;
+            // 먼저 변환된 이름으로 확인
+            if (!database.HasItem(actualItemName))
+            {
+                // 원래 이름으로도 확인
+                if (!database.HasItem(itemName))
+                {
+                    Debug.LogWarning($"[GlobalItemManager] 존재하지 않는 아이템: {itemName} (변환: {actualItemName})");
+                    Debug.LogWarning($"[GlobalItemManager] ItemDatabase에 아이템을 등록해주세요: taser, flashbang, defibrillator, light");
+                    // 경고만 하고 계속 진행 (테스트를 위해)
+                }
+                else
+                {
+                    actualItemName = itemName; // 원래 이름 사용
+                }
+            }
         }
 
-        int oldCount = GetGlobalItemCount(itemName);
-        itemCountDict[itemName] = Mathf.Max(0, count);
+        int oldCount = GetGlobalItemCount(actualItemName);
+        itemCountDict[actualItemName] = Mathf.Max(0, count);
 
         // Inspector 디버그 리스트도 업데이트
         UpdateDebugList();
 
         // 이벤트 발생
-        OnGlobalItemCountChanged?.Invoke(itemName, count);
+        OnGlobalItemCountChanged?.Invoke(actualItemName, count);
 
-        Debug.Log($"[GlobalItemManager] {itemName} 전역 수량 변경: {oldCount} → {count}");
+        Debug.Log($"[GlobalItemManager] {actualItemName} 전역 수량 변경: {oldCount} → {count}");
     }
 
     /// <summary>

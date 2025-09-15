@@ -56,6 +56,22 @@ namespace Services
             return _inventoryModel.GetPlayerSlotCount(slotIndex);
         }
 
+        public bool SwapPlayerSlots(int slotA, int slotB)
+        {
+            if (_inventoryModel.SwapPlayerSlots(slotA, slotB))
+            {
+                // 두 슬롯 모두 변경 이벤트 발생
+                var slotAData = _inventoryModel.playerSlots[slotA];
+                var slotBData = _inventoryModel.playerSlots[slotB];
+
+                OnPlayerSlotChanged?.Invoke(slotA, slotAData.itemId, slotAData.count);
+                OnPlayerSlotChanged?.Invoke(slotB, slotBData.itemId, slotBData.count);
+
+                return true;
+            }
+            return false;
+        }
+
         #endregion
 
         #region Feeding Inventory Operations

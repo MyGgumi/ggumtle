@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.UI
 {
@@ -19,18 +19,21 @@ namespace MVVM.UI
         }
 
         public bool CanUse() => isActive && itemCount > 0;
+
         public bool CanAdd(int amount = 1) => isActive && itemCount + amount <= maxCount;
 
         public bool UseItem(int amount = 1)
         {
-            if (!CanUse() || itemCount < amount) return false;
+            if (!CanUse() || itemCount < amount)
+                return false;
             itemCount -= amount;
             return true;
         }
 
         public bool AddItem(int amount = 1)
         {
-            if (!CanAdd(amount)) return false;
+            if (!CanAdd(amount))
+                return false;
             itemCount += amount;
             return true;
         }
@@ -39,16 +42,25 @@ namespace MVVM.UI
     public class ResourceViewModel : BaseViewModel
     {
         [Header("Light/Mushroom State")]
-        [SerializeField] private int _lightCount = 0;
+        [SerializeField]
+        private int _lightCount = 0;
 
         [Header("Inventory State")]
-        [SerializeField] private ResourceInventorySlot _slot1 = new ResourceInventorySlot();
-        [SerializeField] private ResourceInventorySlot _slot2 = new ResourceInventorySlot();
-        [SerializeField] private ResourceInventorySlot _slot3 = new ResourceInventorySlot();
+        [SerializeField]
+        private ResourceInventorySlot _slot1 = new ResourceInventorySlot();
+
+        [SerializeField]
+        private ResourceInventorySlot _slot2 = new ResourceInventorySlot();
+
+        [SerializeField]
+        private ResourceInventorySlot _slot3 = new ResourceInventorySlot();
 
         [Header("Sprites")]
-        [SerializeField] private Sprite _lightJellySprite;
-        [SerializeField] private Sprite _backgroundItemSlotSprite;
+        [SerializeField]
+        private Sprite _lightJellySprite;
+
+        [SerializeField]
+        private Sprite _backgroundItemSlotSprite;
 
         public event Action<int> LightCountChanged;
         public event Action<int, int> InventorySlotChanged; // slotNumber, newCount
@@ -117,7 +129,8 @@ namespace MVVM.UI
 
         public int AddLight(int amount)
         {
-            if (amount <= 0) return 0;
+            if (amount <= 0)
+                return 0;
 
             if (ViewModels.UI.InventoryViewModel.Instance != null)
             {
@@ -134,12 +147,14 @@ namespace MVVM.UI
 
         public bool RemoveLight(int amount)
         {
-            if (amount <= 0) return false;
+            if (amount <= 0)
+                return false;
 
             if (ViewModels.UI.InventoryViewModel.Instance != null)
             {
                 bool success = ViewModels.UI.InventoryViewModel.Instance.RemoveFeeding(amount);
-                if (success) UpdateLightFromInventoryViewModel();
+                if (success)
+                    UpdateLightFromInventoryViewModel();
                 return success;
             }
             else
@@ -185,14 +200,18 @@ namespace MVVM.UI
 
                 if (EnableDebugLogs)
                 {
-                    Debug.Log($"[ResourceViewModel] 슬롯 {slotNumber} 사용, 남은 개수: {slot.itemCount}");
+                    Debug.Log(
+                        $"[ResourceViewModel] 슬롯 {slotNumber} 사용, 남은 개수: {slot.itemCount}"
+                    );
                 }
                 return true;
             }
 
             if (EnableDebugLogs)
             {
-                Debug.Log($"[ResourceViewModel] 슬롯 {slotNumber} 사용 불가 (개수: {slot?.itemCount ?? 0})");
+                Debug.Log(
+                    $"[ResourceViewModel] 슬롯 {slotNumber} 사용 불가 (개수: {slot?.itemCount ?? 0})"
+                );
             }
             return false;
         }
@@ -207,14 +226,18 @@ namespace MVVM.UI
 
                 if (EnableDebugLogs)
                 {
-                    Debug.Log($"[ResourceViewModel] 슬롯 {slotNumber}에 {amount}개 추가, 총 개수: {slot.itemCount}");
+                    Debug.Log(
+                        $"[ResourceViewModel] 슬롯 {slotNumber}에 {amount}개 추가, 총 개수: {slot.itemCount}"
+                    );
                 }
                 return true;
             }
 
             if (EnableDebugLogs)
             {
-                Debug.Log($"[ResourceViewModel] 슬롯 {slotNumber}에 추가 불가 (현재: {slot?.itemCount ?? 0}, 최대: {slot?.maxCount ?? 0})");
+                Debug.Log(
+                    $"[ResourceViewModel] 슬롯 {slotNumber}에 추가 불가 (현재: {slot?.itemCount ?? 0}, 최대: {slot?.maxCount ?? 0})"
+                );
             }
             return false;
         }
@@ -234,7 +257,9 @@ namespace MVVM.UI
 
                     if (EnableDebugLogs)
                     {
-                        Debug.Log($"[ResourceViewModel] 슬롯 {slotNumber} 개수를 {slot.itemCount}로 설정");
+                        Debug.Log(
+                            $"[ResourceViewModel] 슬롯 {slotNumber} 개수를 {slot.itemCount}로 설정"
+                        );
                     }
                 }
             }
@@ -345,12 +370,14 @@ namespace MVVM.UI
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[ResourceViewModel] State:\n" +
-                     $"  LightCount: {LightCount}\n" +
-                     $"  Slot1: {Slot1.itemCount}/{Slot1.maxCount} (Active: {Slot1.isActive})\n" +
-                     $"  Slot2: {Slot2.itemCount}/{Slot2.maxCount} (Active: {Slot2.isActive})\n" +
-                     $"  Slot3: {Slot3.itemCount}/{Slot3.maxCount} (Active: {Slot3.isActive})\n" +
-                     $"  InventoryViewModel: {(ViewModels.UI.InventoryViewModel.Instance != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[ResourceViewModel] State:\n"
+                    + $"  LightCount: {LightCount}\n"
+                    + $"  Slot1: {Slot1.itemCount}/{Slot1.maxCount} (Active: {Slot1.isActive})\n"
+                    + $"  Slot2: {Slot2.itemCount}/{Slot2.maxCount} (Active: {Slot2.isActive})\n"
+                    + $"  Slot3: {Slot3.itemCount}/{Slot3.maxCount} (Active: {Slot3.isActive})\n"
+                    + $"  InventoryViewModel: {(ViewModels.UI.InventoryViewModel.Instance != null ? "Connected" : "NULL")}"
+            );
         }
 
         [ContextMenu("Initialize For Testing")]

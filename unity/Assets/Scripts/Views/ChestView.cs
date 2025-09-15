@@ -362,10 +362,30 @@ namespace Views
         {
             if (GlobalItemManager.Instance != null)
             {
-                var itemData = GlobalItemManager.Instance.GetItemData(itemId);
+                // 기존 가명을 실제 ID로 변환 (호환성)
+                string actualItemId = Models.ItemTypeHelper.ConvertLegacyId(itemId);
+
+                // ItemDatabase에서 아이템 데이터 가져오기
+                var itemData = GlobalItemManager.Instance.GetItemData(actualItemId);
                 if (itemData != null && itemData.itemIcon != null)
                 {
                     iconElement.style.backgroundImage = new StyleBackground(itemData.itemIcon);
+                    Debug.Log($"[ChestView] 아이템 아이콘 설정: {actualItemId}");
+                }
+                else
+                {
+                    // 아이템을 찾지 못한 경우 원래 ID로도 시도
+                    itemData = GlobalItemManager.Instance.GetItemData(itemId);
+                    if (itemData != null && itemData.itemIcon != null)
+                    {
+                        iconElement.style.backgroundImage = new StyleBackground(itemData.itemIcon);
+                        Debug.Log($"[ChestView] 아이템 아이콘 설정 (원래 ID): {itemId}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[ChestView] 아이템 아이콘을 찾을 수 없음: {itemId} / {actualItemId}");
+                        iconElement.style.backgroundImage = null;
+                    }
                 }
             }
         }

@@ -20,6 +20,6 @@ public class PacketEncoder extends MessageToByteEncoder<Packet> {
             out.writeBytes(packet.data());
         }
 
-        log.debug("[{}] 패킷 인코딩 완료 - Type: {}, Length: {}", ctx.channel().id(), packet.header().packetType(), packet.getDataLength());
+        log.trace("[{}] 패킷 인코딩 완료 - Type: {}, Length: {}", ctx.channel().id(), packet.header().packetType(), packet.getDataLength());
     }
 }

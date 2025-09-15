@@ -75,4 +75,14 @@ public class ChannelManager {
     public Optional<Session> getSession(Channel channel) {
         return sessionManager.getSession(channel);
     }
+
+    public long getPendingWriteCount() {
+        long totalPending = 0;
+        for (Channel ch : channels) {
+            if (!ch.isWritable()) {
+                totalPending += 1;
+            }
+        }
+        return totalPending;
+    }
 }

@@ -37,4 +37,4 @@ jwt:
 
 logging:
   level:
-    com.ggumtle: DEBUG
+    com.ggumtle: TRACE

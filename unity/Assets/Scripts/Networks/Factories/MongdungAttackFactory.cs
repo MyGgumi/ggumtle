@@ -18,4 +18,18 @@ namespace Networks.Factories
             return new MongdungAttackCommand(result, leftHp);
         }
     }
+
+    [CommandFactory(PacketType.MongdungSkillResponse)]
+    public class MongdungSkillFactory
+    {
+        public static MongdungSkillCommand Create(byte[] bytes)
+        {
+            var buffer = Unpooled.WrappedBuffer(bytes);
+
+            var skillType = buffer.ReadInt();
+            var result = buffer.ReadByte();
+
+            return new MongdungSkillCommand(skillType, result);
+        }
+    }
 }

@@ -141,5 +141,42 @@ namespace Networks
             // 몽깅이 부활 완료 처리 로직을 여기에 추가
             // 예: UI 업데이트, 게임 상태 변경 등
         }
+
+        [CommandHandler(PacketType.MongdungSkillResponse)]
+        public async void MongdungSkillResult(MongdungSkillCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"MongdungSkillResult: SkillType [{command.skillType}] - Result [{command.result}]");
+            
+            // 몽둥이 스킬 결과 처리 로직을 여기에 추가
+            if (command.skillType == 1) // 공포 스킬
+            {
+                Debug.Log($"공포 스킬 결과: {command.result}");
+                // 공포 스킬 성공 시 모든 플레이어에게 전송됨
+                // 공포 스킬 실패 시 몽둥이에게만 전송됨
+            }
+            else if (command.skillType == 2) // 꿈틀이 심기
+            {
+                Debug.Log($"꿈틀이 심기 결과: {command.result}");
+                // 꿈틀이 심기는 성공/실패 모두 몽둥이에게만 전송됨
+            }
+        }
+
+        [CommandHandler(PacketType.GgumtleSpawn)]
+        public async void GgumtleSpawn(GgumtleSpawnCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"GgumtleSpawn: ID [{command.id}] - Position [{command.position}]");
+            
+            // 꿈틀이 스폰 처리 로직을 여기에 추가
+            // 예: 꿈틀이 오브젝트 생성, UI 업데이트 등
+        }
+
+        [CommandHandler(PacketType.GgumtleNirvana)]
+        public async void GgumtleNirvana(GgumtleNirvanaCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"GgumtleNirvana: ID [{command.id}]");
+            
+            // 꿈틀이 성불 처리 로직을 여기에 추가
+            // 예: 꿈틀이 오브젝트 제거, UI 업데이트, 효과 재생 등
+        }
     }
 }

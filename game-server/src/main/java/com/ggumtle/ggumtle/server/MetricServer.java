@@ -55,7 +55,8 @@ public class MetricServer {
                                             io.netty.buffer.Unpooled.copiedBuffer(response.getBytes())
                                     );
                                     httpResponse.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/plain; version=0.0.4");
-                                    ctx.writeAndFlush(httpResponse);
+                                    httpResponse.headers().setInt(HttpHeaderNames.CONTENT_LENGTH, response.getBytes().length);
+                                    ctx.writeAndFlush(httpResponse).addListener(ChannelFutureListener.CLOSE);
                                 } else {
                                     ctx.writeAndFlush(new DefaultFullHttpResponse(
                                             HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND

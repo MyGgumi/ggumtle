@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Network;
+using Networks.chests;
 using Networks.Chests;
 using Networks.Ggumtle;
 using Networks.Packets;
@@ -576,6 +577,206 @@ namespace Networks
             catch (Exception e)
             {
                 Debug.LogError($"아이템 넣기 패킷 전송 실패: {e.Message}");
+            }
+        }
+
+        public async Task<MonggingRevivalStartCommand> MonggingRevivalStart(long targetMonggingId)
+        {
+            try
+            {
+                Debug.Log($"MonggingRevivalStart 시작: {targetMonggingId}");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.MonggingRevivalStartResponse] = tcs;
+
+                var monggingRevivalStartRequest = new MonggingRevivalStartSend(targetMonggingId);
+                client.Send(monggingRevivalStartRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("MonggingRevivalStart 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is MonggingRevivalStartCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("MonggingRevivalStart에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("MonggingRevivalStart 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"MonggingRevivalStart 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.MonggingRevivalStartResponse, out _);
+            }
+        }
+
+        public async Task<MonggingRevivalStopCommand> MonggingRevivalStop()
+        {
+            try
+            {
+                Debug.Log("MonggingRevivalStop 시작");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.MonggingRevivalStopResponse] = tcs;
+
+                var monggingRevivalStopRequest = new MonggingRevivalStopSend();
+                client.Send(monggingRevivalStopRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("MonggingRevivalStop 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is MonggingRevivalStopCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("MonggingRevivalStop에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("MonggingRevivalStop 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"MonggingRevivalStop 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.MonggingRevivalStopResponse, out _);
+            }
+        }
+
+        public async Task<MonggingItemUseCommand> MonggingItemUse(Vector3 direction, int itemId)
+        {
+            try
+            {
+                Debug.Log($"MonggingItemUse 시작: direction={direction}, itemId={itemId}");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.MonggingItemUseResponse] = tcs;
+
+                var monggingItemUseRequest = new MonggingItemUseSend(direction, itemId);
+                client.Send(monggingItemUseRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("MonggingItemUse 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is MonggingItemUseCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("MonggingItemUse에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("MonggingItemUse 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"MonggingItemUse 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.MonggingItemUseResponse, out _);
+            }
+        }
+
+        public async Task<MonggingFieldItemUseCommand> MonggingFieldItemUse(int fieldItemId)
+        {
+            try
+            {
+                Debug.Log($"MonggingFieldItemUse 시작: fieldItemId={fieldItemId}");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.MonggingFieldItemUseResponse] = tcs;
+
+                var monggingFieldItemUseRequest = new MonggingFieldItemUseSend(fieldItemId);
+                client.Send(monggingFieldItemUseRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("MonggingFieldItemUse 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is MonggingFieldItemUseCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("MonggingFieldItemUse에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("MonggingFieldItemUse 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"MonggingFieldItemUse 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.MonggingFieldItemUseResponse, out _);
             }
         }
 

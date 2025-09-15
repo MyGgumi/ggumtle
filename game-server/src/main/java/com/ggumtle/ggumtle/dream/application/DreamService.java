@@ -81,7 +81,7 @@ public class DreamService {
     public void handlePlayerMove(PlayerMoveCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.movePlayer(session.getMemberId(), command.x(), command.y(), command.z());
+        dreamManager.movePlayer(session, command.x(), command.y(), command.z());
     }
 
     @PacketCommandHandler(type = ReceivePacketType.HIT_MONGGING)

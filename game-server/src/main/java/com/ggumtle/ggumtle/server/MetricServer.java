@@ -4,6 +4,7 @@ import com.ggumtle.ggumtle.common.property.MetricServerProperty;
 import com.ggumtle.ggumtle.monitor.metric.MetricRegistry;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.sun.management.OperatingSystemMXBean;
+import com.sun.management.UnixOperatingSystemMXBean;
 import io.micrometer.core.instrument.Gauge;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.*;
@@ -67,6 +68,7 @@ public class MetricServer {
                     }
                 });
 
+        // JVM
         OperatingSystemMXBean osBean = ManagementFactory.getPlatformMXBean(OperatingSystemMXBean.class);
         Gauge.builder("jvm_process_cpu_load", osBean, OperatingSystemMXBean::getProcessCpuLoad)
                 .description("JVM 프로세스 CPU 사용률")
@@ -91,9 +93,37 @@ public class MetricServer {
                 .description("JVM 쓰레드 수")
                 .register(MetricRegistry.registry);
 
+        Gauge.builder("jvm_daemon_threads_count", () -> ManagementFactory.getThreadMXBean().getDaemonThreadCount())
+                .description("Daemon 쓰레드 수")
+                .register(MetricRegistry.registry);
+
+        // Netty
         Gauge.builder("game_active_channels", channelManager, ChannelManager::getChannelCount)
                 .description("현재 활성화된 채널 수")
                 .register(MetricRegistry.registry);
+
+        Gauge.builder("game_channel_pending_writes", channelManager, ChannelManager::getPendingWriteCount)
+                .description("채널 쓰기 대기 큐 길이")
+                .register(MetricRegistry.registry);
+
+        // OS fd
+        Gauge.builder("open_file_descriptors", () -> {
+            try {
+                UnixOperatingSystemMXBean unixBean = (UnixOperatingSystemMXBean) osBean;
+                return unixBean.getOpenFileDescriptorCount();
+            } catch (ClassCastException e) {
+                return -1L;
+            }
+        }).description("현재 열린 파일 디스크립터 수").register(MetricRegistry.registry);
+
+        Gauge.builder("max_file_descriptors", () -> {
+            try {
+                UnixOperatingSystemMXBean unixBean = (UnixOperatingSystemMXBean) osBean;
+                return unixBean.getMaxFileDescriptorCount();
+            } catch (ClassCastException e) {
+                return -1L;
+            }
+        }).description("최대 파일 디스크립터 수").register(MetricRegistry.registry);
 
         b.bind(port).sync();
         log.info("매트릭 서버 시작: {}", port);

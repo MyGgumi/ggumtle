@@ -72,7 +72,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
             throw new RuntimeException("채널 인증 전입니다");
         }
 
-        log.info("[{}] 수신한 패킷 데이터: {}", ctx.channel().id(), packet.data());
+        log.debug("[{}] 수신한 패킷 데이터: {}", ctx.channel().id(), packet.data());
 
         // 핸들러로 디스패치
         HandlerInfo handlerInfo = commandHandlerMap.get(receivePacketType);
@@ -88,7 +88,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
             parameters = parseParameterWithData(handlerInfo, packet.data(), ctx, packet.header());
         }
 
-        log.info("[{}] 핸들러: {}\n파라미터: {}", ctx.channel().id(), handlerInfo, Arrays.toString(parameters));
+        log.debug("[{}] 핸들러: {}\n파라미터: {}", ctx.channel().id(), handlerInfo, Arrays.toString(parameters));
         try {
             handlerInfo.method.invoke(handlerInfo.bean, parameters);
         } catch (InvocationTargetException | IllegalAccessException e) {

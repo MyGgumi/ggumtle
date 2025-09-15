@@ -26,6 +26,7 @@ public class Player {
         }
     }
 
+    // TODO: 네트워크 지연 보정
     public Position getPositionAt(long timestamp) {
         synchronized (this.positionLock) {
             Position position = this.positions[curr];

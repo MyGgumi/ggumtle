@@ -5,6 +5,9 @@ import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 public class Mongdung extends Player {
     private static final int BASE_MOVE_SPEED = 100;
     private static final int BASE_DAMAGE = 40;
@@ -19,8 +22,8 @@ public class Mongdung extends Player {
 
     public final int moveSpeed;
 
-    private long lastScareTime;
-    private int buryFakeGgumtleCount;
+    private final AtomicLong lastScareTime;
+    private final AtomicInteger buryFakeGgumtleCount;
 
     @Getter
     protected int damage;
@@ -30,8 +33,8 @@ public class Mongdung extends Player {
 
         this.moveSpeed = BASE_MOVE_SPEED;
         this.damage = BASE_DAMAGE;
-        this.lastScareTime = 0;
-        this.buryFakeGgumtleCount = 0;
+        this.lastScareTime = new AtomicLong(System.currentTimeMillis());
+        this.buryFakeGgumtleCount = new AtomicInteger(0);
     }
 
     public boolean detectHit(int vx, int vy, int vz, long timestamp, Player target) {
@@ -65,24 +68,25 @@ public class Mongdung extends Player {
                 (hitMinZ <= targetMaxZ && hitMaxZ >= targetMinZ);
     }
 
-    public synchronized boolean scare() {
+    public boolean scare() {
         long now = System.currentTimeMillis();
 
-        if (this.lastScareTime + BASE_SCARE_COOL_TIME > now) {
+        long current = this.lastScareTime.get();
+        if (current + BASE_SCARE_COOL_TIME > now) {
             return false;
         }
 
-        this.lastScareTime = now;
-        return true;
+        return this.lastScareTime.compareAndSet(current, now);
     }
 
-    public synchronized boolean tryBuryFakeGgumtle() {
-        if (this.buryFakeGgumtleCount < MAX_BURY_COUNT) {
-            this.buryFakeGgumtleCount++;
+    public boolean tryBuryFakeGgumtle() {
+        int current = this.buryFakeGgumtleCount.get();
+
+        if (current < MAX_BURY_COUNT) {
             return true;
         }
 
-        return false;
+        return this.buryFakeGgumtleCount.compareAndSet(current, current + 1);
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)

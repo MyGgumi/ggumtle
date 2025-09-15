@@ -1,7 +1,6 @@
 package com.ggumtle.ggumtle.dream.domain;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
-import lombok.Getter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -25,11 +24,12 @@ public class Mongging extends Player {
 
     private int hp;
     private Status status;
-
-    private int knockOutCount = 0;
+    private int knockOutCount;
+    private final Object statusLock;
 
     private final ConcurrentHashMap <Item, Integer> inventory;
     private final ConcurrentHashMap<Item, Integer> droppedItems;
+    private final Object inventoryLock;
 
     public enum Status { ALIVE, KNOCKOUT, DEAD, ESCAPED }
 
@@ -38,7 +38,9 @@ public class Mongging extends Player {
 
         this.maxHp = BASE_HP;
         this.hp = maxHp;
+        this.knockOutCount = 0;
         this.status = Status.ALIVE;
+        this.statusLock = new Object();
 
         this.moveSpeed = BASE_MOVE_SPEED;
         this.healSpeed = BASE_HEAL_SPEED;
@@ -46,110 +48,135 @@ public class Mongging extends Player {
 
         this.inventory = new ConcurrentHashMap<>();
         this.droppedItems = new ConcurrentHashMap<>();
+        this.inventoryLock = new Object();
     }
 
-    public synchronized int getHit(int damage) {
-        if (this.hp > damage) {
-            this.hp -= damage;
-            return this.hp;
+    public int getHit(int damage) {
+        synchronized (statusLock) {
+            synchronized (inventoryLock) {
+                if (this.hp > damage) {
+                    this.hp -= damage;
+                    return this.hp;
+                }
+
+                this.hp = 0;
+                this.droppedItems.clear();
+                this.droppedItems.putAll(this.inventory);
+                this.inventory.clear();
+                this.status = Status.KNOCKOUT;
+                this.knockOutCount++;
+
+                if (this.knockOutCount > MAX_KNOCKOUT_COUNT) {
+                    this.status = Status.DEAD;
+                }
+
+                return this.hp;
+            }
         }
-
-        this.hp = 0;
-        this.droppedItems.clear();
-        this.droppedItems.putAll(this.inventory);
-        this.inventory.clear();
-        this.status = Status.KNOCKOUT;
-        this.knockOutCount++;
-
-        if (this.knockOutCount > MAX_KNOCKOUT_COUNT) {
-            this.status = Status.DEAD;
-        }
-
-        return this.hp;
     }
 
-    public synchronized boolean canAddItem(Item item) {
-        if (this.inventory.containsKey(item)) {
-            return this.inventory.get(item) + 1 <= item.maxCapacityForMongging;
-        }
-
-        return this.inventory.size() < INVENTORY_SIZE;
-    }
-
-    public synchronized boolean addItem(Item item) {
-        if (this.inventory.containsKey(item)) {
-            int nextCount = this.inventory.get(item) + 1;
-            if (nextCount > item.maxCapacityForMongging) {
-                return false;
+    public boolean canAddItem(Item item) {
+        synchronized (inventoryLock) {
+            if (this.inventory.containsKey(item)) {
+                return this.inventory.get(item) + 1 <= item.maxCapacityForMongging;
             }
 
-            this.inventory.put(item, nextCount);
-            return true;
+            return this.inventory.size() < INVENTORY_SIZE;
         }
-
-        if (this.inventory.size() < INVENTORY_SIZE) {
-            this.inventory.put(item, 1);
-            return true;
-        }
-
-        return false;
     }
 
-    public synchronized int[][] getItems() {
-        int[][] items = new int[this.inventory.size()][2];
-        int top = 0;
+    public boolean addItem(Item item) {
+        synchronized (inventoryLock) {
+            if (this.inventory.containsKey(item)) {
+                int nextCount = this.inventory.get(item) + 1;
+                if (nextCount > item.maxCapacityForMongging) {
+                    return false;
+                }
 
-        for (Map.Entry<Item, Integer> entry : this.inventory.entrySet()) {
-            items[top][ITEM_ID] = entry.getKey().id;
-            items[top][ITEM_COUNT] = entry.getValue();
-            top++;
+                this.inventory.put(item, nextCount);
+                return true;
+            }
+
+            if (this.inventory.size() < INVENTORY_SIZE) {
+                this.inventory.put(item, 1);
+                return true;
+            }
+
+            return false;
         }
-
-        return items;
     }
 
-    public synchronized Item popItem(Item item) {
-        if (!this.inventory.containsKey(item)) {
-            return null;
+    public int[][] getItems() {
+        synchronized (inventoryLock) {
+            int[][] items = new int[this.inventory.size()][2];
+            int top = 0;
+
+            for (Map.Entry<Item, Integer> entry : this.inventory.entrySet()) {
+                items[top][ITEM_ID] = entry.getKey().id;
+                items[top][ITEM_COUNT] = entry.getValue();
+                top++;
+            }
+
+            return items;
         }
-
-        int nextCount = this.inventory.get(item) - 1;
-
-        if (nextCount <= 0) {
-            this.inventory.remove(item);
-        } else {
-            this.inventory.put(item, nextCount);
-        }
-
-        return item;
     }
 
-    public synchronized int countItem(Item item) {
+    public Item popItem(Item item) {
+        synchronized (inventoryLock) {
+            if (!this.inventory.containsKey(item)) {
+                return null;
+            }
+
+            int nextCount = this.inventory.get(item) - 1;
+
+            if (nextCount <= 0) {
+                this.inventory.remove(item);
+            } else {
+                this.inventory.put(item, nextCount);
+            }
+
+            return item;
+        }
+    }
+
+    public int countItem(Item item) {
         return this.inventory.getOrDefault(item, 0);
     }
 
-    public synchronized Map<Item, Integer> getDroppedItems() {
-        return new HashMap<>(this.droppedItems);
+    public Map<Item, Integer> getDroppedItems() {
+        synchronized (inventoryLock) {
+            return new HashMap<>(this.droppedItems);
+        }
     }
 
     public boolean isNotDead() {
-        return this.status == Status.ALIVE && this.hp > 0;
+        synchronized (statusLock) {
+            return this.status == Status.ALIVE && this.hp > 0;
+        }
     }
 
     public boolean isDead() {
-        return this.status == Status.DEAD;
+        synchronized (statusLock) {
+            return this.status == Status.DEAD;
+        }
     }
 
     public boolean isKnockout() {
-        return this.status == Status.KNOCKOUT;
+        synchronized (statusLock) {
+            return this.status == Status.KNOCKOUT;
+        }
     }
 
-    public synchronized void revive() {
-        this.hp = REVIVE_HP;
-        this.status = Status.ALIVE;
+    public void revive() {
+        synchronized (statusLock) {
+            this.hp = REVIVE_HP;
+            this.status = Status.ALIVE;
+        }
     }
 
-    public synchronized void escape() {
-        this.status = Status.ESCAPED;
+    public void escape() {
+        synchronized (statusLock) {
+            this.status = Status.ESCAPED;
+        }
     }
 }

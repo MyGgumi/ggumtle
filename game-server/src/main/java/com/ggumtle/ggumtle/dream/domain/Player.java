@@ -11,32 +11,38 @@ public class Player {
 
     protected Position[] positions = new Position[POSITION_BUFFER_SIZE];
     private int curr = 0;
+    private final Object positionLock;
 
     public Player(long id, Position position) {
         this.id = id;
+        this.positionLock = new Object();
         this.addPosition(position);
     }
 
-    public synchronized void addPosition(Position position) {
-        curr = (curr + 1) % POSITION_BUFFER_SIZE;
-        positions[curr] = position;
+    public void addPosition(Position position) {
+        synchronized (this.positionLock) {
+            curr = (curr + 1) % POSITION_BUFFER_SIZE;
+            positions[curr] = position;
+        }
     }
 
     public Position getPositionAt(long timestamp) {
-        Position position = this.positions[curr];
-        for (int i = 0; i < POSITION_BUFFER_SIZE; i++) {
-            int index = (curr - i + POSITION_BUFFER_SIZE) % POSITION_BUFFER_SIZE;
+        synchronized (this.positionLock) {
+            Position position = this.positions[curr];
+            for (int i = 0; i < POSITION_BUFFER_SIZE; i++) {
+                int index = (curr - i + POSITION_BUFFER_SIZE) % POSITION_BUFFER_SIZE;
 
-            if (positions[index] == null) {
-                break;
+                if (positions[index] == null) {
+                    break;
+                }
+
+                if (positions[index].timestamp <= timestamp) {
+                    return positions[index];
+                }
+                position = positions[index];
             }
 
-            if (positions[index].timestamp <= timestamp) {
-                return positions[index];
-            }
-            position = positions[index];
+            return position;
         }
-
-        return position;
     }
 }

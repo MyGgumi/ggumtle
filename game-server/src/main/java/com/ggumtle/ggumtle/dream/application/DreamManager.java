@@ -502,7 +502,7 @@ public class DreamManager {
                     return;
                 }
 
-                if (!box.canAddItem(targetItem)) {
+                if (box.isFull()) {
                     Body body = new PutItemBody(PutItemBody.Result.FULL_ABOUT_ITEM, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);

@@ -27,6 +27,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    z-index: 10;
 }
 
 .joystick-base {
@@ -83,7 +84,8 @@
     bottom: 0;
     pointer-events: auto;
     picking-mode: position;
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: rgba(0, 0, 0, 0.05);
+    z-index: 1;
 }
 
 .action-buttons {
@@ -93,25 +95,15 @@
     width: 300px;
     height: 300px;
     pointer-events: none;
+    z-index: 10;
 }
 
 .action-button {
     position: absolute;
-    width: 120px;
-    height: 120px;
+    width: 140px;
+    height: 140px;
     pointer-events: auto;
     picking-mode: position;
-    transition-duration: 0.1s;
-    transition-property: scale, opacity;
-}
-
-.action-button:hover {
-    scale: 1.05 1.05;
-}
-
-.action-button:active {
-    scale: 0.95 0.95;
-    opacity: 0.8;
 }
 
 .button-background {
@@ -140,13 +132,15 @@
 }
 
 .jump-button {
-    right: 130px;
-    bottom: 60px;
+    right: 200px;
+    bottom: 40px;
+    z-index: 15;
 }
 
 .interact-button {
     right: 36px;
     bottom: 186px;
+    z-index: 15;
 }
 
 .jump-icon {

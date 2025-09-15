@@ -53,9 +53,10 @@
 
 #interactionUI {
     position: absolute;
-    left: 0;
-    right: 0;
+    left: 50%;
+    translate: -50% 0;
     bottom: 8px;
+    width: auto;
 }
 
 #mobileControls {
@@ -64,4 +65,16 @@
     left: 0;
     right: 0;
     bottom: 0;
+}
+
+#chestBoxUI {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    translate: -50% -50%;
+}
+
+/* ChestBoxUI root 요소 - 초기에는 숨김 */
+#chestBoxUI #root {
+    display: none;
 }

@@ -7,34 +7,34 @@ public class PlayerListManager : MonoBehaviour
     [Header("UI References")]
     private VisualElement _root;
     private VisualElement _topRightIcons;
-    
+
     [Header("Player Icons")]
     private VisualElement[] _playerIcons = new VisualElement[4];
     private Label[] _playerNames = new Label[4];
     private VisualElement[] _playerAreas = new VisualElement[4];
-    
+
     [Header("Sprites")]
     public Sprite iconMongingDefault;
     public Sprite iconMongingFaint;
     public Sprite iconMongingDead;
     public Sprite iconMongingEscape;
-    
+
     [Header("Current State")]
     public Dictionary<int, PlayerData> playerDataCache = new Dictionary<int, PlayerData>();
-    
+
     // Static 이벤트는 HUDEvents로 이동됨
-    
+
     public void Initialize(VisualElement root)
     {
         _root = root;
         CacheUIElements();
         SetupDefaultPlayers();
     }
-    
+
     private void CacheUIElements()
     {
         _topRightIcons = _root.Q<VisualElement>("topRightIcons");
-        
+
         // 플레이어 아이콘과 이름 캐싱
         for (int i = 0; i < 4; i++)
         {
@@ -42,7 +42,7 @@ public class PlayerListManager : MonoBehaviour
             _playerIcons[i] = _root.Q<VisualElement>($"icon{playerNum}");
             _playerNames[i] = _root.Q<Label>($"player{playerNum}Name");
             _playerAreas[i] = _root.Q<VisualElement>($"player{playerNum}Area");
-            
+
             // UXML의 하드코딩된 플레이어 이름 초기화
             if (_playerNames[i] != null)
             {
@@ -50,23 +50,57 @@ public class PlayerListManager : MonoBehaviour
             }
         }
     }
-    
+
     private void SetupDefaultPlayers()
     {
-        // 기본 플레이어 아이콘 설정
+        // 기본 플레이어들을 즉시 표시
         for (int i = 0; i < 4; i++)
         {
+            int playerId = i + 1;
+
+            // 기본 아이콘 설정
             if (_playerIcons[i] != null && iconMongingDefault != null)
             {
                 _playerIcons[i].style.backgroundImage = new StyleBackground(iconMongingDefault);
+                _playerIcons[i].style.display = DisplayStyle.Flex;
             }
+
+            // 기본 플레이어 이름 설정
+            if (_playerNames[i] != null)
+            {
+                _playerNames[i].text = $"플레이어{playerId}";
+                _playerNames[i].style.display = DisplayStyle.Flex;
+            }
+
+            // 플레이어 영역 표시
+            if (_playerAreas[i] != null)
+            {
+                _playerAreas[i].style.display = DisplayStyle.Flex;
+            }
+
+            Debug.Log($"[PlayerListManager] 기본 플레이어 {playerId} 설정 완료");
+        }
+
+        // 전체 플레이어 리스트 컨테이너 표시
+        if (_topRightIcons != null)
+        {
+            _topRightIcons.style.display = DisplayStyle.Flex;
+            Debug.Log("[PlayerListManager] 플레이어 리스트 컨테이너 표시");
         }
     }
-    
-    public void UpdatePlayer(int playerId, string nickname, string colorTheme, string status = "default", bool isOnline = true, bool isHost = false)
+
+    public void UpdatePlayer(
+        int playerId,
+        string nickname,
+        string colorTheme,
+        string status = "default",
+        bool isOnline = true,
+        bool isHost = false
+    )
     {
-        if (playerId < 1 || playerId > 4) return;
-        
+        if (playerId < 1 || playerId > 4)
+            return;
+
         var playerData = new PlayerData
         {
             playerId = playerId,
@@ -75,15 +109,15 @@ public class PlayerListManager : MonoBehaviour
             status = status,
             avatarSprite = GetStatusSprite(status),
             isOnline = isOnline,
-            isHost = isHost
+            isHost = isHost,
         };
-        
+
         playerDataCache[playerId] = playerData;
-        
+
         // UI 업데이트 (기존 UniversalHUDController 로직)
         var icon = GetPlayerIcon(playerId);
         var nameLabel = GetPlayerNameLabel(playerId);
-        
+
         if (icon != null)
         {
             SetPlayerColor(playerId, colorTheme);
@@ -93,43 +127,45 @@ public class PlayerListManager : MonoBehaviour
                 icon.style.backgroundImage = new StyleBackground(playerData.avatarSprite);
             }
         }
-        
+
         if (nameLabel != null)
         {
             nameLabel.text = nickname;
         }
-        
+
         HUDEvents.TriggerPlayerStatusChange(playerId, status, nickname);
         HUDEvents.TriggerPlayerConnectionChange(playerId, isOnline);
-        
+
         Debug.Log($"[PlayerListManager] 플레이어 {playerId} 업데이트: {nickname} ({status})");
     }
-    
+
     private VisualElement GetPlayerIcon(int playerIndex)
     {
-        if (playerIndex < 1 || playerIndex > 4) return null;
+        if (playerIndex < 1 || playerIndex > 4)
+            return null;
         return _playerIcons[playerIndex - 1];
     }
-    
+
     private Label GetPlayerNameLabel(int playerIndex)
     {
-        if (playerIndex < 1 || playerIndex > 4) return null;
+        if (playerIndex < 1 || playerIndex > 4)
+            return null;
         return _playerNames[playerIndex - 1];
     }
-    
+
     private void ApplyPlayerStateClasses(VisualElement icon, PlayerData player)
     {
         // 기존 상태 클래스 제거
         icon.RemoveFromClassList("player-online");
         icon.RemoveFromClassList("player-offline");
-        
+
         // 새 상태 클래스 적용
         if (player.isOnline)
             icon.AddToClassList("player-online");
         else
             icon.AddToClassList("player-offline");
     }
-    
+
     public void UpdatePlayerFromData(List<PlayerData> players)
     {
         for (int i = 0; i < players.Count && i < 4; i++)
@@ -139,24 +175,27 @@ public class PlayerListManager : MonoBehaviour
             playerDataCache[player.playerId] = player;
         }
     }
-    
+
     private void UpdatePlayerUI(int playerId, PlayerData playerData)
     {
-        if (playerId < 1 || playerId > 4) return;
+        if (playerId < 1 || playerId > 4)
+            return;
         if (_root == null)
         {
-            Debug.LogError("[PlayerListManager] _root가 null입니다. Initialize가 호출되지 않았습니다.");
+            Debug.LogError(
+                "[PlayerListManager] _root가 null입니다. Initialize가 호출되지 않았습니다."
+            );
             return;
         }
-        
+
         int index = playerId - 1;
-        
+
         // 닉네임 직접 교체
         if (_playerNames[index] != null)
         {
             _playerNames[index].text = playerData.nickname;
         }
-        
+
         // 아이콘 업데이트 (기존 요소 완전히 초기화 후 새로 설정)
         if (_playerIcons[index] != null)
         {
@@ -165,29 +204,40 @@ public class PlayerListManager : MonoBehaviour
             _playerIcons[index].style.unityBackgroundImageTintColor = StyleKeyword.None;
             _playerIcons[index].style.backgroundColor = StyleKeyword.None;
             _playerIcons[index].ClearClassList(); // 모든 CSS 클래스 제거
-            
+
             // 새 스프라이트 설정
             if (playerData.avatarSprite != null)
             {
-                _playerIcons[index].style.backgroundImage = new StyleBackground(playerData.avatarSprite);
-                _playerIcons[index].style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
-                _playerIcons[index].style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
-                _playerIcons[index].style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
-                _playerIcons[index].style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Center);
+                _playerIcons[index].style.backgroundImage = new StyleBackground(
+                    playerData.avatarSprite
+                );
+                _playerIcons[index].style.backgroundSize = new BackgroundSize(
+                    BackgroundSizeType.Cover
+                );
+                _playerIcons[index].style.backgroundRepeat = new BackgroundRepeat(
+                    Repeat.NoRepeat,
+                    Repeat.NoRepeat
+                );
+                _playerIcons[index].style.backgroundPositionX = new BackgroundPosition(
+                    BackgroundPositionKeyword.Center
+                );
+                _playerIcons[index].style.backgroundPositionY = new BackgroundPosition(
+                    BackgroundPositionKeyword.Center
+                );
             }
-            
+
             // 색상 적용 (기존 색상 제거 후)
             SetPlayerColor(playerId, playerData.colorTheme);
         }
     }
-    
-    
+
     public void SetPlayerColor(int playerIndex, string colorType)
     {
-        if (playerIndex < 1 || playerIndex > 4) return;
-        
+        if (playerIndex < 1 || playerIndex > 4)
+            return;
+
         VisualElement playerIcon = _playerIcons[playerIndex - 1];
-        
+
         if (playerIcon != null)
         {
             Color color = colorType switch
@@ -196,13 +246,13 @@ public class PlayerListManager : MonoBehaviour
                 "mint" => new Color(0.31f, 1f, 0.78f, 1f),
                 "pink" => new Color(1f, 0.59f, 0.78f, 1f),
                 "blue" => new Color(0.31f, 0.78f, 1f, 1f),
-                _ => Color.white
+                _ => Color.white,
             };
-            
+
             playerIcon.style.unityBackgroundImageTintColor = color;
         }
     }
-    
+
     public void SetPlayerStatus(int playerId, string status)
     {
         if (playerDataCache.ContainsKey(playerId))
@@ -210,22 +260,22 @@ public class PlayerListManager : MonoBehaviour
             var playerData = playerDataCache[playerId];
             playerData.status = status;
             playerData.avatarSprite = GetStatusSprite(status);
-            
+
             UpdatePlayerUI(playerId, playerData);
         }
     }
-    
+
     public void SetPlayerOnlineStatus(int playerId, bool isOnline)
     {
         if (playerDataCache.ContainsKey(playerId))
         {
             var playerData = playerDataCache[playerId];
             playerData.isOnline = isOnline;
-            
+
             UpdatePlayerUI(playerId, playerData);
         }
     }
-    
+
     public void SetPlayerListVisibility(bool visible)
     {
         if (_topRightIcons != null)
@@ -233,11 +283,12 @@ public class PlayerListManager : MonoBehaviour
             _topRightIcons.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
         }
     }
-    
+
     public void HighlightPlayer(int playerId, bool highlight, float duration = 1f)
     {
-        if (playerId < 1 || playerId > 4) return;
-        
+        if (playerId < 1 || playerId > 4)
+            return;
+
         var icon = _playerIcons[playerId - 1];
         if (icon != null)
         {
@@ -253,14 +304,16 @@ public class PlayerListManager : MonoBehaviour
             }
         }
     }
-    
-    private System.Collections.IEnumerator RemoveHighlightAfterDelay(VisualElement icon, float delay)
+
+    private System.Collections.IEnumerator RemoveHighlightAfterDelay(
+        VisualElement icon,
+        float delay
+    )
     {
         yield return new WaitForSeconds(delay);
         icon.RemoveFromClassList("player-highlighted");
     }
-    
-    
+
     private Sprite GetStatusSprite(string status)
     {
         return status switch
@@ -269,17 +322,17 @@ public class PlayerListManager : MonoBehaviour
             "dead" => iconMongingDead,
             "escape" => iconMongingEscape,
             "faint" => iconMongingFaint,
-            _ => iconMongingDefault
+            _ => iconMongingDefault,
         };
     }
-    
+
     public void SetSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
     {
         iconMongingDefault = defaultIcon;
         iconMongingFaint = faintIcon;
         iconMongingDead = deadIcon;
         iconMongingEscape = escapeIcon;
-        
+
         // 현재 플레이어들의 스프라이트 다시 적용
         foreach (var kvp in playerDataCache)
         {
@@ -288,41 +341,42 @@ public class PlayerListManager : MonoBehaviour
             UpdatePlayerUI(playerData.playerId, playerData);
         }
     }
-    
+
     public PlayerData GetPlayer(int playerId)
     {
         return playerDataCache.ContainsKey(playerId) ? playerDataCache[playerId] : null;
     }
-    
+
     public List<PlayerData> GetAllPlayers()
     {
         return new List<PlayerData>(playerDataCache.Values);
     }
-    
+
     public int GetOnlinePlayerCount()
     {
         int count = 0;
         foreach (var player in playerDataCache.Values)
         {
-            if (player.isOnline) count++;
+            if (player.isOnline)
+                count++;
         }
         return count;
     }
-    
+
     public void ClearAllPlayers()
     {
         playerDataCache.Clear();
-        
+
         // UI 초기화
         for (int i = 0; i < 4; i++)
         {
             if (_playerNames[i] != null)
                 _playerNames[i].text = $"플레이어{i + 1}";
-                
+
             if (_playerIcons[i] != null && iconMongingDefault != null)
                 _playerIcons[i].style.backgroundImage = new StyleBackground(iconMongingDefault);
         }
-        
+
         Debug.Log("[PlayerListManager] 모든 플레이어 데이터 초기화");
     }
 }

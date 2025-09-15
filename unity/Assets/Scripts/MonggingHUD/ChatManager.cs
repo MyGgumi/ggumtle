@@ -31,6 +31,10 @@ public class ChatManager : MonoBehaviour
     public bool isChatOpen = false;
     public List<ChatMessage> chatHistory = new List<ChatMessage>();
     
+    // UI 이벤트 콜백 저장 변수들
+    private EventCallback<ClickEvent> _chatIconAreaCallback;
+    private EventCallback<KeyDownEvent> _chatInputKeyDownCallback;
+    
     public static System.Action<string, string> OnChatMessageSent; // playerId, message
     public static System.Action<ChatMessage> OnChatMessageReceived;
     public static System.Action<bool> OnChatToggled;
@@ -83,7 +87,11 @@ public class ChatManager : MonoBehaviour
     {
         if (_chatIconArea != null)
         {
-            _chatIconArea.RegisterCallback<ClickEvent>(evt => ToggleChat());
+            // 콜백 인스턴스 생성 및 저장
+            _chatIconAreaCallback = evt => ToggleChat();
+            
+            // 저장된 콜백으로 등록
+            _chatIconArea.RegisterCallback(_chatIconAreaCallback);
         }
     }
     
@@ -132,7 +140,9 @@ public class ChatManager : MonoBehaviour
         _chatInput = new TextField();
         _chatInput.style.flexGrow = 1;
         _chatInput.style.marginRight = 5;
-        _chatInput.RegisterCallback<KeyDownEvent>(OnChatInputKeyDown);
+        // 콜백 인스턴스 생성 및 저장
+        _chatInputKeyDownCallback = OnChatInputKeyDown;
+        _chatInput.RegisterCallback(_chatInputKeyDownCallback);
         
         _sendButton = new Button(() => SendChatMessage());
         _sendButton.text = "전송";
@@ -387,4 +397,30 @@ public class ChatManager : MonoBehaviour
     
     public bool IsChatOpen() => isChatOpen;
     public int GetMessageCount() => chatHistory.Count;
+    
+    #region Unity Lifecycle
+    
+    private void OnDestroy()
+    {
+        UnregisterUIEvents();
+    }
+    
+    private void UnregisterUIEvents()
+    {
+        // 채팅 아이콘 이벤트 해제
+        if (_chatIconArea != null && _chatIconAreaCallback != null)
+        {
+            _chatIconArea.UnregisterCallback(_chatIconAreaCallback);
+        }
+        
+        // 입력 필드 이벤트 해제
+        if (_chatInput != null && _chatInputKeyDownCallback != null)
+        {
+            _chatInput.UnregisterCallback(_chatInputKeyDownCallback);
+        }
+        
+        Debug.Log("[ChatManager] UI 이벤트 구독 해제 완료");
+    }
+    
+    #endregion
 }

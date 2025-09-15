@@ -25,6 +25,9 @@ public class ResourceManager : MonoBehaviour
 
     [Header("먹이 시스템 통합")]
     public bool showDebugLogs = true;
+    
+    // UI 이벤트 콜백 저장 변수들
+    private EventCallback<ClickEvent>[] _slotClickCallbacks = new EventCallback<ClickEvent>[3];
 
     // Static 이벤트는 HUDEvents로 이동됨
 
@@ -82,7 +85,11 @@ public class ResourceManager : MonoBehaviour
             int slotIndex = i; // 클로저를 위한 로컬 변수
             if (_slots[i] != null)
             {
-                _slots[i].RegisterCallback<ClickEvent>(evt => OnSlotClicked(slotIndex + 1));
+                // 콜백 인스턴스 생성 및 저장
+                _slotClickCallbacks[i] = evt => OnSlotClicked(slotIndex + 1);
+                
+                // 저장된 콜백으로 등록
+                _slots[i].RegisterCallback(_slotClickCallbacks[i]);
             }
         }
     }
@@ -363,5 +370,28 @@ public class ResourceManager : MonoBehaviour
         return RemoveLight(amount);
     }
 
+    #endregion
+    
+    #region Unity Lifecycle
+    
+    private void OnDestroy()
+    {
+        UnregisterUIEvents();
+    }
+    
+    private void UnregisterUIEvents()
+    {
+        // 슬롯 이벤트 해제
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i] != null && _slotClickCallbacks[i] != null)
+            {
+                _slots[i].UnregisterCallback(_slotClickCallbacks[i]);
+            }
+        }
+        
+        Debug.Log("[ResourceManager] UI 이벤트 구독 해제 완료");
+    }
+    
     #endregion
 }

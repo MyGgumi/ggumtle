@@ -5,6 +5,8 @@ import com.ggumtle.ggumtle.dream.vo.Position;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public final class FieldItem {
     public final int id;
 
@@ -12,26 +14,21 @@ public final class FieldItem {
 
     public final Position position;
 
-    private boolean isUsed;
+    private final AtomicBoolean isUsed;
 
     public FieldItem(FieldItemSpawn spawn) {
         this.id = spawn.getId();
         this.type = Type.valueOf(spawn.getTypeId());
         this.position = Position.from(spawn);
-        this.isUsed = false;
+        this.isUsed = new AtomicBoolean(false);
     }
 
-    public synchronized boolean isUsed() {
-        return isUsed;
+    public boolean isUsed() {
+        return isUsed.get();
     }
 
-    public synchronized boolean use() {
-        if (this.isUsed) {
-            return false;
-        }
-
-        this.isUsed = true;
-        return true;
+    public boolean use() {
+        return this.isUsed.compareAndExchange(false, true);
     }
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)

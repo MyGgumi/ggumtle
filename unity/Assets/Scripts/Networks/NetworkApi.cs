@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Network;
 using Networks.chests;
 using Networks.Chests;
+using Networks.Game;
 using Networks.Ggumtle;
 using Networks.Packets;
 using Networks.Players;
@@ -800,6 +801,56 @@ namespace Networks
             catch (Exception e)
             {
                 Debug.LogError($"몽둥이 스킬 패킷 전송 실패: {e.Message}");
+            }
+        }
+
+        public async Task<ExitAttemptCommand> ExitAttempt(int exitId)
+        {
+            try
+            {
+                Debug.Log($"ExitAttempt 시작: exitId={exitId}");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.ExitAttemptResponse] = tcs;
+
+                var exitAttemptRequest = new ExitAttemptSend(exitId);
+                client.Send(exitAttemptRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("ExitAttempt 타임아웃 발생");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is ExitAttemptCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException("ExitAttempt에서 예상치 못한 응답 타입입니다.");
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("ExitAttempt 요청이 타임아웃되었습니다.");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"ExitAttempt 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.ExitAttemptResponse, out _);
             }
         }
 

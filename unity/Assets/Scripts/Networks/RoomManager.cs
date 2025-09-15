@@ -5,6 +5,7 @@ using DotNetty.Transport.Channels;
 using Network;
 using Networks.Attributes;
 using Networks.Chests;
+using Networks.Game;
 using Networks.Ggumtle;
 using Networks.Packets;
 using Networks.Players;
@@ -177,6 +178,39 @@ namespace Networks
             
             // 꿈틀이 성불 처리 로직을 여기에 추가
             // 예: 꿈틀이 오브젝트 제거, UI 업데이트, 효과 재생 등
+        }
+
+        [CommandHandler(PacketType.MonggingStateBroadcast)]
+        public async void MonggingStateBroadcast(MonggingStateBroadcastCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"MonggingStateBroadcast: PlayerId [{command.playerId}] - Type [{command.type}]");
+            
+            // 몽깅이 상태 전파 처리 로직을 여기에 추가
+            // 예: 몽깅이 상태 변경, UI 업데이트, 애니메이션 재생 등
+        }
+
+        [CommandHandler(PacketType.ExitOpen)]
+        public async void ExitOpen(ExitOpenCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"ExitOpen: Count [{command.count}] - Exits [{string.Join(", ", command.exits)}]");
+            
+            // 탈출구 오픈 처리 로직을 여기에 추가
+            // 예: 탈출구 오브젝트 활성화, UI 업데이트, 효과 재생 등
+        }
+
+        [CommandHandler(PacketType.GameEnd)]
+        public async void GameEnd(GameEndCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"GameEnd: Result [{command.result}] - PlayerSize [{command.playerSize}]");
+            
+            // 플레이어 결과 출력
+            foreach (var playerResult in command.playerResults)
+            {
+                Debug.Log($"Player: ID [{playerResult.id}] - Status [{playerResult.status}]");
+            }
+            
+            // 게임 종료 처리 로직을 여기에 추가
+            // 예: 결과 화면 표시, 점수 계산, UI 업데이트 등
         }
     }
 }

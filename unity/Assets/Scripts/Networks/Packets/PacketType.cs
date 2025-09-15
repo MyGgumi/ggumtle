@@ -21,6 +21,7 @@
         MongdungSkill = 67,
         MonggingItemUse = 69,
         MonggingFieldItemUse = 71,
+        ExitAttempt = 140,
         
         // Receive
         VerifyTokenResponse = 2,
@@ -47,7 +48,11 @@
         MongdungSkillResponse = 68,
         MonggingItemUseResponse = 70,
         MonggingFieldItemUseResponse = 72,
+        MonggingStateBroadcast = 42,
         GgumtleSpawn = 43,
         GgumtleNirvana = 120,
+        ExitOpen = 130,
+        ExitAttemptResponse = 141,
+        GameEnd = 200,
     }
 }

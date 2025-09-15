@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.UI
 {
@@ -10,14 +10,24 @@ namespace MVVM.UI
     public class GameTimeViewModel : BaseViewModel
     {
         [Header("Time State")]
-        [SerializeField] private TimeSpan _currentTime = TimeSpan.Zero;
-        [SerializeField] private string _statusMessage = "";
-        [SerializeField] private bool _isTimeWarning = false;
+        [SerializeField]
+        private TimeSpan _currentTime = TimeSpan.Zero;
+
+        [SerializeField]
+        private string _statusMessage = "";
+
+        [SerializeField]
+        private bool _isTimeWarning = false;
 
         [Header("Ggumtle Progress State")]
-        [SerializeField] private int _ggumtleLevel = 1;
-        [SerializeField] private float _ggumtleProgress = 0f;
-        [SerializeField] private int _maxGgumtleLevel = 3;
+        [SerializeField]
+        private int _ggumtleLevel = 1;
+
+        [SerializeField]
+        private float _ggumtleProgress = 0f;
+
+        [SerializeField]
+        private int _maxGgumtleLevel = 3;
 
         // 이벤트들
         public event Action<TimeSpan> TimeChanged;
@@ -117,7 +127,8 @@ namespace MVVM.UI
         /// <summary>
         /// 꿈틀이 완전히 완료되었는지 여부
         /// </summary>
-        public bool IsGgumtleComplete => _ggumtleLevel >= _maxGgumtleLevel && _ggumtleProgress >= 1.0f;
+        public bool IsGgumtleComplete =>
+            _ggumtleLevel >= _maxGgumtleLevel && _ggumtleProgress >= 1.0f;
 
         /// <summary>
         /// 시간이 거의 다 되었는지 여부 (1분 이하)
@@ -154,7 +165,9 @@ namespace MVVM.UI
 
                 if (EnableDebugLogs)
                 {
-                    Debug.Log($"[GameTimeViewModel] 꿈틀 진행도 업데이트: {_ggumtleLevel}단계, {_ggumtleProgress:P0}");
+                    Debug.Log(
+                        $"[GameTimeViewModel] 꿈틀 진행도 업데이트: {_ggumtleLevel}단계, {_ggumtleProgress:P0}"
+                    );
                 }
             }
         }
@@ -246,14 +259,16 @@ namespace MVVM.UI
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[GameTimeViewModel] State:\n" +
-                     $"  CurrentTime: {TimeString}\n" +
-                     $"  StatusMessage: {StatusMessage}\n" +
-                     $"  IsTimeWarning: {IsTimeWarning}\n" +
-                     $"  GgumtleLevel: {GgumtleLevel}/{MaxGgumtleLevel}\n" +
-                     $"  GgumtleProgress: {GgumtleProgress:P1}\n" +
-                     $"  IsGgumtleComplete: {IsGgumtleComplete}\n" +
-                     $"  IsTimeAlmostUp: {IsTimeAlmostUp}");
+            Debug.Log(
+                $"[GameTimeViewModel] State:\n"
+                    + $"  CurrentTime: {TimeString}\n"
+                    + $"  StatusMessage: {StatusMessage}\n"
+                    + $"  IsTimeWarning: {IsTimeWarning}\n"
+                    + $"  GgumtleLevel: {GgumtleLevel}/{MaxGgumtleLevel}\n"
+                    + $"  GgumtleProgress: {GgumtleProgress:P1}\n"
+                    + $"  IsGgumtleComplete: {IsGgumtleComplete}\n"
+                    + $"  IsTimeAlmostUp: {IsTimeAlmostUp}"
+            );
         }
 
         /// <summary>

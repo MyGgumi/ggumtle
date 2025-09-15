@@ -1,3 +1,7 @@
+// DEPRECATED: MVVM 패턴으로 리팩토링되어 ChestViewModel/ChestService로 대체됨
+// 이 코드는 레거시 코드로 주석 처리됨
+
+/*
 using System;
 using System.Collections.Generic;
 using UnityEngine;
@@ -339,3 +343,4 @@ public class ChestInventoryDebugData
     public int itemCount;
     public List<ChestItem> items = new List<ChestItem>();
 }
+*/

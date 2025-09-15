@@ -675,22 +675,22 @@ public class PlayerInventory : MonoBehaviour
                 var numbers = System.Text.RegularExpressions.Regex.Matches(messageValue, @"\d+");
                 if (numbers.Count > 0 && int.TryParse(numbers[0].Value, out int quantity))
                 {
-                    if (FeedingInventory.Instance != null)
+                    if (ViewModels.UI.InventoryViewModel.Instance != null)
                     {
-                        FeedingInventory.Instance.AddMushrooms(quantity);
+                        ViewModels.UI.InventoryViewModel.Instance.AddFeeding(quantity);
                         Debug.Log(
-                            $"[PlayerInventory] FeedingInventory에 Mushroom {quantity}개 추가"
+                            $"[PlayerInventory] InventoryViewModel에 Mushroom {quantity}개 추가"
                         );
                     }
                 }
                 else
                 {
                     // 파싱 실패시 기본값 1개
-                    if (FeedingInventory.Instance != null)
+                    if (ViewModels.UI.InventoryViewModel.Instance != null)
                     {
-                        FeedingInventory.Instance.AddMushrooms(1);
+                        ViewModels.UI.InventoryViewModel.Instance.AddFeeding(1);
                         Debug.Log(
-                            $"[PlayerInventory] FeedingInventory에 Mushroom 1개 추가 (기본값)"
+                            $"[PlayerInventory] InventoryViewModel에 Mushroom 1개 추가 (기본값)"
                         );
                     }
                 }

@@ -73,8 +73,3 @@
     top: 50%;
     translate: -50% -50%;
 }
-
-/* ChestBoxUI root 요소 - 초기에는 숨김 */
-#chestBoxUI #root {
-    display: none;
-}

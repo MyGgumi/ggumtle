@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using Models;
 
 public class MonggingHUDExample : MonoBehaviour
 {
@@ -178,9 +179,9 @@ public class MonggingHUDExample : MonoBehaviour
         Debug.Log($"[MonggingHUDExample] 꿈틀 진행도: {level}단계");
     }
 
-    private void TestInteraction(InteractionType type, float progress)
+    private void TestInteraction(Models.InteractionType type, float progress)
     {
-        hudController.SetInteractionUI(true, "", progress, type == InteractionType.Revive);
+        hudController.SetInteractionUI(true, "", progress, type == Models.InteractionType.Revive);
         Debug.Log($"[MonggingHUDExample] {type} UI 표시 ({progress * 100:F0}%)");
     }
 
@@ -216,11 +217,11 @@ public class MonggingHUDExample : MonoBehaviour
     {
         int newLight = UnityEngine.Random.Range(0, 50);
 
-        // ResourceManager에서 직접 빛 설정
-        if (ResourceManager.Instance != null)
+        // InventoryViewModel에서 직접 빛 설정
+        if (ViewModels.UI.InventoryViewModel.Instance != null)
         {
-            ResourceManager.Instance.SetLightCount(newLight);
-            Debug.Log($"[MonggingHUDExample] 빛 개수 설정: {newLight}개 (ResourceManager)");
+            ViewModels.UI.InventoryViewModel.Instance.AddFeeding(newLight);
+            Debug.Log($"[MonggingHUDExample] 빛 개수 설정: {newLight}개 (InventoryViewModel)");
         }
         else
         {
@@ -241,12 +242,12 @@ public class MonggingHUDExample : MonoBehaviour
     {
         int randomCount = UnityEngine.Random.Range(1, 10);
 
-        // ResourceManager에서 직접 빛 추가 (UI 업데이트 포함)
-        if (ResourceManager.Instance != null)
+        // InventoryViewModel에서 직접 빛 추가 (UI 업데이트 포함)
+        if (ViewModels.UI.InventoryViewModel.Instance != null)
         {
-            ResourceManager.Instance.AddLight(randomCount);
+            ViewModels.UI.InventoryViewModel.Instance.AddFeeding(randomCount);
             Debug.Log(
-                $"[MonggingHUDExample] 빛 {randomCount}개 추가됨 (총: {ResourceManager.Instance.GetCurrentLightCount()}개)"
+                $"[MonggingHUDExample] 빛 {randomCount}개 추가됨 (총: {ViewModels.UI.InventoryViewModel.Instance.GetFeedingCount()}개)"
             );
         }
         else
@@ -290,7 +291,7 @@ public class MonggingHUDExample : MonoBehaviour
 
     private void TriggerInteractionCompleteEvent()
     {
-        HUDEvents.TriggerInteractionComplete(InteractionType.Dig, true);
+        HUDEvents.TriggerInteractionComplete(Models.InteractionType.Dig, true);
         Debug.Log("[MonggingHUDExample] 상호작용 완료 이벤트");
     }
 

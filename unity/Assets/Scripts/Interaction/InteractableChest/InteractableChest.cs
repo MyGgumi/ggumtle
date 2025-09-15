@@ -306,8 +306,8 @@ public class InteractableChest : MonoBehaviour, IInteractable
     /// </summary>
     public bool CanInteract()
     {
-        // 이미 열려있거나, 플레이어가 범위 밖에 있으면 상호작용 불가
-        return !isOpen && IsPlayerInRange();
+        // 플레이어가 범위 안에 있으면 상호작용 가능 (열린 상자는 닫기 가능)
+        return IsPlayerInRange();
     }
 
     /// <summary>
@@ -325,26 +325,39 @@ public class InteractableChest : MonoBehaviour, IInteractable
         // 상호작용 가능 체크
         if (!CanInteract())
         {
-            if (isOpen)
-                Debug.Log("상자가 이미 열려있습니다.");
-            else
-                Debug.Log("너무 멀어서 상자를 열 수 없습니다.");
+            Debug.Log("너무 멀어서 상자를 조작할 수 없습니다.");
             return;
         }
 
         // 상호작용 시작 알림
         InteractionManager.Instance?.BeginInteraction(this);
 
-        // 서버에 상자 열기 요청 (실시간 멀티플레이어)
-        if (ServerSyncManager.Instance != null)
+        if (isOpen)
         {
-            ServerSyncManager.Instance.RequestOpenChest(chestId);
+            // 상자가 이미 열려있으면 닫기
+            Debug.Log($"상자 닫기: {chestName}");
+            CloseChest();
+            
+            // 닫기 핸들러 호출
+            if (handler != null)
+            {
+                handler.HandleChestClose(this);
+            }
         }
-
-        // 상호작용 실행
-        if (handler != null)
+        else
         {
-            handler.HandleChestInteraction(this);
+            // 상자가 닫혀있으면 열기
+            // 서버에 상자 열기 요청 (실시간 멀티플레이어)
+            if (ServerSyncManager.Instance != null)
+            {
+                ServerSyncManager.Instance.RequestOpenChest(chestId);
+            }
+
+            // 상호작용 실행
+            if (handler != null)
+            {
+                handler.HandleChestInteraction(this);
+            }
         }
     }
 
@@ -357,11 +370,12 @@ public class InteractableChest : MonoBehaviour, IInteractable
     }
 
     /// <summary>
-    /// 상호작용 범위 반환
+    /// 상호작용 범위 반환 (상자가 열려있으면 범위를 더 넓게)
     /// </summary>
     public float GetInteractionRange()
     {
-        return interactionRange;
+        // 상자가 열려있으면 범위를 1.5배 넓게 해서 UI가 안 꺼지도록
+        return isOpen ? interactionRange * 1.5f : interactionRange;
     }
 
     /// <summary>

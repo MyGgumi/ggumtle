@@ -1,11 +1,14 @@
 using UnityEngine;
 using UnityEngine.UIElements;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 /// <summary>
 /// UI Toolkit 기반 플레이어 인벤토리 UI 관리
 /// 기존 PlayerInventory 시스템과 연동하여 UI만 UI Toolkit으로 처리
 /// </summary>
-public class PlayerInventoryUI_UIToolkit : MonoBehaviour
+public class PlayerInventoryManager : MonoBehaviour
 {
     [Header("UI References")]
     private VisualElement _root;
@@ -17,6 +20,11 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
     [Header("Sprites")]
     public Sprite backgroundItemSlotSprite;
     
+    // UI 이벤트 콜백 저장 변수들
+    private EventCallback<ClickEvent>[] _slotClickCallbacks = new EventCallback<ClickEvent>[3];
+    private EventCallback<PointerDownEvent>[] _slotPointerDownCallbacks = new EventCallback<PointerDownEvent>[3];
+    private EventCallback<PointerMoveEvent>[] _slotPointerMoveCallbacks = new EventCallback<PointerMoveEvent>[3];
+    
     private void Start()
     {
         // UniversalHUDController에서 초기화하므로 여기서는 이벤트 구독만
@@ -26,6 +34,26 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
     private void OnDestroy()
     {
         UnsubscribeFromInventory();
+        UnregisterUIEvents();
+    }
+    
+    private void UnregisterUIEvents()
+    {
+        // 슬롯 이벤트 해제
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i] != null)
+            {
+                if (_slotClickCallbacks[i] != null)
+                    _slots[i].UnregisterCallback(_slotClickCallbacks[i]);
+                if (_slotPointerDownCallbacks[i] != null)
+                    _slots[i].UnregisterCallback(_slotPointerDownCallbacks[i]);
+                if (_slotPointerMoveCallbacks[i] != null)
+                    _slots[i].UnregisterCallback(_slotPointerMoveCallbacks[i]);
+            }
+        }
+        
+        Debug.Log("[PlayerInventoryManager] UI 이벤트 구독 해제 완료");
     }
     
     /// <summary>
@@ -40,12 +68,12 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
         // 초기 UI 업데이트
         RefreshAllSlots();
         
-        Debug.Log("[PlayerInventoryUI_UIToolkit] UI 초기화 완료");
+        Debug.Log("[PlayerInventoryManager] UI 초기화 완료");
     }
     
     private void CacheUIElements()
     {
-        Debug.Log("[PlayerInventoryUI_UIToolkit] UI 요소 캐싱 시작...");
+        Debug.Log("[PlayerInventoryManager] UI 요소 캐싱 시작...");
         
         // 인벤토리 슬롯들 캐싱 (Inventory.uxml 구조에 맞춤)
         for (int i = 0; i < 3; i++)
@@ -57,14 +85,14 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
             _countLabels[i] = _root.Q<Label>($"slot{slotNum}Count");
             _counters[i] = _root.Q<VisualElement>($"slot{slotNum}Counter");
             
-            Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotNum} 캐싱: " +
+            Debug.Log($"[PlayerInventoryManager] 슬롯 {slotNum} 캐싱: " +
                      $"슬롯={(_slots[i] != null ? "OK" : "NULL")}, " +
                      $"이미지={(_itemImages[i] != null ? "OK" : "NULL")}, " +
                      $"카운트={(_countLabels[i] != null ? "OK" : "NULL")}, " +
                      $"카운터={(_counters[i] != null ? "OK" : "NULL")}");
         }
         
-        Debug.Log("[PlayerInventoryUI_UIToolkit] UI 요소 캐싱 완료");
+        Debug.Log("[PlayerInventoryManager] UI 요소 캐싱 완료");
     }
     
     private void SetupSlotEvents()
@@ -74,27 +102,40 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
             int slotIndex = i; // 클로저를 위한 로컬 변수
             if (_slots[i] != null)
             {
-                Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex + 1} 이벤트 등록 중...");
+                Debug.Log($"[PlayerInventoryManager] 슬롯 {slotIndex + 1} 이벤트 등록 중...");
                 
-                // 클릭 이벤트 등록
-                _slots[i].RegisterCallback<ClickEvent>(evt => 
+                // 콜백 인스턴스 생성 및 저장
+                _slotClickCallbacks[i] = evt => 
                 {
-                    Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex + 1} 클릭 이벤트 발생!");
+                    Debug.Log($"[PlayerInventoryManager] 슬롯 {slotIndex + 1} 클릭 이벤트 발생!");
                     OnSlotClicked(slotIndex);
-                });
+                };
                 
-                // 터치 이벤트도 추가로 등록
-                _slots[i].RegisterCallback<PointerDownEvent>(evt => 
+                _slotPointerDownCallbacks[i] = evt => 
                 {
-                    Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex + 1} 터치 이벤트 발생!");
+                    Debug.Log($"[PlayerInventoryManager] 슬롯 {slotIndex + 1} 터치 이벤트 발생!");
                     OnSlotClicked(slotIndex);
-                });
+                };
                 
-                Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex + 1} 이벤트 등록 완료");
+                _slotPointerMoveCallbacks[i] = evt => 
+                {
+                    // 마우스나 터치가 눌린 상태에서 움직이면 드래그 시작
+                    if ((evt.pressedButtons & (1 << 0)) != 0) // 왼쪽 버튼
+                    {
+                        OnDragStart(slotIndex, evt);
+                    }
+                };
+                
+                // 저장된 콜백으로 등록
+                _slots[i].RegisterCallback(_slotClickCallbacks[i]);
+                _slots[i].RegisterCallback(_slotPointerDownCallbacks[i]);
+                _slots[i].RegisterCallback(_slotPointerMoveCallbacks[i]);
+                
+                Debug.Log($"[PlayerInventoryManager] 슬롯 {slotIndex + 1} 이벤트 등록 완료");
             }
             else
             {
-                Debug.LogError($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex + 1}을 찾을 수 없습니다!");
+                Debug.LogError($"[PlayerInventoryManager] 슬롯 {slotIndex + 1}을 찾을 수 없습니다!");
             }
         }
     }
@@ -219,7 +260,7 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
             }
         }
         
-        Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex} UI 업데이트: {(item?.IsEmpty() != false ? "빈 슬롯" : $"{item.itemName} x{item.quantity}")}");
+        Debug.Log($"[PlayerInventoryManager] 슬롯 {slotIndex} UI 업데이트: {(item?.IsEmpty() != false ? "빈 슬롯" : $"{item.itemName} x{item.quantity}")}");
     }
     
     /// <summary>
@@ -231,7 +272,7 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
         if (PlayerInventory.Instance == null)
             return;
             
-        Debug.Log($"[PlayerInventoryUI_UIToolkit] 슬롯 {slotIndex + 1} 클릭! (배열 인덱스: {slotIndex})");
+        Debug.Log($"[PlayerInventoryManager] 슬롯 {slotIndex + 1} 클릭! (배열 인덱스: {slotIndex})");
         
         // PlayerInventory의 기존 로직 사용 (slotIndex는 0-based이므로 그대로 사용)
         if (slotIndex == 0)
@@ -262,6 +303,42 @@ public class PlayerInventoryUI_UIToolkit : MonoBehaviour
             }
         }
         
-        Debug.Log("[PlayerInventoryUI_UIToolkit] 슬롯 배경 스프라이트 설정 완료");
+        Debug.Log("[PlayerInventoryManager] 슬롯 배경 스프라이트 설정 완료");
+    }
+    
+    /// <summary>
+    /// 드래그 시작 처리
+    /// </summary>
+    private void OnDragStart(int slotIndex, PointerMoveEvent evt)
+    {
+        if (PlayerInventory.Instance == null)
+            return;
+            
+        InventoryItem item = PlayerInventory.Instance.GetItem(slotIndex);
+        if (item == null || item.IsEmpty())
+            return;
+            
+        Debug.Log($"[PlayerInventoryManager] 드래그 시작: 슬롯 {slotIndex}, 아이템: {item.itemName}");
+        
+#if UNITY_EDITOR
+        // DragAndDrop에 데이터 설정
+        DragAndDrop.PrepareStartDrag();
+        DragAndDrop.SetGenericData("inventorySlotIndex", slotIndex);
+        DragAndDrop.SetGenericData("itemName", item.itemName);
+        DragAndDrop.SetGenericData("quantity", item.quantity);
+        
+        // 드래그 시각적 효과를 위한 아이콘 설정
+        if (item.itemIcon != null)
+        {
+            DragAndDrop.objectReferences = new UnityEngine.Object[] { item.itemIcon };
+        }
+        
+        DragAndDrop.StartDrag($"드래그 중: {item.itemName}");
+        
+        Debug.Log($"[PlayerInventoryManager] Unity DragAndDrop 시작: {item.itemName} (슬롯 {slotIndex})");
+#else
+        // 런타임에서는 다른 드래그 시스템 필요 (향후 구현)
+        Debug.Log($"[PlayerInventoryManager] 런타임 드래그는 아직 지원되지 않습니다: {item.itemName}");
+#endif
     }
 }

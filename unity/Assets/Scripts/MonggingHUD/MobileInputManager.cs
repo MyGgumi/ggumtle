@@ -10,13 +10,16 @@ public class MobileInputManager : MonoBehaviour
 {
     [Header("Input System Integration")]
     public StarterAssetsInputs starterAssetsInputs;
-    public StarterAssets.UICanvasControllerInput canvasControllerInput;
 
     [Header("Camera")]
     public CinemachineFreeLook freeLookCamera;
 
     [SerializeField]
     private float cameraSensitivity = 0.5f; // 기존 1.5f에서 0.5f로 감소
+
+    [Header("Debug")]
+    [SerializeField]
+    private bool enableDebugVisualization = false;
 
     [SerializeField]
     private bool invertY = false;
@@ -55,21 +58,102 @@ public class MobileInputManager : MonoBehaviour
     private int _joystickPointerId = -1;
 
     // Camera touch state
-    private Vector2 _currentTouchInput;
-    private Vector2 _inputVelocity;
     private bool _isTouching = false;
     private Vector2 _touchStartPosition;
     private Vector2 _currentTouchPosition;
     private int _cameraPointerId = -1;
 
+    // Camera input smoothing (UICanvasControllerInput 방식)
+    private Vector2 _currentCameraInput;
+    private Vector2 _cameraInputVelocity;
+
     private void Awake()
     {
+        // Cinemachine 카메라 자동 검색
+        if (freeLookCamera == null)
+        {
+            freeLookCamera = FindFirstObjectByType<CinemachineFreeLook>();
+            if (freeLookCamera != null)
+            {
+                Debug.Log(
+                    $"[MobileInputManager] CinemachineFreeLook 자동 검색 성공: {freeLookCamera.name}"
+                );
+            }
+            else
+            {
+                Debug.LogWarning("[MobileInputManager] CinemachineFreeLook을 찾을 수 없습니다!");
+            }
+        }
+        else
+        {
+            Debug.Log(
+                $"[MobileInputManager] CinemachineFreeLook 이미 할당됨: {freeLookCamera.name}"
+            );
+        }
+
         SetupFreeLookCamera();
     }
 
     private void Update()
     {
-        // 카메라 처리는 UICanvasControllerInput에 완전히 위임
+        UpdateCameraInput();
+    }
+
+    /// <summary>
+    /// UICanvasControllerInput 방식의 카메라 입력 처리
+    /// </summary>
+    private void UpdateCameraInput()
+    {
+        if (freeLookCamera == null)
+        {
+            Debug.LogWarning("[MobileInputManager] freeLookCamera가 null입니다!");
+            return;
+        }
+
+        // 터치 중일 때만 카메라 회전 적용
+        if (_isTouching)
+        {
+            // 터치 시작 위치와 현재 위치의 차이 계산 (전체 누적 델타)
+            Vector2 touchDelta = _currentTouchPosition - _touchStartPosition;
+
+            // 감도 적용 (UICanvasControllerInput과 동일한 방식)
+            Vector2 targetInput = touchDelta * cameraSensitivity * 0.005f;
+            if (invertY)
+                targetInput.y = -targetInput.y;
+
+            // 부드러운 입력 적용
+            _currentCameraInput = Vector2.SmoothDamp(
+                _currentCameraInput,
+                targetInput,
+                ref _cameraInputVelocity,
+                inputSmoothing
+            );
+
+            // Cinemachine에 연속 입력 적용
+            freeLookCamera.m_XAxis.m_InputAxisValue = _currentCameraInput.x;
+            freeLookCamera.m_YAxis.m_InputAxisValue = -_currentCameraInput.y;
+
+            // 디버그 (30프레임마다)
+            if (Time.frameCount % 30 == 0)
+            {
+                Debug.Log(
+                    $"[MobileInputManager] 카메라 입력 - touchDelta: {touchDelta}, targetInput: {targetInput}, currentInput: {_currentCameraInput}, XAxis: {freeLookCamera.m_XAxis.m_InputAxisValue}, YAxis: {freeLookCamera.m_YAxis.m_InputAxisValue}"
+                );
+            }
+        }
+        else
+        {
+            // 터치하지 않을 때는 점진적으로 멈춤
+            _currentCameraInput = Vector2.SmoothDamp(
+                _currentCameraInput,
+                Vector2.zero,
+                ref _cameraInputVelocity,
+                inputSmoothing
+            );
+
+            freeLookCamera.m_XAxis.m_InputAxisValue = _currentCameraInput.x;
+            freeLookCamera.m_YAxis.m_InputAxisValue = -_currentCameraInput.y;
+        }
     }
 
     /// <summary>
@@ -108,6 +192,12 @@ public class MobileInputManager : MonoBehaviour
             _joystickArea.RegisterCallback<PointerMoveEvent>(OnJoystickPointerMove);
             _joystickArea.RegisterCallback<PointerUpEvent>(OnJoystickPointerUp);
             _joystickArea.RegisterCallback<PointerLeaveEvent>(OnJoystickPointerLeave);
+
+            // 디버그 시각화
+            if (enableDebugVisualization)
+            {
+                _joystickArea.AddToClassList("debug-joystick");
+            }
         }
 
         // 카메라 터치존 이벤트
@@ -116,6 +206,12 @@ public class MobileInputManager : MonoBehaviour
             _cameraТouchZone.RegisterCallback<PointerDownEvent>(OnCameraPointerDown);
             _cameraТouchZone.RegisterCallback<PointerMoveEvent>(OnCameraPointerMove);
             _cameraТouchZone.RegisterCallback<PointerUpEvent>(OnCameraPointerUp);
+
+            // 디버그 시각화
+            if (enableDebugVisualization)
+            {
+                _cameraТouchZone.AddToClassList("debug-touch-zone");
+            }
         }
 
         Debug.Log("[MobileInputManager] 입력 이벤트 설정 완료");
@@ -126,10 +222,31 @@ public class MobileInputManager : MonoBehaviour
         // CSS에서 이미 중앙 정렬되어 있으므로 범위만 설정
         if (_joystickKnob != null && _joystickArea != null)
         {
-            // CSS 값 기준으로 joystickRange 자동 조정
-            joystickRange = MaxJoystickRadius;
+            // 레이아웃이 완료될 때까지 대기하거나 기본값 사용
+            float joystickSize = _joystickArea.resolvedStyle.width;
+            float knobSize = _joystickKnob.resolvedStyle.width;
+
+            if (float.IsNaN(joystickSize) || joystickSize <= 0)
+            {
+                joystickSize = 400f; // CSS 기본값
+                Debug.LogWarning(
+                    "[MobileInputManager] 조이스틱 크기를 CSS에서 읽을 수 없음 - 기본값 사용: 400px"
+                );
+            }
+
+            if (float.IsNaN(knobSize) || knobSize <= 0)
+            {
+                knobSize = 110f; // CSS 기본값
+                Debug.LogWarning(
+                    "[MobileInputManager] 손잡이 크기를 CSS에서 읽을 수 없음 - 기본값 사용: 110px"
+                );
+            }
+
+            float maxRadius = (joystickSize / 2f) - (knobSize / 2f);
+            joystickRange = maxRadius;
+
             Debug.Log(
-                $"[MobileInputManager] 조이스틱 초기화 완료 - Size: {JoystickSize}, MaxRadius: {MaxJoystickRadius}"
+                $"[MobileInputManager] 조이스틱 초기화 완료 - Size: {joystickSize}, KnobSize: {knobSize}, MaxRadius: {maxRadius}"
             );
         }
     }
@@ -267,12 +384,6 @@ public class MobileInputManager : MonoBehaviour
         _currentTouchPosition = (Vector2)evt.localPosition;
         _cameraТouchZone.CapturePointer(evt.pointerId);
 
-        // UICanvasControllerInput에 터치 시작 알림
-        if (canvasControllerInput != null)
-        {
-            canvasControllerInput.VirtualLookInputStart(_touchStartPosition);
-        }
-
         Debug.Log(
             $"[MobileInputManager] 카메라 터치 시작: {_touchStartPosition}, PointerID: {evt.pointerId}"
         );
@@ -282,23 +393,19 @@ public class MobileInputManager : MonoBehaviour
     {
         // 해당 포인터만 처리
         if (!_isTouching || evt.pointerId != _cameraPointerId)
+        {
+            Debug.Log(
+                $"[MobileInputManager] 카메라 드래그 무시 - isTouching: {_isTouching}, pointerId: {evt.pointerId}, cameraPointerId: {_cameraPointerId}"
+            );
             return;
+        }
 
+        // 현재 터치 위치만 업데이트 (실제 카메라 처리는 UpdateCameraInput에서)
         _currentTouchPosition = (Vector2)evt.localPosition;
 
-        // UICanvasControllerInput에 터치 델타 전달 (화면 크기 기준 정규화)
-        if (canvasControllerInput != null)
-        {
-            Vector2 touchDelta = _currentTouchPosition - _touchStartPosition;
-            // 터치존 크기 기준으로 정규화 (화면 절반 크기)
-            Vector2 normalizedDelta = new Vector2(
-                touchDelta.x / (Screen.width * 0.5f), // 카메라 터치존이 화면 오른쪽 절반
-                touchDelta.y / (Screen.height * 0.8f) // 상단 20%는 제외
-            );
-            // 감도 적용 (훨씬 작은 스케일)
-            Vector2 adjustedDelta = normalizedDelta * cameraSensitivity * 20f; // 100f에서 20f로 감소
-            canvasControllerInput.VirtualLookInput(adjustedDelta);
-        }
+        Debug.Log(
+            $"[MobileInputManager] 카메라 드래그: {_currentTouchPosition}, 델타: {_currentTouchPosition - _touchStartPosition}"
+        );
     }
 
     private void OnCameraPointerUp(PointerUpEvent evt)
@@ -309,19 +416,14 @@ public class MobileInputManager : MonoBehaviour
             _isTouching = false;
             _cameraPointerId = -1;
 
-            // UICanvasControllerInput에 터치 종료 알림
-            if (canvasControllerInput != null)
-            {
-                canvasControllerInput.VirtualLookInputEnd();
-            }
-
+            // 카메라 입력값은 UpdateCameraInput에서 점진적으로 0이 됨
             Debug.Log("[MobileInputManager] 카메라 터치 종료");
         }
     }
 
     #endregion
 
-    #region 카메라 업데이트
+    #region 카메라 설정
 
     private void SetupFreeLookCamera()
     {
@@ -337,66 +439,24 @@ public class MobileInputManager : MonoBehaviour
         freeLookCamera.m_YAxis.m_MaxValue = 0.7f;
         freeLookCamera.m_YAxis.Value = 0.3f;
 
-        // 모바일 최적화 설정 (속도 감소)
-        freeLookCamera.m_XAxis.m_MaxSpeed = 120f; // 기존 300f에서 120f로 감소
-        freeLookCamera.m_XAxis.m_AccelTime = 0.1f;
-        freeLookCamera.m_XAxis.m_DecelTime = 0.1f;
+        // 모바일 최적화 설정 (속도를 더 크게)
+        freeLookCamera.m_XAxis.m_MaxSpeed = 300f; // 120f -> 300f로 증가
+        freeLookCamera.m_XAxis.m_AccelTime = 0.01f; // 0.1f -> 0.01f로 감소 (더 빠른 반응)
+        freeLookCamera.m_XAxis.m_DecelTime = 0.01f; // 0.1f -> 0.01f로 감소
 
-        freeLookCamera.m_YAxis.m_MaxSpeed = 1f; // 기존 2f에서 1f로 감소
-        freeLookCamera.m_YAxis.m_AccelTime = 0.1f;
-        freeLookCamera.m_YAxis.m_DecelTime = 0.1f;
+        freeLookCamera.m_YAxis.m_MaxSpeed = 3f; // 1f -> 3f로 증가
+        freeLookCamera.m_YAxis.m_AccelTime = 0.01f; // 0.1f -> 0.01f로 감소
+        freeLookCamera.m_YAxis.m_DecelTime = 0.01f; // 0.1f -> 0.01f로 감소
 
-        Debug.Log("[MobileInputManager] FreeLook 카메라 설정 완료");
-    }
-
-    private void UpdateCameraInput()
-    {
-        if (freeLookCamera == null)
-            return;
-
-        // 터치 중일 때만 카메라 회전 적용
-        if (_isTouching)
-        {
-            // VirtualTouchZone 방식: 누적 오프셋 계산
-            Vector2 touchDelta = _currentTouchPosition - _touchStartPosition;
-
-            // 터치존 크기에 맞게 정규화 (화면 크기 기준)
-            Vector2 normalizedDelta = new Vector2(
-                touchDelta.x / Screen.width,
-                touchDelta.y / Screen.height
-            );
-
-            // 감도 적용
-            Vector2 targetInput = normalizedDelta * cameraSensitivity;
-
-            if (invertY)
-                targetInput.y = -targetInput.y;
-
-            // 부드러운 입력 적용
-            _currentTouchInput = Vector2.SmoothDamp(
-                _currentTouchInput,
-                targetInput,
-                ref _inputVelocity,
-                inputSmoothing
-            );
-
-            // Cinemachine에 입력 적용
-            freeLookCamera.m_XAxis.m_InputAxisValue = _currentTouchInput.x;
-            freeLookCamera.m_YAxis.m_InputAxisValue = -_currentTouchInput.y;
-        }
-        else
-        {
-            // 터치하지 않을 때는 점진적으로 멈춤
-            _currentTouchInput = Vector2.SmoothDamp(
-                _currentTouchInput,
-                Vector2.zero,
-                ref _inputVelocity,
-                inputSmoothing
-            );
-
-            freeLookCamera.m_XAxis.m_InputAxisValue = _currentTouchInput.x;
-            freeLookCamera.m_YAxis.m_InputAxisValue = -_currentTouchInput.y;
-        }
+        Debug.Log(
+            $"[MobileInputManager] FreeLook 카메라 설정 완료 - XSpeed: {freeLookCamera.m_XAxis.m_MaxSpeed}, YSpeed: {freeLookCamera.m_YAxis.m_MaxSpeed}"
+        );
+        Debug.Log(
+            $"[MobileInputManager] 초기 X축 값: {freeLookCamera.m_XAxis.Value}, Y축 값: {freeLookCamera.m_YAxis.Value}"
+        );
+        Debug.Log(
+            $"[MobileInputManager] 카메라 활성화 상태: {freeLookCamera.enabled}, 게임오브젝트 활성화: {freeLookCamera.gameObject.activeInHierarchy}"
+        );
     }
 
     #endregion
@@ -405,11 +465,7 @@ public class MobileInputManager : MonoBehaviour
 
     private void SendMoveInput(Vector2 moveInput)
     {
-        if (canvasControllerInput != null)
-        {
-            canvasControllerInput.VirtualMoveInput(moveInput);
-        }
-        else if (starterAssetsInputs != null)
+        if (starterAssetsInputs != null)
         {
             starterAssetsInputs.MoveInput(moveInput);
             starterAssetsInputs.LookInput(Vector2.zero);

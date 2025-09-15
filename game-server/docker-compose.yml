@@ -6,6 +6,7 @@ services:
       dockerfile: Dockerfile
     ports:
       - ${GAME_SERVER_PORT}:${GAME_SERVER_PORT}
+      - ${METRIC_SERVER_PORT}:${METRIC_SERVER_PORT}
     env_file:
       - .env
     environment:

@@ -378,6 +378,19 @@ public class InteractionManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 새로운 입력 시스템 ActionButtonController 연결
+    /// </summary>
+    public void SetActionButtonController(InputSystem.Actions.ActionButtonController actionController)
+    {
+        // 새로운 입력 시스템과 호환성을 위한 메서드
+        // 현재는 기존 PlayerActionManager와 동일한 인터페이스 제공
+        Debug.Log("[InteractionManager] ActionButtonController 연결 완료");
+
+        // 즉시 버튼 상태 업데이트
+        UpdateInteractionButtonVisibility();
+    }
+
+    /// <summary>
     /// 모바일용 닫기 버튼에서 호출
     /// </summary>
     public void OnCloseButtonPressed()

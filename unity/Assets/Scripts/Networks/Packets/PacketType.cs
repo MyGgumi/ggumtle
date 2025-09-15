@@ -16,6 +16,10 @@
         FeedStart = 110,
         FeedQuit = 112,
         MongdungAttack = 60,
+        MonggingRevivalStart = 62,
+        MonggingRevivalStop = 65,
+        MonggingItemUse = 69,
+        MonggingFieldItemUse = 71,
         
         // Receive
         VerifyTokenResponse = 2,
@@ -36,5 +40,10 @@
         FeedQuitResponse = 113,
         FeedForceQuitResponse = 114,
         MongdungAttackResponse = 61,
+        MonggingRevivalStartResponse = 63,
+        MonggingRevivalComplete = 64,
+        MonggingRevivalStopResponse = 66,
+        MonggingItemUseResponse = 70,
+        MonggingFieldItemUseResponse = 72,
     }
 }

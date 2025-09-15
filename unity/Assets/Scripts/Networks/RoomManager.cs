@@ -132,5 +132,14 @@ namespace Networks
         {
             Debug.Log($"PutItemResult: Result [{command.Result}] - Items: [{string.Join(", ", command.Items)}]");
         }
+
+        [CommandHandler(PacketType.MonggingRevivalComplete)]
+        public async void MonggingRevivalComplete(MonggingRevivalCompleteCommand command, IChannelHandlerContext ctx)
+        {
+            Debug.Log($"MonggingRevivalComplete: RevivedMonggingId [{command.revivedMonggingId}]");
+            
+            // 몽깅이 부활 완료 처리 로직을 여기에 추가
+            // 예: UI 업데이트, 게임 상태 변경 등
+        }
     }
 }

@@ -61,6 +61,9 @@ namespace InputSystem.Actions
             CacheUIElements();
             SetupButtonEvents();
 
+            // 상호작용 버튼 초기 상태: 숨김
+            UpdateInteractionButtonVisibility(false);
+
             Debug.Log($"[{LayerName}] 초기화 완료");
         }
 
@@ -112,37 +115,15 @@ namespace InputSystem.Actions
                 Debug.Log($"[{LayerName}] 점프 버튼 이벤트 설정 완료");
             }
 
-            // 상호작용 버튼 이벤트
+            // 상호작용 버튼 이벤트는 InteractionView에서 처리하므로 여기서는 가시성만 관리
             if (_interactButton != null)
             {
-                // 콜백 인스턴스 생성 및 저장
-                _interactButtonDownCallback = evt =>
-                {
-                    evt.StopImmediatePropagation();
-                    OnInteractButtonDown(evt);
-                };
-                _interactButtonUpCallback = evt =>
-                {
-                    evt.StopImmediatePropagation();
-                    OnInteractButtonUp(evt);
-                };
-                _interactButtonLeaveCallback = evt =>
-                {
-                    evt.StopImmediatePropagation();
-                    OnInteractButtonLeave(evt);
-                };
-
-                // 저장된 콜백으로 등록
-                _interactButton.RegisterCallback(_interactButtonDownCallback);
-                _interactButton.RegisterCallback(_interactButtonUpCallback);
-                _interactButton.RegisterCallback(_interactButtonLeaveCallback);
-
                 if (enableDebugVisualization)
                 {
                     _interactButton.AddToClassList("debug-button");
                 }
 
-                Debug.Log($"[{LayerName}] 상호작용 버튼 이벤트 설정 완료");
+                Debug.Log($"[{LayerName}] 상호작용 버튼 UI 요소 설정 완료 (이벤트는 InteractionView에서 처리)");
             }
         }
 
@@ -183,43 +164,9 @@ namespace InputSystem.Actions
 
         #endregion
 
-        #region 상호작용 버튼 처리
+        #region 상호작용 버튼 처리 (가시성만 관리, 이벤트는 InteractionView에서 처리)
 
-        private void OnInteractButtonDown(PointerDownEvent evt)
-        {
-            if (!IsEnabled || _isInteractPressed) return;
-
-            _isInteractPressed = true;
-            AnimateButtonPress(_interactButton, true);
-            OnInteractPressed?.Invoke();
-            OnInteractHoldStart?.Invoke();
-
-            Debug.Log($"[{LayerName}] 상호작용 버튼 홀드 시작");
-        }
-
-        private void OnInteractButtonUp(PointerUpEvent evt)
-        {
-            if (!_isInteractPressed) return;
-
-            _isInteractPressed = false;
-            AnimateButtonPress(_interactButton, false);
-            OnInteractReleased?.Invoke();
-            OnInteractHoldEnd?.Invoke();
-
-            Debug.Log($"[{LayerName}] 상호작용 버튼 홀드 종료");
-        }
-
-        private void OnInteractButtonLeave(PointerLeaveEvent evt)
-        {
-            if (!_isInteractPressed) return;
-
-            _isInteractPressed = false;
-            AnimateButtonPress(_interactButton, false);
-            OnInteractReleased?.Invoke();
-            OnInteractHoldEnd?.Invoke();
-
-            Debug.Log($"[{LayerName}] 상호작용 버튼에서 벗어남");
-        }
+        // 상호작용 버튼 이벤트는 InteractionView에서 처리하므로 여기서는 제거됨
 
         #endregion
 
@@ -263,15 +210,9 @@ namespace InputSystem.Actions
                 OnJumpReleased?.Invoke();
             }
 
-            if (_isInteractPressed)
-            {
-                _isInteractPressed = false;
-                AnimateButtonPress(_interactButton, false);
-                OnInteractReleased?.Invoke();
-                OnInteractHoldEnd?.Invoke();
-            }
+            // 상호작용 버튼은 InteractionView에서 관리하므로 여기서는 처리하지 않음
 
-            Debug.Log($"[{LayerName}] 모든 버튼 상태 리셋");
+            Debug.Log($"[{LayerName}] 점프 버튼 상태 리셋");
         }
 
         public void Cleanup()
@@ -293,18 +234,9 @@ namespace InputSystem.Actions
                     _jumpButton.UnregisterCallback(_jumpButtonLeaveCallback);
             }
 
-            // 상호작용 버튼 이벤트 해제
-            if (_interactButton != null)
-            {
-                if (_interactButtonDownCallback != null)
-                    _interactButton.UnregisterCallback(_interactButtonDownCallback);
-                if (_interactButtonUpCallback != null)
-                    _interactButton.UnregisterCallback(_interactButtonUpCallback);
-                if (_interactButtonLeaveCallback != null)
-                    _interactButton.UnregisterCallback(_interactButtonLeaveCallback);
-            }
+            // 상호작용 버튼 이벤트는 InteractionView에서 관리하므로 여기서는 해제하지 않음
 
-            Debug.Log($"[{LayerName}] UI 이벤트 구독 해제 완료");
+            Debug.Log($"[{LayerName}] 점프 버튼 이벤트 구독 해제 완료");
         }
 
         #endregion

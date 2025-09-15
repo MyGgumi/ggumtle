@@ -8,7 +8,11 @@
     translate: -50% -50%;
     width: 328px;
     height: 340px;
+    min-width: 328px;
+    min-height: 340px;
     background-image: url('project://database/Assets/UI/Images/chest_panel_bg.png');
+    /* fallback 배경색 추가 */
+    background-color: rgba(40, 45, 50, 0.95);
     -unity-background-scale-mode: stretch-to-fill;
     -unity-slice-left: 12;
     -unity-slice-top: 0;
@@ -17,7 +21,12 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 20 0 8 0 px;
+    padding: 20px 0px 8px 0px;
+    border-width: 2px;
+    border-color: rgba(18, 79, 107, 1);
+    border-radius: 8px;
+    /* display 명시적 설정 */
+    display: flex;
 }
 
 /* 3x3 아이템 그리드 */
@@ -55,6 +64,8 @@
     height: 80px;
     -unity-background-scale-mode: scale-to-fit;
 }
+
+/* 카운터 제거됨 - 상자에서는 필요없음 */
 
 /* 투명한 클릭 버튼 (전체 슬롯 덮음) */
 .take-button {

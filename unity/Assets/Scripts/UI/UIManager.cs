@@ -50,6 +50,6 @@ public class UIManager : MonoBehaviour
             universalHUDController.HideChestBox();
         }
         
-        InteractionManager.Instance?.EndCurrentInteraction();
+        ViewModels.UI.InteractionViewModel.Instance?.ClearInteraction();
     }
 }

@@ -148,13 +148,12 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     private void CheckHoldState()
     {
         // InteractionManager를 통해 홀드 상태 확인
-        if (InteractionManager.Instance != null)
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
         {
-            bool managerIsHolding = InteractionManager.Instance.IsHolding();
-            var currentHoldObject = InteractionManager.Instance.GetCurrentHoldInteractable();
+            bool managerIsHolding = ViewModels.UI.InteractionViewModel.Instance.IsInProgress;
             
-            // InteractionManager의 홀드 상태와 동기화
-            if (managerIsHolding && currentHoldObject == this)
+            // InteractionViewModel의 홀드 상태와 동기화
+            if (managerIsHolding && ViewModels.UI.InteractionViewModel.Instance.CurrentType == Models.InteractionType.Dig)
             {
                 isInteractionHeld = true;
             }
@@ -391,9 +390,9 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         }
 
         // InteractionManager에게 상호작용 종료 알림
-        if (InteractionManager.Instance != null)
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
         {
-            InteractionManager.Instance.EndInteraction(this);
+            ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
         }
 
         // 일정 시간 후 제거
@@ -413,8 +412,8 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     /// </summary>
     private bool CanPlayerFeed()
     {
-        if (ResourceManager.Instance == null) return false;
-        return ResourceManager.Instance.CanPlayerFeed();
+        if (ViewModels.UI.InventoryViewModel.Instance == null) return false;
+        return ViewModels.UI.InventoryViewModel.Instance.HasEnoughFeeding(feedingRate);
     }
 
     /// <summary>
@@ -422,9 +421,9 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     /// </summary>
     private bool TryConsumeFoodFromPlayer(int amount)
     {
-        if (ResourceManager.Instance == null) return false;
+        if (ViewModels.UI.InventoryViewModel.Instance == null) return false;
 
-        bool success = ResourceManager.Instance.TryConsumeLightForFeeding(amount);
+        bool success = ViewModels.UI.InventoryViewModel.Instance.RemoveFeeding(amount);
         if (success)
         {
             Debug.Log($"[InteractableGgumtle] 빛 자원에서 Light {amount}개 소모");
@@ -456,6 +455,22 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         }
     }
 
+    public string GetInteractionText()
+    {
+        switch (currentState)
+        {
+            case GgumtleState.Buried:
+                return $"{ggumtleName} 파내기";
+            case GgumtleState.Digging:
+                return $"{ggumtleName} 파내는 중...";
+            case GgumtleState.Feeding:
+                return $"{ggumtleName}에게 먹이 주기 ({currentFoodAmount}/{maxFoodRequired})";
+            case GgumtleState.Purified:
+            default:
+                return "";
+        }
+    }
+
     public void Interact()
     {
         if (!CanInteract()) return;
@@ -479,7 +494,11 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         if (!CanInteract()) return;
 
         isInteractionHeld = true;
-        InteractionManager.Instance?.BeginInteraction(this);
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        {
+            var interactionType = (currentState == GgumtleState.Buried) ? Models.InteractionType.Dig : Models.InteractionType.Feeding;
+            ViewModels.UI.InteractionViewModel.Instance.AddNearbyInteraction(interactionType, GetInteractionText(), gameObject);
+        }
 
         switch (currentState)
         {
@@ -506,7 +525,10 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
                 if (isDiggingHold)
                 {
                     StopDiggingHold();
-                    InteractionManager.Instance?.EndInteraction(this);
+                    if (ViewModels.UI.InteractionViewModel.Instance != null)
+                    {
+                        ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
+                    }
                 }
                 break;
 
@@ -514,7 +536,10 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
                 if (isFeedingContinuously)
                 {
                     StopFeeding();
-                    InteractionManager.Instance?.EndInteraction(this);
+                    if (ViewModels.UI.InteractionViewModel.Instance != null)
+                    {
+                        ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
+                    }
                 }
                 break;
         }

@@ -1,3 +1,7 @@
+// DEPRECATED: MVVM 패턴으로 리팩토링되어 ChestViewModel으로 대체됨
+// 이 코드는 레거시 코드로 주석 처리됨
+
+/*
 using UnityEngine;
 
 /// <summary>
@@ -179,3 +183,4 @@ public class ChestInteractionHandler : MonoBehaviour
         }
     }
 }
+*/

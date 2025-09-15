@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using Models;
 
 public enum PlayerRole
 {
@@ -44,7 +45,7 @@ public class UniversalHUDData
     public string interactionText = "";
     public float interactionProgress = 0f;
     public bool isInteracting = false;
-    public InteractionType currentInteractionType = InteractionType.Dig;
+    public Models.InteractionType currentInteractionType = Models.InteractionType.Dig;
 
     [Header("UI State")]
     public bool showInteractionButton;
@@ -143,11 +144,4 @@ public class InventorySlot
     }
 }
 
-// 상호작용 타입 정의
-public enum InteractionType
-{
-    Dig, // 땅 파기
-    Revive, // 동료 구조
-    Feeding, // 먹이 주기
-    Faint, // 기절 상태
-}
+// 상호작용 타입은 Models.InteractionType을 사용

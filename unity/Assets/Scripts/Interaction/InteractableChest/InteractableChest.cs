@@ -7,6 +7,8 @@ public class InteractableChest : MonoBehaviour, IInteractable
     [Header("상자 설정")]
     public string chestName = "상자";
     public string chestId; // 고유 상자 ID (Inspector에서 설정하거나 자동 생성)
+
+    public string ChestId => chestId;
     public float interactionRange = 2.0f;
     public bool isOpen = false;
 
@@ -24,7 +26,7 @@ public class InteractableChest : MonoBehaviour, IInteractable
     public bool useTestItems = true; // 테스트 아이템 사용 여부
     public Sprite[] testItemSprites; // 테스트용 아이템 스프라이트들
 
-    private ChestInteractionHandler handler;
+    // private ChestInteractionHandler handler; // DEPRECATED: ChestViewModel로 대체
     private Transform playerTransform;
 
     void Start()
@@ -47,8 +49,8 @@ public class InteractableChest : MonoBehaviour, IInteractable
         // 매니저 초기화 대기 후 등록
         StartCoroutine(RegisterChestWhenReady());
 
-        // 핸들러 찾기
-        handler = FindFirstObjectByType<ChestInteractionHandler>();
+        // 핸들러 찾기 - DEPRECATED
+        // handler = FindFirstObjectByType<ChestInteractionHandler>();
 
         // 플레이어 찾기
         GameObject player = GameObject.FindGameObjectWithTag("Player");
@@ -78,16 +80,21 @@ public class InteractableChest : MonoBehaviour, IInteractable
 
     private void UpdateInteractionIcon()
     {
-        if (interactionIcon == null || playerTransform == null)
+        if (playerTransform == null)
             return;
 
         float distance = Vector3.Distance(transform.position, playerTransform.position);
-        bool shouldShow = !isOpen && distance <= interactionRange;
+        bool isInRange = distance <= interactionRange;
+        bool shouldShow = !isOpen && isInRange;
 
-        if (interactionIcon.activeInHierarchy != shouldShow)
+        // 상호작용 아이콘 업데이트 (로컬 표시용)
+        if (interactionIcon != null && interactionIcon.activeInHierarchy != shouldShow)
         {
             interactionIcon.SetActive(shouldShow);
         }
+
+        // InteractionViewModel이 이제 중앙에서 거리 계산을 처리하므로
+        // 개별 객체에서는 nearby interaction 등록/해제를 하지 않음
     }
 
     // UI 버튼에서 호출되는 상호작용 메서드 (레거시)
@@ -148,60 +155,57 @@ public class InteractableChest : MonoBehaviour, IInteractable
             chestAnimator.SetTrigger(closeAnimationTrigger);
         }
 
-        // 핸들러에게 닫기 알림
-        if (handler != null)
-        {
-            handler.HandleChestClose();
-        }
+        // 핸들러에게 닫기 알림 - DEPRECATED
+        // if (handler != null)
+        // {
+        //     handler.HandleChestClose();
+        // }
 
-        // InteractionManager에게 상호작용 종료 알림
-        if (InteractionManager.Instance != null)
-        {
-            InteractionManager.Instance.EndInteraction(this);
-        }
+        // InteractionViewModel이 중앙에서 관리하므로 개별 제거 불필요
 
         Debug.Log($"[InteractableChest] 상자 닫힘 완료: {chestName}, isOpen: {isOpen}");
     }
 
-    // 아이템 관리 메서드들 (ChestInventoryManager 연동)
+    // 아이템 관리 메서드들 - DEPRECATED: ChestViewModel 사용
     public void AddItem(ChestItem item)
     {
-        if (ChestInventoryManager.Instance != null)
-        {
-            ChestInventoryManager.Instance.AddItemToChest(chestId, item);
-        }
+        // DEPRECATED: ChestViewModel.Instance.UpdateSlot() 사용
+        Debug.LogWarning("[InteractableChest] AddItem은 deprecated입니다. ChestViewModel 사용하세요.");
     }
 
     public void RemoveItem(ChestItem item)
     {
-        // 특정 아이템 제거는 인덱스 기반으로 처리
-        var items = GetChestItems();
-        for (int i = 0; i < items.Count; i++)
-        {
-            if (items[i].itemName == item.itemName)
-            {
-                RemoveItemAt(i);
-                break;
-            }
-        }
+        // DEPRECATED: ChestViewModel.Instance.TakeItemFromSlot() 사용
+        Debug.LogWarning("[InteractableChest] RemoveItem은 deprecated입니다. ChestViewModel 사용하세요.");
     }
 
     public void RemoveItemAt(int index)
     {
-        if (ChestInventoryManager.Instance != null)
-        {
-            ChestInventoryManager.Instance.RemoveItemFromChest(chestId, index);
-        }
+        // DEPRECATED: ChestViewModel.Instance.TakeItemFromSlot() 사용
+        Debug.LogWarning("[InteractableChest] RemoveItemAt은 deprecated입니다. ChestViewModel 사용하세요.");
     }
 
     /// <summary>
-    /// ChestInventoryManager에서 현재 상자의 아이템 리스트 조회
+    /// 현재 상자의 아이템 리스트 조회 - ChestViewModel 사용
     /// </summary>
     public List<ChestItem> GetChestItems()
     {
-        if (ChestInventoryManager.Instance != null)
+        if (ViewModels.UI.ChestViewModel.Instance != null)
         {
-            return ChestInventoryManager.Instance.GetChestItems(chestId);
+            var chest = ViewModels.UI.ChestViewModel.Instance.GetChest(chestId);
+            if (chest != null)
+            {
+                var items = new List<ChestItem>();
+                foreach (var slot in chest.slots)
+                {
+                    if (!slot.isEmpty)
+                    {
+                        // ChestSlot을 ChestItem으로 변환 (임시)
+                        items.Add(new ChestItem(slot.itemId, null, slot.count, ""));
+                    }
+                }
+                return items;
+            }
         }
         return new List<ChestItem>();
     }
@@ -220,65 +224,14 @@ public class InteractableChest : MonoBehaviour, IInteractable
     public List<ChestItem> chestItems => GetChestItems();
 
     /// <summary>
-    /// 테스트용 더미 아이템 초기화 (새로운 시스템 사용)
+    /// 테스트용 더미 아이템 초기화 - DEPRECATED
     /// </summary>
     private void InitializeTestItems()
     {
-        Debug.Log($"[InteractableChest] 테스트 더미 아이템 초기화: {chestId}");
+        Debug.Log($"[InteractableChest] 테스트 더미 아이템 초기화 - DEPRECATED");
+        return; // 서버에서 처리하므로 비활성화
 
-        if (GlobalItemManager.Instance == null || ChestInventoryManager.Instance == null)
-        {
-            Debug.LogWarning(
-                "[InteractableChest] GlobalItemManager 또는 ChestInventoryManager가 없습니다!"
-            );
-            return;
-        }
-
-        // GlobalItemManager를 통해 아이템 생성 (메타데이터 기반)
-        var testItemNames = new[]
-        {
-            "Apple",
-            "Stone",
-            "Apple",
-            "Stone",
-            "Apple",
-            "Stone",
-            "Apple",
-            "Stone",
-            "Apple",
-        };
-        var testQuantities = new[] { 4, 4, 3, 3, 2, 2, 1, 1, 5 };
-
-        for (int i = 0; i < testItemNames.Length; i++)
-        {
-            // ItemDatabase에 해당 아이템이 있는지 확인 후 생성
-            var chestItem = GlobalItemManager.Instance.CreateChestItem(
-                testItemNames[i],
-                testQuantities[i]
-            );
-            if (chestItem != null)
-            {
-                AddItem(chestItem);
-            }
-            else
-            {
-                // ItemDatabase에 없으면 임시로 기존 방식으로 생성
-                var fallbackItem = new ChestItem(
-                    testItemNames[i],
-                    GetTestSprite(i),
-                    testQuantities[i],
-                    $"{testItemNames[i]} 설명"
-                );
-                AddItem(fallbackItem);
-                Debug.LogWarning(
-                    $"[InteractableChest] ItemDatabase에 '{testItemNames[i]}' 없음, 임시 아이템 생성"
-                );
-            }
-        }
-
-        Debug.Log(
-            $"[InteractableChest] {testItemNames.Length}개 테스트 아이템 초기화 완료 (9개 슬롯 모두 채움)"
-        );
+        // DEPRECATED - 서버에서 처리
     }
 
     /// <summary>
@@ -310,53 +263,83 @@ public class InteractableChest : MonoBehaviour, IInteractable
         return IsPlayerInRange();
     }
 
+    public string GetInteractionText()
+    {
+        return isOpen ? $"{chestName} 닫기" : $"{chestName} 열기";
+    }
+
     /// <summary>
     /// 상호작용 실행
     /// </summary>
     public void Interact()
     {
+        Debug.Log($"[InteractableChest] ⚡ Interact() 호출됨! - {chestName}, isOpen: {isOpen}");
+
         // 이미 다른 상호작용 중이면 무시
-        if (InteractionManager.Instance != null && InteractionManager.Instance.IsInteracting())
+        if (ViewModels.UI.InteractionViewModel.Instance != null && ViewModels.UI.InteractionViewModel.Instance.IsInProgress)
         {
-            Debug.Log("다른 상호작용이 진행 중입니다.");
+            Debug.Log("[InteractableChest] 다른 상호작용이 진행 중입니다.");
             return;
         }
 
         // 상호작용 가능 체크
         if (!CanInteract())
         {
-            Debug.Log("너무 멀어서 상자를 조작할 수 없습니다.");
+            Debug.Log("[InteractableChest] 너무 멀어서 상자를 조작할 수 없습니다.");
             return;
         }
 
-        // 상호작용 시작 알림
-        InteractionManager.Instance?.BeginInteraction(this);
+        // 상호작용 실행 (nearby interaction은 이미 Update()에서 등록됨)
 
         if (isOpen)
         {
             // 상자가 이미 열려있으면 닫기
-            Debug.Log($"상자 닫기: {chestName}");
+            Debug.Log($"[InteractableChest] 상자 닫기: {chestName}");
             CloseChest();
-            
-            // 닫기 핸들러 호출
-            if (handler != null)
+
+            // MVVM 패턴: ChestViewModel에 닫기 알림
+            var chestViewModel = ViewModels.UI.ChestViewModel.Instance;
+            if (chestViewModel != null)
             {
-                handler.HandleChestClose(this);
+                Debug.Log($"[InteractableChest] ChestViewModel.CloseChest() 호출");
+                chestViewModel.CloseChest();
+            }
+            else
+            {
+                Debug.LogWarning($"[InteractableChest] ChestViewModel.Instance가 null입니다!");
             }
         }
         else
         {
             // 상자가 닫혀있으면 열기
+            Debug.Log($"[InteractableChest] 상자 열기: {chestName}");
+
+            // 즉시 상태 업데이트 (서버 응답 대기하지 않음)
+            isOpen = true;
+            Debug.Log($"[InteractableChest] isOpen을 true로 즉시 설정함: {chestName}");
+
             // 서버에 상자 열기 요청 (실시간 멀티플레이어)
             if (ServerSyncManager.Instance != null)
             {
                 ServerSyncManager.Instance.RequestOpenChest(chestId);
+                Debug.Log($"[InteractableChest] ServerSyncManager.RequestOpenChest() 호출");
             }
 
-            // 상호작용 실행
-            if (handler != null)
+            // MVVM 패턴: ChestViewModel 직접 호출
+            var chestViewModel = ViewModels.UI.ChestViewModel.Instance;
+            if (chestViewModel != null)
             {
-                handler.HandleChestInteraction(this);
+                Debug.Log($"[InteractableChest] ChestViewModel.OpenChest() 호출: {chestId}");
+                bool success = chestViewModel.OpenChest(chestId);
+                if (!success)
+                {
+                    Debug.LogWarning($"[InteractableChest] ChestViewModel.OpenChest() 실패: {chestId}");
+                }
+                OpenChest(); // 상자 애니메이션 재생
+            }
+            else
+            {
+                Debug.LogError($"[InteractableChest] ChestViewModel.Instance가 null입니다!");
             }
         }
     }
@@ -399,8 +382,8 @@ public class InteractableChest : MonoBehaviour, IInteractable
     /// </summary>
     private System.Collections.IEnumerator RegisterChestWhenReady()
     {
-        // 매니저들이 초기화될 때까지 대기
-        while (ChestInventoryManager.Instance == null)
+        // ChestViewModel이 초기화될 때까지 대기
+        while (ViewModels.UI.ChestViewModel.Instance == null)
         {
             yield return null;
         }
@@ -408,9 +391,17 @@ public class InteractableChest : MonoBehaviour, IInteractable
         // 추가 안전장치: 1프레임 더 대기
         yield return null;
 
-        // 상자 등록
-        ChestInventoryManager.Instance.RegisterChest(chestId);
-        Debug.Log($"[InteractableChest] {chestId} 등록 완료 (지연 등록)");
+        // ChestViewModel에 상자 등록
+        var chestViewModel = ViewModels.UI.ChestViewModel.Instance;
+        if (chestViewModel != null)
+        {
+            chestViewModel.RegisterChest(chestId, chestName, transform.position, gameObject);
+            Debug.Log($"[InteractableChest] {chestId} ChestViewModel 등록 완료");
+        }
+        else
+        {
+            Debug.LogWarning($"[InteractableChest] ChestViewModel.Instance가 null이어서 {chestId} 등록 실패");
+        }
     }
     #endregion
 }

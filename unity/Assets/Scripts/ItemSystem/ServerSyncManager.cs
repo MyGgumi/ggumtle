@@ -246,10 +246,19 @@ public class ServerSyncManager : MonoBehaviour
             UpdatePlayerInventoryFromServer(response.data.playerInventory);
         }
 
-        // 상자 인벤토리 업데이트
-        if (response.data.chestInventory != null && ChestInventoryManager.Instance != null)
+        // 상자 인벤토리 업데이트 (Service → ViewModel → View 패턴)
+        if (response.data.chestInventory != null)
         {
-            UpdateChestInventoryFromServer(response.data.chestInventory);
+            var chestViewModel = ViewModels.UI.ChestViewModel.Instance;
+            if (chestViewModel != null)
+            {
+                // ChestService를 통해 서버 데이터 동기화
+                UpdateChestServiceFromServer(response.data.chestInventory, chestViewModel);
+            }
+            else
+            {
+                Debug.LogWarning("[ServerSyncManager] ChestViewModel.Instance가 null입니다!");
+            }
         }
 
         // 전역 아이템 수량 업데이트
@@ -314,28 +323,34 @@ public class ServerSyncManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 서버 데이터로부터 상자 인벤토리 업데이트
+    /// 서버 데이터를 ChestService를 통해 MVVM 시스템으로 전달
     /// </summary>
-    private void UpdateChestInventoryFromServer(ChestInventoryData serverData)
+    private void UpdateChestServiceFromServer(ChestInventoryData serverData, ViewModels.UI.ChestViewModel chestViewModel)
     {
-        if (ChestInventoryManager.Instance == null)
+        if (serverData == null || chestViewModel == null)
             return;
 
-        // 서버에서 받은 상자 아이템으로 업데이트
-        var chestItems = new System.Collections.Generic.List<ChestItem>();
-        foreach (var serverItem in serverData.items)
+        // 서버 데이터를 ChestSlot 배열로 변환
+        var chestSlots = new Models.ChestSlot[9]; // 상자는 9슬롯 고정
+
+        // 빈 슬롯으로 초기화
+        for (int i = 0; i < chestSlots.Length; i++)
         {
-            var chestItem = GlobalItemManager.Instance?.CreateChestItem(
-                serverItem.itemName,
-                serverItem.quantity
-            );
-            if (chestItem != null)
-            {
-                chestItems.Add(chestItem);
-            }
+            chestSlots[i] = new Models.ChestSlot();
         }
 
-        ChestInventoryManager.Instance.UpdateChestFromServer(serverData.chestId, chestItems);
+        // 서버 아이템을 슬롯에 배치
+        for (int i = 0; i < serverData.items.Length && i < chestSlots.Length; i++)
+        {
+            var serverItem = serverData.items[i];
+            chestSlots[i] = new Models.ChestSlot(serverItem.itemName, serverItem.quantity);
+        }
+
+        // ChestService를 통해 데이터 동기화 (Service → ViewModel → View)
+        chestViewModel.SyncChestData(serverData.chestId, chestSlots);
+
+        if (enableDebugLogs)
+            Debug.Log($"[ServerSyncManager] ChestService를 통해 상자 데이터 동기화: {serverData.chestId}, {serverData.items.Length}개 아이템");
     }
 
     /// <summary>

@@ -237,15 +237,15 @@ public class ServerSimulator : MonoBehaviour
             // Mushroom은 먹이 인벤토리로 (제한 없음)
             addedAmount = request.quantity;
             
-            // 실제로 FeedingInventory에 추가
-            if (FeedingInventory.Instance != null)
+            // 실제로 InventoryViewModel에 추가
+            if (ViewModels.UI.InventoryViewModel.Instance != null)
             {
-                FeedingInventory.Instance.AddMushrooms(addedAmount);
+                ViewModels.UI.InventoryViewModel.Instance.AddFeeding(addedAmount);
                 Debug.Log($"[ServerSimulator] Mushroom {addedAmount}개 - 먹이 인벤토리로 추가됨");
             }
             else
             {
-                Debug.LogError("[ServerSimulator] FeedingInventory.Instance가 null입니다!");
+                Debug.LogError("[ServerSimulator] InventoryViewModel.Instance가 null입니다!");
             }
         }
         else

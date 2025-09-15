@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Models;
 
 /// <summary>
 /// 모든 HUD 관련 이벤트들을 중앙집중식으로 관리하는 클래스
@@ -28,9 +29,9 @@ public static class HUDEvents
     public static event Action OnPlayerRevived;
 
     // ==== 상호작용 이벤트 ====
-    public static event Action<InteractionType, float, bool> OnInteractionStarted;
-    public static event Action<InteractionType, float> OnInteractionProgress;
-    public static event Action<InteractionType, bool> OnInteractionCompleted;
+    public static event Action<Models.InteractionType, float, bool> OnInteractionStarted;
+    public static event Action<Models.InteractionType, float> OnInteractionProgress;
+    public static event Action<Models.InteractionType, bool> OnInteractionCompleted;
     public static event Action OnInteractionCancelled;
 
     // ==== 플레이어 이벤트 ====
@@ -104,15 +105,15 @@ public static class HUDEvents
 
     // 기존 메서드들 (하위 호환성)
     public static void TriggerInteractionStart(
-        InteractionType type,
+        Models.InteractionType type,
         float duration,
         bool isCountdown = false
     ) => OnInteractionStarted?.Invoke(type, duration, isCountdown);
 
-    public static void TriggerInteractionProgress(InteractionType type, float progress) =>
+    public static void TriggerInteractionProgress(Models.InteractionType type, float progress) =>
         OnInteractionProgress?.Invoke(type, progress);
 
-    public static void TriggerInteractionComplete(InteractionType type, bool success) =>
+    public static void TriggerInteractionComplete(Models.InteractionType type, bool success) =>
         OnInteractionCompleted?.Invoke(type, success);
 
     public static void TriggerInteractionCancel() => OnInteractionCancelled?.Invoke();

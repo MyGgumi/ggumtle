@@ -1,7 +1,6 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <Style src="project://database/Assets/UI/ToolKit/ChestBoxUI.uss?fileID=7433441132597879392&amp;guid=9fdb10ee194d6ea4ab574482ab439ca5&amp;type=3#ChestBoxUI" />
-    <ui:VisualElement name="root" style="flex-grow: 1; -unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;); justify-content: flex-end;">
-        <ui:VisualElement name="chestBoxPanel" class="chest-panel" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;);">
+    <ui:VisualElement name="root" style="flex-grow: 1; width: 100%; height: 100%; position: absolute; -unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;);">
+        <ui:VisualElement name="chestBoxPanel" class="chest-panel">
             <ui:VisualElement name="itemsGrid" class="items-grid">
                 <ui:VisualElement name="row0" class="item-row">
                     <ui:VisualElement name="slot0" class="item-slot">
@@ -46,7 +45,7 @@
                     </ui:VisualElement>
                 </ui:VisualElement>
             </ui:VisualElement>
+            <ui:Button name="closeButton" text="닫기" class="close-button" />
         </ui:VisualElement>
-        <ui:Button name="closeButton" text="닫기" class="close-button" style="align-self: center; justify-content: flex-start; align-content: auto;" />
     </ui:VisualElement>
 </ui:UXML>

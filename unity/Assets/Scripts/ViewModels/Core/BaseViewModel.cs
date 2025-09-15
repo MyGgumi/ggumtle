@@ -37,7 +37,21 @@ namespace MVVM.Core
         /// PropertyChanged 이벤트를 발생시킵니다
         /// </summary>
         /// <param name="propertyName">변경된 프로퍼티 이름</param>
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        public virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(propertyName);
+
+            if (EnableDebugLogs)
+            {
+                Debug.Log($"[{GetType().Name}] Property changed: {propertyName}");
+            }
+        }
+
+        /// <summary>
+        /// PropertyChanged 이벤트를 발생시킵니다 (public alias)
+        /// </summary>
+        /// <param name="propertyName">변경된 프로퍼티 이름</param>
+        public void NotifyPropertyChanged([CallerMemberName] string propertyName = null)
         {
             PropertyChanged?.Invoke(propertyName);
 

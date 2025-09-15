@@ -1,12 +1,11 @@
 using System;
 using System.Collections;
+using InputSystem.Core;
+using InputSystem.Movement;
+using MVVM.Movement;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.UIElements;
-using InputSystem.Core;
-using InputSystem.Movement;
-using InputSystem.Actions;
-using MVVM.Movement;
 
 [RequireComponent(typeof(UIDocument))]
 public class UniversalHUDController : MonoBehaviour
@@ -31,29 +30,35 @@ public class UniversalHUDController : MonoBehaviour
     private UIDocument _doc;
     private VisualElement _root;
 
-    [Header("Manager Components")]
-    public GameTimeManager gameTimeManager;
-    public PlayerListManager playerListManager;
-    public ResourceManager resourceManager;
-    public HealthBarManager healthBarManager;
-    public HUDInteractionManager interactionManager;
-    public NotificationBannerManager notificationManager;
-    public ChatManager chatManager;
-    public PlayerInventoryManager playerInventoryManager;
-    public ChestBoxUIManager chestBoxUIManager;
+    [Header("MVVM ViewModels")]
+    public MVVM.UI.GameTimeViewModel gameTimeViewModel;
+    public MVVM.UI.HealthBarViewModel healthBarViewModel;
+    public MVVM.UI.ResourceViewModel resourceViewModel;
+    public MVVM.UI.ChatViewModel chatViewModel;
+    public MVVM.UI.PlayerListViewModel playerListViewModel;
+    public MVVM.UI.NotificationViewModel notificationViewModel;
+    public ViewModels.UI.InventoryViewModel inventoryViewModel;
+    public ViewModels.UI.InteractionViewModel interactionViewModel;
+    public ViewModels.UI.ChestViewModel chestViewModel;
+
+    [Header("MVVM Views")]
+    public Views.GameTimeView gameTimeView;
+    public Views.HealthBarView healthBarView;
+    public Views.ResourceView resourceView;
+    public Views.ChatView chatView;
+    public Views.PlayerListView playerListView;
+    public Views.NotificationView notificationView;
+    public Views.InventoryView inventoryView;
+    public Views.InteractionView interactionView;
+    public Views.ChestView chestView;
 
     [Header("Input System")]
     private InputCoordinator inputCoordinator;
     private JoystickController joystickController;
     private CameraRotationController cameraRotationController;
-    private ActionButtonController actionButtonController;
 
     [Header("MVVM System")]
     private PlayerMovementViewModel playerMovementViewModel;
-
-    [Header("Legacy Mobile Control Managers - To Be Deprecated")]
-    public MobileInputManager mobileInputManager; // 호환성 유지용
-    public PlayerActionManager playerActionManager; // 호환성 유지용
 
     void Awake()
     {
@@ -89,18 +94,18 @@ public class UniversalHUDController : MonoBehaviour
     private void SetupInputSystem()
     {
         // InputCoordinator 생성 및 초기화
-        inputCoordinator = gameObject.GetComponent<InputCoordinator>()
+        inputCoordinator =
+            gameObject.GetComponent<InputCoordinator>()
             ?? gameObject.AddComponent<InputCoordinator>();
 
         // 입력 컨트롤러들 생성
-        joystickController = gameObject.GetComponent<JoystickController>()
+        joystickController =
+            gameObject.GetComponent<JoystickController>()
             ?? gameObject.AddComponent<JoystickController>();
 
-        cameraRotationController = gameObject.GetComponent<CameraRotationController>()
+        cameraRotationController =
+            gameObject.GetComponent<CameraRotationController>()
             ?? gameObject.AddComponent<CameraRotationController>();
-
-        actionButtonController = gameObject.GetComponent<ActionButtonController>()
-            ?? gameObject.AddComponent<ActionButtonController>();
 
         Debug.Log("[UniversalHUDController] 입력 시스템 컴포넌트 설정 완료");
     }
@@ -127,13 +132,6 @@ public class UniversalHUDController : MonoBehaviour
                 cameraRotationController.Enable();
             }
 
-            if (actionButtonController != null)
-            {
-                inputCoordinator.RegisterLayer(actionButtonController);
-                actionButtonController.Priority = 15;
-                actionButtonController.Enable();
-            }
-
             Debug.Log("[UniversalHUDController] 입력 컨트롤러 초기화 완료");
         }
     }
@@ -144,7 +142,8 @@ public class UniversalHUDController : MonoBehaviour
         if (joystickController != null && playerMovementViewModel != null)
         {
             joystickController.OnMove += playerMovementViewModel.SetMoveInput;
-            joystickController.OnMoveEnd += () => playerMovementViewModel.SetMoveInput(Vector2.zero);
+            joystickController.OnMoveEnd += () =>
+                playerMovementViewModel.SetMoveInput(Vector2.zero);
         }
 
         // 카메라 → PlayerMovementViewModel 연결 (새 방식)
@@ -156,53 +155,55 @@ public class UniversalHUDController : MonoBehaviour
         // 조이스틱 → StarterAssetsInputs 연결 (레거시 호환성)
         if (joystickController != null && starterAssetsInputs != null)
         {
-            joystickController.OnMove += (moveInput) => {
+            joystickController.OnMove += (moveInput) =>
+            {
                 starterAssetsInputs.MoveInput(moveInput);
                 starterAssetsInputs.LookInput(Vector2.zero);
             };
-            joystickController.OnMoveEnd += () => {
+            joystickController.OnMoveEnd += () =>
+            {
                 starterAssetsInputs.MoveInput(Vector2.zero);
             };
         }
 
-        // 액션 버튼 → PlayerMovementViewModel 연결 (새 방식)
-        if (actionButtonController != null && playerMovementViewModel != null)
+        // InteractionViewModel과 InteractionView 연결
+        if (interactionView != null && interactionViewModel != null)
         {
-            actionButtonController.OnJumpPressed += () => playerMovementViewModel.SetJumpInput(true);
-            actionButtonController.OnJumpReleased += () => playerMovementViewModel.SetJumpInput(false);
-        }
-
-        // 액션 버튼 → StarterAssetsInputs 연결 (레거시 호환성)
-        if (actionButtonController != null && starterAssetsInputs != null)
-        {
-            actionButtonController.OnJumpPressed += () => {
-                starterAssetsInputs.JumpInput(true);
-                Debug.Log("[UniversalHUDController] 점프 입력 활성화");
-            };
-            actionButtonController.OnJumpReleased += () => {
-                starterAssetsInputs.JumpInput(false);
-                Debug.Log("[UniversalHUDController] 점프 입력 비활성화");
+            // 상호작용 버튼 가시성 제어를 InteractionView에서 직접 관리
+            interactionViewModel.OnNearbyInteractionAdded += (type, text, target) =>
+            {
+                Debug.Log(
+                    $"[UniversalHUDController] 🎯 상호작용 감지됨: {text} (타입: {type}, 대상: {target?.name})"
+                );
+                interactionView.UpdateInteractionButtonVisibility(true);
+                Debug.Log($"[UniversalHUDController] 상호작용 가능 - 버튼 표시 명령 전송: {text}");
             };
 
-            actionButtonController.OnInteractHoldStart += () => {
-                if (InteractionManager.Instance != null)
+            interactionViewModel.OnNearbyInteractionRemoved += (type, target) =>
+            {
+                Debug.Log(
+                    $"[UniversalHUDController] 📤 상호작용 제거됨: 타입 {type}, 대상: {target?.name}"
+                );
+                if (!interactionViewModel.HasNearbyInteractions)
                 {
-                    InteractionManager.Instance.OnInteractionHoldStart();
+                    interactionView.UpdateInteractionButtonVisibility(false);
+                    Debug.Log("[UniversalHUDController] 상호작용 불가 - 버튼 숨김 명령 전송");
+                }
+                else
+                {
+                    Debug.Log($"[UniversalHUDController] 다른 상호작용이 남아있음 - 버튼 유지)");
                 }
             };
-            actionButtonController.OnInteractHoldEnd += () => {
-                if (InteractionManager.Instance != null)
-                {
-                    InteractionManager.Instance.OnInteractionHoldEnd();
-                }
-            };
-        }
 
-        // InteractionManager와 ActionButtonController 연결
-        if (actionButtonController != null && InteractionManager.Instance != null)
+            Debug.Log(
+                "[UniversalHUDController] ✅ InteractionViewModel과 InteractionView 연결 완료"
+            );
+        }
+        else
         {
-            InteractionManager.Instance.SetActionButtonController(actionButtonController);
-            Debug.Log("[UniversalHUDController] InteractionManager와 ActionButtonController 연결 완료");
+            Debug.LogError(
+                $"[UniversalHUDController] ❌ InteractionView/ViewModel 연결 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
+            );
         }
 
         Debug.Log("[UniversalHUDController] 입력-게임플레이 연결 완료");
@@ -210,6 +211,12 @@ public class UniversalHUDController : MonoBehaviour
 
     private void CleanupInputSystem()
     {
+        // InteractionViewModel 이벤트 해제
+        if (interactionView != null && interactionViewModel != null)
+        {
+            // 이벤트 해제는 각 컴포넌트의 OnDestroy에서 처리됨
+        }
+
         // 이벤트 연결 해제는 각 컨트롤러의 Cleanup에서 처리됨
         inputCoordinator?.ResetAllInput();
     }
@@ -221,7 +228,8 @@ public class UniversalHUDController : MonoBehaviour
     private void SetupMVVMSystem()
     {
         // PlayerMovementViewModel 생성
-        playerMovementViewModel = gameObject.GetComponent<PlayerMovementViewModel>()
+        playerMovementViewModel =
+            gameObject.GetComponent<PlayerMovementViewModel>()
             ?? gameObject.AddComponent<PlayerMovementViewModel>();
 
         Debug.Log("[UniversalHUDController] MVVM 시스템 컴포넌트 설정 완료");
@@ -240,94 +248,126 @@ public class UniversalHUDController : MonoBehaviour
 
     private void EnsureManagerComponents()
     {
-        if (gameTimeManager == null)
-            gameTimeManager =
-                gameObject.GetComponent<GameTimeManager>()
-                ?? gameObject.AddComponent<GameTimeManager>();
-        if (playerListManager == null)
-            playerListManager =
-                gameObject.GetComponent<PlayerListManager>()
-                ?? gameObject.AddComponent<PlayerListManager>();
-        if (resourceManager == null)
-            resourceManager =
-                gameObject.GetComponent<ResourceManager>()
-                ?? gameObject.AddComponent<ResourceManager>();
-        if (healthBarManager == null)
-            healthBarManager =
-                gameObject.GetComponent<HealthBarManager>()
-                ?? gameObject.AddComponent<HealthBarManager>();
-        if (interactionManager == null)
-            interactionManager =
-                gameObject.GetComponent<HUDInteractionManager>()
-                ?? gameObject.AddComponent<HUDInteractionManager>();
-        if (notificationManager == null)
-            notificationManager =
-                gameObject.GetComponent<NotificationBannerManager>()
-                ?? gameObject.AddComponent<NotificationBannerManager>();
-        if (chatManager == null)
-            chatManager =
-                gameObject.GetComponent<ChatManager>() ?? gameObject.AddComponent<ChatManager>();
-        if (playerInventoryManager == null)
-            playerInventoryManager =
-                gameObject.GetComponent<PlayerInventoryManager>()
-                ?? gameObject.AddComponent<PlayerInventoryManager>();
-        if (chestBoxUIManager == null)
-            chestBoxUIManager =
-                gameObject.GetComponent<ChestBoxUIManager>()
-                ?? gameObject.AddComponent<ChestBoxUIManager>();
-        if (mobileInputManager == null)
-            mobileInputManager =
-                gameObject.GetComponent<MobileInputManager>()
-                ?? gameObject.AddComponent<MobileInputManager>();
-        if (playerActionManager == null)
-            playerActionManager =
-                gameObject.GetComponent<PlayerActionManager>()
-                ?? gameObject.AddComponent<PlayerActionManager>();
+        // MVVM ViewModels 컴포넌트 확보
+        if (gameTimeViewModel == null)
+            gameTimeViewModel =
+                gameObject.GetComponent<MVVM.UI.GameTimeViewModel>()
+                ?? gameObject.AddComponent<MVVM.UI.GameTimeViewModel>();
+        if (healthBarViewModel == null)
+            healthBarViewModel =
+                gameObject.GetComponent<MVVM.UI.HealthBarViewModel>()
+                ?? gameObject.AddComponent<MVVM.UI.HealthBarViewModel>();
+        if (resourceViewModel == null)
+            resourceViewModel =
+                gameObject.GetComponent<MVVM.UI.ResourceViewModel>()
+                ?? gameObject.AddComponent<MVVM.UI.ResourceViewModel>();
+        if (chatViewModel == null)
+            chatViewModel =
+                gameObject.GetComponent<MVVM.UI.ChatViewModel>()
+                ?? gameObject.AddComponent<MVVM.UI.ChatViewModel>();
+        if (playerListViewModel == null)
+            playerListViewModel =
+                gameObject.GetComponent<MVVM.UI.PlayerListViewModel>()
+                ?? gameObject.AddComponent<MVVM.UI.PlayerListViewModel>();
+        if (notificationViewModel == null)
+            notificationViewModel =
+                gameObject.GetComponent<MVVM.UI.NotificationViewModel>()
+                ?? gameObject.AddComponent<MVVM.UI.NotificationViewModel>();
+        if (inventoryViewModel == null)
+            inventoryViewModel =
+                gameObject.GetComponent<ViewModels.UI.InventoryViewModel>()
+                ?? gameObject.AddComponent<ViewModels.UI.InventoryViewModel>();
+        if (interactionViewModel == null)
+        {
+            interactionViewModel =
+                gameObject.GetComponent<ViewModels.UI.InteractionViewModel>()
+                ?? gameObject.AddComponent<ViewModels.UI.InteractionViewModel>();
+            Debug.Log(
+                $"[UniversalHUDController] InteractionViewModel 생성: {interactionViewModel != null}"
+            );
+        }
+        if (chestViewModel == null)
+            chestViewModel =
+                gameObject.GetComponent<ViewModels.UI.ChestViewModel>()
+                ?? gameObject.AddComponent<ViewModels.UI.ChestViewModel>();
+
+        // MVVM Views 컴포넌트 확보
+        if (gameTimeView == null)
+            gameTimeView =
+                gameObject.GetComponent<Views.GameTimeView>()
+                ?? gameObject.AddComponent<Views.GameTimeView>();
+        if (healthBarView == null)
+            healthBarView =
+                gameObject.GetComponent<Views.HealthBarView>()
+                ?? gameObject.AddComponent<Views.HealthBarView>();
+        if (resourceView == null)
+            resourceView =
+                gameObject.GetComponent<Views.ResourceView>()
+                ?? gameObject.AddComponent<Views.ResourceView>();
+        if (chatView == null)
+            chatView =
+                gameObject.GetComponent<Views.ChatView>()
+                ?? gameObject.AddComponent<Views.ChatView>();
+        if (playerListView == null)
+            playerListView =
+                gameObject.GetComponent<Views.PlayerListView>()
+                ?? gameObject.AddComponent<Views.PlayerListView>();
+        if (notificationView == null)
+            notificationView =
+                gameObject.GetComponent<Views.NotificationView>()
+                ?? gameObject.AddComponent<Views.NotificationView>();
+        if (inventoryView == null)
+            inventoryView =
+                gameObject.GetComponent<Views.InventoryView>()
+                ?? gameObject.AddComponent<Views.InventoryView>();
+        if (interactionView == null)
+            interactionView =
+                gameObject.GetComponent<Views.InteractionView>()
+                ?? gameObject.AddComponent<Views.InteractionView>();
+        if (chestView == null)
+            chestView =
+                gameObject.GetComponent<Views.ChestView>()
+                ?? gameObject.AddComponent<Views.ChestView>();
     }
 
     private void InitializeManagers()
     {
-        gameTimeManager?.Initialize(_root);
-        playerListManager?.Initialize(_root);
-        resourceManager?.Initialize(_root);
-        healthBarManager?.Initialize(_root);
-        interactionManager?.Initialize(_root);
-        notificationManager?.Initialize(_root);
-        chatManager?.Initialize(_root);
-        playerInventoryManager?.Initialize(_root);
-        chestBoxUIManager?.Initialize(_root);
-
-        // 모바일 컨트롤 매니저 초기화
-        mobileInputManager?.Initialize(_root);
-        playerActionManager?.Initialize(_root);
-
-        // StarterAssetsInputs 연결
-        if (mobileInputManager != null)
-        {
-            mobileInputManager.starterAssetsInputs = starterAssetsInputs;
-        }
-        if (playerActionManager != null)
-            playerActionManager.starterAssetsInputs = starterAssetsInputs;
-
-        // InteractionManager와 PlayerActionManager 연결
-        if (playerActionManager != null && InteractionManager.Instance != null)
-        {
-            InteractionManager.Instance.SetPlayerActionManager(playerActionManager);
-            Debug.Log(
-                "[UniversalHUDController] InteractionManager와 PlayerActionManager 연결 완료"
-            );
-        }
-        else if (InteractionManager.Instance == null)
-        {
-            Debug.LogWarning(
-                "[UniversalHUDController] InteractionManager.Instance를 찾을 수 없습니다!"
-            );
-        }
-
-        // 체력바 강제 표시 (CSS 클래스 충돌 해결)
-        healthBarManager?.SetHealthBarVisibility(true);
+        // MVVM 시스템 초기화
+        InitializeMVVMSystem();
 
         Debug.Log("[UniversalHUDController] 모든 매니저 초기화 완료");
+    }
+
+    private void InitializeMVVMSystem()
+    {
+        // MVVM View-ViewModel 연결 및 초기화
+        gameTimeView?.Initialize(_root, gameTimeViewModel);
+        healthBarView?.Initialize(_root, healthBarViewModel);
+        resourceView?.Initialize(_root, resourceViewModel);
+        chatView?.Initialize(_root, chatViewModel);
+        playerListView?.Initialize(_root, playerListViewModel);
+        notificationView?.Initialize(_root, notificationViewModel);
+        inventoryView?.Initialize(_root, inventoryViewModel);
+
+        if (interactionView != null && interactionViewModel != null)
+        {
+            Debug.Log("[UniversalHUDController] InteractionView 초기화 시작");
+            interactionView.Initialize(_root, interactionViewModel);
+            Debug.Log("[UniversalHUDController] InteractionView 초기화 완료");
+        }
+        else
+        {
+            Debug.LogError(
+                $"[UniversalHUDController] InteractionView 초기화 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
+            );
+        }
+
+        chestView?.Initialize(_root, chestViewModel);
+
+        // 체력바 강제 표시 (CSS 클래스 충돌 해결)
+        healthBarView?.SetHealthBarVisibility(true);
+
+        Debug.Log("[UniversalHUDController] MVVM 시스템 초기화 완료");
     }
 
     private void SubscribeToEvents()
@@ -370,14 +410,14 @@ public class UniversalHUDController : MonoBehaviour
         SetSpriteToElement("chatIconArea", iconQuickChat);
         SetSpriteToElement("hpIcon", iconHp);
 
-        resourceManager?.SetSprites(lightJelly, backgroundItemSlot);
-        playerListManager?.SetSprites(
+        // MVVM ViewModels에 스프라이트 설정
+        resourceViewModel?.SetSprites(lightJelly, backgroundItemSlot);
+        playerListViewModel?.SetSprites(
             iconMongingDefault,
             iconMongingFaint,
             iconMongingDead,
             iconMongingEscape
         );
-        playerInventoryManager?.SetSprites(backgroundItemSlot);
     }
 
     private void SetSpriteToElement(string elementName, Sprite sprite)
@@ -390,15 +430,30 @@ public class UniversalHUDController : MonoBehaviour
         }
     }
 
-    // ====== Public API (각 매니저로 위임) ======
-    public void SetTimeRemaining(TimeSpan t) => gameTimeManager?.SetTimeRemaining(t);
+    // ====== Public API (MVVM ViewModels로 위임) ======
+    public void SetTimeRemaining(TimeSpan t)
+    {
+        if (gameTimeViewModel != null)
+            gameTimeViewModel.CurrentTime = t;
+    }
 
-    public void SetStatusMessage(string message) => gameTimeManager?.SetStatusMessage(message);
+    public void SetStatusMessage(string message)
+    {
+        if (gameTimeViewModel != null)
+            gameTimeViewModel.StatusMessage = message;
+    }
 
-    public void SetLightCount(int count) => resourceManager?.SetLightCount(count);
+    public void SetLightCount(int count)
+    {
+        if (resourceViewModel != null)
+            resourceViewModel.LightCount = count;
+    }
 
-    public void SetGgumtleProgress(int level, float progress) =>
-        gameTimeManager?.SetGgumtleProgress(level, progress);
+    public void SetGgumtleProgress(int level, float progress)
+    {
+        if (gameTimeViewModel != null)
+            gameTimeViewModel.SetGgumtleProgress(level, progress);
+    }
 
     public void UpdatePlayer(
         int playerId,
@@ -409,17 +464,34 @@ public class UniversalHUDController : MonoBehaviour
         bool isHost = false
     )
     {
-        playerListManager?.UpdatePlayer(playerId, nickname, colorTheme, status, isOnline, isHost);
+        playerListViewModel?.UpdatePlayer(playerId, nickname, colorTheme, status, isOnline, isHost);
     }
 
-    public void ShowBanner(string msg, float seconds = 2.2f) =>
-        notificationManager?.ShowBanner(msg, seconds);
+    public void ShowBanner(string msg, float seconds = 2.2f)
+    {
+        notificationViewModel?.ShowNotification(msg, seconds);
+    }
 
-    public void SetHealth(int currentHP, int maxHP = 100) =>
-        healthBarManager?.SetHealth(currentHP, maxHP);
+    public void SetHealth(int currentHP, int maxHP = 100)
+    {
+        if (healthBarViewModel != null)
+            healthBarViewModel.SetHealth(currentHP, maxHP);
+    }
 
-    public void SetFaintState(bool isFainted, float reviveTime = 5f) =>
-        healthBarManager?.SetFaintState(isFainted, reviveTime);
+    public void SetFaintState(bool isFainted, float reviveTime = 5f)
+    {
+        if (healthBarViewModel != null)
+        {
+            if (isFainted)
+            {
+                healthBarViewModel.SetHealth(0);
+            }
+            else
+            {
+                healthBarViewModel.RevivePlayer();
+            }
+        }
+    }
 
     public void SetInteractionUI(
         bool show,
@@ -435,7 +507,17 @@ public class UniversalHUDController : MonoBehaviour
             return;
         }
 
-        interactionManager?.SetInteractionUI(show, text, progress, isCountdown);
+        if (interactionViewModel != null)
+        {
+            if (show)
+            {
+                interactionViewModel.ShowInteractionUI(text, Models.InteractionType.Custom);
+            }
+            else
+            {
+                interactionViewModel.HideInteractionUI();
+            }
+        }
     }
 
     public void SetCustomInteraction(string text, float progress = 0f, bool isCountdown = false)
@@ -447,7 +529,10 @@ public class UniversalHUDController : MonoBehaviour
             return;
         }
 
-        interactionManager?.SetCustomInteraction(text, progress, isCountdown);
+        if (interactionViewModel != null)
+        {
+            interactionViewModel.ShowInteractionUI(text, Models.InteractionType.Custom);
+        }
     }
 
     // 상호작용 가능 여부 체크
@@ -457,26 +542,37 @@ public class UniversalHUDController : MonoBehaviour
     }
 
     public bool UseInventoryItem(int slotNumber) =>
-        resourceManager?.UseInventoryItem(slotNumber) ?? false;
+        inventoryViewModel?.UsePlayerSlot(slotNumber) ?? false;
 
     public bool AddInventoryItem(int slotNumber, int amount = 1) =>
-        resourceManager?.AddInventoryItem(slotNumber, amount) ?? false;
+        inventoryViewModel?.AddToPlayerSlot(slotNumber, "", amount) ?? false;
 
     public void SetInventoryItemCount(int slotNumber, int count) =>
-        resourceManager?.SetInventoryItemCount(slotNumber, count);
+        inventoryViewModel?.AddToPlayerSlot(slotNumber, "", count);
 
     public int GetInventoryItemCount(int slotNumber) =>
-        resourceManager?.GetInventoryItemCount(slotNumber) ?? 0;
+        inventoryViewModel?.GetPlayerSlotCount(slotNumber) ?? 0;
 
-    public void InitializeInventoryForTesting() => resourceManager?.InitializeForTesting();
+    public void InitializeInventoryForTesting() => resourceView?.InitializeForTesting();
 
     // 상자 UI 관리 API
-    public void ShowChestInventory(InteractableChest chest) =>
-        chestBoxUIManager?.ShowChestInventory(chest);
+    public void ShowChestInventory(InteractableChest chest)
+    {
+        if (chestViewModel != null && chest != null)
+        {
+            chestViewModel.ShowChestUI(chest.ChestId);
+        }
+    }
 
-    public void HideChestBox() => chestBoxUIManager?.HideChestBox();
+    public void HideChestBox()
+    {
+        if (chestViewModel != null)
+        {
+            chestViewModel.HideChestUI();
+        }
+    }
 
-    public string GetCurrentChestId() => chestBoxUIManager?.GetCurrentChestId() ?? "";
+    public string GetCurrentChestId() => chestViewModel?.CurrentChestId ?? "";
 
     // 역할 관리
     public void ChangePlayerRole(PlayerRole newRole)
@@ -494,20 +590,22 @@ public class UniversalHUDController : MonoBehaviour
         switch (role)
         {
             case PlayerRole.Mongging:
-                resourceManager?.SetLightAreaVisibility(true);
-                resourceManager?.SetSlotVisibility(2, true);
-                resourceManager?.SetSlotVisibility(3, true);
-                healthBarManager?.SetHealthBarVisibility(true);
-                chatManager?.SetChatIconVisibility(true);
-                gameTimeManager?.SetStatusMessage("• 꿈 속을 탈출하세요.");
+                resourceView?.SetLightAreaVisibility(true);
+                resourceView?.SetSlotVisibility(2, true);
+                resourceView?.SetSlotVisibility(3, true);
+                healthBarView?.SetHealthBarVisibility(true);
+                chatView?.SetChatIconVisibility(true);
+                if (gameTimeViewModel != null)
+                    gameTimeViewModel.StatusMessage = "• 꿈 속을 탈출하세요.";
                 break;
             case PlayerRole.Mongdung:
-                resourceManager?.SetLightAreaVisibility(false);
-                resourceManager?.SetSlotVisibility(2, false);
-                resourceManager?.SetSlotVisibility(3, false);
-                healthBarManager?.SetHealthBarVisibility(false);
-                chatManager?.SetChatIconVisibility(false);
-                gameTimeManager?.SetStatusMessage("• 몽깅이를 제압해 꿈 속에 가두세요.");
+                resourceView?.SetLightAreaVisibility(false);
+                resourceView?.SetSlotVisibility(2, false);
+                resourceView?.SetSlotVisibility(3, false);
+                healthBarView?.SetHealthBarVisibility(false);
+                chatView?.SetChatIconVisibility(false);
+                if (gameTimeViewModel != null)
+                    gameTimeViewModel.StatusMessage = "• 몽깅이를 제압해 꿈 속에 가두세요.";
                 break;
         }
     }
@@ -527,7 +625,8 @@ public class UniversalHUDController : MonoBehaviour
     /// <summary>
     /// 특정 입력 레이어만 활성화
     /// </summary>
-    public void EnableOnlyInputLayer<T>() where T : class, IInputLayer
+    public void EnableOnlyInputLayer<T>()
+        where T : class, IInputLayer
     {
         inputCoordinator?.EnableOnlyLayer<T>();
     }
@@ -561,8 +660,6 @@ public class UniversalHUDController : MonoBehaviour
     /// <summary>
     /// 액션 버튼 컨트롤러 가져오기
     /// </summary>
-    public ActionButtonController GetActionButtonController() => actionButtonController;
-
     /// <summary>
     /// 플레이어 이동 ViewModel 가져오기
     /// </summary>
@@ -582,8 +679,9 @@ public class UniversalHUDController : MonoBehaviour
     // ====== 이벤트 핸들러들 ======
     private void OnGgumtleProgressChanged(int newLevel)
     {
-        // 실제 UI 업데이트 (이벤트 발생 안함)
-        gameTimeManager?.SetGgumtleProgressInternal(newLevel, 1.0f);
+        // 실제 UI 업데이트 (MVVM 방식)
+        if (gameTimeView != null)
+            gameTimeView.SetGgumtleProgressInternal(newLevel, 1.0f);
 
         // 배너 메시지
         if (newLevel == 3)
@@ -595,7 +693,7 @@ public class UniversalHUDController : MonoBehaviour
         else
         {
             // 일반 메시지
-            notificationManager?.ShowBanner("[꿈틀 정화 +1] 맵이 조금 밝아집니다.");
+            notificationViewModel?.ShowNotification("[꿈틀 정화 +1] 맵이 조금 밝아집니다.");
         }
 
         Debug.Log($"[UniversalHUD] 꿈틀 진행도 변경: {newLevel}단계");
@@ -604,24 +702,24 @@ public class UniversalHUDController : MonoBehaviour
     private IEnumerator Show3rdStageBanners()
     {
         // 첫 번째 배너
-        notificationManager?.ShowBanner("[꿈틀 정화 +1] 맵이 조금 밝아집니다.");
+        notificationViewModel?.ShowNotification("[꿈틀 정화 +1] 맵이 조금 밝아집니다.");
 
         // 3초 대기 (첫 번째 배너가 표시되는 시간)
         yield return new WaitForSeconds(3f);
 
         // 두 번째 배너 (탈출구 메시지)
-        notificationManager?.ShowBanner("탈출구가 열렸습니다. 어서 나가세요!");
+        notificationViewModel?.ShowNotification("탈출구가 열렸습니다. 어서 나가세요!");
 
         Debug.Log("[UniversalHUD] 3단계 배너 순차 표시 완료");
     }
 
     private void OnLightCountChanged(int newCount)
     {
-        // 실제 UI 업데이트 (이벤트 발생 안함)
-        resourceManager?.SetLightCountInternal(newCount);
+        // 실제 UI 업데이트 (MVVM 방식)
+        resourceView?.UpdateFromFeedingInventory();
 
         // 배너 메시지
-        notificationManager?.ShowBanner($"[빛 획득] 빛을 {newCount}개 얻었습니다!");
+        notificationViewModel?.ShowNotification($"[빛 획득] 빛을 {newCount}개 얻었습니다!");
         Debug.Log($"[UniversalHUD] 빛 개수 변경: {newCount}");
     }
 
@@ -629,9 +727,10 @@ public class UniversalHUDController : MonoBehaviour
     {
         if (isFainted)
         {
-            // UI 업데이트
-            healthBarManager?.SetFaintState(true, 5f);
-            notificationManager?.ShowBanner(
+            // UI 업데이트 (MVVM 방식)
+            if (healthBarViewModel != null)
+                healthBarViewModel.SetHealth(0);
+            notificationViewModel?.ShowNotification(
                 "기절! 제한 시간 내 동료 몽깅이의 도움이 필요합니다.",
                 3f
             );
@@ -641,9 +740,11 @@ public class UniversalHUDController : MonoBehaviour
         }
         else
         {
-            // 기절 해제 시 UI 업데이트
-            healthBarManager?.SetFaintState(false, 0f);
-            interactionManager?.SetInteractionUI(false);
+            // 기절 해제 시 UI 업데이트 (MVVM 방식)
+            if (healthBarViewModel != null)
+                healthBarViewModel.RevivePlayer();
+            if (interactionViewModel != null)
+                interactionViewModel.HideInteractionUI();
         }
 
         Debug.Log($"[UniversalHUD] 기절 상태 변경: {isFainted}");
@@ -651,30 +752,30 @@ public class UniversalHUDController : MonoBehaviour
 
     private void OnPlayerDeath()
     {
-        notificationManager?.ShowBanner("사망하였습니다.");
+        notificationViewModel?.ShowNotification("사망하였습니다.");
         Debug.Log("[UniversalHUD] 플레이어 사망");
     }
 
     private void OnPlayerRevived()
     {
-        notificationManager?.ShowBanner("부활하였습니다");
+        notificationViewModel?.ShowNotification("부활하였습니다");
         Debug.Log("[UniversalHUD] 플레이어 부활");
     }
 
-    private void OnInteractionCompleted(InteractionType type, bool success)
+    private void OnInteractionCompleted(Models.InteractionType type, bool success)
     {
         if (success)
         {
             string message = type switch
             {
-                InteractionType.Dig => "땅파기 완료!",
-                InteractionType.Revive => "구조 완료!",
-                InteractionType.Feeding => "먹이주기 완료!",
-                InteractionType.Faint => "시간 만료!",
+                Models.InteractionType.Dig => "땅파기 완료!",
+                Models.InteractionType.Revive => "구조 완료!",
+                Models.InteractionType.Feeding => "먹이주기 완료!",
+                Models.InteractionType.Faint => "시간 만료!",
                 _ => "상호작용이 완료되었습니다!",
             };
 
-            notificationManager?.ShowBanner(message);
+            notificationViewModel?.ShowNotification(message);
         }
 
         Debug.Log($"[UniversalHUD] 상호작용 완료: {type} (성공: {success})");
@@ -689,26 +790,28 @@ public class UniversalHUDController : MonoBehaviour
             _ => $"남은 {minutes}분 안에 탈출하세요.",
         };
 
-        notificationManager?.ShowBanner(message);
+        notificationViewModel?.ShowNotification(message);
         Debug.Log($"[UniversalHUD] 시간 경고: {minutes}분");
     }
 
     private void OnTimeUp()
     {
-        notificationManager?.ShowBanner("사망하였습니다.");
+        notificationViewModel?.ShowNotification("사망하였습니다.");
         Debug.Log("[UniversalHUD] 시간 종료");
     }
 
     // ====== 인벤토리 이벤트 핸들러들 ======
     private void OnItemObtained(string itemName, int quantity)
     {
-        notificationManager?.ShowBanner($"[아이템 획득] {itemName} {quantity}개를 얻었습니다!");
+        notificationViewModel?.ShowNotification(
+            $"[아이템 획득] {itemName} {quantity}개를 얻었습니다!"
+        );
         Debug.Log($"[UniversalHUD] 아이템 획득: {itemName} x{quantity}");
     }
 
     private void OnItemUsed(string itemName, int quantity)
     {
-        notificationManager?.ShowBanner($"[아이템 사용] {itemName} 사용");
+        notificationViewModel?.ShowNotification($"[아이템 사용] {itemName} 사용");
         Debug.Log($"[UniversalHUD] 아이템 사용: {itemName} x{quantity}");
     }
 

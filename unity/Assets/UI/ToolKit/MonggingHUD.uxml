@@ -19,6 +19,7 @@
     <Style src="project://database/Assets/UI/ToolKit/Uss/HealthBar.uss?fileID=7433441132597879392&amp;guid=7dee1fa434b35a741bad95728a9de109&amp;type=3#HealthBar" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/Inventory.uss?fileID=7433441132597879392&amp;guid=b54ca6f63693fbc4f8372715a500e65c&amp;type=3#Inventory" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/QuickChat.uss?fileID=7433441132597879392&amp;guid=d585259c3cd0e584fb793310da491b25&amp;type=3#QuickChat" />
+    <Style src="project://database/Assets/UI/ToolKit/Uss/ChestBoxUI.uss?fileID=7433441132597879392&amp;guid=9fdb10ee194d6ea4ab574482ab439ca5&amp;type=3#ChestBoxUI" />
     <ui:VisualElement name="hudRoot" class="hudRoot">
         <ui:Instance template="MobileControls" name="mobileControls" />
         <ui:Instance template="GameInfo" name="gameInfo" />

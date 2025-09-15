@@ -184,10 +184,28 @@ namespace Views
         {
             if (GlobalItemManager.Instance != null)
             {
-                var itemData = GlobalItemManager.Instance.GetItemData(itemId);
+                // 기존 가명을 실제 ID로 변환 (호환성)
+                string actualItemId = Models.ItemTypeHelper.ConvertLegacyId(itemId);
+
+                // ItemDatabase에서 아이템 데이터 가져오기
+                var itemData = GlobalItemManager.Instance.GetItemData(actualItemId);
                 if (itemData != null && itemData.itemIcon != null)
                 {
                     iconElement.style.backgroundImage = new StyleBackground(itemData.itemIcon);
+                }
+                else
+                {
+                    // 아이템을 찾지 못한 경우 원래 ID로도 시도
+                    itemData = GlobalItemManager.Instance.GetItemData(itemId);
+                    if (itemData != null && itemData.itemIcon != null)
+                    {
+                        iconElement.style.backgroundImage = new StyleBackground(itemData.itemIcon);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[InventoryView] 아이템 아이콘을 찾을 수 없음: {itemId} / {actualItemId}");
+                        iconElement.style.backgroundImage = null;
+                    }
                 }
             }
         }
@@ -198,10 +216,32 @@ namespace Views
 
         private void OnPlayerSlotClicked(int slotIndex)
         {
-            if (_viewModel != null && _viewModel.CanUsePlayerSlot(slotIndex))
+            if (_viewModel == null) return;
+
+            if (slotIndex == 0)
             {
-                _viewModel.UsePlayerSlot(slotIndex, 1);
-                Debug.Log($"[InventoryView] Used item from player slot {slotIndex}");
+                // 슬롯 0번: 아이템 사용
+                if (_viewModel.CanUsePlayerSlot(slotIndex))
+                {
+                    _viewModel.UsePlayerSlot(slotIndex, 1);
+                    Debug.Log($"[InventoryView] 슬롯 0번 아이템 사용");
+                }
+                else
+                {
+                    Debug.Log($"[InventoryView] 슬롯 0번에 사용할 아이템이 없습니다.");
+                }
+            }
+            else
+            {
+                // 다른 슬롯: 슬롯 0과 스왑
+                if (_viewModel.SwapPlayerSlots(0, slotIndex))
+                {
+                    Debug.Log($"[InventoryView] 슬롯 0번과 슬롯 {slotIndex}번 스왑 완료");
+                }
+                else
+                {
+                    Debug.Log($"[InventoryView] 슬롯 0번과 슬롯 {slotIndex}번 스왑 실패");
+                }
             }
         }
 

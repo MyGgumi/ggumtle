@@ -262,27 +262,103 @@ namespace ViewModels.UI
             var chestSlot = _currentChestSlots[slotIndex];
             if (chestSlot.isEmpty) return false;
 
-            if (targetSlot >= 0)
+            // 기존 가명 아이템을 실제 ID로 변환 (호환성)
+            string actualItemId = Models.ItemTypeHelper.ConvertLegacyId(chestSlot.itemId);
+
+            // 아이템 타입에 따른 처리
+            var itemType = Models.ItemTypeHelper.GetItemType(actualItemId);
+            var displayName = Models.ItemTypeHelper.GetDisplayName(actualItemId);
+
+            Debug.Log($"[ChestViewModel] 아이템 전송 시도: {chestSlot.itemId} ({displayName}) x{chestSlot.count}, 타입: {itemType}");
+
+            switch (itemType)
             {
-                if (inventoryViewModel.AddToPlayerSlot(targetSlot, chestSlot.itemId, chestSlot.count))
-                {
-                    TakeItemFromSlot(slotIndex);
-                    return true;
-                }
-            }
-            else
-            {
-                for (int i = 0; i < 3; i++)
-                {
-                    if (inventoryViewModel.AddToPlayerSlot(i, chestSlot.itemId, chestSlot.count))
+                case Models.ItemType.Feeding:
+                    // 빛젤리는 먹이 시스템으로
+                    int addedAmount = inventoryViewModel.AddFeeding(chestSlot.count);
+                    if (addedAmount > 0)
                     {
                         TakeItemFromSlot(slotIndex);
+                        Debug.Log($"[ChestViewModel] {displayName} {addedAmount}개 획득!");
                         return true;
                     }
-                }
-            }
+                    Debug.Log($"[ChestViewModel] {displayName} 저장 공간이 부족합니다.");
+                    return false;
 
-            return false;
+                case Models.ItemType.Equipment:
+                    // 장비 아이템은 플레이어 슬롯으로 (최대 3개 제한)
+                    if (targetSlot >= 0)
+                    {
+                        if (inventoryViewModel.AddToPlayerSlot(targetSlot, actualItemId, chestSlot.count))
+                        {
+                            TakeItemFromSlot(slotIndex);
+                            Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (슬롯 {targetSlot})");
+                            return true;
+                        }
+                        else
+                        {
+                            // 해당 슬롯에 추가 실패 (최대 3개 제한 또는 다른 아이템)
+                            ShowEquipmentLimitNotification(displayName);
+                        }
+                    }
+                    else
+                    {
+                        // 빈 슬롯 자동 찾기
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (inventoryViewModel.AddToPlayerSlot(i, actualItemId, chestSlot.count))
+                            {
+                                TakeItemFromSlot(slotIndex);
+                                Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (슬롯 {i})");
+                                return true;
+                            }
+                        }
+                        // 모든 슬롯에서 추가 실패
+                        ShowEquipmentLimitNotification(displayName);
+                    }
+                    Debug.Log($"[ChestViewModel] 인벤토리가 가득 찼거나 {displayName}이(가) 최대 개수에 도달했습니다.");
+                    return false;
+
+                default:
+                    // 기타 아이템 처리 (기존 방식 유지)
+                    Debug.LogWarning($"[ChestViewModel] 알 수 없는 아이템 타입: {chestSlot.itemId} -> {actualItemId}");
+                    if (targetSlot >= 0)
+                    {
+                        if (inventoryViewModel.AddToPlayerSlot(targetSlot, actualItemId, chestSlot.count))
+                        {
+                            TakeItemFromSlot(slotIndex);
+                            Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (기타 아이템, 슬롯 {targetSlot})");
+                            return true;
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i < 3; i++)
+                        {
+                            if (inventoryViewModel.AddToPlayerSlot(i, actualItemId, chestSlot.count))
+                            {
+                                TakeItemFromSlot(slotIndex);
+                                Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (기타 아이템, 슬롯 {i})");
+                                return true;
+                            }
+                        }
+                    }
+                    Debug.Log($"[ChestViewModel] 인벤토리가 가득 찼습니다. {displayName}을(를) 가져올 수 없습니다.");
+                    return false;
+            }
+        }
+
+        /// <summary>
+        /// 장비 아이템 최대 개수 제한 알림 표시
+        /// </summary>
+        private void ShowEquipmentLimitNotification(string itemName)
+        {
+            var universalHUD = UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
+            if (universalHUD != null && universalHUD.notificationViewModel != null)
+            {
+                universalHUD.notificationViewModel.ShowNotification($"{itemName}은(는) 최대 3개까지만 보유할 수 있습니다!", 2.5f);
+                Debug.Log($"[ChestViewModel] 장비 아이템 제한 알림 표시: {itemName}");
+            }
         }
 
         #endregion

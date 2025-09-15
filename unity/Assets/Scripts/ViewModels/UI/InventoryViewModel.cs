@@ -79,6 +79,14 @@ namespace ViewModels.UI
             _feedingCount = newCount;
             OnFeedingCountChanged?.Invoke(newCount);
             NotifyPropertyChanged();
+
+            // ResourceViewModel의 LightCount도 업데이트 (PlayerStatus UI 업데이트용)
+            var universalHUD = UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
+            if (universalHUD != null)
+            {
+                universalHUD.SetLightCount(newCount);
+                UnityEngine.Debug.Log($"[InventoryViewModel] ResourceViewModel LightCount 업데이트: {newCount}");
+            }
         }
 
         private void HandleGlobalItemChanged(string itemId, int count)
@@ -102,6 +110,14 @@ namespace ViewModels.UI
 
             _feedingCount = _inventoryModel.feedingCount;
             _maxFeedingCount = _inventoryModel.maxFeedingCount;
+
+            // 초기화 시 ResourceViewModel의 LightCount도 설정
+            var universalHUD = UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
+            if (universalHUD != null)
+            {
+                universalHUD.SetLightCount(_feedingCount);
+                UnityEngine.Debug.Log($"[InventoryViewModel] 초기화 - ResourceViewModel LightCount: {_feedingCount}");
+            }
         }
 
         #endregion
@@ -131,6 +147,11 @@ namespace ViewModels.UI
         public int GetPlayerSlotCount(int slotIndex)
         {
             return _inventoryService.GetPlayerSlotCount(slotIndex);
+        }
+
+        public bool SwapPlayerSlots(int slotA, int slotB)
+        {
+            return _inventoryService.SwapPlayerSlots(slotA, slotB);
         }
 
         #endregion

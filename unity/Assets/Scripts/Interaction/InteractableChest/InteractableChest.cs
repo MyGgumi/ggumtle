@@ -378,6 +378,46 @@ public class InteractableChest : MonoBehaviour, IInteractable
     }
 
     /// <summary>
+    /// 홀드 시작 - 상자는 홀드가 필요하지 않으므로 빈 구현
+    /// </summary>
+    public void OnHoldStart()
+    {
+        // 상자는 홀드가 필요하지 않음
+    }
+
+    /// <summary>
+    /// 홀드 진행 - 상자는 홀드가 필요하지 않으므로 빈 구현
+    /// </summary>
+    public void OnHoldProgress(float progress)
+    {
+        // 상자는 홀드가 필요하지 않음
+    }
+
+    /// <summary>
+    /// 홀드 완료 - 상자는 홀드가 필요하지 않으므로 빈 구현
+    /// </summary>
+    public void OnHoldComplete()
+    {
+        // 상자는 홀드가 필요하지 않음
+    }
+
+    /// <summary>
+    /// 홀드 취소 - 상자는 홀드가 필요하지 않으므로 빈 구현
+    /// </summary>
+    public void OnHoldCancelled()
+    {
+        // 상자는 홀드가 필요하지 않음
+    }
+
+    /// <summary>
+    /// 홀드 필요 시간 - 상자는 홀드가 필요하지 않으므로 0 반환
+    /// </summary>
+    public float GetHoldDuration()
+    {
+        return 0f; // 홀드 불필요
+    }
+
+    /// <summary>
     /// 매니저가 준비될 때까지 대기 후 상자 등록
     /// </summary>
     private System.Collections.IEnumerator RegisterChestWhenReady()

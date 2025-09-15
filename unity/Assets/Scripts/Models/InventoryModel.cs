@@ -85,14 +85,44 @@ namespace Models
             if (slotIndex < 0 || slotIndex >= playerSlots.Length) return false;
 
             var slot = playerSlots[slotIndex];
-            if (slot.IsEmpty)
+
+            // 장비 아이템 최대 개수 제한 적용
+            int maxEquipmentCount = 3;
+            if (Models.ItemTypeHelper.GetItemType(itemId) == Models.ItemType.Equipment)
             {
-                slot.SetItem(itemId, amount);
-                return true;
+                if (slot.IsEmpty)
+                {
+                    // 새로운 장비 아이템을 추가할 때 maxCount를 3으로 설정
+                    slot.maxCount = maxEquipmentCount;
+                    int clampedAmount = Mathf.Min(amount, maxEquipmentCount);
+                    slot.SetItem(itemId, clampedAmount);
+                    return true;
+                }
+                else if (slot.itemId == itemId)
+                {
+                    // 같은 장비 아이템을 추가할 때 최대 3개까지만
+                    slot.maxCount = maxEquipmentCount;
+                    int canAdd = Mathf.Min(amount, maxEquipmentCount - slot.count);
+                    if (canAdd > 0)
+                    {
+                        slot.count += canAdd;
+                        return true;
+                    }
+                    return false;
+                }
             }
-            else if (slot.itemId == itemId)
+            else
             {
-                return slot.AddItem(amount);
+                // 장비가 아닌 아이템은 기존 로직 유지
+                if (slot.IsEmpty)
+                {
+                    slot.SetItem(itemId, amount);
+                    return true;
+                }
+                else if (slot.itemId == itemId)
+                {
+                    return slot.AddItem(amount);
+                }
             }
             return false;
         }
@@ -124,6 +154,31 @@ namespace Models
         {
             if (slotIndex < 0 || slotIndex >= playerSlots.Length) return false;
             return !playerSlots[slotIndex].IsEmpty;
+        }
+
+        public bool SwapPlayerSlots(int slotA, int slotB)
+        {
+            if (slotA < 0 || slotA >= playerSlots.Length) return false;
+            if (slotB < 0 || slotB >= playerSlots.Length) return false;
+            if (slotA == slotB) return true; // 같은 슬롯이면 성공으로 처리
+
+            var slotAData = playerSlots[slotA];
+            var slotBData = playerSlots[slotB];
+
+            // 두 슬롯의 데이터를 교환
+            string tempItemId = slotAData.itemId;
+            int tempCount = slotAData.count;
+            int tempMaxCount = slotAData.maxCount;
+
+            slotAData.itemId = slotBData.itemId;
+            slotAData.count = slotBData.count;
+            slotAData.maxCount = slotBData.maxCount;
+
+            slotBData.itemId = tempItemId;
+            slotBData.count = tempCount;
+            slotBData.maxCount = tempMaxCount;
+
+            return true;
         }
 
         #endregion

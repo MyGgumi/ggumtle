@@ -5,6 +5,7 @@ using Models;
 using Services;
 using MVVM.Core;
 using StarterAssets;
+using Interaction.Handlers;
 
 namespace ViewModels.UI
 {
@@ -13,6 +14,9 @@ namespace ViewModels.UI
         [Header("Model & Service")]
         [SerializeField] private InteractionModel _interactionModel;
         [SerializeField] private InteractionService _interactionService;
+
+        // GgumtleService 참조 (MVVM 패턴을 위한 Service 연동)
+        private GgumtleService _ggumtleService;
 
         [Header("Current Interaction State")]
         [SerializeField] private InteractionType _currentType = InteractionType.None;
@@ -40,6 +44,9 @@ namespace ViewModels.UI
         public event Action<InteractionType, GameObject> OnNearbyInteractionRemoved;
         public event Action<bool> OnUIVisibilityChanged;
 
+        // 핸들러 기반 UI 제어 이벤트
+        public event Action<bool> OnProgressBarVisibilityChanged;
+
         void Awake()
         {
             if (_interactionModel == null)
@@ -48,8 +55,26 @@ namespace ViewModels.UI
             if (_interactionService == null)
                 _interactionService = new InteractionService(_interactionModel);
 
+            // GgumtleService 참조 획득 또는 생성
+            EnsureGgumtleServiceExists();
+
             SubscribeToServiceEvents();
             InitializeFromModel();
+        }
+
+        private void EnsureGgumtleServiceExists()
+        {
+            _ggumtleService = GgumtleService.Instance;
+            if (_ggumtleService == null)
+            {
+                Debug.Log("[InteractionViewModel] GgumtleService가 없어서 자동 생성합니다.");
+
+                // GgumtleService를 가진 GameObject 생성
+                var serviceObject = new GameObject("GgumtleService");
+                _ggumtleService = serviceObject.AddComponent<GgumtleService>();
+
+                Debug.Log("[InteractionViewModel] GgumtleService 자동 생성 완료");
+            }
         }
 
         void Update()
@@ -109,6 +134,10 @@ namespace ViewModels.UI
             _isActive = true;
             _isInProgress = true;
 
+            // 핸들러를 사용해서 UI 전략 결정
+            var handler = InteractionHandlerFactory.GetHandler(type);
+            OnProgressBarVisibilityChanged?.Invoke(handler.ShouldShowProgressBar());
+
             OnInteractionStarted?.Invoke(type, text, duration);
             NotifyPropertyChanged();
         }
@@ -125,6 +154,11 @@ namespace ViewModels.UI
             _isInProgress = false;
             _isActive = false;
             _currentProgress = 1f;
+
+            // 핸들러의 완료 처리 실행
+            var handler = InteractionHandlerFactory.GetHandler(type);
+            var interactionData = _interactionModel.currentInteraction;
+            handler.OnInteractionCompleted(interactionData);
 
             OnInteractionCompleted?.Invoke(type);
             NotifyPropertyChanged();
@@ -294,12 +328,38 @@ namespace ViewModels.UI
                 if (!stillNearby)
                 {
                     toRemove.Add(nearbyData);
+
+                    // 진행 중인 상호작용이 범위를 벗어나면 취소
+                    if (_isInProgress && _interactionModel.currentInteraction.targetObject == nearbyData.targetObject)
+                    {
+                        Debug.Log($"[InteractionViewModel] {nearbyData.targetObject?.name} 범위 이탈로 상호작용 취소");
+                        CancelInteraction();
+                    }
                 }
             }
 
             foreach (var data in toRemove)
             {
                 RemoveInteractableFromNearby(data);
+            }
+
+            // 상자 상태 변경 감지를 위한 텍스트 업데이트
+            foreach (var nearbyData in _interactionModel.nearbyInteractions)
+            {
+                if (nearbyData.type == Models.InteractionType.Chest && nearbyData.targetObject != null)
+                {
+                    var chest = nearbyData.targetObject.GetComponent<InteractableChest>();
+                    if (chest != null)
+                    {
+                        var newText = chest.GetInteractionText();
+                        if (nearbyData.displayText != newText)
+                        {
+                            // 상자 상태가 변경되었으므로 텍스트 업데이트
+                            nearbyData.displayText = newText;
+                            NotifyPropertyChanged();
+                        }
+                    }
+                }
             }
         }
 
@@ -319,11 +379,21 @@ namespace ViewModels.UI
         private void AddInteractableToNearby(IInteractable interactable)
         {
             var obj = (interactable as MonoBehaviour)?.gameObject;
-            if (obj == null) return;
+            if (obj == null)
+            {
+                Debug.LogWarning("[InteractionViewModel] AddInteractableToNearby - GameObject가 null입니다!");
+                return;
+            }
 
             // 상호작용 타입 결정
             var interactionType = GetInteractionType(interactable);
             var text = GetInteractionText(interactable);
+
+            if (string.IsNullOrEmpty(text))
+            {
+                Debug.LogWarning($"[InteractionViewModel] {obj.name} - GetInteractionText()가 빈 문자열을 반환했습니다!");
+                return;
+            }
 
             _interactionService.AddNearbyInteraction(interactionType, text, obj);
             Debug.Log($"[InteractionViewModel] {obj.name} 상호작용 추가: {text}");
@@ -403,6 +473,30 @@ namespace ViewModels.UI
         {
             _interactionService.RemoveNearbyInteraction(type, target);
             Debug.Log($"[InteractionViewModel] Nearby interaction removed: {type}, HasNearby: {HasNearbyInteractions}");
+        }
+
+        /// <summary>
+        /// 기존 상호작용의 텍스트만 업데이트 (상호작용을 제거/추가하지 않음)
+        /// </summary>
+        public bool UpdateNearbyInteractionText(InteractionType type, GameObject targetObject, string newText)
+        {
+            if (_interactionModel?.nearbyInteractions == null) return false;
+
+            foreach (var interaction in _interactionModel.nearbyInteractions)
+            {
+                if (interaction.type == type && interaction.targetObject == targetObject)
+                {
+                    if (interaction.displayText != newText)
+                    {
+                        interaction.displayText = newText;
+                        NotifyPropertyChanged();
+                        Debug.Log($"[InteractionViewModel] 상호작용 텍스트 업데이트: {newText}");
+                        return true;
+                    }
+                    return false; // 텍스트가 동일하면 업데이트 불필요
+                }
+            }
+            return false; // 해당 상호작용을 찾지 못함
         }
 
         public void ClearNearbyInteractions()
@@ -493,6 +587,76 @@ namespace ViewModels.UI
             Debug.Log($"  - Has nearby: {HasNearbyInteractions}");
             Debug.Log($"  - Is active: {IsActive}");
             Debug.Log($"  - Show UI: {ShowUI}");
+        }
+
+        #endregion
+
+        #region GgumtleService Integration (MVVM Pattern)
+
+        /// <summary>
+        /// 꿈틀이 홀드 시작 (View에서 호출)
+        /// </summary>
+        public void StartGgumtleHold(string ggumtleId)
+        {
+            if (_ggumtleService != null)
+            {
+                _ggumtleService.StartHold(ggumtleId);
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 홀드 진행 업데이트 (View에서 호출)
+        /// </summary>
+        public void UpdateGgumtleHoldProgress(string ggumtleId, float progress)
+        {
+            if (_ggumtleService != null)
+            {
+                _ggumtleService.UpdateHoldProgress(ggumtleId, progress);
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 홀드 완료 (View에서 호출)
+        /// </summary>
+        public void CompleteGgumtleHold(string ggumtleId)
+        {
+            if (_ggumtleService != null)
+            {
+                _ggumtleService.CompleteHold(ggumtleId);
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 홀드 취소 (View에서 호출)
+        /// </summary>
+        public void CancelGgumtleHold(string ggumtleId)
+        {
+            if (_ggumtleService != null)
+            {
+                _ggumtleService.CancelHold(ggumtleId);
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 먹이주기 중지 (View에서 호출) - 홀드 기반으로 변경되어 더 이상 사용되지 않음
+        /// </summary>
+        public void StopGgumtleFeeding(string ggumtleId)
+        {
+            // 홀드 기반으로 변경되어 별도 중단 불필요
+            Debug.Log($"[InteractionViewModel] 먹이주기가 홀드 기반으로 변경되어 별도 중단 불필요: {ggumtleId}");
+        }
+
+        /// <summary>
+        /// 먹이주기 후 프로그레스 바 리셋
+        /// </summary>
+        public void ResetFeedingProgressBar()
+        {
+            if (_isInProgress && _currentType == InteractionType.Feeding)
+            {
+                _currentProgress = 0f;
+                NotifyPropertyChanged();
+                Debug.Log("[InteractionViewModel] 먹이주기 프로그레스 바 리셋");
+            }
         }
 
         #endregion

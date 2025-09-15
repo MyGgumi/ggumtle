@@ -37,6 +37,7 @@ namespace Views
 
         private bool _isUIVisible = false;
         private ActionButtonController _actionButtonController;
+        private bool _isHolding = false;
 
         protected override void InitializeUIElements()
         {
@@ -57,6 +58,10 @@ namespace Views
             if (_actionButton != null)
             {
                 _actionButton.RegisterCallback<ClickEvent>(OnActionButtonClicked);
+                _actionButton.RegisterCallback<PointerDownEvent>(OnActionButtonPointerDown);
+                _actionButton.RegisterCallback<PointerUpEvent>(OnActionButtonPointerUp);
+                // PointerLeave 이벤트는 너무 민감해서 일시적으로 비활성화
+                // _actionButton.RegisterCallback<PointerLeaveEvent>(OnActionButtonPointerLeave);
                 Debug.Log("[InteractionView] ✅ 상호작용 버튼 이벤트 등록 완료");
             }
             else
@@ -64,11 +69,13 @@ namespace Views
                 Debug.LogError($"[InteractionView] ❌ {_actionButtonName} 버튼을 찾을 수 없습니다!");
             }
 
-            // 초기에는 상호작용 버튼 숨김
+            // 초기에는 상호작용 버튼 및 프로그레스바 숨김
             UpdateInteractionButtonVisibility(false);
+            SetProgressBarVisibility(false);
 
             HideInteractionUI();
         }
+
 
         protected override void SubscribeToViewModel()
         {
@@ -81,6 +88,7 @@ namespace Views
                 _viewModel.OnNearbyInteractionAdded += HandleNearbyInteractionAdded;
                 _viewModel.OnNearbyInteractionRemoved += HandleNearbyInteractionRemoved;
                 _viewModel.OnUIVisibilityChanged += HandleUIVisibilityChanged;
+                _viewModel.OnProgressBarVisibilityChanged += HandleProgressBarVisibilityChanged;
                 _viewModel.PropertyChanged += HandleViewModelPropertyChanged;
 
                 RefreshUI();
@@ -98,6 +106,7 @@ namespace Views
                 _viewModel.OnNearbyInteractionAdded -= HandleNearbyInteractionAdded;
                 _viewModel.OnNearbyInteractionRemoved -= HandleNearbyInteractionRemoved;
                 _viewModel.OnUIVisibilityChanged -= HandleUIVisibilityChanged;
+                _viewModel.OnProgressBarVisibilityChanged -= HandleProgressBarVisibilityChanged;
                 _viewModel.PropertyChanged -= HandleViewModelPropertyChanged;
             }
         }
@@ -107,6 +116,9 @@ namespace Views
             if (_actionButton != null)
             {
                 _actionButton.UnregisterCallback<ClickEvent>(OnActionButtonClicked);
+                _actionButton.UnregisterCallback<PointerDownEvent>(OnActionButtonPointerDown);
+                _actionButton.UnregisterCallback<PointerUpEvent>(OnActionButtonPointerUp);
+                // PointerLeave 이벤트는 사용하지 않음
             }
 
             // ActionButtonController 이벤트 해제 불필요 (구독하지 않음)
@@ -116,40 +128,87 @@ namespace Views
 
         private void HandleInteractionStarted(InteractionType type, string text, float duration)
         {
-            // 상자 타입은 InteractionView UI를 사용하지 않음 (ChestView가 처리)
-            if (type == InteractionType.Chest)
+            UpdateInteractionText(text);
+
+            // 홀드 진행 중일 때는 UI 재표시로 인한 레이아웃 변경 방지
+            if (!_isHolding)
             {
-                Debug.Log($"[InteractionView] Chest interaction started - skipping UI");
-                return;
+                ShowInteractionUI();
             }
 
-            UpdateInteractionText(text);
-            SetProgressBarVisibility(duration > 0);
-            ShowInteractionUI();
-
-            Debug.Log($"[InteractionView] Interaction started: {type} - {text}");
+            Debug.Log($"[InteractionView] Interaction started: {type} - {text}, 홀드 중: {_isHolding}");
         }
 
         private void HandleInteractionProgress(float progress)
         {
             UpdateProgressBar(progress);
+
+            // 홀드 상호작용인 경우 핸들러에게 진행도 위임
+            if (_viewModel != null && _viewModel.HasNearbyInteractions)
+            {
+                var nearbyInteraction = _viewModel.GetBestNearbyInteraction();
+                if (nearbyInteraction != null && nearbyInteraction.targetObject != null)
+                {
+                    var handler = Interaction.Handlers.InteractionHandlerFactory.GetHandler(nearbyInteraction.type);
+                    var interactable = nearbyInteraction.targetObject.GetComponent<IInteractable>();
+
+                    if (handler.RequiresHold() && interactable != null)
+                    {
+                        handler.OnHoldProgress(interactable, progress);
+                    }
+                }
+            }
         }
 
         private void HandleInteractionCompleted(InteractionType type)
         {
             Debug.Log($"[InteractionView] Interaction completed: {type}");
 
-            // 상자 타입은 UI를 숨기지 않음 (반복 가능한 상호작용)
-            if (type != InteractionType.Chest)
+            // 홀드 상호작용인 경우 핸들러에게 완료 위임
+            if (_viewModel != null && _viewModel.HasNearbyInteractions)
+            {
+                var nearbyInteraction = _viewModel.GetBestNearbyInteraction();
+                if (nearbyInteraction != null && nearbyInteraction.targetObject != null)
+                {
+                    var handler = Interaction.Handlers.InteractionHandlerFactory.GetHandler(nearbyInteraction.type);
+                    var interactable = nearbyInteraction.targetObject.GetComponent<IInteractable>();
+
+                    if (handler.RequiresHold() && interactable != null)
+                    {
+                        handler.OnHoldComplete(interactable);
+                    }
+                }
+            }
+
+            // Feeding 타입은 UI를 유지하고 텍스트만 업데이트
+            if (type != Models.InteractionType.Feeding)
             {
                 HideInteractionUI();
+            }
+            else
+            {
+                // 먹이주기는 프로그레스바만 리셋하고 UI 유지
+                UpdateProgressBar(0f);
+                Debug.Log("[InteractionView] 먹이주기 완료 - UI 유지, 프로그레스바 리셋");
             }
         }
 
         private void HandleInteractionCancelled()
         {
             Debug.Log("[InteractionView] Interaction cancelled");
-            HideInteractionUI();
+
+            // 홀드 중이었다면 홀드 상태만 초기화
+            if (_isHolding)
+            {
+                _isHolding = false;
+                Debug.Log("[InteractionView] 홀드 상태 초기화됨");
+            }
+
+            // 진행바만 0으로 초기화 (가시성은 RefreshUI에서 결정)
+            UpdateProgressBar(0f);
+
+            // 근처 상호작용 여부에 따라 UI 상태 결정 (텍스트와 진행바 함께)
+            RefreshUI();
         }
 
         private void HandleNearbyInteractionAdded(
@@ -158,30 +217,43 @@ namespace Views
             GameObject target
         )
         {
-            // 상자 타입은 InteractionView UI를 사용하지 않음
-            if (type == InteractionType.Chest)
+            // 상자가 열려있는 경우 UI 표시하지 않음
+            if (type == InteractionType.Chest && target != null)
             {
-                return;
+                var chest = target.GetComponent<InteractableChest>();
+                if (chest != null && chest.isOpen)
+                {
+                    return;
+                }
             }
 
-            if (!_isUIVisible && !_viewModel.IsActive)
+            if (!_isUIVisible)
             {
                 UpdateInteractionText(text);
+
+                // 핸들러를 사용해서 프로그레스바 가시성 결정
+                var handler = Interaction.Handlers.InteractionHandlerFactory.GetHandler(type);
+                SetProgressBarVisibility(handler.ShouldShowProgressBar());
+
                 ShowInteractionUI();
             }
         }
 
         private void HandleNearbyInteractionRemoved(InteractionType type, GameObject target)
         {
-            // 상자 타입은 InteractionView UI를 사용하지 않음
-            if (type == InteractionType.Chest)
-            {
-                return;
-            }
+            Debug.Log($"[InteractionView] 근처 상호작용 제거됨: {type}, 남은 상호작용: {_viewModel.HasNearbyInteractions}, 활성 상호작용: {_viewModel.IsActive}");
 
-            if (!_viewModel.IsActive && !_viewModel.HasNearbyInteractions)
+            // 근처에 상호작용이 없으면 UI 숨김 (활성 상태와 관계없이)
+            if (!_viewModel.HasNearbyInteractions)
             {
                 HideInteractionUI();
+                Debug.Log("[InteractionView] 근처 상호작용 없음 - UI 숨김");
+            }
+            else
+            {
+                // 남은 상호작용이 있다면 UI 새로고침
+                RefreshUI();
+                Debug.Log("[InteractionView] 다른 상호작용 남아있음 - UI 새로고침");
             }
         }
 
@@ -191,6 +263,11 @@ namespace Views
                 ShowInteractionUI();
             else
                 HideInteractionUI();
+        }
+
+        private void HandleProgressBarVisibilityChanged(bool visible)
+        {
+            SetProgressBarVisibility(visible);
         }
 
         private void HandleViewModelPropertyChanged(string propertyName)
@@ -222,7 +299,16 @@ namespace Views
         {
             if (_progressBar != null)
             {
-                _progressBar.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+                var targetDisplay = visible ? DisplayStyle.Flex : DisplayStyle.None;
+
+                // 현재 상태와 동일하면 불필요한 레이아웃 변경 방지
+                if (_progressBar.style.display.value == targetDisplay)
+                {
+                    return; // 로그 제거 - 너무 자주 호출됨
+                }
+
+                _progressBar.style.display = targetDisplay;
+                Debug.Log($"[InteractionView] 📊 프로그레스바 가시성 변경: {(visible ? "표시" : "숨김")}");
             }
         }
 
@@ -232,9 +318,7 @@ namespace Views
             {
                 _isUIVisible = true;
                 _interactionContainer.style.display = DisplayStyle.Flex;
-
-                _interactionContainer.RemoveFromClassList("fade-out");
-                _interactionContainer.AddToClassList("fade-in");
+                _interactionContainer.style.opacity = 1f;
 
                 Debug.Log("[InteractionView] Showing interaction UI");
             }
@@ -246,8 +330,10 @@ namespace Views
             {
                 _isUIVisible = false;
 
-                _interactionContainer.RemoveFromClassList("fade-in");
-                _interactionContainer.AddToClassList("fade-out");
+                // fade 애니메이션 대신 opacity 트랜지션 사용
+                _interactionContainer.style.opacity = 0f;
+
+                // 프로그레스바도 컨테이너와 함께 사라지도록 (별도로 숨기지 않음)
 
                 _interactionContainer
                     .schedule.Execute(() =>
@@ -255,11 +341,12 @@ namespace Views
                         if (_interactionContainer != null)
                         {
                             _interactionContainer.style.display = DisplayStyle.None;
+                            _interactionContainer.style.opacity = 1f; // 다음 표시를 위해 리셋
                         }
                     })
                     .ExecuteLater((long)(_fadeOutDuration * 1000));
 
-                Debug.Log("[InteractionView] Hiding interaction UI");
+                Debug.Log("[InteractionView] Hiding interaction UI (텍스트와 진행바 함께)");
             }
         }
 
@@ -268,104 +355,174 @@ namespace Views
             if (_viewModel == null)
                 return;
 
-            // 상자 타입은 InteractionView UI를 사용하지 않음
-            if (_viewModel.CurrentType == InteractionType.Chest)
-            {
-                HideInteractionUI();
-                return;
-            }
+            UpdateInteractionText(_viewModel.CurrentText);
+            UpdateProgressBar(_viewModel.CurrentProgress);
 
-            // 근처에 상자만 있는 경우에도 UI 숨김
+            // 근처 상호작용 확인
             if (_viewModel.HasNearbyInteractions)
             {
                 var nearbyInteraction = _viewModel.GetBestNearbyInteraction();
-                if (nearbyInteraction != null && nearbyInteraction.type == InteractionType.Chest)
+                if (nearbyInteraction != null)
                 {
-                    HideInteractionUI();
+                    // 상자가 열려있는 경우 UI 숨김
+                    if (nearbyInteraction.type == InteractionType.Chest && nearbyInteraction.targetObject != null)
+                    {
+                        var chest = nearbyInteraction.targetObject.GetComponent<InteractableChest>();
+                        if (chest != null && chest.isOpen)
+                        {
+                            HideInteractionUI();
+                            return;
+                        }
+                    }
+
+                    // 텍스트와 진행바 업데이트
+                    UpdateInteractionText(nearbyInteraction.displayText);
+                    var handler = Interaction.Handlers.InteractionHandlerFactory.GetHandler(nearbyInteraction.type);
+                    SetProgressBarVisibility(handler.ShouldShowProgressBar());
+
+                    // UI 표시
+                    ShowInteractionUI();
                     return;
                 }
             }
 
-            UpdateInteractionText(_viewModel.CurrentText);
-            UpdateProgressBar(_viewModel.CurrentProgress);
-
-            if (_viewModel.ShowUI || _viewModel.IsActive || _viewModel.HasNearbyInteractions)
-            {
-                ShowInteractionUI();
-            }
-            else
-            {
-                HideInteractionUI();
-            }
+            // 근처 상호작용 없으면 UI 숨김
+            HideInteractionUI();
         }
 
         #endregion
 
         #region User Interactions
 
-        private void OnActionButtonClicked(ClickEvent evt)
+        private void OnActionButtonPointerDown(PointerDownEvent evt)
         {
-            Debug.Log("[InteractionView] 🖱️ Action button clicked!");
+            Debug.Log("[InteractionView] 🖱️ Action button pointer down!");
+            _isHolding = true;
 
-            if (_viewModel == null)
+            // 마우스 캡처 - 이제 PointerUp까지 모든 마우스 이벤트를 받음
+            if (_actionButton != null)
             {
-                Debug.LogError("[InteractionView] _viewModel이 null입니다!");
-                return;
+                _actionButton.CaptureMouse();
+                Debug.Log("[InteractionView] 🎯 마우스 캡처 완료");
             }
 
-            // 근처에 상호작용이 있으면 우선 처리 (상자 포함)
+            StartHoldInteraction();
+        }
+
+        private void OnActionButtonPointerUp(PointerUpEvent evt)
+        {
+            Debug.Log("[InteractionView] 🖱️ Action button pointer up!");
+
+            // 마우스 캡처 해제
+            if (_actionButton != null)
+            {
+                _actionButton.ReleaseMouse();
+                Debug.Log("[InteractionView] 🎯 마우스 캡처 해제");
+            }
+
+            StopHoldInteraction();
+        }
+
+
+        private void StartHoldInteraction()
+        {
+            if (_viewModel == null || !_isHolding) return;
+
+            // 근처에 상호작용이 있는지 확인
             if (_viewModel.HasNearbyInteractions)
             {
-                Debug.Log("[InteractionView] 근처 상호작용 있음, 실행 시도");
                 var nearbyInteraction = _viewModel.GetBestNearbyInteraction();
                 if (nearbyInteraction != null)
                 {
-                    Debug.Log($"[InteractionView] 발견된 상호작용: {nearbyInteraction.type}, 대상: {nearbyInteraction.targetObject?.name}");
+                    Debug.Log($"[InteractionView] 홀드 시작 시도 - 타입: {nearbyInteraction.type}, 텍스트: '{nearbyInteraction.displayText}'");
+                    var handler = Interaction.Handlers.InteractionHandlerFactory.GetHandler(nearbyInteraction.type);
 
-                    // 실제 상호작용 객체의 Interact 메서드 호출
-                    if (nearbyInteraction.targetObject != null)
+                    if (handler.RequiresHold())
                     {
-                        var interactable = nearbyInteraction.targetObject.GetComponent<IInteractable>();
-                        if (interactable != null)
+                        // 홀드가 필요한 상호작용: 핸들러에게 홀드 시작 위임
+                        if (nearbyInteraction.targetObject != null)
                         {
-                            Debug.Log($"[InteractionView] ⚡ {nearbyInteraction.targetObject.name}.Interact() 호출!");
-                            interactable.Interact();
+                            var interactable = nearbyInteraction.targetObject.GetComponent<IInteractable>();
+                            if (interactable != null)
+                            {
+                                Debug.Log($"[InteractionView] 홀드 상호작용 시작: {nearbyInteraction.type}");
+                                handler.OnHoldStart(interactable);
+
+                                // ViewModel에게 홀드 상호작용 시작 알림
+                                _viewModel.StartInteraction(
+                                    nearbyInteraction.type,
+                                    nearbyInteraction.displayText,
+                                    interactable.GetHoldDuration(),
+                                    true, // requiresHold = true
+                                    nearbyInteraction.targetObject
+                                );
+                            }
                         }
                     }
-
-                    // 상자가 아닌 경우에만 상호작용 시작
-                    if (nearbyInteraction.type != InteractionType.Chest)
+                    else
                     {
-                        _viewModel.StartInteraction(
-                            nearbyInteraction.type,
-                            nearbyInteraction.displayText,
-                            3f,
-                            false,
-                            nearbyInteraction.targetObject
-                        );
+                        // 즉시 실행 타입은 상호작용 객체의 Interact 메서드 호출
+                        if (nearbyInteraction.targetObject != null)
+                        {
+                            var interactable = nearbyInteraction.targetObject.GetComponent<IInteractable>();
+                            if (interactable != null)
+                            {
+                                Debug.Log($"[InteractionView] ⚡ {nearbyInteraction.targetObject.name}.Interact() 호출!");
+                                interactable.Interact();
+                            }
+                        }
                     }
                 }
             }
-            else if (_viewModel.IsActive)
-            {
-                // 활성 상호작용이 있을 때 (상자는 이미 처리됨)
-                Debug.Log("[InteractionView] 활성 상호작용 처리");
+        }
 
-                if (_viewModel.IsInProgress)
+        private void StopHoldInteraction()
+        {
+            if (!_isHolding) return;
+            _isHolding = false;
+
+            // 마우스 캡처 해제 (PointerUp이 호출되지 않을 수 있으므로)
+            if (_actionButton != null)
+            {
+                _actionButton.ReleaseMouse();
+                Debug.Log("[InteractionView] 🎯 마우스 캡처 해제 (StopHoldInteraction)");
+            }
+
+            // 홀드가 필요한 진행 중인 상호작용이 있으면 취소
+            if (_viewModel != null && _viewModel.IsInProgress)
+            {
+                // 핸들러에게 홀드 취소 위임
+                if (_viewModel.HasNearbyInteractions)
                 {
-                    Debug.Log("[InteractionView] 진행 중인 상호작용 취소");
-                    _viewModel.CancelInteraction();
+                    var nearbyInteraction = _viewModel.GetBestNearbyInteraction();
+                    if (nearbyInteraction != null && nearbyInteraction.targetObject != null)
+                    {
+                        var handler = Interaction.Handlers.InteractionHandlerFactory.GetHandler(nearbyInteraction.type);
+                        var interactable = nearbyInteraction.targetObject.GetComponent<IInteractable>();
+
+                        if (handler.RequiresHold() && interactable != null)
+                        {
+                            Debug.Log("[InteractionView] 홀드 중단으로 상호작용 취소");
+                            handler.OnHoldCancelled(interactable);
+                        }
+                    }
                 }
-                else
-                {
-                    Debug.Log("[InteractionView] 상호작용 완료");
-                    _viewModel.CompleteInteraction();
-                }
+
+                _viewModel.CancelInteraction();
+                // CancelInteraction에서 HandleInteractionCancelled가 호출되어 RefreshUI 실행됨
             }
             else
             {
-                Debug.LogWarning("[InteractionView] 근처에 상호작용 가능한 객체가 없습니다!");
+                // 진행 중인 상호작용이 없는 경우에만 직접 RefreshUI 호출
+                RefreshUI();
             }
+        }
+
+        private void OnActionButtonClicked(ClickEvent evt)
+        {
+            // 클릭 이벤트는 홀드 처리로 대체됨
+            // 홀드가 필요하지 않은 상호작용(상자, 탈출)은 PointerDown에서 처리됨
+            Debug.Log("[InteractionView] 🖱️ Action button clicked! (홀드 처리로 대체됨)");
         }
 
 
@@ -395,7 +552,15 @@ namespace Views
         {
             if (_actionButton != null)
             {
-                _actionButton.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
+                var targetDisplay = visible ? DisplayStyle.Flex : DisplayStyle.None;
+
+                // 현재 상태와 동일하면 불필요한 재렌더링 방지
+                if (_actionButton.style.display.value == targetDisplay)
+                {
+                    return; // 로그 제거 - 너무 자주 호출됨
+                }
+
+                _actionButton.style.display = targetDisplay;
                 Debug.Log($"[InteractionView] 🔘 상호작용 버튼 {(visible ? "표시" : "숨김")} - 버튼 상태: {_actionButton.style.display.value}");
             }
             else

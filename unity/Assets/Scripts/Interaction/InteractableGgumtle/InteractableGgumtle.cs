@@ -1,13 +1,7 @@
 using System.Collections;
 using UnityEngine;
-
-public enum GgumtleState
-{
-    Buried,    // 땅에 묻혀있음 (초기 상태)
-    Digging,   // 파내는 중 (애니메이션)
-    Feeding,   // 먹이 주기 가능 상태
-    Purified   // 정화 완료 (제거됨)
-}
+using Models;
+using Services;
 
 public class InteractableGgumtle : MonoBehaviour, IInteractable
 {
@@ -15,16 +9,8 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     public string ggumtleName = "꿈틀이";
     public string ggumtleId; // 고유 ID
     public float interactionRange = 2.0f;
-    public GgumtleState currentState = GgumtleState.Buried;
 
-    [Header("상호작용 설정")]
-    public float diggingHoldTime = 3f; // 파내기에 필요한 홀드 시간 (초)
-    
-    [Header("먹이 설정")]
-    public int maxFoodRequired = 30; // 정화에 필요한 총 먹이량
-    public int feedingRate = 1; // 0.5초당 먹이 개수 (빛 자원에서 소모)
-    public int currentFoodAmount = 0; // 현재 먹은 먹이량
-    public string acceptableFoodType = "Light"; // 받을 수 있는 먹이 종류 (이제 빛)
+    // 설정값들은 GgumtleService에서 관리하므로 제거
 
     [Header("애니메이션")]
     public Animator ggumtleAnimator;
@@ -40,13 +26,10 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     public ParticleSystem diggingEffect;
     public ParticleSystem purificationEffect;
 
+    // 서비스 참조
+    private GgumtleService ggumtleService;
+    private GgumtleData ggumtleData;
     private Transform playerTransform;
-    private bool isFeedingContinuously = false;
-    private bool isDiggingHold = false;
-    private bool isInteractionHeld = false; // 현재 상호작용 버튼이 눌려있는 상태
-    private Coroutine feedingCoroutine;
-    private Coroutine diggingCoroutine;
-    private float lastFeedTime = 0f; // 마지막 먹이 준 시간
 
     void Start()
     {
@@ -58,28 +41,50 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
             ggumtleId = $"Ggumtle_{transform.position.x}_{transform.position.z}_{GetInstanceID()}";
         }
 
-        // 플레이어 찾기
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-            playerTransform = player.transform;
-
         if (ggumtleAnimator == null)
             ggumtleAnimator = GetComponent<Animator>();
 
-        InitializeState();
+        // 서비스 초기화
+        InitializeService();
     }
 
     void Update()
     {
         UpdateInteractionIcon();
-        UpdateHoldInteractions();
     }
 
-    private void InitializeState()
+    private void InitializeService()
     {
-        // 초기 상태 설정
-        currentState = GgumtleState.Buried;
-        currentFoodAmount = 0;
+        Debug.Log($"[InteractableGgumtle] {ggumtleName} InitializeService 시작");
+
+        // 서비스 인스턴스 획득
+        ggumtleService = GgumtleService.Instance;
+        if (ggumtleService == null)
+        {
+            Debug.LogError("[InteractableGgumtle] GgumtleService가 없습니다! 코루틴으로 대기합니다.");
+            StartCoroutine(WaitForServiceAndInitialize());
+            return;
+        }
+
+        // 서비스에 꿈틀이 등록
+        ggumtleService.RegisterGgumtle(ggumtleId, ggumtleName, transform.position);
+        ggumtleData = ggumtleService.GetGgumtleData(ggumtleId);
+
+        if (ggumtleData == null)
+        {
+            Debug.LogError($"[InteractableGgumtle] {ggumtleName} ggumtleData를 가져올 수 없습니다!");
+            return;
+        }
+
+        // 플레이어 찾기
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (player != null)
+            playerTransform = player.transform;
+
+        // 서비스 이벤트 구독
+        ggumtleService.OnGgumtleStateChanged += OnStateChanged;
+        ggumtleService.OnGgumtleFoodAdded += OnFoodAdded;
+        ggumtleService.OnGgumtlePurified += OnPurified;
 
         // UI 아이콘 초기화
         if (interactionIcon != null)
@@ -87,18 +92,137 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         if (feedingIcon != null)
             feedingIcon.SetActive(false);
 
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 초기화 완료 - 상태: {currentState}");
+        Debug.Log($"[InteractableGgumtle] {ggumtleName} 서비스 등록 완료 - ID: {ggumtleId}, 상태: {ggumtleData.currentState}");
     }
+
+    private System.Collections.IEnumerator WaitForServiceAndInitialize()
+    {
+        Debug.Log($"[InteractableGgumtle] {ggumtleName} GgumtleService 대기 중...");
+
+        // GgumtleService가 준비될 때까지 대기
+        while (GgumtleService.Instance == null)
+        {
+            yield return null;
+        }
+
+        // 추가 안전 대기
+        yield return new WaitForSeconds(0.1f);
+
+        InitializeService();
+    }
+
+    void OnDestroy()
+    {
+        // 서비스 이벤트 구독 해제
+        if (ggumtleService != null)
+        {
+            ggumtleService.OnGgumtleStateChanged -= OnStateChanged;
+            ggumtleService.OnGgumtleFoodAdded -= OnFoodAdded;
+            ggumtleService.OnGgumtlePurified -= OnPurified;
+
+            // 서비스에서 꿈틀이 등록 해제
+            ggumtleService.UnregisterGgumtle(ggumtleId);
+        }
+    }
+
+    #region Service Event Handlers
+
+    private void OnStateChanged(string id, GgumtleState previousState, GgumtleState newState)
+    {
+        if (id != ggumtleId) return;
+
+        Debug.Log($"[InteractableGgumtle] 상태 변경: {previousState} → {newState}");
+
+        // 애니메이션 처리
+        switch (newState)
+        {
+            case GgumtleState.Digging:
+                if (ggumtleAnimator != null && !string.IsNullOrEmpty(diggingAnimationTrigger))
+                {
+                    ggumtleAnimator.SetTrigger(diggingAnimationTrigger);
+                }
+                if (diggingEffect != null)
+                {
+                    diggingEffect.Play();
+                }
+                break;
+
+            case GgumtleState.Emerging:
+                // 나오는 중 애니메이션 (추후 추가)
+                if (diggingEffect != null)
+                {
+                    diggingEffect.Stop();
+                }
+                Debug.Log($"[InteractableGgumtle] {ggumtleName} 나오는 중... (2초간 애니메이션)");
+                break;
+
+            case GgumtleState.Feeding:
+                if (ggumtleAnimator != null && !string.IsNullOrEmpty(feedingAnimationTrigger))
+                {
+                    ggumtleAnimator.SetTrigger(feedingAnimationTrigger);
+                }
+                Debug.Log($"[InteractableGgumtle] {ggumtleName} 먹이주기 가능 상태");
+                break;
+
+            case GgumtleState.Purified:
+                if (purificationEffect != null)
+                {
+                    purificationEffect.Play();
+                }
+                break;
+        }
+
+        // UI 업데이트를 위해 InteractionViewModel에게 알림 (Digging, Emerging 상태 제외)
+        if (newState != GgumtleState.Digging && newState != GgumtleState.Emerging)
+        {
+            UpdateNearbyInteractionUI();
+        }
+    }
+
+    private void OnFoodAdded(string id, int currentAmount, int maxAmount)
+    {
+        if (id != ggumtleId) return;
+
+        Debug.Log($"[InteractableGgumtle] 먹이 추가: {currentAmount}/{maxAmount}");
+
+        // UI 텍스트만 업데이트 (전체 UI 제거/재추가 방지)
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        {
+            var newText = GetInteractionText();
+            bool updated = ViewModels.UI.InteractionViewModel.Instance.UpdateNearbyInteractionText(
+                Models.InteractionType.Feeding, gameObject, newText);
+
+            if (updated)
+            {
+                Debug.Log($"[InteractableGgumtle] UI 텍스트 업데이트 완료: {newText}");
+
+                // 먹이주기 후 프로그레스 바 리셋 요청
+                ViewModels.UI.InteractionViewModel.Instance.ResetFeedingProgressBar();
+            }
+        }
+    }
+
+    private void OnPurified(string id)
+    {
+        if (id != ggumtleId) return;
+
+        Debug.Log($"[InteractableGgumtle] 정화 완료: {id}");
+
+        // 일정 시간 후 오브젝트 제거
+        StartCoroutine(DestroyAfterPurification());
+    }
+
+    #endregion
 
     private void UpdateInteractionIcon()
     {
-        if (playerTransform == null) return;
+        if (playerTransform == null || ggumtleData == null) return;
 
         float distance = Vector3.Distance(transform.position, playerTransform.position);
-        bool isInRange = distance <= interactionRange;
+        bool isInRange = distance <= ggumtleData.interactionRange;
 
         // 상태에 따른 아이콘 표시
-        switch (currentState)
+        switch (ggumtleData.currentState)
         {
             case GgumtleState.Buried:
                 if (interactionIcon != null)
@@ -125,279 +249,54 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
 
     private bool IsPlayerInRange()
     {
-        if (playerTransform == null) return false;
+        if (playerTransform == null || ggumtleData == null) return false;
         float distance = Vector3.Distance(transform.position, playerTransform.position);
-        return distance <= interactionRange;
+        return distance <= ggumtleData.interactionRange;
     }
 
-    private void UpdateHoldInteractions()
-    {
-        // 플레이어가 범위를 벗어나면 모든 홀드 상호작용 중단
-        if (!IsPlayerInRange())
-        {
-            StopAllHoldInteractions();
-            return;
-        }
 
-        // InteractionManager를 통해 상호작용 버튼 상태 확인
-        // 실제로는 InteractionManager에서 홀드 상태를 알려줘야 하지만,
-        // 임시로 여기서 처리
-        CheckHoldState();
-    }
 
-    private void CheckHoldState()
+    // CompleteDigging은 서비스에서 처리하므로 제거
+
+    private void UpdateNearbyInteractionUI()
     {
-        // InteractionManager를 통해 홀드 상태 확인
+        if (ggumtleData == null) return;
+
+        // InteractionViewModel에게 상태 변경 알림
         if (ViewModels.UI.InteractionViewModel.Instance != null)
         {
-            bool managerIsHolding = ViewModels.UI.InteractionViewModel.Instance.IsInProgress;
-            
-            // InteractionViewModel의 홀드 상태와 동기화
-            if (managerIsHolding && ViewModels.UI.InteractionViewModel.Instance.CurrentType == Models.InteractionType.Dig)
+            // 상태에 따른 올바른 타입 설정
+            Models.InteractionType interactionType;
+            switch (ggumtleData.currentState)
             {
-                isInteractionHeld = true;
-            }
-            else if (!managerIsHolding)
-            {
-                isInteractionHeld = false;
-            }
-        }
-    }
-
-    private void StopAllHoldInteractions()
-    {
-        if (isDiggingHold)
-        {
-            StopDiggingHold();
-        }
-        if (isFeedingContinuously)
-        {
-            StopFeeding();
-        }
-        isInteractionHeld = false;
-    }
-
-    private void StartDiggingHold()
-    {
-        if (isDiggingHold) return;
-        
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 파내기 홀드 시작");
-        
-        isDiggingHold = true;
-        currentState = GgumtleState.Digging;
-
-        // 파내기 애니메이션
-        if (ggumtleAnimator != null && !string.IsNullOrEmpty(diggingAnimationTrigger))
-        {
-            ggumtleAnimator.SetTrigger(diggingAnimationTrigger);
-        }
-
-        // 파내기 이펙트
-        if (diggingEffect != null)
-        {
-            diggingEffect.Play();
-        }
-
-        // 홀드 시간 체크 코루틴 시작
-        if (diggingCoroutine != null)
-        {
-            StopCoroutine(diggingCoroutine);
-        }
-        diggingCoroutine = StartCoroutine(DiggingHoldProgress());
-    }
-
-    private void StopDiggingHold()
-    {
-        if (!isDiggingHold) return;
-
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 파내기 홀드 중단");
-        
-        isDiggingHold = false;
-        
-        // 다시 묻힌 상태로 복귀
-        currentState = GgumtleState.Buried;
-
-        // 파내기 이펙트 중단
-        if (diggingEffect != null)
-        {
-            diggingEffect.Stop();
-        }
-
-        // 코루틴 중단
-        if (diggingCoroutine != null)
-        {
-            StopCoroutine(diggingCoroutine);
-            diggingCoroutine = null;
-        }
-    }
-
-    private IEnumerator DiggingHoldProgress()
-    {
-        float holdTime = 0f;
-        
-        while (isDiggingHold && holdTime < diggingHoldTime)
-        {
-            // 플레이어가 범위를 벗어나면 중단
-            if (!IsPlayerInRange() || !isInteractionHeld)
-            {
-                StopDiggingHold();
-                yield break;
+                case GgumtleState.Buried:
+                    interactionType = Models.InteractionType.Dig;
+                    break;
+                case GgumtleState.Feeding:
+                    interactionType = Models.InteractionType.Feeding;
+                    break;
+                default:
+                    return; // Digging, Purified 상태에서는 상호작용 불가
             }
 
-            holdTime += Time.deltaTime;
-            
-            // 진행도 표시 (선택적)
-            float progress = holdTime / diggingHoldTime;
-            Debug.Log($"[InteractableGgumtle] 파내기 진행도: {progress:P0}");
+            var text = GetInteractionText();
+            if (string.IsNullOrEmpty(text)) return;
 
-            yield return null;
-        }
-
-        // 홀드 완료
-        if (isDiggingHold && holdTime >= diggingHoldTime)
-        {
-            CompleteDigging();
-        }
-    }
-
-    private void CompleteDigging()
-    {
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 파내기 완료");
-        
-        isDiggingHold = false;
-        currentState = GgumtleState.Feeding;
-
-        // 파내기 이펙트 중단
-        if (diggingEffect != null)
-        {
-            diggingEffect.Stop();
-        }
-
-        // 먹이주기 애니메이션으로 전환
-        if (ggumtleAnimator != null && !string.IsNullOrEmpty(feedingAnimationTrigger))
-        {
-            ggumtleAnimator.SetTrigger(feedingAnimationTrigger);
-        }
-
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 먹이주기 가능 상태로 전환");
-    }
-
-
-    private void StartFeeding()
-    {
-        if (isFeedingContinuously) return;
-
-        // 플레이어가 먹이를 가지고 있는지 확인
-        if (!CanPlayerFeed())
-        {
-            Debug.Log($"[InteractableGgumtle] 플레이어가 Light를 가지고 있지 않습니다");
-            return;
-        }
-
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 먹이주기 시작");
-        isFeedingContinuously = true;
-        lastFeedTime = Time.time;
-
-        // 지속적 먹이주기 코루틴 시작
-        if (feedingCoroutine != null)
-        {
-            StopCoroutine(feedingCoroutine);
-        }
-        feedingCoroutine = StartCoroutine(ContinuousFeeding());
-    }
-
-    private void StopFeeding()
-    {
-        if (!isFeedingContinuously) return;
-
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 먹이주기 중단");
-        isFeedingContinuously = false;
-
-        if (feedingCoroutine != null)
-        {
-            StopCoroutine(feedingCoroutine);
-            feedingCoroutine = null;
-        }
-    }
-
-    private IEnumerator ContinuousFeeding()
-    {
-        while (isFeedingContinuously && currentState == GgumtleState.Feeding)
-        {
-            // 플레이어가 범위를 벗어나거나 홀드가 해제되면 먹이주기 중단
-            if (!IsPlayerInRange() || !isInteractionHeld)
-            {
-                StopFeeding();
-                yield break;
-            }
-
-            // 플레이어가 먹이를 가지고 있는지 확인
-            if (!CanPlayerFeed())
-            {
-                Debug.Log($"[InteractableGgumtle] 플레이어의 Light가 모두 소모됨 - 먹이주기 중단");
-                StopFeeding();
-                yield break;
-            }
-
-            // 0.5초마다 feedingRate만큼 먹이 소모 및 추가
-            float currentTime = Time.time;
-            if (currentTime - lastFeedTime >= 0.5f) // 0.5초마다
-            {
-                // 플레이어 인벤토리에서 먹이 제거
-                if (TryConsumeFoodFromPlayer(feedingRate))
-                {
-                    currentFoodAmount += feedingRate;
-                    lastFeedTime = currentTime;
-
-                    Debug.Log($"[InteractableGgumtle] 먹이 {feedingRate}개 소모, 현재 먹이량: {currentFoodAmount}/{maxFoodRequired}");
-
-                    // 정화 조건 확인
-                    if (currentFoodAmount >= maxFoodRequired)
-                    {
-                        StartPurification();
-                        yield break;
-                    }
-                }
-                else
-                {
-                    Debug.Log($"[InteractableGgumtle] 플레이어 인벤토리에서 Light 소모 실패");
-                    StopFeeding();
-                    yield break;
-                }
-            }
-
-            yield return null; // 매 프레임마다 실행
-        }
-    }
-
-    private void StartPurification()
-    {
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 정화 시작!");
-        
-        currentState = GgumtleState.Purified;
-        StopFeeding();
-
-        // 정화 애니메이션
-        if (ggumtleAnimator != null && !string.IsNullOrEmpty(purifiedAnimationTrigger))
-        {
-            ggumtleAnimator.SetTrigger(purifiedAnimationTrigger);
-        }
-
-        // 정화 이펙트
-        if (purificationEffect != null)
-        {
-            purificationEffect.Play();
-        }
-
-        // InteractionManager에게 상호작용 종료 알림
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
-        {
+            // 기존 상호작용 제거 후 새로 추가 (텍스트 업데이트)
             ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
-        }
+            ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Feeding, gameObject);
 
-        // 일정 시간 후 제거
-        StartCoroutine(DestroyAfterPurification());
+            ViewModels.UI.InteractionViewModel.Instance.AddNearbyInteraction(interactionType, text, gameObject);
+            Debug.Log($"[InteractableGgumtle] UI 업데이트: {text}, 타입: {interactionType}");
+        }
     }
+
+
+    // FeedOnce 제거 - 이제 홀드 방식으로 통일
+    // StopFeeding 제거 - 홀드 기반으로 변경됨
+    // ContinuousFeeding은 GgumtleService에서 처리하므로 제거
+
+    // StartPurification은 OnPurified 이벤트에서 처리
 
     private IEnumerator DestroyAfterPurification()
     {
@@ -407,159 +306,126 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         Destroy(gameObject);
     }
 
-    /// <summary>
-    /// 플레이어가 먹이를 줄 수 있는지 확인
-    /// </summary>
-    private bool CanPlayerFeed()
-    {
-        if (ViewModels.UI.InventoryViewModel.Instance == null) return false;
-        return ViewModels.UI.InventoryViewModel.Instance.HasEnoughFeeding(feedingRate);
-    }
-
-    /// <summary>
-    /// 빛 자원에서 먹이 소모 시도
-    /// </summary>
-    private bool TryConsumeFoodFromPlayer(int amount)
-    {
-        if (ViewModels.UI.InventoryViewModel.Instance == null) return false;
-
-        bool success = ViewModels.UI.InventoryViewModel.Instance.RemoveFeeding(amount);
-        if (success)
-        {
-            Debug.Log($"[InteractableGgumtle] 빛 자원에서 Light {amount}개 소모");
-        }
-        return success;
-    }
+    // 아래 메서드들은 이제 GgumtleService에서 처리됨 (DEPRECATED)
+    // CanPlayerFeed(), TryConsumeFoodFromPlayer() 메서드들은 GgumtleService로 이동됨
 
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        Gizmos.DrawWireSphere(transform.position, interactionRange);
+        float range = ggumtleData?.interactionRange ?? 2f;
+        Gizmos.DrawWireSphere(transform.position, range);
     }
 
     #region IInteractable 구현
     public bool CanInteract()
     {
-        switch (currentState)
+        if (ggumtleData == null)
         {
-            case GgumtleState.Buried:
-                return IsPlayerInRange();
-            case GgumtleState.Digging:
-                // 파내기 중에도 상호작용 가능 (홀드 유지용)
-                return IsPlayerInRange();
-            case GgumtleState.Feeding:
-                return IsPlayerInRange();
-            case GgumtleState.Purified:
-            default:
-                return false;
+            // Service 초기화가 완료되지 않았으면 상호작용 불가
+            return false;
         }
+
+        bool canInteract = ggumtleData.CanInteract() && IsPlayerInRange();
+        return canInteract;
     }
 
     public string GetInteractionText()
     {
-        switch (currentState)
+        if (ggumtleData == null)
         {
-            case GgumtleState.Buried:
-                return $"{ggumtleName} 파내기";
-            case GgumtleState.Digging:
-                return $"{ggumtleName} 파내는 중...";
-            case GgumtleState.Feeding:
-                return $"{ggumtleName}에게 먹이 주기 ({currentFoodAmount}/{maxFoodRequired})";
-            case GgumtleState.Purified:
-            default:
-                return "";
+            // Service 초기화가 완료되지 않았으면 빈 문자열 반환
+            return "";
         }
+
+        return ggumtleData.GetInteractionText();
     }
 
     public void Interact()
     {
         if (!CanInteract()) return;
 
-        Debug.Log($"[InteractableGgumtle] Interact 호출됨 - 상태: {currentState}");
-        
-        // Digging 상태에서는 Interact 호출 무시 (중복 방지)
-        if (currentState == GgumtleState.Digging)
-        {
-            Debug.Log($"[InteractableGgumtle] 파내기 진행 중 - Interact 무시");
-            return;
-        }
-        
-        // 기본 Interact는 홀드 시작으로 처리
-        OnInteractionStart();
-    }
+        Debug.Log($"[InteractableGgumtle] Interact 호출됨 - 상태: {ggumtleData.currentState}");
 
-    // 상호작용 시작 (홀드 시작)
-    public void OnInteractionStart()
-    {
-        if (!CanInteract()) return;
-
-        isInteractionHeld = true;
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
-        {
-            var interactionType = (currentState == GgumtleState.Buried) ? Models.InteractionType.Dig : Models.InteractionType.Feeding;
-            ViewModels.UI.InteractionViewModel.Instance.AddNearbyInteraction(interactionType, GetInteractionText(), gameObject);
-        }
-
-        switch (currentState)
-        {
-            case GgumtleState.Buried:
-                StartDiggingHold();
-                break;
-
-            case GgumtleState.Feeding:
-                StartFeeding();
-                break;
-        }
-    }
-
-    // 상호작용 해제 (홀드 해제)
-    public void OnInteractionRelease()
-    {
-        Debug.Log($"[InteractableGgumtle] 상호작용 해제 - 상태: {currentState}");
-        
-        isInteractionHeld = false;
-        
-        switch (currentState)
-        {
-            case GgumtleState.Digging:
-                if (isDiggingHold)
-                {
-                    StopDiggingHold();
-                    if (ViewModels.UI.InteractionViewModel.Instance != null)
-                    {
-                        ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
-                    }
-                }
-                break;
-
-            case GgumtleState.Feeding:
-                if (isFeedingContinuously)
-                {
-                    StopFeeding();
-                    if (ViewModels.UI.InteractionViewModel.Instance != null)
-                    {
-                        ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
-                    }
-                }
-                break;
-        }
+        // 즉시 실행되는 상호작용은 없음 - 모든 상호작용이 홀드 필요
+        Debug.Log($"[InteractableGgumtle] 모든 상호작용이 홀드 필요 - Handler에서 처리됨");
     }
 
     public void OnInteractionEnd()
     {
         Debug.Log($"[InteractableGgumtle] {ggumtleName} 상호작용 종료");
-        
-        // 모든 홀드 상호작용 중단
-        StopAllHoldInteractions();
-        
-        // 상태 완전 초기화
-        isInteractionHeld = false;
+
+        // 홀드 중이었다면 취소
+        if (ggumtleData != null && ggumtleData.isHoldInProgress)
+        {
+            OnHoldCancelled();
+        }
+
+        // 홀드 기반으로 변경되어 별도 중단 불필요
+
         Debug.Log($"[InteractableGgumtle] {ggumtleName} 상태 완전 초기화");
     }
 
+    #region IInteractable Hold Methods
+
+    public void OnHoldStart()
+    {
+        // MVVM 패턴: ViewModel을 통해 서비스 호출
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        {
+            ViewModels.UI.InteractionViewModel.Instance.StartGgumtleHold(ggumtleId);
+        }
+    }
+
+    public void OnHoldProgress(float progress)
+    {
+        // MVVM 패턴: ViewModel을 통해 서비스 호출
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        {
+            ViewModels.UI.InteractionViewModel.Instance.UpdateGgumtleHoldProgress(ggumtleId, progress);
+        }
+    }
+
+    public void OnHoldComplete()
+    {
+        // MVVM 패턴: ViewModel을 통해 서비스 호출
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        {
+            ViewModels.UI.InteractionViewModel.Instance.CompleteGgumtleHold(ggumtleId);
+        }
+    }
+
+    public void OnHoldCancelled()
+    {
+        // MVVM 패턴: ViewModel을 통해 서비스 호출
+        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        {
+            ViewModels.UI.InteractionViewModel.Instance.CancelGgumtleHold(ggumtleId);
+        }
+    }
+
+    public float GetHoldDuration()
+    {
+        if (ggumtleData == null) return 3f;
+
+        // 상태에 따라 다른 홀드 시간 반환
+        switch (ggumtleData.currentState)
+        {
+            case GgumtleState.Buried:
+            case GgumtleState.Digging:
+                return ggumtleData.diggingHoldTime; // 파내기: 3초
+            case GgumtleState.Feeding:
+                return 0.5f; // 먹이주기: 0.5초마다 반복
+            default:
+                return 3f;
+        }
+    }
+
+    #endregion
+
     public float GetInteractionRange()
     {
-        return interactionRange;
+        if (ggumtleData == null) return 2f;
+        return ggumtleData.interactionRange;
     }
 
     public Transform GetTransform()
@@ -569,15 +435,11 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
 
     public string GetInteractableName()
     {
-        switch (currentState)
-        {
-            case GgumtleState.Buried:
-                return $"{ggumtleName} (파내기)";
-            case GgumtleState.Feeding:
-                return $"{ggumtleName} (먹이주기 {currentFoodAmount}/{maxFoodRequired})";
-            default:
-                return ggumtleName;
-        }
+        if (ggumtleData == null) return ggumtleName;
+        return ggumtleData.GetInteractableName();
     }
+
+    // SendFeedingStatusToServer는 GgumtleService에서 처리하므로 제거
+
     #endregion
 }

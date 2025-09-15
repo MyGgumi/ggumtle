@@ -3,6 +3,10 @@ using System.Collections;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.UIElements;
+using InputSystem.Core;
+using InputSystem.Movement;
+using InputSystem.Actions;
+using MVVM.Movement;
 
 [RequireComponent(typeof(UIDocument))]
 public class UniversalHUDController : MonoBehaviour
@@ -38,9 +42,18 @@ public class UniversalHUDController : MonoBehaviour
     public PlayerInventoryManager playerInventoryManager;
     public ChestBoxUIManager chestBoxUIManager;
 
-    [Header("Mobile Control Managers")]
-    public MobileInputManager mobileInputManager;
-    public PlayerActionManager playerActionManager;
+    [Header("Input System")]
+    private InputCoordinator inputCoordinator;
+    private JoystickController joystickController;
+    private CameraRotationController cameraRotationController;
+    private ActionButtonController actionButtonController;
+
+    [Header("MVVM System")]
+    private PlayerMovementViewModel playerMovementViewModel;
+
+    [Header("Legacy Mobile Control Managers - To Be Deprecated")]
+    public MobileInputManager mobileInputManager; // 호환성 유지용
+    public PlayerActionManager playerActionManager; // 호환성 유지용
 
     void Awake()
     {
@@ -48,13 +61,18 @@ public class UniversalHUDController : MonoBehaviour
         _root = _doc.rootVisualElement;
 
         EnsureManagerComponents();
+        SetupInputSystem();
+        SetupMVVMSystem();
         ConfigureUIForRole(currentPlayerRole);
     }
 
     void Start()
     {
         InitializeManagers();
+        InitializeInputControllers();
+        InitializeViewModels();
         InitializeSprites();
+        ConnectInputToGameplay();
 
         // 매니저 초기화 후 이벤트 구독
         SubscribeToEvents();
@@ -63,7 +81,162 @@ public class UniversalHUDController : MonoBehaviour
     void OnDestroy()
     {
         UnsubscribeFromEvents();
+        CleanupInputSystem();
     }
+
+    #region 새로운 입력 시스템 설정
+
+    private void SetupInputSystem()
+    {
+        // InputCoordinator 생성 및 초기화
+        inputCoordinator = gameObject.GetComponent<InputCoordinator>()
+            ?? gameObject.AddComponent<InputCoordinator>();
+
+        // 입력 컨트롤러들 생성
+        joystickController = gameObject.GetComponent<JoystickController>()
+            ?? gameObject.AddComponent<JoystickController>();
+
+        cameraRotationController = gameObject.GetComponent<CameraRotationController>()
+            ?? gameObject.AddComponent<CameraRotationController>();
+
+        actionButtonController = gameObject.GetComponent<ActionButtonController>()
+            ?? gameObject.AddComponent<ActionButtonController>();
+
+        Debug.Log("[UniversalHUDController] 입력 시스템 컴포넌트 설정 완료");
+    }
+
+    private void InitializeInputControllers()
+    {
+        if (inputCoordinator != null)
+        {
+            // InputCoordinator 초기화
+            inputCoordinator.Initialize(_root);
+
+            // 각 컨트롤러 등록 및 초기화
+            if (joystickController != null)
+            {
+                inputCoordinator.RegisterLayer(joystickController);
+                joystickController.Priority = 10;
+                joystickController.Enable();
+            }
+
+            if (cameraRotationController != null)
+            {
+                inputCoordinator.RegisterLayer(cameraRotationController);
+                cameraRotationController.Priority = 5;
+                cameraRotationController.Enable();
+            }
+
+            if (actionButtonController != null)
+            {
+                inputCoordinator.RegisterLayer(actionButtonController);
+                actionButtonController.Priority = 15;
+                actionButtonController.Enable();
+            }
+
+            Debug.Log("[UniversalHUDController] 입력 컨트롤러 초기화 완료");
+        }
+    }
+
+    private void ConnectInputToGameplay()
+    {
+        // 조이스틱 → PlayerMovementViewModel 연결 (새 방식)
+        if (joystickController != null && playerMovementViewModel != null)
+        {
+            joystickController.OnMove += playerMovementViewModel.SetMoveInput;
+            joystickController.OnMoveEnd += () => playerMovementViewModel.SetMoveInput(Vector2.zero);
+        }
+
+        // 카메라 → PlayerMovementViewModel 연결 (새 방식)
+        if (cameraRotationController != null && playerMovementViewModel != null)
+        {
+            cameraRotationController.OnCameraRotate += playerMovementViewModel.SetLookInput;
+        }
+
+        // 조이스틱 → StarterAssetsInputs 연결 (레거시 호환성)
+        if (joystickController != null && starterAssetsInputs != null)
+        {
+            joystickController.OnMove += (moveInput) => {
+                starterAssetsInputs.MoveInput(moveInput);
+                starterAssetsInputs.LookInput(Vector2.zero);
+            };
+            joystickController.OnMoveEnd += () => {
+                starterAssetsInputs.MoveInput(Vector2.zero);
+            };
+        }
+
+        // 액션 버튼 → PlayerMovementViewModel 연결 (새 방식)
+        if (actionButtonController != null && playerMovementViewModel != null)
+        {
+            actionButtonController.OnJumpPressed += () => playerMovementViewModel.SetJumpInput(true);
+            actionButtonController.OnJumpReleased += () => playerMovementViewModel.SetJumpInput(false);
+        }
+
+        // 액션 버튼 → StarterAssetsInputs 연결 (레거시 호환성)
+        if (actionButtonController != null && starterAssetsInputs != null)
+        {
+            actionButtonController.OnJumpPressed += () => {
+                starterAssetsInputs.JumpInput(true);
+                Debug.Log("[UniversalHUDController] 점프 입력 활성화");
+            };
+            actionButtonController.OnJumpReleased += () => {
+                starterAssetsInputs.JumpInput(false);
+                Debug.Log("[UniversalHUDController] 점프 입력 비활성화");
+            };
+
+            actionButtonController.OnInteractHoldStart += () => {
+                if (InteractionManager.Instance != null)
+                {
+                    InteractionManager.Instance.OnInteractionHoldStart();
+                }
+            };
+            actionButtonController.OnInteractHoldEnd += () => {
+                if (InteractionManager.Instance != null)
+                {
+                    InteractionManager.Instance.OnInteractionHoldEnd();
+                }
+            };
+        }
+
+        // InteractionManager와 ActionButtonController 연결
+        if (actionButtonController != null && InteractionManager.Instance != null)
+        {
+            InteractionManager.Instance.SetActionButtonController(actionButtonController);
+            Debug.Log("[UniversalHUDController] InteractionManager와 ActionButtonController 연결 완료");
+        }
+
+        Debug.Log("[UniversalHUDController] 입력-게임플레이 연결 완료");
+    }
+
+    private void CleanupInputSystem()
+    {
+        // 이벤트 연결 해제는 각 컨트롤러의 Cleanup에서 처리됨
+        inputCoordinator?.ResetAllInput();
+    }
+
+    #endregion
+
+    #region MVVM 시스템 설정
+
+    private void SetupMVVMSystem()
+    {
+        // PlayerMovementViewModel 생성
+        playerMovementViewModel = gameObject.GetComponent<PlayerMovementViewModel>()
+            ?? gameObject.AddComponent<PlayerMovementViewModel>();
+
+        Debug.Log("[UniversalHUDController] MVVM 시스템 컴포넌트 설정 완료");
+    }
+
+    private void InitializeViewModels()
+    {
+        // PlayerMovementViewModel 이미 초기화됨 (MonoBehaviour이므로)
+        if (playerMovementViewModel != null)
+        {
+            Debug.Log("[UniversalHUDController] ViewModel들 초기화 완료");
+        }
+    }
+
+    #endregion
 
     private void EnsureManagerComponents()
     {
@@ -340,6 +513,71 @@ public class UniversalHUDController : MonoBehaviour
     }
 
     public PlayerRole GetCurrentRole() => currentPlayerRole;
+
+    // ====== 새로운 입력 시스템 API ======
+
+    /// <summary>
+    /// 입력 모드 변경 (Normal, Chatting, UIInteraction, etc.)
+    /// </summary>
+    public void SetInputMode(InputMode mode)
+    {
+        inputCoordinator?.SetInputMode(mode);
+    }
+
+    /// <summary>
+    /// 특정 입력 레이어만 활성화
+    /// </summary>
+    public void EnableOnlyInputLayer<T>() where T : class, IInputLayer
+    {
+        inputCoordinator?.EnableOnlyLayer<T>();
+    }
+
+    /// <summary>
+    /// 모든 입력 활성화
+    /// </summary>
+    public void EnableAllInput()
+    {
+        inputCoordinator?.EnableAllLayers();
+    }
+
+    /// <summary>
+    /// 모든 입력 비활성화
+    /// </summary>
+    public void DisableAllInput()
+    {
+        inputCoordinator?.DisableAllLayers();
+    }
+
+    /// <summary>
+    /// 조이스틱 컨트롤러 가져오기
+    /// </summary>
+    public JoystickController GetJoystickController() => joystickController;
+
+    /// <summary>
+    /// 카메라 회전 컨트롤러 가져오기
+    /// </summary>
+    public CameraRotationController GetCameraRotationController() => cameraRotationController;
+
+    /// <summary>
+    /// 액션 버튼 컨트롤러 가져오기
+    /// </summary>
+    public ActionButtonController GetActionButtonController() => actionButtonController;
+
+    /// <summary>
+    /// 플레이어 이동 ViewModel 가져오기
+    /// </summary>
+    public PlayerMovementViewModel GetPlayerMovementViewModel() => playerMovementViewModel;
+
+    /// <summary>
+    /// 플레이어 이동 가능 여부 설정 (상호작용 중일 때 사용)
+    /// </summary>
+    public void SetPlayerCanMove(bool canMove)
+    {
+        if (playerMovementViewModel != null)
+        {
+            playerMovementViewModel.CanMove = canMove;
+        }
+    }
 
     // ====== 이벤트 핸들러들 ======
     private void OnGgumtleProgressChanged(int newLevel)

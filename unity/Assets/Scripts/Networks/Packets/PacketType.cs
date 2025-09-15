@@ -18,6 +18,7 @@
         MongdungAttack = 60,
         MonggingRevivalStart = 62,
         MonggingRevivalStop = 65,
+        MongdungSkill = 67,
         MonggingItemUse = 69,
         MonggingFieldItemUse = 71,
         
@@ -43,7 +44,10 @@
         MonggingRevivalStartResponse = 63,
         MonggingRevivalComplete = 64,
         MonggingRevivalStopResponse = 66,
+        MongdungSkillResponse = 68,
         MonggingItemUseResponse = 70,
         MonggingFieldItemUseResponse = 72,
+        GgumtleSpawn = 43,
+        GgumtleNirvana = 120,
     }
 }

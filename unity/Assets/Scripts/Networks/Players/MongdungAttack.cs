@@ -51,4 +51,42 @@ namespace Networks.Players
             this.leftHp = leftHp;
         }
     }
+
+    public class MongdungSkillSend : Sendable
+    {
+        public override PacketType Type => PacketType.MongdungSkill;
+
+        public int skillType;
+
+        public MongdungSkillSend(int skillType)
+        {
+            this.skillType = skillType;
+        }
+
+        public override byte[] ToBytes()
+        {
+            var buffer = Unpooled.Buffer(4);
+            
+            buffer.WriteInt(skillType);
+
+            var bytes = new byte[buffer.ReadableBytes];
+            buffer.ReadBytes(bytes);
+
+            return bytes;
+        }
+    }
+
+    public class MongdungSkillCommand : Command
+    {
+        public override PacketType Type => PacketType.MongdungSkillResponse;
+
+        public int skillType;
+        public byte result;
+
+        public MongdungSkillCommand(int skillType, byte result)
+        {
+            this.skillType = skillType;
+            this.result = result;
+        }
+    }
 }

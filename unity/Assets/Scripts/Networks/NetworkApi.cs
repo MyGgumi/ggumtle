@@ -780,6 +780,29 @@ namespace Networks
             }
         }
 
+        public void MongdungSkill(int skillType)
+        {
+            try
+            {
+                Debug.Log($"MongdungSkill 시작: skillType={skillType}");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    return;
+                }
+
+                var mongdungSkillRequest = new MongdungSkillSend(skillType);
+                client.Send(mongdungSkillRequest);
+                
+                Debug.Log($"몽둥이 스킬 요청 전송 완료: skillType={skillType}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"몽둥이 스킬 패킷 전송 실패: {e.Message}");
+            }
+        }
+
         public void HandleResponse(Command command)
         {
             Debug.Log($"HandleResponse 호출됨: {command.Type}");

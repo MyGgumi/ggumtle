@@ -164,7 +164,7 @@ public class DreamController {
         CancelMatchingResult result = dreamService.cancelMatching(command);
         CancelMatchingResponse response = new CancelMatchingResponse(result.message());
 
-        SendSocketEvent event = new SendSocketEvent(SocketType.CANCELLED_MATCHING, result.participantsIds(), response);
+        SendSocketEvent event = new SendSocketEvent(SocketType.CANCELLED_MATCHING, result.participantIds(), response);
         applicationEventPublisher.publishEvent(event);
     }
 }

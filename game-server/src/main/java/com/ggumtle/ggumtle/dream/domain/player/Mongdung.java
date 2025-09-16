@@ -21,8 +21,6 @@ public class Mongdung extends Player {
     private static final double TARGET_SIZE_Y = 2000;
     private static final double TARGET_SIZE_Z = 1000;
 
-    public final int moveSpeed;
-
     private final AtomicLong lastScareTime;
     private final AtomicInteger buryFakeGgumtleCount;
 
@@ -30,9 +28,8 @@ public class Mongdung extends Player {
     protected int damage;
 
     public Mongdung(long id, Position position) {
-        super(id, position);
+        super(id, position, BASE_MOVE_SPEED);
 
-        this.moveSpeed = BASE_MOVE_SPEED;
         this.damage = BASE_DAMAGE;
         this.lastScareTime = new AtomicLong(System.currentTimeMillis());
         this.buryFakeGgumtleCount = new AtomicInteger(0);

@@ -20,7 +20,6 @@ public class Mongging extends Player {
     public static final int REVIVE_DISTANCE_SQUARE = 1000 * 1000;
 
     public final int maxHp;
-    public final int moveSpeed;
     public final int healSpeed;
     public final int workSpeed;
 
@@ -36,7 +35,7 @@ public class Mongging extends Player {
     public enum Status { ALIVE, KNOCKOUT, DEAD, ESCAPED }
 
     public Mongging(long id, Position position) {
-        super(id, position);
+        super(id, position, BASE_MOVE_SPEED);
 
         this.maxHp = BASE_HP;
         this.hp = maxHp;
@@ -44,7 +43,6 @@ public class Mongging extends Player {
         this.status = Status.ALIVE;
         this.statusLock = new Object();
 
-        this.moveSpeed = BASE_MOVE_SPEED;
         this.healSpeed = BASE_HEAL_SPEED;
         this.workSpeed = BASE_WORK_SPEED;
 

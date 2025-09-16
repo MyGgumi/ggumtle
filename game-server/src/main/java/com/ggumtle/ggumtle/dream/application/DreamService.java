@@ -170,10 +170,10 @@ public class DreamService {
     }
 
     @PacketCommandHandler(type = ReceivePacketType.START_FEED)
-    public void handleStartFeed(StartFeedCommand command, Session session) {
+    public void handleStartFeed(StartFeedCommand command, Session session, Timestamp timestamp) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.startFeed(command.ggumtleId(), session);
+        dreamManager.startFeed(command.ggumtleId(), session, timestamp);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.STOP_FEED)

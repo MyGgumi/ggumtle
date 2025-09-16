@@ -13,7 +13,8 @@ public record StartFeedBody(
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {
         FAIL((byte) 0), START_FEEDING((byte) 1),
-        NOT_FOUND((byte) 2), YET_DIG_UP((byte) 3), ALREADY_DONE((byte) 4), LACK_OF_FEED_ITEM((byte) 5);
+        NOT_FOUND_GGUMTLE((byte) 2), NOT_FOUND_PLAYER((byte) 3),
+        YET_DIG_UP((byte) 10), ALREADY_DONE((byte) 11), LACK_OF_FEED_ITEM((byte) 12), NOT_AROUND((byte) 13);
 
         private final byte value;
     }

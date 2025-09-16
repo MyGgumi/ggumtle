@@ -1,8 +1,8 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.domain.Item;
+import com.ggumtle.ggumtle.dream.domain.item.Box;
+import com.ggumtle.ggumtle.dream.domain.item.Boxable;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
@@ -11,7 +11,7 @@ import java.nio.charset.Charset;
 
 public record PutItemBody(
     Result result,
-    Item[] items
+    Boxable[] items
 ) implements Body {
     private static final int bufferSize = 4 + 4 + 4 * Box.BOX_SIZE;
 

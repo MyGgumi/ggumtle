@@ -1,13 +1,13 @@
 package com.ggumtle.ggumtle.dream.util;
 
-import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.domain.Item;
+import com.ggumtle.ggumtle.dream.domain.item.Box;
+import com.ggumtle.ggumtle.dream.domain.item.Boxable;
 
 import java.util.List;
 import java.util.Random;
 
 public class ItemDistributor {
-    public static void distribute(Item item, List<Box> boxes, int totalCount) {
+    public static void distribute(Boxable item, List<Box> boxes, int totalCount) {
         Random random = new Random();
 
         int remaining = totalCount;

@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.dream.domain;
+package com.ggumtle.ggumtle.dream.domain.player;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
 import lombok.Getter;

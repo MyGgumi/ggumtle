@@ -58,11 +58,11 @@ namespace InputSystem.Movement
                 freeLookCamera = FindFirstObjectByType<CinemachineFreeLook>();
                 if (freeLookCamera != null)
                 {
-                    Debug.Log($"[{LayerName}] CinemachineFreeLook 자동 검색 성공: {freeLookCamera.name}");
+                    UnityEngine.Debug.Log($"[{LayerName}] CinemachineFreeLook 자동 검색 성공: {freeLookCamera.name}");
                 }
                 else
                 {
-                    Debug.LogWarning($"[{LayerName}] CinemachineFreeLook을 찾을 수 없습니다!");
+                    UnityEngine.Debug.LogWarning($"[{LayerName}] CinemachineFreeLook을 찾을 수 없습니다!");
                 }
             }
 
@@ -85,14 +85,14 @@ namespace InputSystem.Movement
             CacheUIElements();
             SetupInputEvents();
 
-            Debug.Log($"[{LayerName}] 초기화 완료");
+            UnityEngine.Debug.Log($"[{LayerName}] 초기화 완료");
         }
 
         private void CacheUIElements()
         {
             _cameraТouchZone = _root.Q<VisualElement>("cameraТouchZone");
 
-            Debug.Log($"[{LayerName}] UI 요소 캐싱: " +
+            UnityEngine.Debug.Log($"[{LayerName}] UI 요소 캐싱: " +
                 $"터치존={(_cameraТouchZone != null ? "OK" : "NULL")}");
         }
 
@@ -146,7 +146,7 @@ namespace InputSystem.Movement
 
                 if (Time.frameCount % 30 == 0)
                 {
-                    Debug.Log($"[{LayerName}] 카메라 입력: {_currentCameraInput}");
+                    UnityEngine.Debug.Log($"[{LayerName}] 카메라 입력: {_currentCameraInput}");
                 }
             }
             else
@@ -187,7 +187,7 @@ namespace InputSystem.Movement
 
             OnRotateStart?.Invoke();
 
-            Debug.Log($"[{LayerName}] 카메라 터치 시작: {_touchStartPosition}, PointerID: {evt.pointerId}");
+            UnityEngine.Debug.Log($"[{LayerName}] 카메라 터치 시작: {_touchStartPosition}, PointerID: {evt.pointerId}");
         }
 
         private void OnCameraPointerMove(PointerMoveEvent evt)
@@ -202,7 +202,7 @@ namespace InputSystem.Movement
 
             if (Time.frameCount % 30 == 0)
             {
-                Debug.Log($"[{LayerName}] 카메라 드래그: {_currentTouchPosition}, 델타: {_currentTouchPosition - _touchStartPosition}");
+                UnityEngine.Debug.Log($"[{LayerName}] 카메라 드래그: {_currentTouchPosition}, 델타: {_currentTouchPosition - _touchStartPosition}");
             }
         }
 
@@ -224,7 +224,7 @@ namespace InputSystem.Movement
 
             OnRotateEnd?.Invoke();
 
-            Debug.Log($"[{LayerName}] 카메라 터치 종료");
+            UnityEngine.Debug.Log($"[{LayerName}] 카메라 터치 종료");
         }
 
         #endregion
@@ -253,7 +253,7 @@ namespace InputSystem.Movement
             freeLookCamera.m_YAxis.m_AccelTime = 0.01f;
             freeLookCamera.m_YAxis.m_DecelTime = 0.01f;
 
-            Debug.Log($"[{LayerName}] FreeLook 카메라 설정 완료");
+            UnityEngine.Debug.Log($"[{LayerName}] FreeLook 카메라 설정 완료");
         }
 
         #endregion

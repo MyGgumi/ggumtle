@@ -25,7 +25,7 @@ public class UniversalHUDController : MonoBehaviour
     public PlayerRole currentPlayerRole = PlayerRole.Mongging;
 
     [Header("Input System Integration")]
-    public StarterAssetsInputs starterAssetsInputs;
+    // StarterAssetsInputs 제거됨 - PlayerMovementViewModel 직접 사용
 
     private UIDocument _doc;
     private VisualElement _root;
@@ -56,6 +56,7 @@ public class UniversalHUDController : MonoBehaviour
     private InputCoordinator inputCoordinator;
     private JoystickController joystickController;
     private CameraRotationController cameraRotationController;
+    private InputSystem.Debug.KeyboardDebugController keyboardDebugController;
 
     [Header("MVVM System")]
     private PlayerMovementViewModel playerMovementViewModel;
@@ -107,7 +108,20 @@ public class UniversalHUDController : MonoBehaviour
             gameObject.GetComponent<CameraRotationController>()
             ?? gameObject.AddComponent<CameraRotationController>();
 
+        // ActionButtonController 생성
+        var actionButtonController =
+            gameObject.GetComponent<InputSystem.Actions.ActionButtonController>()
+            ?? gameObject.AddComponent<InputSystem.Actions.ActionButtonController>();
+
         Debug.Log("[UniversalHUDController] 입력 시스템 컴포넌트 설정 완료");
+
+        // 키보드 디버그 컨트롤러 추가 (테스트용)
+        keyboardDebugController = gameObject.GetComponent<InputSystem.Debug.KeyboardDebugController>();
+        if (keyboardDebugController == null)
+        {
+            keyboardDebugController = gameObject.AddComponent<InputSystem.Debug.KeyboardDebugController>();
+            Debug.Log("[UniversalHUDController] 키보드 디버그 컨트롤러 추가 (WASD 이동, Space 점프)");
+        }
     }
 
     private void InitializeInputControllers()
@@ -132,6 +146,16 @@ public class UniversalHUDController : MonoBehaviour
                 cameraRotationController.Enable();
             }
 
+            // ActionButtonController 등록
+            var actionButtonController = gameObject.GetComponent<InputSystem.Actions.ActionButtonController>();
+            if (actionButtonController != null)
+            {
+                inputCoordinator.RegisterLayer(actionButtonController);
+                actionButtonController.Priority = 15;
+                actionButtonController.Enable();
+                Debug.Log("[UniversalHUDController] ActionButtonController 등록 완료");
+            }
+
             Debug.Log("[UniversalHUDController] 입력 컨트롤러 초기화 완료");
         }
     }
@@ -152,19 +176,23 @@ public class UniversalHUDController : MonoBehaviour
             cameraRotationController.OnCameraRotate += playerMovementViewModel.SetLookInput;
         }
 
-        // 조이스틱 → StarterAssetsInputs 연결 (레거시 호환성)
-        if (joystickController != null && starterAssetsInputs != null)
+        // 액션 버튼 → PlayerMovementViewModel 연결 (점프)
+        if (inputCoordinator != null && playerMovementViewModel != null)
         {
-            joystickController.OnMove += (moveInput) =>
+            var actionButtonController = inputCoordinator.GetLayer<InputSystem.Actions.ActionButtonController>();
+            if (actionButtonController != null)
             {
-                starterAssetsInputs.MoveInput(moveInput);
-                starterAssetsInputs.LookInput(Vector2.zero);
-            };
-            joystickController.OnMoveEnd += () =>
+                actionButtonController.OnJumpPressed += () => playerMovementViewModel.SetJumpInput(true);
+                actionButtonController.OnJumpReleased += () => playerMovementViewModel.SetJumpInput(false);
+                Debug.Log("[UniversalHUDController] 점프 버튼 → PlayerMovementViewModel 연결 완료");
+            }
+            else
             {
-                starterAssetsInputs.MoveInput(Vector2.zero);
-            };
+                Debug.LogWarning("[UniversalHUDController] ActionButtonController를 찾을 수 없습니다!");
+            }
         }
+
+        // 레거시 StarterAssetsInputs 연결 코드 제거됨 - 이제 ThirdPersonController가 PlayerMovementViewModel 직접 사용
 
         // InteractionViewModel과 InteractionView 연결
         if (interactionView != null && interactionViewModel != null)
@@ -227,10 +255,17 @@ public class UniversalHUDController : MonoBehaviour
 
     private void SetupMVVMSystem()
     {
-        // PlayerMovementViewModel 생성
-        playerMovementViewModel =
-            gameObject.GetComponent<PlayerMovementViewModel>()
-            ?? gameObject.AddComponent<PlayerMovementViewModel>();
+        // PlayerMovementViewModel 싱글톤 인스턴스 사용
+        playerMovementViewModel = MVVM.Movement.PlayerMovementViewModel.Instance;
+
+        if (playerMovementViewModel != null)
+        {
+            Debug.Log("[UniversalHUDController] PlayerMovementViewModel 싱글톤 인스턴스 연결 완료");
+        }
+        else
+        {
+            Debug.LogError("[UniversalHUDController] PlayerMovementViewModel 싱글톤 인스턴스를 가져올 수 없습니다!");
+        }
 
         Debug.Log("[UniversalHUDController] MVVM 시스템 컴포넌트 설정 완료");
     }

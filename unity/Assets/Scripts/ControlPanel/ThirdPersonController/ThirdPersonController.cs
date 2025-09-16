@@ -1,14 +1,9 @@
 ﻿using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
+using MVVM.Movement;
 
 namespace StarterAssets
 {
     [RequireComponent(typeof(CharacterController))]
-#if ENABLE_INPUT_SYSTEM
-    [RequireComponent(typeof(PlayerInput))]
-#endif
     public class ThirdPersonController : MonoBehaviour
     {
         [Header("플레이어 이동")]
@@ -55,7 +50,7 @@ namespace StarterAssets
 
         private Animator _animator;
         private CharacterController _controller;
-        private StarterAssetsInputs _input;
+        private PlayerMovementViewModel _movementViewModel;
         private GameObject _mainCamera;
 
         private bool _hasAnimator;
@@ -74,7 +69,23 @@ namespace StarterAssets
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
-            _input = GetComponent<StarterAssetsInputs>();
+            // PlayerMovementViewModel 싱글톤 사용
+            _movementViewModel = MVVM.Movement.PlayerMovementViewModel.Instance;
+
+            if (_movementViewModel != null)
+            {
+                Debug.Log($"[ThirdPersonController] PlayerMovementViewModel 싱글톤 인스턴스 연결 완료!");
+
+                // 싱글톤이 플레이어 GameObject에 있지 않으면 옮기기
+                if (_movementViewModel.gameObject != gameObject && !_movementViewModel.transform.IsChildOf(transform))
+                {
+                    Debug.Log($"[ThirdPersonController] PlayerMovementViewModel이 다른 GameObject에 있음: {_movementViewModel.gameObject.name}");
+                }
+            }
+            else
+            {
+                Debug.LogError("[ThirdPersonController] PlayerMovementViewModel 싱글톤 인스턴스를 가져올 수 없습니다!");
+            }
 
             AssignAnimationIDs();
 
@@ -126,10 +137,23 @@ namespace StarterAssets
             if (!canMove)
                 return;
 
-            // 스프린트 여부에 따른 목표 속도 설정
-            float targetSpeed = _input.sprint ? SprintSpeed : MoveSpeed;
+            // 디버그: ViewModel 상태 확인
+            if (_movementViewModel != null)
+            {
+                if (_movementViewModel.MoveInput.magnitude > 0.01f)
+                {
+                    Debug.Log($"[ThirdPersonController] Move Input: {_movementViewModel.MoveInput}, Jump: {_movementViewModel.JumpInput}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[ThirdPersonController] Move() - PlayerMovementViewModel이 null입니다!");
+            }
 
-            if (_input.move == Vector2.zero)
+            // 스프린트 여부에 따른 목표 속도 설정
+            float targetSpeed = (_movementViewModel != null && _movementViewModel.SprintInput) ? SprintSpeed : MoveSpeed;
+
+            if (_movementViewModel == null || _movementViewModel.MoveInput == Vector2.zero)
                 targetSpeed = 0.0f;
 
             // 현재 수평 속도
@@ -140,7 +164,7 @@ namespace StarterAssets
             ).magnitude;
 
             float speedOffset = 0.1f;
-            float inputMagnitude = _input.analogMovement ? _input.move.magnitude : 1f;
+            float inputMagnitude = (_movementViewModel != null && _movementViewModel.AnalogMovement) ? _movementViewModel.MoveInput.magnitude : 1f;
 
             // 속도 가속/감속
             if (
@@ -171,10 +195,11 @@ namespace StarterAssets
                 _animationBlend = 0f;
 
             // 입력 방향 정규화
-            Vector3 inputDirection = new Vector3(_input.move.x, 0.0f, _input.move.y).normalized;
+            Vector2 moveInput = _movementViewModel != null ? _movementViewModel.MoveInput : Vector2.zero;
+            Vector3 inputDirection = new Vector3(moveInput.x, 0.0f, moveInput.y).normalized;
 
             // 이동 시 플레이어 회전
-            if (_input.move != Vector2.zero)
+            if (moveInput != Vector2.zero)
             {
                 _targetRotation =
                     Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg
@@ -229,10 +254,22 @@ namespace StarterAssets
                     _verticalVelocity = -2f;
                 }
 
+                // 점프 디버그
+                bool jumpInput = _movementViewModel != null && _movementViewModel.JumpInput;
+                if (jumpInput)
+                {
+                    Debug.Log($"[ThirdPersonController] Jump Input Detected! JumpTimeoutDelta: {_jumpTimeoutDelta:F2}, Grounded: {Grounded}");
+                }
+
                 // 점프
-                if (_input.jump && _jumpTimeoutDelta <= 0.0f)
+                if (jumpInput && _jumpTimeoutDelta <= 0.0f)
                 {
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
+
+                    Debug.Log($"[ThirdPersonController] 점프 실행! Velocity: {_verticalVelocity:F2}");
+
+                    // 점프 타임아웃 리셋 - 다음 점프까지 대기
+                    _jumpTimeoutDelta = JumpTimeout;
 
                     if (_hasAnimator)
                     {
@@ -261,7 +298,7 @@ namespace StarterAssets
                     }
                 }
 
-                _input.jump = false;
+                // PlayerMovementViewModel의 점프 입력은 ActionButtonController에서 관리
             }
 
             // 중력 적용

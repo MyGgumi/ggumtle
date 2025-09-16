@@ -29,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.sql.Time;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -155,10 +156,10 @@ public class DreamService {
     }
 
     @PacketCommandHandler(type = ReceivePacketType.DIG_UP_GGUMTLE)
-    public void handleDigUpGgumtle(DigUpCommand command, Session session) {
+    public void handleDigUpGgumtle(DigUpCommand command, Session session, Timestamp timestamp) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.digUpGgumtle(command.ggumtleId(), session);
+        dreamManager.digUpGgumtle(command.ggumtleId(), session, timestamp);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.STOP_DIGGING)

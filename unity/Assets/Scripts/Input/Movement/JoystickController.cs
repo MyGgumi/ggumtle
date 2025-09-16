@@ -58,7 +58,7 @@ namespace InputSystem.Movement
             SetupInputEvents();
             InitializeJoystickKnob();
 
-            Debug.Log($"[{LayerName}] 초기화 완료");
+            UnityEngine.Debug.Log($"[{LayerName}] 초기화 완료");
         }
 
         private void CacheUIElements()
@@ -66,7 +66,7 @@ namespace InputSystem.Movement
             _joystickArea = _root.Q<VisualElement>("joystickArea");
             _joystickKnob = _root.Q<VisualElement>("joystickKnob");
 
-            Debug.Log($"[{LayerName}] UI 요소 캐싱: " +
+            UnityEngine.Debug.Log($"[{LayerName}] UI 요소 캐싱: " +
                 $"조이스틱={(_joystickArea != null ? "OK" : "NULL")}, " +
                 $"손잡이={(_joystickKnob != null ? "OK" : "NULL")}");
         }
@@ -97,19 +97,19 @@ namespace InputSystem.Movement
                 if (float.IsNaN(joystickSize) || joystickSize <= 0)
                 {
                     joystickSize = 400f;
-                    Debug.LogWarning($"[{LayerName}] 조이스틱 크기를 CSS에서 읽을 수 없음 - 기본값 사용: 400px");
+                    UnityEngine.Debug.LogWarning($"[{LayerName}] 조이스틱 크기를 CSS에서 읽을 수 없음 - 기본값 사용: 400px");
                 }
 
                 if (float.IsNaN(knobSize) || knobSize <= 0)
                 {
                     knobSize = 110f;
-                    Debug.LogWarning($"[{LayerName}] 손잡이 크기를 CSS에서 읽을 수 없음 - 기본값 사용: 110px");
+                    UnityEngine.Debug.LogWarning($"[{LayerName}] 손잡이 크기를 CSS에서 읽을 수 없음 - 기본값 사용: 110px");
                 }
 
                 float maxRadius = (joystickSize / 2f) - (knobSize / 2f);
                 joystickRange = maxRadius;
 
-                Debug.Log($"[{LayerName}] 조이스틱 초기화 - Size: {joystickSize}, KnobSize: {knobSize}, MaxRadius: {maxRadius}");
+                UnityEngine.Debug.Log($"[{LayerName}] 조이스틱 초기화 - Size: {joystickSize}, KnobSize: {knobSize}, MaxRadius: {maxRadius}");
             }
         }
 
@@ -133,7 +133,7 @@ namespace InputSystem.Movement
             _joystickCenter = (Vector2)evt.localPosition;
             _joystickArea.CapturePointer(evt.pointerId);
 
-            Debug.Log($"[{LayerName}] 조이스틱 시작: {_joystickCenter}, PointerID: {evt.pointerId}");
+            UnityEngine.Debug.Log($"[{LayerName}] 조이스틱 시작: {_joystickCenter}, PointerID: {evt.pointerId}");
         }
 
         private void OnJoystickPointerMove(PointerMoveEvent evt)
@@ -180,7 +180,7 @@ namespace InputSystem.Movement
 
             if (Time.frameCount % 30 == 0) // 30프레임마다 로그
             {
-                Debug.Log($"[{LayerName}] Input: {_currentInput}");
+                UnityEngine.Debug.Log($"[{LayerName}] Input: {_currentInput}");
             }
         }
 
@@ -222,7 +222,7 @@ namespace InputSystem.Movement
             OnMoveEnd?.Invoke();
             OnMove?.Invoke(Vector2.zero);
 
-            Debug.Log($"[{LayerName}] 조이스틱 리셋");
+            UnityEngine.Debug.Log($"[{LayerName}] 조이스틱 리셋");
         }
 
         #endregion

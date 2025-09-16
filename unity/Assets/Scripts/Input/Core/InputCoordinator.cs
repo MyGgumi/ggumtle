@@ -259,7 +259,7 @@ namespace InputSystem.Core
         {
             if (enableDebugLogs)
             {
-                Debug.Log($"[InputCoordinator] {message}");
+                UnityEngine.Debug.Log($"[InputCoordinator] {message}");
             }
         }
     }

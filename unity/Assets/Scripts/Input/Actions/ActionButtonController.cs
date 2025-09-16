@@ -64,7 +64,7 @@ namespace InputSystem.Actions
             // 상호작용 버튼 초기 상태: 숨김
             UpdateInteractionButtonVisibility(false);
 
-            Debug.Log($"[{LayerName}] 초기화 완료");
+            UnityEngine.Debug.Log($"[{LayerName}] 초기화 완료");
         }
 
         private void CacheUIElements()
@@ -72,7 +72,7 @@ namespace InputSystem.Actions
             _jumpButton = _root.Q<VisualElement>("jumpButton");
             _interactButton = _root.Q<VisualElement>("interactButton");
 
-            Debug.Log($"[{LayerName}] UI 요소 캐싱: " +
+            UnityEngine.Debug.Log($"[{LayerName}] UI 요소 캐싱: " +
                 $"점프버튼={(_jumpButton != null ? "OK" : "NULL")}, " +
                 $"상호작용버튼={(_interactButton != null ? "OK" : "NULL")}");
         }
@@ -112,7 +112,7 @@ namespace InputSystem.Actions
                     _jumpButton.AddToClassList("debug-button");
                 }
 
-                Debug.Log($"[{LayerName}] 점프 버튼 이벤트 설정 완료");
+                UnityEngine.Debug.Log($"[{LayerName}] 점프 버튼 이벤트 설정 완료");
             }
 
             // 상호작용 버튼 이벤트는 InteractionView에서 처리하므로 여기서는 가시성만 관리
@@ -123,7 +123,7 @@ namespace InputSystem.Actions
                     _interactButton.AddToClassList("debug-button");
                 }
 
-                Debug.Log($"[{LayerName}] 상호작용 버튼 UI 요소 설정 완료 (이벤트는 InteractionView에서 처리)");
+                UnityEngine.Debug.Log($"[{LayerName}] 상호작용 버튼 UI 요소 설정 완료 (이벤트는 InteractionView에서 처리)");
             }
         }
 
@@ -137,7 +137,7 @@ namespace InputSystem.Actions
             AnimateButtonPress(_jumpButton, true);
             OnJumpPressed?.Invoke();
 
-            Debug.Log($"[{LayerName}] 점프 버튼 눌림");
+            UnityEngine.Debug.Log($"[{LayerName}] 점프 버튼 눌림");
         }
 
         private void OnJumpButtonUp(PointerUpEvent evt)
@@ -148,7 +148,7 @@ namespace InputSystem.Actions
             AnimateButtonPress(_jumpButton, false);
             OnJumpReleased?.Invoke();
 
-            Debug.Log($"[{LayerName}] 점프 버튼 뗌");
+            UnityEngine.Debug.Log($"[{LayerName}] 점프 버튼 뗌");
         }
 
         private void OnJumpButtonLeave(PointerLeaveEvent evt)
@@ -159,7 +159,7 @@ namespace InputSystem.Actions
             AnimateButtonPress(_jumpButton, false);
             OnJumpReleased?.Invoke();
 
-            Debug.Log($"[{LayerName}] 점프 버튼에서 벗어남");
+            UnityEngine.Debug.Log($"[{LayerName}] 점프 버튼에서 벗어남");
         }
 
         #endregion
@@ -212,7 +212,7 @@ namespace InputSystem.Actions
 
             // 상호작용 버튼은 InteractionView에서 관리하므로 여기서는 처리하지 않음
 
-            Debug.Log($"[{LayerName}] 점프 버튼 상태 리셋");
+            UnityEngine.Debug.Log($"[{LayerName}] 점프 버튼 상태 리셋");
         }
 
         public void Cleanup()
@@ -236,7 +236,7 @@ namespace InputSystem.Actions
 
             // 상호작용 버튼 이벤트는 InteractionView에서 관리하므로 여기서는 해제하지 않음
 
-            Debug.Log($"[{LayerName}] 점프 버튼 이벤트 구독 해제 완료");
+            UnityEngine.Debug.Log($"[{LayerName}] 점프 버튼 이벤트 구독 해제 완료");
         }
 
         #endregion
@@ -251,7 +251,7 @@ namespace InputSystem.Actions
             if (_interactButton != null)
             {
                 _interactButton.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-                Debug.Log($"[{LayerName}] 상호작용 버튼 {(visible ? "표시" : "숨김")}");
+                UnityEngine.Debug.Log($"[{LayerName}] 상호작용 버튼 {(visible ? "표시" : "숨김")}");
             }
         }
 
@@ -281,7 +281,7 @@ namespace InputSystem.Actions
                 button.SetEnabled(enabled);
                 button.style.opacity = enabled ? 1.0f : 0.5f;
 
-                Debug.Log($"[{LayerName}] {buttonName} 버튼 {(enabled ? "활성화" : "비활성화")}");
+                UnityEngine.Debug.Log($"[{LayerName}] {buttonName} 버튼 {(enabled ? "활성화" : "비활성화")}");
             }
         }
 
@@ -300,7 +300,7 @@ namespace InputSystem.Actions
             if (button != null)
             {
                 button.style.display = visible ? DisplayStyle.Flex : DisplayStyle.None;
-                Debug.Log($"[{LayerName}] {buttonName} 버튼 {(visible ? "표시" : "숨김")}");
+                UnityEngine.Debug.Log($"[{LayerName}] {buttonName} 버튼 {(visible ? "표시" : "숨김")}");
             }
         }
 

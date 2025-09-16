@@ -5,11 +5,40 @@ using MVVM.Core;
 namespace MVVM.Movement
 {
     /// <summary>
-    /// 플레이어 이동 관련 ViewModel
+    /// 플레이어 이동 관련 ViewModel (싱글톤)
     /// StarterAssetsInputs를 대체하여 입력과 이동 로직을 분리
     /// </summary>
     public class PlayerMovementViewModel : BaseViewModel
     {
+        // 싱글톤 인스턴스
+        private static PlayerMovementViewModel _instance;
+        public static PlayerMovementViewModel Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    // 씬에서 기존 인스턴스 찾기
+                    _instance = FindObjectOfType<PlayerMovementViewModel>();
+
+                    if (_instance == null)
+                    {
+                        // 없으면 플레이어 GameObject에 생성
+                        GameObject player = GameObject.FindGameObjectWithTag("Player");
+                        if (player == null)
+                        {
+                            // 플레이어도 없으면 새 GameObject 생성
+                            player = new GameObject("PlayerMovementViewModel");
+                            Debug.LogWarning("[PlayerMovementViewModel] Player GameObject가 없어서 새로 생성");
+                        }
+
+                        _instance = player.AddComponent<PlayerMovementViewModel>();
+                        Debug.Log("[PlayerMovementViewModel] 싱글톤 인스턴스 생성");
+                    }
+                }
+                return _instance;
+            }
+        }
         [Header("Movement State")]
         [SerializeField] private Vector2 _moveInput;
         [SerializeField] private Vector2 _lookInput;
@@ -233,6 +262,19 @@ namespace MVVM.Movement
 
         protected override void InitializeViewModel()
         {
+            // 싱글톤 설정
+            if (_instance == null)
+            {
+                _instance = this;
+                DontDestroyOnLoad(gameObject);
+            }
+            else if (_instance != this)
+            {
+                Debug.LogWarning("[PlayerMovementViewModel] 중복 인스턴스 감지. 제거합니다.");
+                Destroy(gameObject);
+                return;
+            }
+
             base.InitializeViewModel();
 
             // 초기 상태 설정
@@ -242,7 +284,7 @@ namespace MVVM.Movement
 
             if (EnableDebugLogs)
             {
-                Debug.Log("[PlayerMovementViewModel] 초기화 완료");
+                Debug.Log("[PlayerMovementViewModel] 싱글톤 초기화 완료");
             }
         }
 
@@ -256,6 +298,12 @@ namespace MVVM.Movement
             JumpInputChanged = null;
             SprintInputChanged = null;
             MovingStateChanged = null;
+
+            // 싱글톤 정리
+            if (_instance == this)
+            {
+                _instance = null;
+            }
 
             if (EnableDebugLogs)
             {

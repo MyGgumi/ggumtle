@@ -17,15 +17,11 @@ import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.home.model.PartyMember
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.designsystem.dialog.DialogState
-import com.ggumtle.domain.unity.UnitySendManager
-import com.ggumtle.domain.unity.model.UnityMethod
-import com.ggumtle.domain.unity.model.UnityTarget
+import com.example.domain.unity.UnitySendManager
 import com.ggumtle.domain.websocket.usecase.home.ObserveReadyGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.ReadyGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.UnReadyGameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
-import android.util.Log
-import androidx.lifecycle.viewModelScope
 import com.ggumtle.datastore.LogoutReason
 import com.ggumtle.domain.websocket.model.DreamStatus
 import com.ggumtle.domain.websocket.usecase.home.ObserveStartGameUseCase

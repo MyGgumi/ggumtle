@@ -3,8 +3,7 @@ package com.ggumtle.startup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ggumtle.designsystem.dialog.DialogState
-import com.ggumtle.domain.unity.UnitySendManager
-import com.ggumtle.domain.unity.UnityStartupManager
+import com.example.domain.unity.UnityStartupManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -40,10 +39,6 @@ class StartUpViewModel @Inject constructor(
         unityStartupManager.completionFlow
             .onEach { onLoadingComplete() }
             .launchIn(viewModelScope)
-
-        unityStartupManager.errorFlow
-            .onEach { errorMessage -> onLoadingError(errorMessage) }
-            .launchIn(viewModelScope)
     }
 
     private fun updateProgress(progress: Int, message: String) = intent {
@@ -68,18 +63,8 @@ class StartUpViewModel @Inject constructor(
         postSideEffect(StartUpContract.SideEffect.NavigateToLogin)
     }
 
-    private fun onLoadingError(errorMessage: String) = intent {
-        reduce {
-            state.copy(
-                isLoading = false,
-                isError = true,
-                errorMessage = errorMessage
-            )
-        }
-    }
-
     private fun startTimeoutTimer() = intent {
-        delay(30_0000)
+        delay(60_000)
         if (state.isLoading && !state.isError) {
             reduce {
                 state.copy(

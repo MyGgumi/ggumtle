@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.dream.domain;
+package com.ggumtle.ggumtle.dream.domain.player;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
 import lombok.AccessLevel;
@@ -13,6 +13,7 @@ public class Mongdung extends Player {
     private static final int BASE_DAMAGE = 40;
     private static final int BASE_SCARE_COOL_TIME = 30 * 1000;
     private static final int MAX_BURY_COUNT = 3;
+    public static final int SIZE = 10000;
     private static final double HIT_SIZE_X = 500;
     private static final double HIT_SIZE_Y = 1000;
     private static final double HIT_SIZE_Z = 500;

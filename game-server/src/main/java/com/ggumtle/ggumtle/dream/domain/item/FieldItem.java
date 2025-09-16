@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.dream.domain;
+package com.ggumtle.ggumtle.dream.domain.item;
 
 import com.ggumtle.ggumtle.dream.vo.FieldItemSpawn;
 import com.ggumtle.ggumtle.dream.vo.Position;

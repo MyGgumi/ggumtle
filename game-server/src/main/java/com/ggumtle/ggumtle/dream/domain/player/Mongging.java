@@ -1,5 +1,6 @@
-package com.ggumtle.ggumtle.dream.domain;
+package com.ggumtle.ggumtle.dream.domain.player;
 
+import com.ggumtle.ggumtle.dream.domain.item.Boxable;
 import com.ggumtle.ggumtle.dream.vo.Position;
 
 import java.util.HashMap;
@@ -28,8 +29,8 @@ public class Mongging extends Player {
     private int knockOutCount;
     private final Object statusLock;
 
-    private final ConcurrentHashMap <Item, Integer> inventory;
-    private final ConcurrentHashMap<Item, Integer> droppedItems;
+    private final ConcurrentHashMap <Boxable, Integer> inventory;
+    private final ConcurrentHashMap<Boxable, Integer> droppedItems;
     private final Object inventoryLock;
 
     public enum Status { ALIVE, KNOCKOUT, DEAD, ESCAPED }
@@ -76,7 +77,7 @@ public class Mongging extends Player {
         }
     }
 
-    public boolean canAddItem(Item item) {
+    public boolean canAddItem(Boxable item) {
         synchronized (inventoryLock) {
             if (this.inventory.containsKey(item)) {
                 return this.inventory.get(item) + 1 <= item.maxCapacityForMongging;
@@ -86,7 +87,7 @@ public class Mongging extends Player {
         }
     }
 
-    public boolean addItem(Item item) {
+    public boolean addItem(Boxable item) {
         synchronized (inventoryLock) {
             if (this.inventory.containsKey(item)) {
                 int nextCount = this.inventory.get(item) + 1;
@@ -112,7 +113,7 @@ public class Mongging extends Player {
             int[][] items = new int[this.inventory.size()][2];
             int top = 0;
 
-            for (Map.Entry<Item, Integer> entry : this.inventory.entrySet()) {
+            for (Map.Entry<Boxable, Integer> entry : this.inventory.entrySet()) {
                 items[top][ITEM_ID] = entry.getKey().id;
                 items[top][ITEM_COUNT] = entry.getValue();
                 top++;
@@ -122,7 +123,7 @@ public class Mongging extends Player {
         }
     }
 
-    public Item popItem(Item item) {
+    public Boxable popItem(Boxable item) {
         synchronized (inventoryLock) {
             if (!this.inventory.containsKey(item)) {
                 return null;
@@ -140,11 +141,11 @@ public class Mongging extends Player {
         }
     }
 
-    public int countItem(Item item) {
+    public int countItem(Boxable item) {
         return this.inventory.getOrDefault(item, 0);
     }
 
-    public Map<Item, Integer> getDroppedItems() {
+    public Map<Boxable, Integer> getDroppedItems() {
         synchronized (inventoryLock) {
             return new HashMap<>(this.droppedItems);
         }

@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.Exit;
+import com.ggumtle.ggumtle.dream.domain.exit.Exit;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.dream.domain;
+package com.ggumtle.ggumtle.dream.domain.item;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.session.Session;
@@ -21,8 +21,8 @@ public class Box {
 
     public final Position position;
 
-    private final Item[] items;
-    private final Map<Item, Integer> itemCount;
+    private final Boxable[] items;
+    private final Map<Boxable, Integer> itemCount;
     private int totalCount;
     private final Object itemLock;
 
@@ -32,7 +32,7 @@ public class Box {
         this.id = id;
         this.position = position;
 
-        this.items = new Item[BOX_SIZE];
+        this.items = new Boxable[BOX_SIZE];
         this.itemCount = new HashMap<>();
         this.totalCount = 0;
         this.itemLock = new Object();
@@ -40,7 +40,7 @@ public class Box {
         this.viewer = new ArrayList<>();
     }
     
-    public boolean addItemBySystem(Item item, int count) {
+    public boolean addItemBySystem(Boxable item, int count) {
         synchronized (itemLock) {
             int nextItemCount = this.itemCount.getOrDefault(item, 0) + count;
 
@@ -67,7 +67,7 @@ public class Box {
         }
     }
 
-    public boolean addItem(Item item) {
+    public boolean addItem(Boxable item) {
         synchronized (itemLock) {
             int nextItemCount = this.itemCount.getOrDefault(item, 0) + 1;
 
@@ -89,13 +89,13 @@ public class Box {
         return true;
     }
 
-    public Item[] getItems() {
+    public Boxable[] getItems() {
         synchronized (itemLock) {
             return Arrays.copyOf(this.items, this.items.length);
         }
     }
 
-    public Item getItemAt(int index) {
+    public Boxable getItemAt(int index) {
         synchronized (itemLock) {
             return this.items[index];
         }
@@ -107,9 +107,9 @@ public class Box {
         }
     }
 
-    public Item[] popItem(int index) {
+    public Boxable[] popItem(int index) {
         synchronized (itemLock) {
-            Item item = this.items[index];
+            Boxable item = this.items[index];
             if (item == null) {
                 return null;
             }
@@ -118,7 +118,7 @@ public class Box {
             this.itemCount.put(item, itemCount.get(item) - 1);
             this.totalCount--;
 
-            Item[] result = new Item[BOX_SIZE + 1];
+            Boxable[] result = new Boxable[BOX_SIZE + 1];
             for (int i = 0; i < BOX_SIZE; i++) {
                 result[i] = this.items[i];
             }

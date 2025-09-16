@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.dream.domain;
+package com.ggumtle.ggumtle.dream.domain.exit;
 
 import com.ggumtle.ggumtle.dream.vo.Position;
 import lombok.ToString;

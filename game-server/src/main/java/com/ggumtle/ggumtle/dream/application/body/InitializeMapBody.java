@@ -1,9 +1,9 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.domain.FieldItem;
-import com.ggumtle.ggumtle.dream.domain.Ggumtle;
+import com.ggumtle.ggumtle.dream.domain.item.Box;
+import com.ggumtle.ggumtle.dream.domain.item.FieldItem;
+import com.ggumtle.ggumtle.dream.domain.ggumtle.Ggumtle;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

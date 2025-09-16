@@ -1,8 +1,8 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.Mongging;
-import com.ggumtle.ggumtle.dream.domain.Player;
+import com.ggumtle.ggumtle.dream.domain.player.Mongging;
+import com.ggumtle.ggumtle.dream.domain.player.Player;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 

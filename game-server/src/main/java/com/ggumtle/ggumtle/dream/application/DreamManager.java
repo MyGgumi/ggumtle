@@ -27,21 +27,25 @@ import com.ggumtle.ggumtle.dream.application.body.StopDiggingBody;
 import com.ggumtle.ggumtle.dream.application.body.StopFeedingBody;
 import com.ggumtle.ggumtle.dream.application.body.UseFieldItemBody;
 import com.ggumtle.ggumtle.dream.application.body.UseMonggingItemBody;
-import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.domain.Exit;
-import com.ggumtle.ggumtle.dream.domain.FakeGgumtle;
-import com.ggumtle.ggumtle.dream.domain.FieldItem;
-import com.ggumtle.ggumtle.dream.domain.Ggumtle;
-import com.ggumtle.ggumtle.dream.domain.Mongdung;
-import com.ggumtle.ggumtle.dream.domain.Mongging;
-import com.ggumtle.ggumtle.dream.domain.Player;
+import com.ggumtle.ggumtle.dream.domain.item.Attackable;
+import com.ggumtle.ggumtle.dream.domain.item.Box;
+import com.ggumtle.ggumtle.dream.domain.exit.Exit;
+import com.ggumtle.ggumtle.dream.domain.ggumtle.FakeGgumtle;
+import com.ggumtle.ggumtle.dream.domain.item.Boxable;
+import com.ggumtle.ggumtle.dream.domain.item.FieldItem;
+import com.ggumtle.ggumtle.dream.domain.ggumtle.Ggumtle;
+import com.ggumtle.ggumtle.dream.domain.item.Flash;
+import com.ggumtle.ggumtle.dream.domain.item.Taser;
+import com.ggumtle.ggumtle.dream.domain.player.Mongdung;
+import com.ggumtle.ggumtle.dream.domain.player.Mongging;
+import com.ggumtle.ggumtle.dream.domain.player.Player;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.dream.util.ItemDistributor;
 import com.ggumtle.ggumtle.dream.vo.BoxSpawn;
 import com.ggumtle.ggumtle.dream.vo.ExitSpawn;
 import com.ggumtle.ggumtle.dream.vo.FieldItemSpawn;
 import com.ggumtle.ggumtle.dream.vo.GgumtleSpawn;
-import com.ggumtle.ggumtle.dream.domain.Item;
+import com.ggumtle.ggumtle.dream.domain.item.ItemDictionary;
 import com.ggumtle.ggumtle.dream.vo.PlayerSpawn;
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.room.domain.Room;
@@ -310,7 +314,7 @@ public class DreamManager {
     }
 
     public void attackWithItem(AttackWithItemCommand command, Session session) {
-        Item item = Item.valueOf(command.itemId());
+        Boxable item = ItemDictionary.valueOf(command.itemId());
         if (item == null) {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM_ID, command.itemId());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
@@ -320,7 +324,7 @@ public class DreamManager {
             return;
         }
 
-        if (!item.isAttackItem()) {
+        if (!(item instanceof Attackable<?> attackable)) {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_ATTACK_ITEM, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
@@ -329,9 +333,8 @@ public class DreamManager {
             return;
         }
 
-        Player player = players.getOrDefault(session.getMemberId(), null);
-        if (!(player instanceof Mongging mongging)) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_MONGGING, item.id);
+        if (!(players.getOrDefault(session.getMemberId(), null) instanceof Mongging mongging)) {
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGGING, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -341,7 +344,7 @@ public class DreamManager {
 
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -349,23 +352,50 @@ public class DreamManager {
             return;
         }
 
-        Item usedItem = mongging.popItem(item);
+        Boxable usedItem = mongging.popItem(item);
         if (usedItem == null) {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id);
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
-            log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번 몽깅이에게 {} 아이템이 없음", session.getChannel().id(), room.id, session.getMemberId(), usedItem);
+            log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번 몽깅이에게 {} 아이템이 없음", session.getChannel().id(), room.id, session.getMemberId(), item);
             return;
         }
 
-        // TODO: 히트 판정
-        Mongdung mongdung = (Mongdung) mongdungPlayer;
+        long now = System.currentTimeMillis();
+
+        Position sourcePosition = mongging.getPositionAt(now);
+        Position targetPosition = mongdungPlayer.getPositionAt(now);
+        boolean isHit = switch (attackable) {
+            case Flash flash -> {
+                Flash.HitContext context = new Flash.HitContext(sourcePosition, targetPosition, Mongdung.SIZE, command.vx(), command.vy(), command.vz());
+                yield flash.detectHit(context);
+            }
+
+            case Taser taser -> {
+                Taser.HitContext context = new Taser.HitContext(sourcePosition, targetPosition, Mongdung.SIZE, command.vx(), command.vy(), command.vz());
+                yield taser.detectHit(context);
+            }
+
+            default -> {
+                log.error("[{} - {}] 몽깅이 아이템 공격 실패: 지원하지 않는 아이템 사용 - {}", session.getChannel().id(), room.id, attackable);
+                yield false;
+            }
+        };
+
+        if (!isHit) {
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id);
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.info("[{} - {}] 몽깅이 아이템 공격 실패: 몽둥이가 {}번 아이템의 피격 범위에 없음", session.getChannel().id(), room.id, item.id);
+            return;
+        }
 
         Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.SUCCESS, item.id);
         Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
         session.sendPacket(packet);
-        this.room.sendPacket(mongdung.getId(), packet);
+        this.room.sendPacket(mongdungPlayer.getId(), packet);
 
         log.error("[{} - {}] 몽깅이 아이템 공격 성공", session.getChannel().id(), room.id);
     }
@@ -423,7 +453,7 @@ public class DreamManager {
         // TODO: 상자 근처인지 확인
 
         Box box = boxes.get(boxId);
-        Item[] items = box.getItems();
+        Boxable[] items = box.getItems();
         box.addViewer(session);
 
         Body body = new ShowBoxBody(true, boxId, items);
@@ -496,7 +526,7 @@ public class DreamManager {
 
         synchronized (lockOrder.get(0)) {
             synchronized (lockOrder.get(1)) {
-                Item targetItem = box.getItemAt(index);
+                Boxable targetItem = box.getItemAt(index);
                 if (targetItem == null) {
                     Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
@@ -515,7 +545,7 @@ public class DreamManager {
                     return;
                 }
 
-                Item[] popResult = box.popItem(index);
+                Boxable[] popResult = box.popItem(index);
                 boolean success = mongging.addItem(popResult[Box.BOX_SIZE]);
 
                 if (!success) {
@@ -543,7 +573,7 @@ public class DreamManager {
     }
 
     public void putItem(int itemId, int boxId, Session session) {
-        Item targetItem = Item.valueOf(itemId);
+        Boxable targetItem = ItemDictionary.valueOf(itemId);
         if (targetItem == null) {
             Body body = new PutItemBody(PutItemBody.Result.ILLEGAL_ITEM_ID, null);
             Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
@@ -609,8 +639,8 @@ public class DreamManager {
                     return;
                 }
 
-                Item poppedItem = mongging.popItem(targetItem);
-                boolean success = box.addItem(poppedItem);
+                Boxable boxable = mongging.popItem(targetItem);
+                boolean success = box.addItem(boxable);
 
                 if (!success) {
                     Body body = new PutItemBody(PutItemBody.Result.FAIL, null);
@@ -622,7 +652,7 @@ public class DreamManager {
                             room.id,
                             boxId,
                             targetItem,
-                            poppedItem,
+                            boxable,
                             Arrays.deepToString(mongging.getItems()));
                     return;
                 }
@@ -758,7 +788,7 @@ public class DreamManager {
             return;
         }
 
-        int count = mongging.countItem(Item.LIGHT_JELLY);
+        int count = mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem);
         if (count == 0) {
             Body body = new StartFeedBody(StartFeedBody.Result.LACK_OF_FEED_ITEM);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
@@ -780,7 +810,7 @@ public class DreamManager {
 
         Runnable task = () -> {
             final int left = ggumtle.feed();
-            mongging.popItem(Item.LIGHT_JELLY);
+            mongging.popItem(ItemDictionary.LIGHT_JELLY.boxableItem);
 
             // 성불시키면 종료
             if (left <= 0) {
@@ -793,7 +823,7 @@ public class DreamManager {
                     }
                 }
 
-                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(Item.LIGHT_JELLY));
+                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
@@ -808,9 +838,9 @@ public class DreamManager {
             }
 
             // 남은 아이템이 없으면 종료
-            int leftFeedItem = mongging.countItem(Item.LIGHT_JELLY);
-            if (leftFeedItem == 0) {
-                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(Item.LIGHT_JELLY));
+            int leftLightJellyCount = mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem);
+            if (leftLightJellyCount == 0) {
+                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
@@ -835,16 +865,16 @@ public class DreamManager {
         WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
 
         Mongging mongging = (Mongging) players.get(session.getMemberId());
-        int leftItemCount = mongging.countItem(Item.LIGHT_JELLY);
+        int leftLightJellyCount = mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem);
 
         Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.FEED) {
-            body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftItemCount);
+            body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
             workingThreads.remove(session.getMemberId());
 
             log.info("[{} - {}] 꿈틀이 먹이기 종료 성공: {}번 사용자의 빛젤리 먹이기 작업 종료", session.getChannel().id(), room.id, session.getMemberId());
         } else {
-            body = new StopFeedingBody(StopFeedingBody.Result.NOT_FOUND, leftItemCount);
+            body = new StopFeedingBody(StopFeedingBody.Result.NOT_FOUND, leftLightJellyCount);
 
             log.error("[{} - {}] 꿈틀이 먹이기 종료 실패: {}번 사용자에게 빛젤리 먹이기 작업 없음", session.getChannel().id(), room.id, session.getMemberId());
         }
@@ -977,8 +1007,8 @@ public class DreamManager {
     }
 
     private void distributeDroppedItem(Mongging mongging) {
-        Map<Item, Integer> droppedItems = mongging.getDroppedItems();
-        for (Map.Entry<Item, Integer> entry : droppedItems.entrySet()) {
+        Map<Boxable, Integer> droppedItems = mongging.getDroppedItems();
+        for (Map.Entry<Boxable, Integer> entry : droppedItems.entrySet()) {
             ItemDistributor.distribute(entry.getKey(), boxes.values().stream().toList(), entry.getValue());
         }
     }
@@ -999,8 +1029,8 @@ public class DreamManager {
 
         // 상자 아이템 초기화
         List<Box> boxes = this.boxes.values().stream().toList();
-        for (Item item : Item.values()) {
-            ItemDistributor.distribute(item, boxes, item.initialCount);
+        for (ItemDictionary itemDictionary : ItemDictionary.values()) {
+            ItemDistributor.distribute(itemDictionary.boxableItem, boxes, itemDictionary.boxableItem.initialCount);
         }
 
         // 필드 아이템 초기화

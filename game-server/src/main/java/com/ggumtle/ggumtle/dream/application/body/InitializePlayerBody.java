@@ -1,9 +1,9 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.Mongdung;
-import com.ggumtle.ggumtle.dream.domain.Mongging;
-import com.ggumtle.ggumtle.dream.domain.Player;
+import com.ggumtle.ggumtle.dream.domain.player.Mongdung;
+import com.ggumtle.ggumtle.dream.domain.player.Mongging;
+import com.ggumtle.ggumtle.dream.domain.player.Player;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;

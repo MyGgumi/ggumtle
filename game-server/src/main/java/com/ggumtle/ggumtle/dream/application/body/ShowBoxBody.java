@@ -1,8 +1,8 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.Box;
-import com.ggumtle.ggumtle.dream.domain.Item;
+import com.ggumtle.ggumtle.dream.domain.item.Box;
+import com.ggumtle.ggumtle.dream.domain.item.Boxable;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
@@ -10,7 +10,7 @@ import java.nio.charset.Charset;
 public record ShowBoxBody(
         boolean success,
         int boxId,
-        Item[] items
+        Boxable[] items
 ) implements Body {
     @Override
     public byte[] toBytes(Charset charsets) {
@@ -30,7 +30,7 @@ public record ShowBoxBody(
 
         byteBuffer.putInt(boxId);
         byteBuffer.putInt(items.length);
-        for (Item item : items) {
+        for (Boxable item : items) {
             byteBuffer.putInt(item == null ? -1 : item.id);
         }
 

@@ -14,8 +14,8 @@ public record UseMonggingItemBody(
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {
         FAIL((byte) 0), SUCCESS((byte) 1),
-        NOT_FOUND_ITEM_ID((byte) 2),
-        NOT_MONGGING((byte) 10), NOT_ATTACK_ITEM((byte) 11), NOT_FOUND_ITEM((byte) 12), MISS((byte) 13);
+        NOT_FOUND_ITEM_ID((byte) 2), NOT_FOUND_MONGGING((byte) 3), NOT_FOUND_MONGDUNG((byte) 4),
+        NOT_ATTACK_ITEM((byte) 10), NOT_FOUND_ITEM((byte) 11), MISS((byte) 12);
         ;
 
         private final byte value;

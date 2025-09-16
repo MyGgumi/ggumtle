@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 
 @AllArgsConstructor
 public enum Item {
-    GGUMTLE_FEED(1, 60, 6, 99),
+    LIGHT_JELLY(1, 60, 6, 99),
     FLASH(2, 3, 1, 3),
     TASER(3, 3, 1, 3),
     ;

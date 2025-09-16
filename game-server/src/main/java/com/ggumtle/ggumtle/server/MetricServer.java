@@ -17,8 +17,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.lang.management.ThreadMXBean;
+import java.util.Arrays;
+import java.util.List;
 
 @Component
 @Slf4j
@@ -89,13 +93,51 @@ public class MetricServer {
                 .description("JVM Heap 예약량")
                 .register(MetricRegistry.registry);
 
+        // 쓰레드
         Gauge.builder("jvm_threads_count", () -> ManagementFactory.getThreadMXBean().getThreadCount())
-                .description("JVM 쓰레드 수")
+                .description("JVM 스레드 수")
                 .register(MetricRegistry.registry);
 
         Gauge.builder("jvm_daemon_threads_count", () -> ManagementFactory.getThreadMXBean().getDaemonThreadCount())
-                .description("Daemon 쓰레드 수")
+                .description("Daemon 스레드 수")
                 .register(MetricRegistry.registry);
+
+        ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+        Gauge.builder("jvm_threads_runnable_count", () -> {
+            long runnable = Arrays.stream(threadMXBean.dumpAllThreads(false, false))
+                    .filter(t -> t.getThreadState() == Thread.State.RUNNABLE)
+                    .count();
+            return (double) runnable;
+        }).description("RUNNABLE 상태 스레드 수").register(MetricRegistry.registry);
+
+        Gauge.builder("jvm_threads_blocked_count", () -> {
+            long blocked = Arrays.stream(threadMXBean.dumpAllThreads(false, false))
+                    .filter(t -> t.getThreadState() == Thread.State.BLOCKED)
+                    .count();
+            return (double) blocked;
+        }).description("BLOCKED 상태 스레드 수").register(MetricRegistry.registry);
+
+        Gauge.builder("jvm_threads_waiting_count", () -> {
+            long waiting = Arrays.stream(threadMXBean.dumpAllThreads(false, false))
+                    .filter(t -> t.getThreadState() == Thread.State.WAITING ||
+                            t.getThreadState() == Thread.State.TIMED_WAITING)
+                    .count();
+            return (double) waiting;
+        }).description("WAITING/TIMED_WAITING 상태 스레드 수").register(MetricRegistry.registry);
+
+        // GC
+        List<GarbageCollectorMXBean> gcBeans = ManagementFactory.getGarbageCollectorMXBeans();
+        for (GarbageCollectorMXBean gcBean : gcBeans) {
+            Gauge.builder("jvm_gc_collection_count", gcBean, GarbageCollectorMXBean::getCollectionCount)
+                    .description("GC 횟수")
+                    .tag("gc", gcBean.getName())
+                    .register(MetricRegistry.registry);
+
+            Gauge.builder("jvm_gc_collection_time_ms", gcBean, GarbageCollectorMXBean::getCollectionTime)
+                    .description("GC 소요 시간(ms)")
+                    .tag("gc", gcBean.getName())
+                    .register(MetricRegistry.registry);
+        }
 
         // Netty
         Gauge.builder("game_active_channels", channelManager, ChannelManager::getChannelCount)

@@ -905,6 +905,7 @@ public class DreamManager {
     public void escape(int exitId, Session session) {
         Exit exit = exits.getOrDefault(exitId, null);
 
+        // 탈출구 존재 확인
         if (exit == null) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_FOUND_EXIT);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
@@ -914,6 +915,7 @@ public class DreamManager {
             return;
         }
 
+        // 몽깅이 존재 확인
         Player player = players.get(session.getMemberId());
         if (!(player instanceof Mongging mongging)) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_MONGGING);
@@ -924,8 +926,18 @@ public class DreamManager {
             return;
         }
 
-        // TODO: 위치 검사
+        // 몽깅이 위치가 탈출구 범위 내에 있는지 확인
+        Position monggingPosition = mongging.getPositionAt(System.currentTimeMillis());
+        if (!exit.detectEscape(monggingPosition)) {
+            Body body = new EscapeBody(EscapeBody.Result.NOT_IN_EXIT);
+            Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
+            log.error("[{} - {}] 몽깅이 탈출 실패: {}번 몽깅이가 탈출구 범위 내에 없음", session.getChannel().id(), room.id, session.getMemberId());
+            return;
+        }
+
+        // 몽깅이 생존 확인
         if (!mongging.isNotDead()) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_ALIVE);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
@@ -935,19 +947,23 @@ public class DreamManager {
             return;
         }
 
+        // 몽깅이 탈출
         mongging.escape();
         escapedMonggings.add(mongging.getId());
 
+        // 몽깅이 탈출 성공
         Body body = new EscapeBody(EscapeBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
         session.sendPacket(packet);
 
+        // 몽깅이 상태 업데이트
         body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.ESCAPE);
         packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
 
         log.info("[{} - {}] 몽깅이 탈출 성공: {}번 몽깅이 탈출 성공", session.getChannel().id(), room.id, session.getMemberId());
 
+        // 몽깅이 승리 조건 확인
         if (escapedMonggings.size() >= WINNING_MONGGING_COUNT) {
             body = new DreamEndBody(DreamEndBody.Result.MONGGING_WIN, escapedMonggings, players.values());
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);

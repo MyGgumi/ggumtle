@@ -14,7 +14,18 @@ public class Exit {
 
     public Exit(int id, Position middle) {
         this.id = id;
-        this.leftTop = new Position(middle.x, middle.y, middle.z, 0);
-        this.rightBottom = new Position(middle.x, middle.y, middle.z, 0);
+        int halfSize = EXIT_SIZE / 2;
+        this.leftTop = new Position(middle.x - halfSize, middle.y - halfSize, middle.z - halfSize, middle.timestamp);
+        this.rightBottom = new Position(middle.x + halfSize, middle.y + halfSize, middle.z + halfSize, middle.timestamp);
+    }
+
+    /**
+     * 탈출구 범위 내에 있는지 확인
+     * @param position 몽깅이 위치
+     * @return 탈출구 범위 내에 있는지 여부
+     */
+    public boolean detectEscape(Position position) {
+        return position.x >= leftTop.x && position.x <= rightBottom.x
+                && position.z >= leftTop.z && position.z <= rightBottom.z;
     }
 }

@@ -12,7 +12,8 @@ public record DigUpReceiveBody(
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {
-        FAIL((byte) 0), START_DIGGING((byte) 1), NOT_FOUND((byte) 2), ALREADY_DIG_UP((byte) 3);
+        FAIL((byte) 0), START_DIGGING((byte) 1), NOT_FOUND_GGUMTLE((byte) 2), NOT_FOUND_MONGGING((byte) 3),
+        ALREADY_DIG_UP((byte) 10), NOT_AROUND((byte) 11);
 
         private final byte value;
     }

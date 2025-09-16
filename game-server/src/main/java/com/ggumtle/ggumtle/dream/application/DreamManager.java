@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Body;
+import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
@@ -636,9 +637,19 @@ public class DreamManager {
         }
     }
 
-    public void digUpGgumtle(int ggumtleId, Session session) {
+    public void digUpGgumtle(int ggumtleId, Session session, Timestamp timestamp) {
+        Player player = players.getOrDefault(session.getMemberId(), null);
+        if (!(player instanceof Mongging mongging)) {
+            Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND_MONGGING);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.error("[{} - {}] 꿈틀이 파기 시작 실패: {}번 플레이어가 없거나 몽깅이가 아님", session.getChannel().id(), room.id, session.getMemberId());
+            return;
+        }
+
         if (!ggumtles.containsKey(ggumtleId)) {
-            Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND);
+            Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND_GGUMTLE);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -656,7 +667,15 @@ public class DreamManager {
             return;
         }
 
-        // TODO: 꿈틀이 근처인지 확인
+        Position playerPosition = mongging.getPositionAt(timestamp.value);
+        if (ggumtle.detectDigUp(playerPosition)) {
+            Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_AROUND);
+            Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.warn("[{} - {}] 꿈틀이 파기 시작 실패: {}번 사용자가 {}번 꿈틀이의 유효 범위 내에 없음", session.getChannel().id(), room.id, session.getMemberId(), ggumtleId);
+            return;
+        }
 
         ScheduledFuture<?> future = workerThreadPool.schedule(() -> {
             Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();

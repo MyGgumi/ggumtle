@@ -10,6 +10,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Ggumtle {
 
     public final static int INIT_LEFT_FEED_COUNT = 30;
+    private static final double DIG_UP_RADIUS = 10000;
+    private static final double DIG_UP_BOTTOM = 500;
+    private static final double DIG_UP_TOP = 1000;
 
     public final int id;
 
@@ -24,6 +27,14 @@ public class Ggumtle {
         this.position = position;
         this.leftFeedCount = new AtomicInteger(INIT_LEFT_FEED_COUNT);
         this.isDugUp = new AtomicBoolean(false);
+    }
+
+    public boolean detectDigUp(Position position) {
+        int dx = position.x - this.position.x;
+        int dz = position.z - this.position.z;
+        int distSq = dx * dx + dz * dz;
+
+        return (distSq <= DIG_UP_RADIUS * DIG_UP_RADIUS) && (position.y <= this.position.y + DIG_UP_TOP) && (position.y >= this.position.y - DIG_UP_BOTTOM);
     }
 
     public boolean isDugUp() {

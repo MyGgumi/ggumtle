@@ -12,8 +12,8 @@ public record StartReviveBody(
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {
         SUCCESS((byte) 1),
-        NOT_FOUND_PLAYER((byte) 2),
-        NOT_MONGGING((byte) 10), NOT_KNOCKOUT((byte) 11),
+        NOT_FOUND_MONGGING((byte) 2),
+        NOT_KNOCKOUT((byte) 10), NOT_NEAR((byte) 11),
         ;
 
         private final byte value;
@@ -21,6 +21,6 @@ public record StartReviveBody(
 
     @Override
     public byte[] toBytes(Charset charsets) {
-        return new byte[0];
+        return new byte[]{ this.result.value };
     }
 }

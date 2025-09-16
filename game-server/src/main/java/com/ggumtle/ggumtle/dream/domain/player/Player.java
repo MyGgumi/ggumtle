@@ -9,12 +9,15 @@ public class Player {
 
     protected long id;
 
+    public final int moveSpeed;
+
     protected Position[] positions = new Position[POSITION_BUFFER_SIZE];
     private int curr = 0;
     private final Object positionLock;
 
-    public Player(long id, Position position) {
+    public Player(long id, Position position, int moveSpeed) {
         this.id = id;
+        this.moveSpeed = moveSpeed;
         this.positionLock = new Object();
         this.addPosition(position);
     }
@@ -44,6 +47,12 @@ public class Player {
             }
 
             return position;
+        }
+    }
+
+    public Position getLastPosition() {
+        synchronized (this.positionLock) {
+            return this.positions[curr];
         }
     }
 }

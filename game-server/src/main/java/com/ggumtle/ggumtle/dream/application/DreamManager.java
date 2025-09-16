@@ -121,10 +121,26 @@ public class DreamManager {
     }
 
     public void movePlayer(Session session, int x, int y, int z) {
-        Position position = new Position(x, y, z, System.currentTimeMillis());
+        long now = System.currentTimeMillis();
 
         Player player = players.get(session.getMemberId());
-        player.addPosition(position);
+
+        Position lastPosition = player.getLastPosition();
+        Position currentPosition = new Position(x, y, z, now);
+
+        int distanceSquare = lastPosition.getDistanceSquareWith(currentPosition);
+        double maxDistance = player.moveSpeed * (now - lastPosition.timestamp);
+
+        if (distanceSquare > maxDistance * maxDistance) {
+            Body body = new PlayerMoveBody(player.getId(), lastPosition);
+            Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
+
+            log.warn("[{} - {}] {}번 사용자의 이동 핸들링: 비정상적인 이동 감지: {{}, {}, {}}", session.getChannel().id(), room.id, session.getMemberId(), x, y, z);
+            return;
+        }
+
+        player.addPosition(currentPosition);
 
         Body body = new PlayerMoveBody(player.getId(), x, y, z);
         Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);

@@ -1,7 +1,6 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
-import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
 import com.ggumtle.ggumtle.common.event.JoinRoomEvent;
 import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
@@ -29,7 +28,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.sql.Time;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -86,10 +84,10 @@ public class DreamService {
     }
 
     @PacketCommandHandler(type = ReceivePacketType.HIT_MONGGING)
-    public void handleHitMongging(HitMonggingCommand command, Session session, Timestamp timestamp) {
+    public void handleHitMongging(HitMonggingCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.hitMongging(command, session, timestamp.value);
+        dreamManager.hitMongging(command, session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.START_REVIVE)
@@ -156,10 +154,10 @@ public class DreamService {
     }
 
     @PacketCommandHandler(type = ReceivePacketType.DIG_UP_GGUMTLE)
-    public void handleDigUpGgumtle(DigUpCommand command, Session session, Timestamp timestamp) {
+    public void handleDigUpGgumtle(DigUpCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.digUpGgumtle(command.ggumtleId(), session, timestamp);
+        dreamManager.digUpGgumtle(command.ggumtleId(), session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.STOP_DIGGING)
@@ -170,10 +168,10 @@ public class DreamService {
     }
 
     @PacketCommandHandler(type = ReceivePacketType.START_FEED)
-    public void handleStartFeed(StartFeedCommand command, Session session, Timestamp timestamp) {
+    public void handleStartFeed(StartFeedCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.startFeed(command.ggumtleId(), session, timestamp);
+        dreamManager.startFeed(command.ggumtleId(), session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.STOP_FEED)

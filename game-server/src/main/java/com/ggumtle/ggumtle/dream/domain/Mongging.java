@@ -16,6 +16,7 @@ public class Mongging extends Player {
     private static final int ITEM_ID = 0;
     private static final int ITEM_COUNT = 1;
     private static final int MAX_KNOCKOUT_COUNT = 3;
+    public static final int REVIVE_DISTANCE_SQUARE = 1000 * 1000;
 
     public final int maxHp;
     public final int moveSpeed;

@@ -1,7 +1,6 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
@@ -130,7 +129,7 @@ public class DreamManager {
         log.debug("[{} - {}] {}번 사용자의 이동 핸들링: {{}, {}, {}}", session.getChannel().id(), room.id, session.getMemberId(), x, y, z);
     }
 
-    public void hitMongging(HitMonggingCommand command, Session session, long timestamp) {
+    public void hitMongging(HitMonggingCommand command, Session session) {
         Player requester = players.getOrDefault(session.getMemberId(), null);
 
         if (requester == null) {
@@ -170,7 +169,7 @@ public class DreamManager {
             return;
         }
 
-        boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), timestamp, targetMongging);
+        boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), System.currentTimeMillis(), targetMongging);
 
         if (!isHit) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.FAIL, -1);
@@ -207,23 +206,13 @@ public class DreamManager {
     }
 
     public void startRevive(long targetMonggingId, Session session) {
-        Player player = players.getOrDefault(session.getMemberId(), null);
-        Player targetPlayer = players.getOrDefault(targetMonggingId, null);
-        if (player == null || targetPlayer == null) {
-            Body body = new StartReviveBody(StartReviveBody.Result.NOT_FOUND_PLAYER);
+        if (!(players.getOrDefault(session.getMemberId(), null) instanceof Mongging requesterMongging) ||
+                !(players.getOrDefault(targetMonggingId, null) instanceof Mongging targetMongging)) {
+            Body body = new StartReviveBody(StartReviveBody.Result.NOT_FOUND_MONGGING);
             Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
-            log.warn("[{} - {}] 몽깅이 부활 시작 실패: 요청자 {}번 사용자 혹은 대상 {}번 사용자를 찾을 수 없음", session.getChannel().id(), room.id, session.getMemberId(), targetMonggingId);
-            return;
-        }
-
-        if (!(targetPlayer instanceof Mongging targetMongging) || !(player instanceof Mongging)) {
-            Body body = new StartReviveBody(StartReviveBody.Result.NOT_MONGGING);
-            Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
-
-            log.error("[{} - {}] 몽깅이 부활 시작 실패: 요청자 {}번 사용자 혹은 대상 {}번 사용자가 몽깅이가 아님", session.getChannel().id(), room.id, session.getMemberId(), targetMonggingId);
+            log.error("[{} - {}] 몽깅이 부활 시작 실패: 요청자 {}번 사용자 혹은 대상 {}번 사용자를 찾을 수 없거나 몽깅이가 아님", session.getChannel().id(), room.id, session.getMemberId(), targetMonggingId);
             return;
         }
 
@@ -236,7 +225,17 @@ public class DreamManager {
             return;
         }
 
-        // TODO: 몽깅이 인근인지 확인
+        long now = System.currentTimeMillis();
+        Position requesterPosition = requesterMongging.getPositionAt(now);
+        Position targetPosition = targetMongging.getPositionAt(now);
+        if (requesterPosition.getDistanceSquareWith(targetPosition) > Mongging.REVIVE_DISTANCE_SQUARE) {
+            Body body = new StartReviveBody(StartReviveBody.Result.NOT_NEAR);
+            Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.warn("[{} - {}] 몽깅이 부활 시작 실패: 대상 {}번 몽깅이와 요청한 {}번 몽깅이가 근처에 없음", session.getChannel().id(), room.id, targetMonggingId, session.getMemberId());
+            return;
+        }
 
         ScheduledFuture<?> future = workerThreadPool.schedule(
                 () -> {
@@ -638,7 +637,7 @@ public class DreamManager {
         }
     }
 
-    public void digUpGgumtle(int ggumtleId, Session session, Timestamp timestamp) {
+    public void digUpGgumtle(int ggumtleId, Session session) {
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (!(player instanceof Mongging mongging)) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND_MONGGING);
@@ -668,7 +667,7 @@ public class DreamManager {
             return;
         }
 
-        Position playerPosition = mongging.getPositionAt(timestamp.value);
+        Position playerPosition = mongging.getPositionAt(System.currentTimeMillis());
         if (ggumtle.detectDigUp(playerPosition)) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_AROUND);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
@@ -730,7 +729,7 @@ public class DreamManager {
         session.sendPacket(packet);
     }
 
-    public void startFeed(int ggumtleId, Session session, Timestamp timestamp) {
+    public void startFeed(int ggumtleId, Session session) {
         if (!(players.getOrDefault(session.getMemberId(), null) instanceof Mongging mongging)) {
             Body body = new StartFeedBody(StartFeedBody.Result.NOT_FOUND_PLAYER);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
@@ -769,7 +768,7 @@ public class DreamManager {
             return;
         }
 
-        Position position = mongging.getPositionAt(timestamp.value);
+        Position position = mongging.getPositionAt(System.currentTimeMillis());
         if (!ggumtle.detectFeed(position)) {
             Body body = new StartFeedBody(StartFeedBody.Result.NOT_AROUND);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);

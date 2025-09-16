@@ -3,7 +3,6 @@ package com.ggumtle.ggumtle
 import android.os.Bundle
 import android.util.Log
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,20 +14,17 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.lifecycle.lifecycleScope
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.datastore.AutoLoginState
-import com.ggumtle.datastore.LogoutReason
 import com.ggumtle.designsystem.component.GlobalNotificationOverlay
 import com.ggumtle.designsystem.theme.AppTheme
 import com.ggumtle.domain.manager.GlobalInviteManager
 import com.ggumtle.domain.model.InviteNotification
-import com.ggumtle.domain.unity.UnitySendManager
-import com.ggumtle.domain.unity.UnityStartupManager
+import com.example.domain.unity.UnitySendManager
+import com.example.domain.unity.UnityStartupManager
 import com.ggumtle.ggumtle.navigation.AppNavigation
 import com.ggumtle.ggumtle.unity.UnitySendManagerImpl
 import com.unity3d.player.UnityPlayer
 import com.unity3d.player.UnityPlayerGameActivity
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -122,19 +118,6 @@ class MainActivity : UnityPlayerGameActivity()
         }
     }
 
-//    private fun observeUnityMessages() {
-//        lifecycleScope.launch {
-//            combine(
-//                unitySendManager.targetFlow,
-//                unitySendManager.methodFlow,
-//                unitySendManager.paramsFlow
-//            ) { target, methodName, params ->
-//                UnityPlayer.UnitySendMessage(target, methodName, params.joinToString())
-//            }.collect()
-//        }
-//    }
-
-
     fun updateLoadingProgress(progress: Int, message: String) {
         lifecycleScope.launch {
             unityStartupManager.updateProgress(progress, message)
@@ -147,9 +130,27 @@ class MainActivity : UnityPlayerGameActivity()
         }
     }
 
-    fun onLoadingError(errorMessage: String) {
+    fun onNameTagClicked(nickname: String, type: String){
         lifecycleScope.launch {
-            unityStartupManager.reportError(errorMessage)
+            // TODO: 네임테그 클릭시 정보 다이얼로그 띄우기
+        }
+    }
+
+    fun onRefreshButtonClicked(type: String){
+        lifecycleScope.launch {
+            // TODO: 타입 변경 버튼 호출시 타입변경 로직
+        }
+    }
+
+    fun onInGameSceneLoadingProgress(progress: Float, message: String){
+        lifecycleScope.launch {
+            // TODO: 인게임 로딩 정보 업데이트
+        }
+    }
+
+    fun onInGameSceneLoadingComplete(){
+        lifecycleScope.launch {
+            // TODO: 인게임 로딩 완료 업데이트
         }
     }
 

@@ -44,7 +44,7 @@ dependencies {
     implementation(project(":unityLibrary"))
     implementation("androidx.games:games-activity:3.0.5")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation(files("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest\\unityLibrary\\libs\\unity-classes.jar"))
+    implementation(files("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest2\\unityLibrary\\libs\\unity-classes.jar"))
 
 
     // ───── Android 기본 ─────

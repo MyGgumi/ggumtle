@@ -7,7 +7,7 @@ import com.ggumtle.datastore.AuthManager
 import com.ggumtle.datastore.GoogleSignInResult
 import com.ggumtle.designsystem.dialog.DialogState
 import com.ggumtle.domain.rest.model.Resource
-import com.ggumtle.domain.unity.UnitySendManager
+import com.example.domain.unity.UnitySendManager
 import com.ggumtle.domain.unity.model.UnityMethod
 import com.ggumtle.domain.unity.model.UnityTarget
 import com.ggumtle.domain.rest.usecase.auth.GoogleLoginUseCase

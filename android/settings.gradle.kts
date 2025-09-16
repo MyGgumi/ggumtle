@@ -42,7 +42,7 @@ include(":feature:auth")
 include(":unityLibrary")
 
 // Unity 라이브러리 경로 설정 (외부 경로에 있는 경우)
-project(":unityLibrary").projectDir = file("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest\\unityLibrary")
+project(":unityLibrary").projectDir = file("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest2\\unityLibrary")
 include(":feature:startup")
 include(":feature:social")
 include(":feature:home")

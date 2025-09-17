@@ -45,7 +45,7 @@ public class UniversalHUDData
     public string interactionText = "";
     public float interactionProgress = 0f;
     public bool isInteracting = false;
-    public Models.InteractionType currentInteractionType = Models.InteractionType.Dig;
+    // public Models.InteractionType currentInteractionType = Models.InteractionType.Dig; // InteractionType 삭제로 인해 주석 처리
 
     [Header("UI State")]
     public bool showInteractionButton;

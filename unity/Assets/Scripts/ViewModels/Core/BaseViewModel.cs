@@ -23,7 +23,11 @@ namespace MVVM.Core
         /// <param name="value">새로운 값</param>
         /// <param name="propertyName">프로퍼티 이름 (자동으로 설정됨)</param>
         /// <returns>값이 변경되었으면 true, 그렇지 않으면 false</returns>
-        protected bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = null)
+        protected bool SetProperty<T>(
+            ref T field,
+            T value,
+            [CallerMemberName] string propertyName = null
+        )
         {
             if (Equals(field, value))
                 return false;
@@ -65,7 +69,8 @@ namespace MVVM.Core
         /// 디버그 로그 활성화 여부
         /// </summary>
         [Header("Debug")]
-        [SerializeField] protected bool EnableDebugLogs = false;
+        [SerializeField]
+        protected bool EnableDebugLogs = false;
 
         /// <summary>
         /// ViewModel이 활성화되었을 때 호출
@@ -116,7 +121,10 @@ namespace MVVM.Core
         /// </summary>
         /// <param name="condition">알림 조건</param>
         /// <param name="propertyName">프로퍼티 이름</param>
-        protected void OnPropertyChangedIf(bool condition, [CallerMemberName] string propertyName = null)
+        protected void OnPropertyChangedIf(
+            bool condition,
+            [CallerMemberName] string propertyName = null
+        )
         {
             if (condition)
             {

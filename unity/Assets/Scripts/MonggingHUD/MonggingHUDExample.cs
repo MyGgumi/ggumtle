@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
+using Models;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using Models;
 
 public class MonggingHUDExample : MonoBehaviour
 {
@@ -179,11 +179,11 @@ public class MonggingHUDExample : MonoBehaviour
         Debug.Log($"[MonggingHUDExample] 꿈틀 진행도: {level}단계");
     }
 
-    private void TestInteraction(Models.InteractionType type, float progress)
-    {
-        hudController.SetInteractionUI(true, "", progress, type == Models.InteractionType.Revive);
-        Debug.Log($"[MonggingHUDExample] {type} UI 표시 ({progress * 100:F0}%)");
-    }
+    // private void TestInteraction(Models.InteractionType type, float progress) // InteractionType 삭제로 인해 주석 처리
+    // {
+    //     hudController.SetInteractionUI(true, "", progress, type == Models.InteractionType.Revive);
+    //     Debug.Log($"[MonggingHUDExample] {type} UI 표시 ({progress * 100:F0}%)");
+    // }
 
     private void TestInventory(int slot, int amount)
     {
@@ -291,8 +291,8 @@ public class MonggingHUDExample : MonoBehaviour
 
     private void TriggerInteractionCompleteEvent()
     {
-        HUDEvents.TriggerInteractionComplete(Models.InteractionType.Dig, true);
-        Debug.Log("[MonggingHUDExample] 상호작용 완료 이벤트");
+        // HUDEvents.TriggerInteractionComplete(Models.InteractionType.Dig, true); // InteractionType 삭제로 인해 주석 처리
+        Debug.Log("[MonggingHUDExample] 상호작용 완료 이벤트 (비활성화)");
     }
 
     // 직접 상호작용 트리거 테스트 (dig, revive, feeding)

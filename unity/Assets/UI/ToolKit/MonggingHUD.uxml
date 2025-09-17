@@ -7,7 +7,6 @@
     <ui:Template name="QuickChat" src="project://database/Assets/UI/ToolKit/Components/QuickChat.uxml?fileID=9197481963319205126&amp;guid=52e3588273804d646ae286547e13e9e5&amp;type=3#QuickChat" />
     <ui:Template name="NotificationBanner" src="project://database/Assets/UI/ToolKit/Components/NotificationBanner.uxml?fileID=9197481963319205126&amp;guid=1a2f442117d2f9345972d47cd518cbc6&amp;type=3#NotificationBanner" />
     <ui:Template name="HealthBar" src="project://database/Assets/UI/ToolKit/Components/HealthBar.uxml?fileID=9197481963319205126&amp;guid=1a6b838260d56aa4c8f12cb05565cc16&amp;type=3#HealthBar" />
-    <ui:Template name="InteractionUI" src="project://database/Assets/UI/ToolKit/Components/InteractionUI.uxml?fileID=9197481963319205126&amp;guid=ba92ccd9333ef174db991798bfcf541d&amp;type=3#InteractionUI" />
     <ui:Template name="ChestBoxUI" src="project://database/Assets/UI/ToolKit/Components/ChestBoxUI.uxml?fileID=9197481963319205126&amp;guid=94ea7ff3bef2f1a4d9f171554f539d4e&amp;type=3#ChestBoxUI" />
     <Style src="project://database/Assets/UI/ToolKit/MonggingHUD.uss?fileID=7433441132597879392&amp;guid=7684af9551fd7e140b2f67216bb48364&amp;type=3#MonggingHUD" />
     <Style src="project://database/Assets/UI/ToolKit/Uss/InteractionUI.uss?fileID=7433441132597879392&amp;guid=925c7e208781833439030ce1de96c7bb&amp;type=3#InteractionUI" />
@@ -29,7 +28,6 @@
         <ui:Instance template="QuickChat" name="quickChat" />
         <ui:Instance template="NotificationBanner" name="notificationBanner" />
         <ui:Instance template="HealthBar" name="healthBar" />
-        <ui:Instance template="InteractionUI" name="interactionUI" />
         <ui:Instance template="ChestBoxUI" name="chestBoxUI" />
     </ui:VisualElement>
 </ui:UXML>

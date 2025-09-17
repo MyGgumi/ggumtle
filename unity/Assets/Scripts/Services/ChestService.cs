@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using Models;
+using UnityEngine;
 
 namespace Services
 {
@@ -22,7 +22,12 @@ namespace Services
 
         #region Chest Management
 
-        public void RegisterChest(string chestId, string chestName, Vector3 position, GameObject chestObject = null)
+        public void RegisterChest(
+            string chestId,
+            string chestName,
+            Vector3 position,
+            GameObject chestObject = null
+        )
         {
             _chestModel.RegisterChest(chestId, chestName, position, chestObject);
             OnChestRegistered?.Invoke(chestId);
@@ -61,7 +66,9 @@ namespace Services
 
             if (_chestModel.OpenChest(chestId))
             {
-                Debug.Log($"[ChestService] ChestModel.OpenChest 성공, OnChestOpened 이벤트 발생: {chestId}");
+                Debug.Log(
+                    $"[ChestService] ChestModel.OpenChest 성공, OnChestOpened 이벤트 발생: {chestId}"
+                );
                 OnChestOpened?.Invoke(chestId);
                 return true;
             }
@@ -130,7 +137,12 @@ namespace Services
                 // 각 슬롯의 변경사항을 한 번에 처리
                 for (int i = 0; i < serverSlots.Length; i++)
                 {
-                    OnChestSlotChanged?.Invoke(chestId, i, serverSlots[i].itemId, serverSlots[i].count);
+                    OnChestSlotChanged?.Invoke(
+                        chestId,
+                        i,
+                        serverSlots[i].itemId,
+                        serverSlots[i].count
+                    );
                 }
             }
         }

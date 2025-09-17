@@ -1,5 +1,8 @@
 using UnityEngine;
 using Services;
+using VContainer;
+using VContainer.Unity;
+using DI;
 
 namespace Managers
 {
@@ -44,9 +47,8 @@ namespace Managers
             if (enableDebugLogs)
                 Debug.Log("[GameManager] 서비스 초기화 시작");
 
-            // GgumtleService 초기화
-            InitializeGgumtleService();
-
+            // VContainer LifetimeScope 초기화
+            InitializeVContainer();
 
             // 추후 다른 서비스들도 여기서 초기화
             // InitializeInventoryService();
@@ -58,26 +60,27 @@ namespace Managers
         }
 
         /// <summary>
-        /// GgumtleService 초기화
+        /// VContainer LifetimeScope 초기화
         /// </summary>
-        private void InitializeGgumtleService()
+        private void InitializeVContainer()
         {
-            if (GgumtleService.Instance == null)
+            // Scene에 GameLifetimeScope가 없으면 생성
+            var existingScope = FindObjectOfType<GameLifetimeScope>();
+            if (existingScope == null)
             {
-                var serviceObject = new GameObject("GgumtleService");
-                serviceObject.AddComponent<GgumtleService>();
+                var scopeObject = new GameObject("GameLifetimeScope");
+                scopeObject.AddComponent<GameLifetimeScope>();
 
                 if (enableDebugLogs)
-                    Debug.Log("[GameManager] GgumtleService 생성 완료");
+                    Debug.Log("[GameManager] GameLifetimeScope 생성 완료");
             }
             else
             {
                 if (enableDebugLogs)
-                    Debug.Log("[GameManager] GgumtleService 이미 존재함");
+                    Debug.Log("[GameManager] GameLifetimeScope 이미 존재함");
             }
         }
 
-        }
 
         /// <summary>
         /// 게임 종료 시 정리 작업
@@ -98,13 +101,6 @@ namespace Managers
             InitializeServices();
         }
 
-        /// <summary>
-        /// 특정 서비스만 다시 초기화
-        /// </summary>
-        public void ReinitializeGgumtleService()
-        {
-            InitializeGgumtleService();
-        }
 
         #endregion
 
@@ -114,7 +110,7 @@ namespace Managers
         public void DebugLogGameState()
         {
             Debug.Log($"[GameManager] Debug State:");
-            Debug.Log($"  - GgumtleService: {(GgumtleService.Instance != null ? "✅ 활성" : "❌ 비활성")}");
+            Debug.Log($"  - IGgumtleService: ✅ VContainer로 관리됨");
             // 추후 다른 서비스 상태도 추가
         }
 

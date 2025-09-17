@@ -1,15 +1,16 @@
 using System;
 using System.Collections;
+using MVVM.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVVM.UI;
 
 namespace Views
 {
     public class NotificationView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
-        [SerializeField] private NotificationViewModel viewModel;
+        [SerializeField]
+        private NotificationViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -44,14 +45,17 @@ namespace Views
                 _bannerLabel.text = "";
             }
 
-            Debug.Log($"[NotificationView] UI 요소 캐싱 완료: " +
-                     $"배너={(_banner != null ? "OK" : "NULL")}, " +
-                     $"배너라벨={(_bannerLabel != null ? "OK" : "NULL")}");
+            Debug.Log(
+                $"[NotificationView] UI 요소 캐싱 완료: "
+                    + $"배너={(_banner != null ? "OK" : "NULL")}, "
+                    + $"배너라벨={(_bannerLabel != null ? "OK" : "NULL")}"
+            );
         }
 
         private void SubscribeToViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.NotificationRequested += OnNotificationRequested;
             viewModel.NotificationHideRequested += OnNotificationHideRequested;
@@ -64,7 +68,8 @@ namespace Views
 
         private void UnsubscribeFromViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.NotificationRequested -= OnNotificationRequested;
             viewModel.NotificationHideRequested -= OnNotificationHideRequested;
@@ -108,15 +113,19 @@ namespace Views
 
         public void ShowBanner(string message, float duration = -1f)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             if (!_isInitialized || _root == null)
             {
-                Debug.LogWarning($"[NotificationView] 아직 초기화되지 않았습니다. 메시지를 표시할 수 없습니다: {message}");
+                Debug.LogWarning(
+                    $"[NotificationView] 아직 초기화되지 않았습니다. 메시지를 표시할 수 없습니다: {message}"
+                );
                 return;
             }
 
-            float displayDuration = duration > 0 ? duration : (viewModel?.DefaultDisplayDuration ?? 2.2f);
+            float displayDuration =
+                duration > 0 ? duration : (viewModel?.DefaultDisplayDuration ?? 2.2f);
 
             // 배너 요소 다시 확인
             if (_banner == null || _bannerLabel == null)
@@ -206,7 +215,8 @@ namespace Views
 
         private IEnumerator FadeInBanner()
         {
-            if (_banner == null) yield break;
+            if (_banner == null)
+                yield break;
 
             SetBannerDisplayState(true);
 
@@ -226,7 +236,8 @@ namespace Views
 
         private IEnumerator FadeOutBanner()
         {
-            if (_banner == null) yield break;
+            if (_banner == null)
+                yield break;
 
             float fadeOutDuration = viewModel?.FadeOutDuration ?? 0.5f;
             float elapsed = 0f;
@@ -333,14 +344,16 @@ namespace Views
         [ContextMenu("Log Current UI State")]
         public void LogCurrentUIState()
         {
-            Debug.Log($"[NotificationView] UI State:\n" +
-                     $"  Banner Visible: {(_banner?.style.display.value == DisplayStyle.Flex)}\n" +
-                     $"  Banner Opacity: {_banner?.style.opacity.value ?? 0f}\n" +
-                     $"  Banner Text: '{_bannerLabel?.text ?? "NULL"}'\n" +
-                     $"  Is Showing: {IsBannerShowing()}\n" +
-                     $"  Queue Count: {GetQueueCount()}\n" +
-                     $"  Current Coroutine: {(_currentBannerCoroutine != null ? "Active" : "None")}\n" +
-                     $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[NotificationView] UI State:\n"
+                    + $"  Banner Visible: {(_banner?.style.display.value == DisplayStyle.Flex)}\n"
+                    + $"  Banner Opacity: {_banner?.style.opacity.value ?? 0f}\n"
+                    + $"  Banner Text: '{_bannerLabel?.text ?? "NULL"}'\n"
+                    + $"  Is Showing: {IsBannerShowing()}\n"
+                    + $"  Queue Count: {GetQueueCount()}\n"
+                    + $"  Current Coroutine: {(_currentBannerCoroutine != null ? "Active" : "None")}\n"
+                    + $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}"
+            );
         }
 
         [ContextMenu("Test Show Banner")]

@@ -14,13 +14,13 @@ namespace Networks
         private IEventLoopGroup _group;
         private IChannel _channel;
         private PacketHandler _packetHandler;
-        
+
         public bool IsConnected => _channel != null && _channel.Active;
 
         private void Awake()
         {
             Debug.Log("[Client] 초기화 시작");
-            
+
             DontDestroyOnLoad(gameObject);
         }
 
@@ -34,19 +34,23 @@ namespace Networks
             try
             {
                 Debug.Log($"[Client] 서버 연결 시도: {host}:{port}");
-                
+
                 if (string.IsNullOrEmpty(host))
                 {
-                    Debug.LogError("[Client] Host가 설정되지 않았습니다. Inspector에서 Host를 설정해주세요.");
+                    Debug.LogError(
+                        "[Client] Host가 설정되지 않았습니다. Inspector에서 Host를 설정해주세요."
+                    );
                     return;
                 }
-                
+
                 if (port <= 0)
                 {
-                    Debug.LogError($"[Client] Port가 올바르지 않습니다: {port}. Inspector에서 Port를 설정해주세요.");
+                    Debug.LogError(
+                        $"[Client] Port가 올바르지 않습니다: {port}. Inspector에서 Port를 설정해주세요."
+                    );
                     return;
                 }
-                
+
                 _group = new MultithreadEventLoopGroup();
                 _packetHandler = new PacketHandler();
 
@@ -55,17 +59,19 @@ namespace Networks
                     .Group(_group)
                     .Channel<TcpSocketChannel>()
                     .Option(ChannelOption.TcpNodelay, true)
-                    .Handler(new ActionChannelInitializer<ISocketChannel>(channel =>
-                    {
-                        channel.Pipeline
-                            .AddLast(new PacketDecoder())
-                            .AddLast(new PacketEncoder())
-                            .AddLast(_packetHandler);
-                    }));
-                
+                    .Handler(
+                        new ActionChannelInitializer<ISocketChannel>(channel =>
+                        {
+                            channel
+                                .Pipeline.AddLast(new PacketDecoder())
+                                .AddLast(new PacketEncoder())
+                                .AddLast(_packetHandler);
+                        })
+                    );
+
                 Debug.Log($"[Client] 서버 연결 중: {host}:{port}");
                 _channel = await bootstrap.ConnectAsync(host, port);
-                
+
                 Debug.Log($"[Client] 서버 연결 성공: {host}:{port}");
             }
             catch (Exception ex)

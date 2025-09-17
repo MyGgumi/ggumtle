@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.Movement
 {
@@ -29,7 +29,9 @@ namespace MVVM.Movement
                         {
                             // 플레이어도 없으면 새 GameObject 생성
                             player = new GameObject("PlayerMovementViewModel");
-                            Debug.LogWarning("[PlayerMovementViewModel] Player GameObject가 없어서 새로 생성");
+                            Debug.LogWarning(
+                                "[PlayerMovementViewModel] Player GameObject가 없어서 새로 생성"
+                            );
                         }
 
                         _instance = player.AddComponent<PlayerMovementViewModel>();
@@ -39,16 +41,29 @@ namespace MVVM.Movement
                 return _instance;
             }
         }
+
         [Header("Movement State")]
-        [SerializeField] private Vector2 _moveInput;
-        [SerializeField] private Vector2 _lookInput;
-        [SerializeField] private bool _jumpInput;
-        [SerializeField] private bool _sprintInput;
-        [SerializeField] private bool _isMoving;
+        [SerializeField]
+        private Vector2 _moveInput;
+
+        [SerializeField]
+        private Vector2 _lookInput;
+
+        [SerializeField]
+        private bool _jumpInput;
+
+        [SerializeField]
+        private bool _sprintInput;
+
+        [SerializeField]
+        private bool _isMoving;
 
         [Header("Movement Settings")]
-        [SerializeField] private bool _analogMovement = true;
-        [SerializeField] private bool _canMove = true;
+        [SerializeField]
+        private bool _analogMovement = true;
+
+        [SerializeField]
+        private bool _canMove = true;
 
         // 이벤트들
         public event Action<Vector2> MoveInputChanged;
@@ -321,14 +336,16 @@ namespace MVVM.Movement
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[PlayerMovementViewModel] State:\n" +
-                     $"  MoveInput: {MoveInput}\n" +
-                     $"  LookInput: {LookInput}\n" +
-                     $"  JumpInput: {JumpInput}\n" +
-                     $"  SprintInput: {SprintInput}\n" +
-                     $"  IsMoving: {IsMoving}\n" +
-                     $"  CanMove: {CanMove}\n" +
-                     $"  AnalogMovement: {AnalogMovement}");
+            Debug.Log(
+                $"[PlayerMovementViewModel] State:\n"
+                    + $"  MoveInput: {MoveInput}\n"
+                    + $"  LookInput: {LookInput}\n"
+                    + $"  JumpInput: {JumpInput}\n"
+                    + $"  SprintInput: {SprintInput}\n"
+                    + $"  IsMoving: {IsMoving}\n"
+                    + $"  CanMove: {CanMove}\n"
+                    + $"  AnalogMovement: {AnalogMovement}"
+            );
         }
 
         #endregion

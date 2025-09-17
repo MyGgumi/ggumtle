@@ -12,10 +12,14 @@ namespace Networks.Pipelines
     /// </summary>
     public class PacketDecoder : ByteToMessageDecoder
     {
-        protected override void Decode(IChannelHandlerContext context, IByteBuffer input, List<object> output)
+        protected override void Decode(
+            IChannelHandlerContext context,
+            IByteBuffer input,
+            List<object> output
+        )
         {
             // 최소 헤더 크기 확인
-            if (input.ReadableBytes < PacketHeader.Size) 
+            if (input.ReadableBytes < PacketHeader.Size)
             {
                 return;
             }
@@ -36,7 +40,7 @@ namespace Networks.Pipelines
                     input.ResetReaderIndex();
                     return;
                 }
-                
+
                 // 데이터 읽기
                 byte[] data = null;
                 if (header.DataLength > 0)
@@ -48,8 +52,10 @@ namespace Networks.Pipelines
                 // 패킷 생성 및 출력
                 var packet = new Packet(header, data);
                 output.Add(packet);
-                
-                Debug.Log($"패킷 디코딩 완료 - Type: {header.Type}, DataLength: {header.DataLength}");
+
+                Debug.Log(
+                    $"패킷 디코딩 완료 - Type: {header.Type}, DataLength: {header.DataLength}"
+                );
             }
             catch (System.Exception e)
             {

@@ -1,26 +1,41 @@
 using System;
 using System.Collections;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.UI
 {
     public class HealthBarViewModel : BaseViewModel
     {
         [Header("Health State")]
-        [SerializeField] private int _currentHP = 100;
-        [SerializeField] private int _maxHP = 100;
-        [SerializeField] private bool _isFainted = false;
-        [SerializeField] private float _faintTimeRemaining = 0f;
+        [SerializeField]
+        private int _currentHP = 100;
+
+        [SerializeField]
+        private int _maxHP = 100;
+
+        [SerializeField]
+        private bool _isFainted = false;
+
+        [SerializeField]
+        private float _faintTimeRemaining = 0f;
 
         [Header("Settings")]
-        [SerializeField] private float _faintReviveTime = 5f;
-        [SerializeField] private bool _enableFaintSystem = true;
+        [SerializeField]
+        private float _faintReviveTime = 5f;
+
+        [SerializeField]
+        private bool _enableFaintSystem = true;
 
         [Header("Colors")]
-        [SerializeField] private Color _normalBarColor = new Color(255f / 255f, 255f / 255f, 255f / 255f, 0.4f);
-        [SerializeField] private Color _criticalBarColor = new Color(154f / 255f, 8f / 255f, 11f / 255f, 1.0f);
-        [SerializeField] private Color _thirdBarColor = new Color(235f / 255f, 255f / 255f, 123f / 255f, 0.4f);
+        [SerializeField]
+        private Color _normalBarColor = new Color(255f / 255f, 255f / 255f, 255f / 255f, 0.4f);
+
+        [SerializeField]
+        private Color _criticalBarColor = new Color(154f / 255f, 8f / 255f, 11f / 255f, 1.0f);
+
+        [SerializeField]
+        private Color _thirdBarColor = new Color(235f / 255f, 255f / 255f, 123f / 255f, 0.4f);
 
         public event Action<int, int> HealthChanged;
         public event Action<bool, float> FaintStateChanged;
@@ -137,7 +152,8 @@ namespace MVVM.UI
 
         public void RevivePlayer(int reviveHP = 30)
         {
-            if (!_isFainted) return;
+            if (!_isFainted)
+                return;
 
             SetFaintState(false);
             CurrentHP = reviveHP;
@@ -162,7 +178,8 @@ namespace MVVM.UI
 
         private void CheckFaintState()
         {
-            if (!_enableFaintSystem) return;
+            if (!_enableFaintSystem)
+                return;
 
             if (_currentHP <= 0 && !_isFainted)
             {
@@ -228,7 +245,9 @@ namespace MVVM.UI
 
                 if (EnableDebugLogs)
                 {
-                    Debug.Log($"[HealthBarViewModel] 기절 카운트다운: {_faintTimeRemaining:F0}초 남음");
+                    Debug.Log(
+                        $"[HealthBarViewModel] 기절 카운트다운: {_faintTimeRemaining:F0}초 남음"
+                    );
                 }
             }
 
@@ -292,13 +311,15 @@ namespace MVVM.UI
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[HealthBarViewModel] State:\n" +
-                     $"  CurrentHP: {CurrentHP}/{MaxHP} ({HealthPercentage:P1})\n" +
-                     $"  IsFainted: {IsFainted}\n" +
-                     $"  FaintTimeRemaining: {FaintTimeRemaining:F1}s\n" +
-                     $"  IsLowHealth: {IsLowHealth}\n" +
-                     $"  IsCriticalHealth: {IsCriticalHealth}\n" +
-                     $"  IsAlive: {IsAlive}");
+            Debug.Log(
+                $"[HealthBarViewModel] State:\n"
+                    + $"  CurrentHP: {CurrentHP}/{MaxHP} ({HealthPercentage:P1})\n"
+                    + $"  IsFainted: {IsFainted}\n"
+                    + $"  FaintTimeRemaining: {FaintTimeRemaining:F1}s\n"
+                    + $"  IsLowHealth: {IsLowHealth}\n"
+                    + $"  IsCriticalHealth: {IsCriticalHealth}\n"
+                    + $"  IsAlive: {IsAlive}"
+            );
         }
 
         [ContextMenu("Debug Damage (10)")]

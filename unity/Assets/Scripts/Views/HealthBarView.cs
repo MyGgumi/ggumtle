@@ -1,15 +1,16 @@
 using System;
 using System.Collections;
+using MVVM.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVVM.UI;
 
 namespace Views
 {
     public class HealthBarView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
-        [SerializeField] private HealthBarViewModel viewModel;
+        [SerializeField]
+        private HealthBarViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -25,8 +26,11 @@ namespace Views
         private VisualElement _bar3Fill;
 
         [Header("Animation Settings")]
-        [SerializeField] private float healthChangeAnimationDuration = 0.5f;
-        [SerializeField] private AnimationCurve healthChangeAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        [SerializeField]
+        private float healthChangeAnimationDuration = 0.5f;
+
+        [SerializeField]
+        private AnimationCurve healthChangeAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         public void Initialize(VisualElement root, HealthBarViewModel viewModel)
         {
@@ -52,15 +56,18 @@ namespace Views
             _bar3 = _root.Q<VisualElement>("bar3");
             _bar3Fill = _root.Q<VisualElement>("bar3Fill");
 
-            Debug.Log($"[HealthBarView] UI 요소 캐싱 완료: " +
-                     $"체력바={(_healthBar != null ? "OK" : "NULL")}, " +
-                     $"기절오버레이={(_faintOverlay != null ? "OK" : "NULL")}, " +
-                     $"체력바들={(_bar1Fill != null && _bar2Fill != null && _bar3Fill != null ? "OK" : "NULL")}");
+            Debug.Log(
+                $"[HealthBarView] UI 요소 캐싱 완료: "
+                    + $"체력바={(_healthBar != null ? "OK" : "NULL")}, "
+                    + $"기절오버레이={(_faintOverlay != null ? "OK" : "NULL")}, "
+                    + $"체력바들={(_bar1Fill != null && _bar2Fill != null && _bar3Fill != null ? "OK" : "NULL")}"
+            );
         }
 
         private void SubscribeToViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.HealthChanged += OnHealthChanged;
             viewModel.FaintStateChanged += OnFaintStateChanged;
@@ -71,7 +78,8 @@ namespace Views
 
         private void UnsubscribeFromViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.HealthChanged -= OnHealthChanged;
             viewModel.FaintStateChanged -= OnFaintStateChanged;
@@ -151,12 +159,15 @@ namespace Views
                 }
             }
 
-            Debug.Log($"[HealthBarView] 체력바 UI 업데이트: {currentHP}/{maxHP} (바1: {hp1}/40, 바2: {hp2}/40, 바3: {hp3}/20)");
+            Debug.Log(
+                $"[HealthBarView] 체력바 UI 업데이트: {currentHP}/{maxHP} (바1: {hp1}/40, 바2: {hp2}/40, 바3: {hp3}/20)"
+            );
         }
 
         private void UpdateFaintOverlay(bool isFainted, float reviveTime)
         {
-            if (_faintOverlay == null) return;
+            if (_faintOverlay == null)
+                return;
 
             if (isFainted)
             {
@@ -180,7 +191,8 @@ namespace Views
 
         private void UpdateAllUI()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             UpdateHealthBarUI(viewModel.CurrentHP, viewModel.MaxHP);
             UpdateFaintOverlay(viewModel.IsFainted, viewModel.FaintTimeRemaining);
@@ -222,7 +234,8 @@ namespace Views
 
         public void AnimateHealthChange(int targetHP, float duration = -1f)
         {
-            if (duration < 0) duration = healthChangeAnimationDuration;
+            if (duration < 0)
+                duration = healthChangeAnimationDuration;
             StartCoroutine(AnimateHealthChangeCoroutine(targetHP, duration));
         }
 
@@ -277,13 +290,15 @@ namespace Views
         [ContextMenu("Log Current UI State")]
         public void LogCurrentUIState()
         {
-            Debug.Log($"[HealthBarView] UI State:\n" +
-                     $"  HealthBar: {(_healthBar?.style.display.value == DisplayStyle.Flex ? "Visible" : "Hidden")}\n" +
-                     $"  FaintOverlay: {(_faintOverlay?.style.display.value == DisplayStyle.Flex ? "Visible" : "Hidden")}\n" +
-                     $"  Bar1Fill Width: {_bar1Fill?.style.width.value.value ?? 0}%\n" +
-                     $"  Bar2Fill Width: {_bar2Fill?.style.width.value.value ?? 0}%\n" +
-                     $"  Bar3Fill Width: {_bar3Fill?.style.width.value.value ?? 0}%\n" +
-                     $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[HealthBarView] UI State:\n"
+                    + $"  HealthBar: {(_healthBar?.style.display.value == DisplayStyle.Flex ? "Visible" : "Hidden")}\n"
+                    + $"  FaintOverlay: {(_faintOverlay?.style.display.value == DisplayStyle.Flex ? "Visible" : "Hidden")}\n"
+                    + $"  Bar1Fill Width: {_bar1Fill?.style.width.value.value ?? 0}%\n"
+                    + $"  Bar2Fill Width: {_bar2Fill?.style.width.value.value ?? 0}%\n"
+                    + $"  Bar3Fill Width: {_bar3Fill?.style.width.value.value ?? 0}%\n"
+                    + $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}"
+            );
         }
 
         #endregion

@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.UI
 {
@@ -24,15 +24,27 @@ namespace MVVM.UI
     public class NotificationViewModel : BaseViewModel
     {
         [Header("Notification State")]
-        [SerializeField] private bool _isShowing = false;
-        [SerializeField] private string _currentMessage = "";
-        [SerializeField] private Queue<NotificationData> _notificationQueue = new Queue<NotificationData>();
+        [SerializeField]
+        private bool _isShowing = false;
+
+        [SerializeField]
+        private string _currentMessage = "";
+
+        [SerializeField]
+        private Queue<NotificationData> _notificationQueue = new Queue<NotificationData>();
 
         [Header("Settings")]
-        [SerializeField] private float _defaultDisplayDuration = 2.2f;
-        [SerializeField] private float _fadeInDuration = 0.3f;
-        [SerializeField] private float _fadeOutDuration = 0.5f;
-        [SerializeField] private int _maxQueueSize = 10;
+        [SerializeField]
+        private float _defaultDisplayDuration = 2.2f;
+
+        [SerializeField]
+        private float _fadeInDuration = 0.3f;
+
+        [SerializeField]
+        private float _fadeOutDuration = 0.5f;
+
+        [SerializeField]
+        private int _maxQueueSize = 10;
 
         public event Action<string, float> NotificationRequested; // message, duration
         public event Action NotificationHideRequested;
@@ -99,7 +111,8 @@ namespace MVVM.UI
 
         public void ShowNotification(string message, float duration = -1f)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             float displayDuration = duration > 0 ? duration : _defaultDisplayDuration;
             CurrentMessage = message;
@@ -127,7 +140,8 @@ namespace MVVM.UI
 
         public void QueueNotification(string message, float duration = -1f)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             float displayDuration = duration > 0 ? duration : _defaultDisplayDuration;
             var notification = new NotificationData(message, displayDuration);
@@ -154,7 +168,9 @@ namespace MVVM.UI
 
             if (EnableDebugLogs)
             {
-                Debug.Log($"[NotificationViewModel] 알림 큐에 추가: {message} (큐 크기: {_notificationQueue.Count})");
+                Debug.Log(
+                    $"[NotificationViewModel] 알림 큐에 추가: {message} (큐 크기: {_notificationQueue.Count})"
+                );
             }
         }
 
@@ -304,12 +320,14 @@ namespace MVVM.UI
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[NotificationViewModel] State:\n" +
-                     $"  IsShowing: {IsShowing}\n" +
-                     $"  CurrentMessage: '{CurrentMessage}'\n" +
-                     $"  QueueCount: {QueueCount}/{MaxQueueSize}\n" +
-                     $"  DefaultDuration: {DefaultDisplayDuration}s\n" +
-                     $"  FadeIn/Out: {FadeInDuration}s / {FadeOutDuration}s");
+            Debug.Log(
+                $"[NotificationViewModel] State:\n"
+                    + $"  IsShowing: {IsShowing}\n"
+                    + $"  CurrentMessage: '{CurrentMessage}'\n"
+                    + $"  QueueCount: {QueueCount}/{MaxQueueSize}\n"
+                    + $"  DefaultDuration: {DefaultDisplayDuration}s\n"
+                    + $"  FadeIn/Out: {FadeInDuration}s / {FadeOutDuration}s"
+            );
         }
 
         [ContextMenu("Show Test Notification")]

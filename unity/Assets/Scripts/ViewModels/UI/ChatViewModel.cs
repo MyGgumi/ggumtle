@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.UI
 {
@@ -14,7 +14,12 @@ namespace MVVM.UI
         public System.DateTime timestamp;
         public ChatMessageType type;
 
-        public ChatMessage(string id, string name, string msg, ChatMessageType msgType = ChatMessageType.Normal)
+        public ChatMessage(
+            string id,
+            string name,
+            string msg,
+            ChatMessageType msgType = ChatMessageType.Normal
+        )
         {
             playerId = id;
             playerName = name;
@@ -31,30 +36,42 @@ namespace MVVM.UI
         QuickChat,
         Warning,
         Death,
-        Escape
+        Escape,
     }
 
     public class ChatViewModel : BaseViewModel
     {
         [Header("Chat State")]
-        [SerializeField] private bool _isChatOpen = false;
-        [SerializeField] private string _currentMessage = "";
+        [SerializeField]
+        private bool _isChatOpen = false;
+
+        [SerializeField]
+        private string _currentMessage = "";
 
         [Header("Settings")]
-        [SerializeField] private int _maxChatMessages = 50;
-        [SerializeField] private float _messageDisplayDuration = 10f;
-        [SerializeField] private bool _enableQuickChat = true;
-        [SerializeField] private string[] _quickChatMessages = {
+        [SerializeField]
+        private int _maxChatMessages = 50;
+
+        [SerializeField]
+        private float _messageDisplayDuration = 10f;
+
+        [SerializeField]
+        private bool _enableQuickChat = true;
+
+        [SerializeField]
+        private string[] _quickChatMessages =
+        {
             "도와줘!",
             "근처야",
             "위험!",
             "따라와!",
             "가는중!",
-            "해결됨"
+            "해결됨",
         };
 
         [Header("Current State")]
-        [SerializeField] private List<ChatMessage> _chatHistory = new List<ChatMessage>();
+        [SerializeField]
+        private List<ChatMessage> _chatHistory = new List<ChatMessage>();
 
         public event Action<bool> ChatToggled;
         public event Action<ChatMessage> MessageAdded;
@@ -130,15 +147,21 @@ namespace MVVM.UI
             }
         }
 
-        public void SendMessage(string message)
+        public new void SendMessage(string message)
         {
-            if (string.IsNullOrEmpty(message?.Trim())) return;
+            if (string.IsNullOrEmpty(message?.Trim()))
+                return;
 
             // 로컬 플레이어 메시지 전송
             string playerId = "1"; // 임시 플레이어 ID
             string playerName = "나"; // 임시 플레이어 이름
 
-            var chatMessage = new ChatMessage(playerId, playerName, message.Trim(), ChatMessageType.Normal);
+            var chatMessage = new ChatMessage(
+                playerId,
+                playerName,
+                message.Trim(),
+                ChatMessageType.Normal
+            );
             AddMessage(chatMessage);
 
             MessageSent?.Invoke(playerId, message.Trim());
@@ -152,12 +175,18 @@ namespace MVVM.UI
 
         public void SendQuickChatMessage(string message)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             string playerId = "1"; // 임시 플레이어 ID
             string playerName = "나"; // 임시 플레이어 이름
 
-            var chatMessage = new ChatMessage(playerId, playerName, message, ChatMessageType.QuickChat);
+            var chatMessage = new ChatMessage(
+                playerId,
+                playerName,
+                message,
+                ChatMessageType.QuickChat
+            );
             AddMessage(chatMessage);
 
             MessageSent?.Invoke(playerId, message);
@@ -168,7 +197,12 @@ namespace MVVM.UI
             }
         }
 
-        public void ReceiveMessage(string playerId, string playerName, string message, ChatMessageType type = ChatMessageType.Normal)
+        public void ReceiveMessage(
+            string playerId,
+            string playerName,
+            string message,
+            ChatMessageType type = ChatMessageType.Normal
+        )
         {
             var chatMessage = new ChatMessage(playerId, playerName, message, type);
             AddMessage(chatMessage);
@@ -177,7 +211,8 @@ namespace MVVM.UI
 
         public void AddMessage(ChatMessage message)
         {
-            if (message == null) return;
+            if (message == null)
+                return;
 
             _chatHistory.Add(message);
 
@@ -199,7 +234,12 @@ namespace MVVM.UI
 
         public void AddSystemMessage(string message)
         {
-            var systemMessage = new ChatMessage("SYSTEM", "시스템", message, ChatMessageType.System);
+            var systemMessage = new ChatMessage(
+                "SYSTEM",
+                "시스템",
+                message,
+                ChatMessageType.System
+            );
             AddMessage(systemMessage);
         }
 
@@ -213,14 +253,14 @@ namespace MVVM.UI
                 "player_escaped" => $"{playerName}님이 탈출했습니다!",
                 "game_started" => "게임이 시작되었습니다!",
                 "game_ended" => "게임이 종료되었습니다.",
-                _ => eventType
+                _ => eventType,
             };
 
             ChatMessageType messageType = eventType switch
             {
                 "player_died" => ChatMessageType.Death,
                 "player_escaped" => ChatMessageType.Escape,
-                _ => ChatMessageType.System
+                _ => ChatMessageType.System,
             };
 
             var gameMessage = new ChatMessage("SYSTEM", "게임", message, messageType);
@@ -251,7 +291,8 @@ namespace MVVM.UI
 
         public void AddQuickChatMessage(string message)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             var newMessages = new List<string>(_quickChatMessages) { message };
             QuickChatMessages = newMessages.ToArray();
@@ -259,7 +300,8 @@ namespace MVVM.UI
 
         public void RemoveQuickChatMessage(string message)
         {
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             var newMessages = new List<string>(_quickChatMessages);
             newMessages.Remove(message);
@@ -279,13 +321,14 @@ namespace MVVM.UI
                 ChatMessageType.Warning => Color.red,
                 ChatMessageType.Death => Color.red,
                 ChatMessageType.Escape => Color.green,
-                _ => Color.white
+                _ => Color.white,
             };
         }
 
         public List<ChatMessage> GetRecentMessages(int count)
         {
-            if (count <= 0) return new List<ChatMessage>();
+            if (count <= 0)
+                return new List<ChatMessage>();
 
             int startIndex = Mathf.Max(0, _chatHistory.Count - count);
             int actualCount = Mathf.Min(count, _chatHistory.Count);
@@ -343,12 +386,14 @@ namespace MVVM.UI
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[ChatViewModel] State:\n" +
-                     $"  IsChatOpen: {IsChatOpen}\n" +
-                     $"  CurrentMessage: '{CurrentMessage}'\n" +
-                     $"  MessageCount: {MessageCount}/{MaxChatMessages}\n" +
-                     $"  EnableQuickChat: {EnableQuickChat}\n" +
-                     $"  QuickChatMessages: {QuickChatMessages.Length}개");
+            Debug.Log(
+                $"[ChatViewModel] State:\n"
+                    + $"  IsChatOpen: {IsChatOpen}\n"
+                    + $"  CurrentMessage: '{CurrentMessage}'\n"
+                    + $"  MessageCount: {MessageCount}/{MaxChatMessages}\n"
+                    + $"  EnableQuickChat: {EnableQuickChat}\n"
+                    + $"  QuickChatMessages: {QuickChatMessages.Length}개"
+            );
         }
 
         [ContextMenu("Add Test Message")]

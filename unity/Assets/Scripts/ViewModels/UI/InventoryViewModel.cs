@@ -1,24 +1,33 @@
 using System;
-using UnityEngine;
 using Models;
-using Services;
 using MVVM.Core;
+using Services;
+using UnityEngine;
 
 namespace ViewModels.UI
 {
     public class InventoryViewModel : BaseViewModel
     {
         [Header("Model & Service")]
-        [SerializeField] private InventoryModel _inventoryModel;
-        [SerializeField] private InventoryService _inventoryService;
+        [SerializeField]
+        private InventoryModel _inventoryModel;
+
+        [SerializeField]
+        private InventoryService _inventoryService;
 
         [Header("Player Inventory")]
-        [SerializeField] private string[] _playerSlotItemIds = new string[3];
-        [SerializeField] private int[] _playerSlotCounts = new int[3];
+        [SerializeField]
+        private string[] _playerSlotItemIds = new string[3];
+
+        [SerializeField]
+        private int[] _playerSlotCounts = new int[3];
 
         [Header("Feeding Inventory")]
-        [SerializeField] private int _feedingCount;
-        [SerializeField] private int _maxFeedingCount = 999;
+        [SerializeField]
+        private int _feedingCount;
+
+        [SerializeField]
+        private int _maxFeedingCount = 999;
 
         public event Action<int, string, int> OnPlayerSlotChanged;
         public event Action<int> OnFeedingCountChanged;
@@ -81,11 +90,14 @@ namespace ViewModels.UI
             NotifyPropertyChanged();
 
             // ResourceViewModel의 LightCount도 업데이트 (PlayerStatus UI 업데이트용)
-            var universalHUD = UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
+            var universalHUD =
+                UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
             if (universalHUD != null)
             {
                 universalHUD.SetLightCount(newCount);
-                UnityEngine.Debug.Log($"[InventoryViewModel] ResourceViewModel LightCount 업데이트: {newCount}");
+                UnityEngine.Debug.Log(
+                    $"[InventoryViewModel] ResourceViewModel LightCount 업데이트: {newCount}"
+                );
             }
         }
 
@@ -112,11 +124,14 @@ namespace ViewModels.UI
             _maxFeedingCount = _inventoryModel.maxFeedingCount;
 
             // 초기화 시 ResourceViewModel의 LightCount도 설정
-            var universalHUD = UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
+            var universalHUD =
+                UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
             if (universalHUD != null)
             {
                 universalHUD.SetLightCount(_feedingCount);
-                UnityEngine.Debug.Log($"[InventoryViewModel] 초기화 - ResourceViewModel LightCount: {_feedingCount}");
+                UnityEngine.Debug.Log(
+                    $"[InventoryViewModel] 초기화 - ResourceViewModel LightCount: {_feedingCount}"
+                );
             }
         }
 
@@ -216,7 +231,9 @@ namespace ViewModels.UI
             }
             else
             {
-                Debug.LogWarning("[InventoryViewModel] Multiple instances detected! Using first instance.");
+                Debug.LogWarning(
+                    "[InventoryViewModel] Multiple instances detected! Using first instance."
+                );
             }
         }
 
@@ -225,7 +242,8 @@ namespace ViewModels.UI
 
         public int TakeLight(int amount)
         {
-            if (amount <= 0) return 0;
+            if (amount <= 0)
+                return 0;
 
             int actualTaken = Mathf.Min(amount, _feedingCount);
             if (RemoveFeeding(actualTaken))

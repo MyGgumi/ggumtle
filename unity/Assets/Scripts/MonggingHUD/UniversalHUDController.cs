@@ -38,7 +38,8 @@ public class UniversalHUDController : MonoBehaviour
     public MVVM.UI.PlayerListViewModel playerListViewModel;
     public MVVM.UI.NotificationViewModel notificationViewModel;
     public ViewModels.UI.InventoryViewModel inventoryViewModel;
-    public ViewModels.UI.InteractionViewModel interactionViewModel;
+
+    // public ViewModels.UI.InteractionViewModel interactionViewModel; // InteractionViewModel 삭제로 인해 주석 처리
     public ViewModels.UI.ChestViewModel chestViewModel;
 
     [Header("MVVM Views")]
@@ -49,7 +50,8 @@ public class UniversalHUDController : MonoBehaviour
     public Views.PlayerListView playerListView;
     public Views.NotificationView notificationView;
     public Views.InventoryView inventoryView;
-    public Views.InteractionView interactionView;
+
+    // public Views.InteractionView interactionView; // InteractionView 삭제로 인해 주석 처리
     public Views.ChestView chestView;
 
     [Header("Input System")]
@@ -116,11 +118,15 @@ public class UniversalHUDController : MonoBehaviour
         Debug.Log("[UniversalHUDController] 입력 시스템 컴포넌트 설정 완료");
 
         // 키보드 디버그 컨트롤러 추가 (테스트용)
-        keyboardDebugController = gameObject.GetComponent<InputSystem.Debug.KeyboardDebugController>();
+        keyboardDebugController =
+            gameObject.GetComponent<InputSystem.Debug.KeyboardDebugController>();
         if (keyboardDebugController == null)
         {
-            keyboardDebugController = gameObject.AddComponent<InputSystem.Debug.KeyboardDebugController>();
-            Debug.Log("[UniversalHUDController] 키보드 디버그 컨트롤러 추가 (WASD 이동, Space 점프)");
+            keyboardDebugController =
+                gameObject.AddComponent<InputSystem.Debug.KeyboardDebugController>();
+            Debug.Log(
+                "[UniversalHUDController] 키보드 디버그 컨트롤러 추가 (WASD 이동, Space 점프)"
+            );
         }
     }
 
@@ -147,7 +153,8 @@ public class UniversalHUDController : MonoBehaviour
             }
 
             // ActionButtonController 등록
-            var actionButtonController = gameObject.GetComponent<InputSystem.Actions.ActionButtonController>();
+            var actionButtonController =
+                gameObject.GetComponent<InputSystem.Actions.ActionButtonController>();
             if (actionButtonController != null)
             {
                 inputCoordinator.RegisterLayer(actionButtonController);
@@ -179,71 +186,76 @@ public class UniversalHUDController : MonoBehaviour
         // 액션 버튼 → PlayerMovementViewModel 연결 (점프)
         if (inputCoordinator != null && playerMovementViewModel != null)
         {
-            var actionButtonController = inputCoordinator.GetLayer<InputSystem.Actions.ActionButtonController>();
+            var actionButtonController =
+                inputCoordinator.GetLayer<InputSystem.Actions.ActionButtonController>();
             if (actionButtonController != null)
             {
-                actionButtonController.OnJumpPressed += () => playerMovementViewModel.SetJumpInput(true);
-                actionButtonController.OnJumpReleased += () => playerMovementViewModel.SetJumpInput(false);
+                actionButtonController.OnJumpPressed += () =>
+                    playerMovementViewModel.SetJumpInput(true);
+                actionButtonController.OnJumpReleased += () =>
+                    playerMovementViewModel.SetJumpInput(false);
                 Debug.Log("[UniversalHUDController] 점프 버튼 → PlayerMovementViewModel 연결 완료");
             }
             else
             {
-                Debug.LogWarning("[UniversalHUDController] ActionButtonController를 찾을 수 없습니다!");
+                Debug.LogWarning(
+                    "[UniversalHUDController] ActionButtonController를 찾을 수 없습니다!"
+                );
             }
         }
 
         // 레거시 StarterAssetsInputs 연결 코드 제거됨 - 이제 ThirdPersonController가 PlayerMovementViewModel 직접 사용
 
-        // InteractionViewModel과 InteractionView 연결
-        if (interactionView != null && interactionViewModel != null)
-        {
-            // 상호작용 버튼 가시성 제어를 InteractionView에서 직접 관리
-            interactionViewModel.OnNearbyInteractionAdded += (type, text, target) =>
-            {
-                Debug.Log(
-                    $"[UniversalHUDController] 🎯 상호작용 감지됨: {text} (타입: {type}, 대상: {target?.name})"
-                );
-                interactionView.UpdateInteractionButtonVisibility(true);
-                Debug.Log($"[UniversalHUDController] 상호작용 가능 - 버튼 표시 명령 전송: {text}");
-            };
+        // InteractionViewModel과 InteractionView 연결 (삭제로 인해 주석 처리)
+        // if (interactionView != null && interactionViewModel != null)
+        // {
+        //     // 상호작용 버튼 가시성 제어를 InteractionView에서 직접 관리
+        //     interactionViewModel.OnNearbyInteractionAdded += (type, text, target) =>
+        //     {
+        //         Debug.Log(
+        //             $"[UniversalHUDController] 🎯 상호작용 감지됨: {text} (타입: {type}, 대상: {target?.name})"
+        //         );
+        //         interactionView.UpdateInteractionButtonVisibility(true);
+        //         Debug.Log($"[UniversalHUDController] 상호작용 가능 - 버튼 표시 명령 전송: {text}");
+        //     };
 
-            interactionViewModel.OnNearbyInteractionRemoved += (type, target) =>
-            {
-                Debug.Log(
-                    $"[UniversalHUDController] 📤 상호작용 제거됨: 타입 {type}, 대상: {target?.name}"
-                );
-                if (!interactionViewModel.HasNearbyInteractions)
-                {
-                    interactionView.UpdateInteractionButtonVisibility(false);
-                    Debug.Log("[UniversalHUDController] 상호작용 불가 - 버튼 숨김 명령 전송");
-                }
-                else
-                {
-                    Debug.Log($"[UniversalHUDController] 다른 상호작용이 남아있음 - 버튼 유지)");
-                }
-            };
+        //     interactionViewModel.OnNearbyInteractionRemoved += (type, target) =>
+        //     {
+        //         Debug.Log(
+        //             $"[UniversalHUDController] 📤 상호작용 제거됨: 타입 {type}, 대상: {target?.name}"
+        //         );
+        //         if (!interactionViewModel.HasNearbyInteractions)
+        //         {
+        //             interactionView.UpdateInteractionButtonVisibility(false);
+        //             Debug.Log("[UniversalHUDController] 상호작용 불가 - 버튼 숨김 명령 전송");
+        //         }
+        //         else
+        //         {
+        //             Debug.Log($"[UniversalHUDController] 다른 상호작용이 남아있음 - 버튼 유지)");
+        //         }
+        //     };
 
-            Debug.Log(
-                "[UniversalHUDController] ✅ InteractionViewModel과 InteractionView 연결 완료"
-            );
-        }
-        else
-        {
-            Debug.LogError(
-                $"[UniversalHUDController] ❌ InteractionView/ViewModel 연결 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
-            );
-        }
+        //     Debug.Log(
+        //         "[UniversalHUDController] ✅ InteractionViewModel과 InteractionView 연결 완료"
+        //     );
+        // }
+        // else
+        // {
+        //     Debug.LogError(
+        //         $"[UniversalHUDController] ❌ InteractionView/ViewModel 연결 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
+        //     );
+        // }
 
         Debug.Log("[UniversalHUDController] 입력-게임플레이 연결 완료");
     }
 
     private void CleanupInputSystem()
     {
-        // InteractionViewModel 이벤트 해제
-        if (interactionView != null && interactionViewModel != null)
-        {
-            // 이벤트 해제는 각 컴포넌트의 OnDestroy에서 처리됨
-        }
+        // InteractionViewModel 이벤트 해제 (삭제로 인해 주석 처리)
+        // if (interactionView != null && interactionViewModel != null)
+        // {
+        //     // 이벤트 해제는 각 컴포넌트의 OnDestroy에서 처리됨
+        // }
 
         // 이벤트 연결 해제는 각 컨트롤러의 Cleanup에서 처리됨
         inputCoordinator?.ResetAllInput();
@@ -264,7 +276,9 @@ public class UniversalHUDController : MonoBehaviour
         }
         else
         {
-            Debug.LogError("[UniversalHUDController] PlayerMovementViewModel 싱글톤 인스턴스를 가져올 수 없습니다!");
+            Debug.LogError(
+                "[UniversalHUDController] PlayerMovementViewModel 싱글톤 인스턴스를 가져올 수 없습니다!"
+            );
         }
 
         Debug.Log("[UniversalHUDController] MVVM 시스템 컴포넌트 설정 완료");
@@ -312,15 +326,15 @@ public class UniversalHUDController : MonoBehaviour
             inventoryViewModel =
                 gameObject.GetComponent<ViewModels.UI.InventoryViewModel>()
                 ?? gameObject.AddComponent<ViewModels.UI.InventoryViewModel>();
-        if (interactionViewModel == null)
-        {
-            interactionViewModel =
-                gameObject.GetComponent<ViewModels.UI.InteractionViewModel>()
-                ?? gameObject.AddComponent<ViewModels.UI.InteractionViewModel>();
-            Debug.Log(
-                $"[UniversalHUDController] InteractionViewModel 생성: {interactionViewModel != null}"
-            );
-        }
+        // if (interactionViewModel == null) // InteractionViewModel 삭제로 인해 주석 처리
+        // {
+        //     interactionViewModel =
+        //         gameObject.GetComponent<ViewModels.UI.InteractionViewModel>()
+        //         ?? gameObject.AddComponent<ViewModels.UI.InteractionViewModel>();
+        //     Debug.Log(
+        //         $"[UniversalHUDController] InteractionViewModel 생성: {interactionViewModel != null}"
+        //     );
+        // }
         if (chestViewModel == null)
             chestViewModel =
                 gameObject.GetComponent<ViewModels.UI.ChestViewModel>()
@@ -355,10 +369,10 @@ public class UniversalHUDController : MonoBehaviour
             inventoryView =
                 gameObject.GetComponent<Views.InventoryView>()
                 ?? gameObject.AddComponent<Views.InventoryView>();
-        if (interactionView == null)
-            interactionView =
-                gameObject.GetComponent<Views.InteractionView>()
-                ?? gameObject.AddComponent<Views.InteractionView>();
+        // if (interactionView == null) // InteractionView 삭제로 인해 주석 처리
+        //     interactionView =
+        //         gameObject.GetComponent<Views.InteractionView>()
+        //         ?? gameObject.AddComponent<Views.InteractionView>();
         if (chestView == null)
             chestView =
                 gameObject.GetComponent<Views.ChestView>()
@@ -384,18 +398,18 @@ public class UniversalHUDController : MonoBehaviour
         notificationView?.Initialize(_root, notificationViewModel);
         inventoryView?.Initialize(_root, inventoryViewModel);
 
-        if (interactionView != null && interactionViewModel != null)
-        {
-            Debug.Log("[UniversalHUDController] InteractionView 초기화 시작");
-            interactionView.Initialize(_root, interactionViewModel);
-            Debug.Log("[UniversalHUDController] InteractionView 초기화 완료");
-        }
-        else
-        {
-            Debug.LogError(
-                $"[UniversalHUDController] InteractionView 초기화 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
-            );
-        }
+        // if (interactionView != null && interactionViewModel != null) // InteractionView/ViewModel 삭제로 인해 주석 처리
+        // {
+        //     Debug.Log("[UniversalHUDController] InteractionView 초기화 시작");
+        //     interactionView.Initialize(_root, interactionViewModel);
+        //     Debug.Log("[UniversalHUDController] InteractionView 초기화 완료");
+        // }
+        // else
+        // {
+        //     Debug.LogError(
+        //         $"[UniversalHUDController] InteractionView 초기화 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
+        //     );
+        // }
 
         chestView?.Initialize(_root, chestViewModel);
 
@@ -414,7 +428,7 @@ public class UniversalHUDController : MonoBehaviour
         HUDEvents.OnFaintStateChanged += OnFaintStateChanged;
         HUDEvents.OnPlayerDeath += OnPlayerDeath;
         HUDEvents.OnPlayerRevived += OnPlayerRevived;
-        HUDEvents.OnInteractionCompleted += OnInteractionCompleted;
+        // HUDEvents.OnInteractionCompleted += OnInteractionCompleted; // InteractionCompleted 이벤트 삭제로 인해 주석 처리
 
         // 인벤토리 이벤트 구독
         HUDEvents.OnItemObtained += OnItemObtained;
@@ -431,7 +445,7 @@ public class UniversalHUDController : MonoBehaviour
         HUDEvents.OnFaintStateChanged -= OnFaintStateChanged;
         HUDEvents.OnPlayerDeath -= OnPlayerDeath;
         HUDEvents.OnPlayerRevived -= OnPlayerRevived;
-        HUDEvents.OnInteractionCompleted -= OnInteractionCompleted;
+        // HUDEvents.OnInteractionCompleted -= OnInteractionCompleted; // InteractionCompleted 이벤트 삭제로 인해 주석 처리
 
         // 인벤토리 이벤트 구독 해제
         HUDEvents.OnItemObtained -= OnItemObtained;
@@ -528,47 +542,47 @@ public class UniversalHUDController : MonoBehaviour
         }
     }
 
-    public void SetInteractionUI(
-        bool show,
-        string text = "",
-        float progress = 0f,
-        bool isCountdown = false
-    )
-    {
-        // 몽둥이는 상호작용 불가
-        if (currentPlayerRole == PlayerRole.Mongdung && show)
-        {
-            Debug.Log("[UniversalHUD] 몽둥이는 상호작용할 수 없습니다.");
-            return;
-        }
+    // public void SetInteractionUI(
+    //     bool show,
+    //     string text = "",
+    //     float progress = 0f,
+    //     bool isCountdown = false
+    // )
+    // {
+    //     // 몽둥이는 상호작용 불가
+    //     if (currentPlayerRole == PlayerRole.Mongdung && show)
+    //     {
+    //         Debug.Log("[UniversalHUD] 몽둥이는 상호작용할 수 없습니다.");
+    //         return;
+    //     }
 
-        if (interactionViewModel != null)
-        {
-            if (show)
-            {
-                interactionViewModel.ShowInteractionUI(text, Models.InteractionType.Custom);
-            }
-            else
-            {
-                interactionViewModel.HideInteractionUI();
-            }
-        }
-    }
+    //     if (interactionViewModel != null)
+    //     {
+    //         if (show)
+    //         {
+    //             interactionViewModel.ShowInteractionUI(text, Models.InteractionType.Custom);
+    //         }
+    //         else
+    //         {
+    //             interactionViewModel.HideInteractionUI();
+    //         }
+    //     }
+    // }
 
-    public void SetCustomInteraction(string text, float progress = 0f, bool isCountdown = false)
-    {
-        // 몽둥이는 상호작용 불가
-        if (currentPlayerRole == PlayerRole.Mongdung)
-        {
-            Debug.Log("[UniversalHUD] 몽둥이는 상호작용할 수 없습니다.");
-            return;
-        }
+    // public void SetCustomInteraction(string text, float progress = 0f, bool isCountdown = false)
+    // {
+    //     // 몽둥이는 상호작용 불가
+    //     if (currentPlayerRole == PlayerRole.Mongdung)
+    //     {
+    //         Debug.Log("[UniversalHUD] 몽둥이는 상호작용할 수 없습니다.");
+    //         return;
+    //     }
 
-        if (interactionViewModel != null)
-        {
-            interactionViewModel.ShowInteractionUI(text, Models.InteractionType.Custom);
-        }
-    }
+    //     if (interactionViewModel != null)
+    //     {
+    //         interactionViewModel.ShowInteractionUI(text, Models.InteractionType.Custom);
+    //     }
+    // }
 
     // 상호작용 가능 여부 체크
     public bool CanInteract()
@@ -778,8 +792,8 @@ public class UniversalHUDController : MonoBehaviour
             // 기절 해제 시 UI 업데이트 (MVVM 방식)
             if (healthBarViewModel != null)
                 healthBarViewModel.RevivePlayer();
-            if (interactionViewModel != null)
-                interactionViewModel.HideInteractionUI();
+            // if (interactionViewModel != null) // InteractionViewModel 삭제로 인해 주석 처리
+            //     interactionViewModel.HideInteractionUI();
         }
 
         Debug.Log($"[UniversalHUD] 기절 상태 변경: {isFainted}");
@@ -797,24 +811,24 @@ public class UniversalHUDController : MonoBehaviour
         Debug.Log("[UniversalHUD] 플레이어 부활");
     }
 
-    private void OnInteractionCompleted(Models.InteractionType type, bool success)
-    {
-        if (success)
-        {
-            string message = type switch
-            {
-                Models.InteractionType.Dig => "땅파기 완료!",
-                Models.InteractionType.Revive => "구조 완료!",
-                Models.InteractionType.Feeding => "먹이주기 완료!",
-                Models.InteractionType.Faint => "시간 만료!",
-                _ => "상호작용이 완료되었습니다!",
-            };
+    // private void OnInteractionCompleted(Models.InteractionType type, bool success) // InteractionType 삭제로 인해 주석 처리
+    // {
+    //     if (success)
+    //     {
+    //         string message = type switch
+    //         {
+    //             Models.InteractionType.Dig => "땅파기 완료!",
+    //             Models.InteractionType.Revive => "구조 완료!",
+    //             Models.InteractionType.Feeding => "먹이주기 완료!",
+    //             Models.InteractionType.Faint => "시간 만료!",
+    //             _ => "상호작용이 완료되었습니다!",
+    //         };
 
-            notificationViewModel?.ShowNotification(message);
-        }
+    //         notificationViewModel?.ShowNotification(message);
+    //     }
 
-        Debug.Log($"[UniversalHUD] 상호작용 완료: {type} (성공: {success})");
-    }
+    //     Debug.Log($"[UniversalHUD] 상호작용 완료: {type} (성공: {success})");
+    // }
 
     private void OnTimeWarning(int minutes)
     {

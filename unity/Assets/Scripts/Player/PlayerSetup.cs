@@ -1,6 +1,6 @@
-using UnityEngine;
 using MVVM.Movement;
 using StarterAssets;
+using UnityEngine;
 
 namespace Player
 {
@@ -12,8 +12,11 @@ namespace Player
     public class PlayerSetup : MonoBehaviour
     {
         [Header("Setup Settings")]
-        [SerializeField] private bool autoSetup = true;
-        [SerializeField] private bool setupOnAwake = true;
+        [SerializeField]
+        private bool autoSetup = true;
+
+        [SerializeField]
+        private bool setupOnAwake = true;
 
         void Awake()
         {
@@ -51,20 +54,26 @@ namespace Player
             var movementViewModel = GetComponent<PlayerMovementViewModel>();
             if (movementViewModel == null)
             {
-                // 직접 컴포넌트 추가
-                movementViewModel = gameObject.AddComponent<PlayerMovementViewModel>();
-                Debug.Log("[PlayerSetup] PlayerMovementViewModel 컴포넌트 추가 완료");
-            }
+                // 싱글톤 Instance를 통해 가져오기
+                var instance = PlayerMovementViewModel.Instance;
 
-            // 싱글톤 인스턴스 확인
-            var instance = PlayerMovementViewModel.Instance;
-            if (instance != null && instance.gameObject == gameObject)
-            {
-                Debug.Log("[PlayerSetup] PlayerMovementViewModel 싱글톤 연결 완료");
-            }
-            else
-            {
-                Debug.LogError("[PlayerSetup] PlayerMovementViewModel 싱글톤 설정 실패!");
+                // 인스턴스가 다른 GameObject에 있으면 현재 GameObject로 이동
+                if (instance != null && instance.gameObject != gameObject)
+                {
+                    Debug.LogWarning(
+                        $"[PlayerSetup] PlayerMovementViewModel이 다른 GameObject({instance.gameObject.name})에 있습니다."
+                    );
+                }
+                else if (instance == null)
+                {
+                    Debug.LogError(
+                        "[PlayerSetup] PlayerMovementViewModel 싱글톤을 생성할 수 없습니다!"
+                    );
+                }
+                else
+                {
+                    Debug.Log("[PlayerSetup] PlayerMovementViewModel 싱글톤 연결 완료");
+                }
             }
 
             // 4. ThirdPersonController 설정
@@ -79,7 +88,9 @@ namespace Player
             var animator = GetComponent<Animator>();
             if (animator == null)
             {
-                Debug.LogWarning("[PlayerSetup] Animator가 없습니다. 애니메이션이 작동하지 않을 수 있습니다.");
+                Debug.LogWarning(
+                    "[PlayerSetup] Animator가 없습니다. 애니메이션이 작동하지 않을 수 있습니다."
+                );
             }
 
             Debug.Log("[PlayerSetup] ===== 플레이어 설정 완료 =====");
@@ -158,33 +169,6 @@ namespace Player
                 Debug.Log($"  - Grounded: {thirdPerson.Grounded}");
                 Debug.Log($"  - MoveSpeed: {thirdPerson.MoveSpeed}");
                 Debug.Log($"  - JumpHeight: {thirdPerson.JumpHeight}");
-            }
-
-            // KeyboardDebugController 확인
-            var keyboardDebugController = FindObjectOfType<InputSystem.Debug.KeyboardDebugController>();
-            if (keyboardDebugController != null)
-            {
-                Debug.Log($"[PlayerSetup] KeyboardDebugController 발견 - GameObject: {keyboardDebugController.gameObject.name}");
-            }
-            else
-            {
-                Debug.LogWarning("[PlayerSetup] KeyboardDebugController를 찾을 수 없습니다!");
-            }
-        }
-
-        [ContextMenu("Enable Keyboard Debug")]
-        public void EnableKeyboardDebug()
-        {
-            var keyboardDebugController = FindObjectOfType<InputSystem.Debug.KeyboardDebugController>();
-            if (keyboardDebugController != null)
-            {
-                keyboardDebugController.SetKeyboardInputEnabled(true);
-                keyboardDebugController.SetDebugLogsEnabled(true);
-                Debug.Log("[PlayerSetup] 키보드 디버그 활성화 완료!");
-            }
-            else
-            {
-                Debug.LogError("[PlayerSetup] KeyboardDebugController를 찾을 수 없어서 활성화할 수 없습니다!");
             }
         }
     }

@@ -8,15 +8,19 @@ namespace Views
     public class InventoryView : BaseView<InventoryViewModel>
     {
         [Header("Player Inventory UI Elements")]
-        [SerializeField] private string[] _playerSlotNames = { "slot1", "slot2", "slot3" };
+        [SerializeField]
+        private string[] _playerSlotNames = { "slot1", "slot2", "slot3" };
         private VisualElement[] _playerSlots;
         private Label[] _playerSlotCountLabels;
         private VisualElement[] _playerSlotIcons;
         private VisualElement[] _playerSlotCounters;
 
         [Header("Feeding Inventory UI Elements")]
-        [SerializeField] private string _feedingCountLabelName = "FeedingCountLabel";
-        [SerializeField] private string _feedingProgressBarName = "FeedingProgressBar";
+        [SerializeField]
+        private string _feedingCountLabelName = "FeedingCountLabel";
+
+        [SerializeField]
+        private string _feedingProgressBarName = "FeedingProgressBar";
         private Label _feedingCountLabel;
         private ProgressBar _feedingProgressBar;
 
@@ -40,14 +44,18 @@ namespace Views
                 _playerSlots[i] = GetUIElement<VisualElement>(_playerSlotNames[i]);
                 if (_playerSlots[i] != null)
                 {
-                    _playerSlotCountLabels[i] = _playerSlots[i].Q<Label>($"slot{i+1}Count");
-                    _playerSlotIcons[i] = _playerSlots[i].Q<VisualElement>($"slot{i+1}ItemImage");
-                    _playerSlotCounters[i] = _playerSlots[i].Q<VisualElement>($"slot{i+1}Counter");
+                    _playerSlotCountLabels[i] = _playerSlots[i].Q<Label>($"slot{i + 1}Count");
+                    _playerSlotIcons[i] = _playerSlots[i].Q<VisualElement>($"slot{i + 1}ItemImage");
+                    _playerSlotCounters[i] = _playerSlots[i]
+                        .Q<VisualElement>($"slot{i + 1}Counter");
 
                     int slotIndex = i;
-                    _playerSlots[i].RegisterCallback<ClickEvent>(evt => OnPlayerSlotClicked(slotIndex));
+                    _playerSlots[i]
+                        .RegisterCallback<ClickEvent>(evt => OnPlayerSlotClicked(slotIndex));
 
-                    Debug.Log($"[InventoryView] 슬롯 {i+1} 초기화: slot={_playerSlots[i] != null}, icon={_playerSlotIcons[i] != null}, counter={_playerSlotCounters[i] != null}, label={_playerSlotCountLabels[i] != null}");
+                    Debug.Log(
+                        $"[InventoryView] 슬롯 {i + 1} 초기화: slot={_playerSlots[i] != null}, icon={_playerSlotIcons[i] != null}, counter={_playerSlotCounters[i] != null}, label={_playerSlotCountLabels[i] != null}"
+                    );
                 }
             }
         }
@@ -110,7 +118,11 @@ namespace Views
 
         private void UpdatePlayerSlotUI(int slotIndex, string itemId, int count)
         {
-            if (slotIndex < 0 || slotIndex >= _playerSlots.Length || _playerSlots[slotIndex] == null)
+            if (
+                slotIndex < 0
+                || slotIndex >= _playerSlots.Length
+                || _playerSlots[slotIndex] == null
+            )
                 return;
 
             var slot = _playerSlots[slotIndex];
@@ -147,7 +159,7 @@ namespace Views
             if (countLabel != null)
             {
                 countLabel.text = isEmpty ? "" : count.ToString();
-                Debug.Log($"[InventoryView] 슬롯 {slotIndex+1} 카운터 업데이트: {count}개");
+                Debug.Log($"[InventoryView] 슬롯 {slotIndex + 1} 카운터 업데이트: {count}개");
             }
 
             slot.EnableInClassList("empty", isEmpty);
@@ -170,11 +182,16 @@ namespace Views
 
         private void RefreshAllUI()
         {
-            if (_viewModel == null) return;
+            if (_viewModel == null)
+                return;
 
             for (int i = 0; i < _playerSlotNames.Length; i++)
             {
-                UpdatePlayerSlotUI(i, _viewModel.GetPlayerSlotItemId(i), _viewModel.GetPlayerSlotCount(i));
+                UpdatePlayerSlotUI(
+                    i,
+                    _viewModel.GetPlayerSlotItemId(i),
+                    _viewModel.GetPlayerSlotCount(i)
+                );
             }
 
             UpdateFeedingCountUI(_viewModel.GetFeedingCount());
@@ -203,7 +220,9 @@ namespace Views
                     }
                     else
                     {
-                        Debug.LogWarning($"[InventoryView] 아이템 아이콘을 찾을 수 없음: {itemId} / {actualItemId}");
+                        Debug.LogWarning(
+                            $"[InventoryView] 아이템 아이콘을 찾을 수 없음: {itemId} / {actualItemId}"
+                        );
                         iconElement.style.backgroundImage = null;
                     }
                 }
@@ -216,7 +235,8 @@ namespace Views
 
         private void OnPlayerSlotClicked(int slotIndex)
         {
-            if (_viewModel == null) return;
+            if (_viewModel == null)
+                return;
 
             if (slotIndex == 0)
             {

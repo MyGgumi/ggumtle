@@ -11,7 +11,11 @@ namespace Networks.Pipelines
     /// </summary>
     public class PacketEncoder : MessageToByteEncoder<Packet>
     {
-        protected override void Encode(IChannelHandlerContext context, Packet packet, IByteBuffer output)
+        protected override void Encode(
+            IChannelHandlerContext context,
+            Packet packet,
+            IByteBuffer output
+        )
         {
             if (packet == null)
             {
@@ -23,7 +27,7 @@ namespace Networks.Pipelines
             {
                 var bytes = packet.ToBytes();
                 output.WriteBytes(bytes);
-                
+
                 Debug.Log($"패킷 인코딩 완료 - Type: {packet.Header.Type}, Size: {bytes.Length}");
             }
             catch (System.Exception e)

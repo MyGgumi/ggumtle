@@ -1,16 +1,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using MVVM.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVVM.UI;
 
 namespace Views
 {
     public class PlayerListView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
-        [SerializeField] private PlayerListViewModel viewModel;
+        [SerializeField]
+        private PlayerListViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -55,14 +56,17 @@ namespace Views
                 }
             }
 
-            Debug.Log($"[PlayerListView] UI 요소 캐싱 완료: " +
-                     $"플레이어리스트={(_topRightIcons != null ? "OK" : "NULL")}, " +
-                     $"플레이어아이콘들={(_playerIcons[0] != null && _playerIcons[3] != null ? "OK" : "NULL")}");
+            Debug.Log(
+                $"[PlayerListView] UI 요소 캐싱 완료: "
+                    + $"플레이어리스트={(_topRightIcons != null ? "OK" : "NULL")}, "
+                    + $"플레이어아이콘들={(_playerIcons[0] != null && _playerIcons[3] != null ? "OK" : "NULL")}"
+            );
         }
 
         private void SubscribeToViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.PlayerUpdated += OnPlayerUpdated;
             viewModel.PlayerStatusChanged += OnPlayerStatusChanged;
@@ -76,7 +80,8 @@ namespace Views
 
         private void UnsubscribeFromViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.PlayerUpdated -= OnPlayerUpdated;
             viewModel.PlayerStatusChanged -= OnPlayerStatusChanged;
@@ -129,7 +134,12 @@ namespace Views
             ClearAllPlayersUI();
         }
 
-        private void OnSpritesUpdated(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
+        private void OnSpritesUpdated(
+            Sprite defaultIcon,
+            Sprite faintIcon,
+            Sprite deadIcon,
+            Sprite escapeIcon
+        )
         {
             UpdateAllPlayersUI();
         }
@@ -140,7 +150,8 @@ namespace Views
 
         private void UpdatePlayerUI(int playerId, PlayerListData playerData)
         {
-            if (playerId < 1 || playerId > 4) return;
+            if (playerId < 1 || playerId > 4)
+                return;
 
             int index = playerId - 1;
 
@@ -163,11 +174,22 @@ namespace Views
                 // 새 스프라이트 설정
                 if (playerData.avatarSprite != null)
                 {
-                    _playerIcons[index].style.backgroundImage = new StyleBackground(playerData.avatarSprite);
-                    _playerIcons[index].style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
-                    _playerIcons[index].style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
-                    _playerIcons[index].style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
-                    _playerIcons[index].style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Center);
+                    _playerIcons[index].style.backgroundImage = new StyleBackground(
+                        playerData.avatarSprite
+                    );
+                    _playerIcons[index].style.backgroundSize = new BackgroundSize(
+                        BackgroundSizeType.Cover
+                    );
+                    _playerIcons[index].style.backgroundRepeat = new BackgroundRepeat(
+                        Repeat.NoRepeat,
+                        Repeat.NoRepeat
+                    );
+                    _playerIcons[index].style.backgroundPositionX = new BackgroundPosition(
+                        BackgroundPositionKeyword.Center
+                    );
+                    _playerIcons[index].style.backgroundPositionY = new BackgroundPosition(
+                        BackgroundPositionKeyword.Center
+                    );
                 }
 
                 // 색상 적용
@@ -185,12 +207,15 @@ namespace Views
                 _playerAreas[index].style.display = DisplayStyle.Flex;
             }
 
-            Debug.Log($"[PlayerListView] 플레이어 {playerId} UI 업데이트: {playerData.nickname} ({playerData.status})");
+            Debug.Log(
+                $"[PlayerListView] 플레이어 {playerId} UI 업데이트: {playerData.nickname} ({playerData.status})"
+            );
         }
 
         private void SetPlayerColor(int playerId, string colorType)
         {
-            if (playerId < 1 || playerId > 4) return;
+            if (playerId < 1 || playerId > 4)
+                return;
 
             VisualElement playerIcon = _playerIcons[playerId - 1];
             if (playerIcon != null && viewModel != null)
@@ -215,10 +240,12 @@ namespace Views
 
         private void ApplyPlayerHighlight(int playerId, bool highlight, float duration)
         {
-            if (playerId < 1 || playerId > 4) return;
+            if (playerId < 1 || playerId > 4)
+                return;
 
             var icon = _playerIcons[playerId - 1];
-            if (icon == null) return;
+            if (icon == null)
+                return;
 
             // 기존 하이라이트 코루틴 중단
             if (_highlightCoroutines.ContainsKey(playerId))
@@ -234,7 +261,9 @@ namespace Views
             {
                 icon.AddToClassList("player-highlighted");
                 // 지정된 시간 후 하이라이트 자동 해제
-                _highlightCoroutines[playerId] = StartCoroutine(RemoveHighlightAfterDelay(icon, playerId, duration));
+                _highlightCoroutines[playerId] = StartCoroutine(
+                    RemoveHighlightAfterDelay(icon, playerId, duration)
+                );
             }
             else
             {
@@ -259,7 +288,8 @@ namespace Views
 
         private void UpdateAllPlayersUI()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             foreach (var kvp in viewModel.PlayerListDataCache)
             {
@@ -295,7 +325,9 @@ namespace Views
 
                 if (_playerIcons[i] != null && viewModel?.IconMongingDefault != null)
                 {
-                    _playerIcons[i].style.backgroundImage = new StyleBackground(viewModel.IconMongingDefault);
+                    _playerIcons[i].style.backgroundImage = new StyleBackground(
+                        viewModel.IconMongingDefault
+                    );
                     _playerIcons[i].ClearClassList();
                     _playerIcons[i].AddToClassList("player-online");
                 }
@@ -365,14 +397,16 @@ namespace Views
         [ContextMenu("Log Current UI State")]
         public void LogCurrentUIState()
         {
-            Debug.Log($"[PlayerListView] UI State:\n" +
-                     $"  TopRightIcons Visible: {(_topRightIcons?.style.display.value == DisplayStyle.Flex)}\n" +
-                     $"  Player1 Name: {(_playerNames[0]?.text ?? "NULL")}\n" +
-                     $"  Player2 Name: {(_playerNames[1]?.text ?? "NULL")}\n" +
-                     $"  Player3 Name: {(_playerNames[2]?.text ?? "NULL")}\n" +
-                     $"  Player4 Name: {(_playerNames[3]?.text ?? "NULL")}\n" +
-                     $"  Active Highlights: {_highlightCoroutines.Count}\n" +
-                     $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[PlayerListView] UI State:\n"
+                    + $"  TopRightIcons Visible: {(_topRightIcons?.style.display.value == DisplayStyle.Flex)}\n"
+                    + $"  Player1 Name: {(_playerNames[0]?.text ?? "NULL")}\n"
+                    + $"  Player2 Name: {(_playerNames[1]?.text ?? "NULL")}\n"
+                    + $"  Player3 Name: {(_playerNames[2]?.text ?? "NULL")}\n"
+                    + $"  Player4 Name: {(_playerNames[3]?.text ?? "NULL")}\n"
+                    + $"  Active Highlights: {_highlightCoroutines.Count}\n"
+                    + $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}"
+            );
         }
 
         [ContextMenu("Test Highlight Player 1")]

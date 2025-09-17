@@ -49,7 +49,7 @@ public class UIManager : MonoBehaviour
         {
             universalHUDController.HideChestBox();
         }
-        
-        ViewModels.UI.InteractionViewModel.Instance?.ClearInteraction();
+
+        // ViewModels.UI.InteractionViewModel.Instance?.ClearInteraction(); // InteractionViewModel 삭제로 인해 주석 처리
     }
 }

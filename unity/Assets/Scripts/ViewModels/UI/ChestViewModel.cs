@@ -1,32 +1,46 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using Models;
-using Services;
-using MVVM.Core;
 using Config;
+using Models;
+using MVVM.Core;
+using Services;
+using UnityEngine;
 
 namespace ViewModels.UI
 {
     public class ChestViewModel : BaseViewModel
     {
         [Header("Model & Service")]
-        [SerializeField] private ChestModel _chestModel;
-        [SerializeField] private ChestService _chestService;
+        [SerializeField]
+        private ChestModel _chestModel;
+
+        [SerializeField]
+        private ChestService _chestService;
 
         [Header("Current Chest State")]
-        [SerializeField] private string _currentChestId = "";
-        [SerializeField] private string _currentChestName = "";
-        [SerializeField] private bool _isChestOpen = false;
-        [SerializeField] private ChestSlot[] _currentChestSlots = new ChestSlot[9];
+        [SerializeField]
+        private string _currentChestId = "";
+
+        [SerializeField]
+        private string _currentChestName = "";
+
+        [SerializeField]
+        private bool _isChestOpen = false;
+
+        [SerializeField]
+        private ChestSlot[] _currentChestSlots = new ChestSlot[9];
 
         [Header("UI State")]
-        [SerializeField] private bool _isUIVisible = false;
+        [SerializeField]
+        private bool _isUIVisible = false;
 
         [Header("Distance Check")]
-        [SerializeField] private float _maxInteractionDistance = 3f;
-        [SerializeField] private Transform _playerTransform;
+        [SerializeField]
+        private float _maxInteractionDistance = 3f;
+
+        [SerializeField]
+        private Transform _playerTransform;
         private InteractableChest _currentChestObject;
 
         public event Action<string> OnChestOpened;
@@ -58,7 +72,10 @@ namespace ViewModels.UI
             // 상자가 열려있고 플레이어가 설정되어 있을 때만 거리 체크
             if (_isChestOpen && _playerTransform != null && _currentChestObject != null)
             {
-                float distance = Vector3.Distance(_playerTransform.position, _currentChestObject.transform.position);
+                float distance = Vector3.Distance(
+                    _playerTransform.position,
+                    _currentChestObject.transform.position
+                );
 
                 // Config에서 상자 상호작용 범위 사용
                 float maxDistance = InteractionConfig.ChestInteractionRange;
@@ -66,7 +83,9 @@ namespace ViewModels.UI
                 // 상호작용 범위를 벗어났을 때
                 if (distance > maxDistance)
                 {
-                    Debug.Log($"[ChestViewModel] 플레이어가 상자 범위를 벗어남 (거리: {distance:F2}m, 최대: {maxDistance}m)");
+                    Debug.Log(
+                        $"[ChestViewModel] 플레이어가 상자 범위를 벗어남 (거리: {distance:F2}m, 최대: {maxDistance}m)"
+                    );
                     CloseChest();
                 }
             }
@@ -121,7 +140,10 @@ namespace ViewModels.UI
 
                 for (int i = 0; i < _currentChestSlots.Length && i < chest.slots.Length; i++)
                 {
-                    _currentChestSlots[i] = new ChestSlot(chest.slots[i].itemId, chest.slots[i].count);
+                    _currentChestSlots[i] = new ChestSlot(
+                        chest.slots[i].itemId,
+                        chest.slots[i].count
+                    );
                 }
 
                 _isUIVisible = true;
@@ -161,7 +183,11 @@ namespace ViewModels.UI
 
         private void HandleChestSlotChanged(string chestId, int slotIndex, string itemId, int count)
         {
-            if (chestId == _currentChestId && slotIndex >= 0 && slotIndex < _currentChestSlots.Length)
+            if (
+                chestId == _currentChestId
+                && slotIndex >= 0
+                && slotIndex < _currentChestSlots.Length
+            )
             {
                 _currentChestSlots[slotIndex] = new ChestSlot(itemId, count);
                 OnChestSlotChanged?.Invoke(chestId, slotIndex, itemId, count);
@@ -193,9 +219,16 @@ namespace ViewModels.UI
             if (_chestModel.currentChest != null)
             {
                 _currentChestName = _chestModel.currentChest.chestName;
-                for (int i = 0; i < _currentChestSlots.Length && i < _chestModel.currentChest.slots.Length; i++)
+                for (
+                    int i = 0;
+                    i < _currentChestSlots.Length && i < _chestModel.currentChest.slots.Length;
+                    i++
+                )
                 {
-                    _currentChestSlots[i] = new ChestSlot(_chestModel.currentChest.slots[i].itemId, _chestModel.currentChest.slots[i].count);
+                    _currentChestSlots[i] = new ChestSlot(
+                        _chestModel.currentChest.slots[i].itemId,
+                        _chestModel.currentChest.slots[i].count
+                    );
                 }
             }
 
@@ -206,7 +239,12 @@ namespace ViewModels.UI
 
         #region Chest Management
 
-        public void RegisterChest(string chestId, string chestName, Vector3 position, GameObject chestObject = null)
+        public void RegisterChest(
+            string chestId,
+            string chestName,
+            Vector3 position,
+            GameObject chestObject = null
+        )
         {
             _chestService.RegisterChest(chestId, chestName, position, chestObject);
         }
@@ -253,13 +291,18 @@ namespace ViewModels.UI
             _chestService.UpdateCurrentChestSlot(slotIndex, itemId, count);
         }
 
-        public bool TransferToInventory(int slotIndex, InventoryViewModel inventoryViewModel, int targetSlot = -1)
+        public bool TransferToInventory(
+            int slotIndex,
+            InventoryViewModel inventoryViewModel,
+            int targetSlot = -1
+        )
         {
             if (!_isChestOpen || slotIndex < 0 || slotIndex >= _currentChestSlots.Length)
                 return false;
 
             var chestSlot = _currentChestSlots[slotIndex];
-            if (chestSlot.isEmpty) return false;
+            if (chestSlot.isEmpty)
+                return false;
 
             // 기존 가명 아이템을 실제 ID로 변환 (호환성)
             string actualItemId = Models.ItemTypeHelper.ConvertLegacyId(chestSlot.itemId);
@@ -268,7 +311,9 @@ namespace ViewModels.UI
             var itemType = Models.ItemTypeHelper.GetItemType(actualItemId);
             var displayName = Models.ItemTypeHelper.GetDisplayName(actualItemId);
 
-            Debug.Log($"[ChestViewModel] 아이템 전송 시도: {chestSlot.itemId} ({displayName}) x{chestSlot.count}, 타입: {itemType}");
+            Debug.Log(
+                $"[ChestViewModel] 아이템 전송 시도: {chestSlot.itemId} ({displayName}) x{chestSlot.count}, 타입: {itemType}"
+            );
 
             switch (itemType)
             {
@@ -288,10 +333,18 @@ namespace ViewModels.UI
                     // 장비 아이템은 플레이어 슬롯으로 (최대 3개 제한)
                     if (targetSlot >= 0)
                     {
-                        if (inventoryViewModel.AddToPlayerSlot(targetSlot, actualItemId, chestSlot.count))
+                        if (
+                            inventoryViewModel.AddToPlayerSlot(
+                                targetSlot,
+                                actualItemId,
+                                chestSlot.count
+                            )
+                        )
                         {
                             TakeItemFromSlot(slotIndex);
-                            Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (슬롯 {targetSlot})");
+                            Debug.Log(
+                                $"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (슬롯 {targetSlot})"
+                            );
                             return true;
                         }
                         else
@@ -305,28 +358,44 @@ namespace ViewModels.UI
                         // 빈 슬롯 자동 찾기
                         for (int i = 0; i < 3; i++)
                         {
-                            if (inventoryViewModel.AddToPlayerSlot(i, actualItemId, chestSlot.count))
+                            if (
+                                inventoryViewModel.AddToPlayerSlot(i, actualItemId, chestSlot.count)
+                            )
                             {
                                 TakeItemFromSlot(slotIndex);
-                                Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (슬롯 {i})");
+                                Debug.Log(
+                                    $"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (슬롯 {i})"
+                                );
                                 return true;
                             }
                         }
                         // 모든 슬롯에서 추가 실패
                         ShowEquipmentLimitNotification(displayName);
                     }
-                    Debug.Log($"[ChestViewModel] 인벤토리가 가득 찼거나 {displayName}이(가) 최대 개수에 도달했습니다.");
+                    Debug.Log(
+                        $"[ChestViewModel] 인벤토리가 가득 찼거나 {displayName}이(가) 최대 개수에 도달했습니다."
+                    );
                     return false;
 
                 default:
                     // 기타 아이템 처리 (기존 방식 유지)
-                    Debug.LogWarning($"[ChestViewModel] 알 수 없는 아이템 타입: {chestSlot.itemId} -> {actualItemId}");
+                    Debug.LogWarning(
+                        $"[ChestViewModel] 알 수 없는 아이템 타입: {chestSlot.itemId} -> {actualItemId}"
+                    );
                     if (targetSlot >= 0)
                     {
-                        if (inventoryViewModel.AddToPlayerSlot(targetSlot, actualItemId, chestSlot.count))
+                        if (
+                            inventoryViewModel.AddToPlayerSlot(
+                                targetSlot,
+                                actualItemId,
+                                chestSlot.count
+                            )
+                        )
                         {
                             TakeItemFromSlot(slotIndex);
-                            Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (기타 아이템, 슬롯 {targetSlot})");
+                            Debug.Log(
+                                $"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (기타 아이템, 슬롯 {targetSlot})"
+                            );
                             return true;
                         }
                     }
@@ -334,15 +403,21 @@ namespace ViewModels.UI
                     {
                         for (int i = 0; i < 3; i++)
                         {
-                            if (inventoryViewModel.AddToPlayerSlot(i, actualItemId, chestSlot.count))
+                            if (
+                                inventoryViewModel.AddToPlayerSlot(i, actualItemId, chestSlot.count)
+                            )
                             {
                                 TakeItemFromSlot(slotIndex);
-                                Debug.Log($"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (기타 아이템, 슬롯 {i})");
+                                Debug.Log(
+                                    $"[ChestViewModel] {displayName} {chestSlot.count}개 획득! (기타 아이템, 슬롯 {i})"
+                                );
                                 return true;
                             }
                         }
                     }
-                    Debug.Log($"[ChestViewModel] 인벤토리가 가득 찼습니다. {displayName}을(를) 가져올 수 없습니다.");
+                    Debug.Log(
+                        $"[ChestViewModel] 인벤토리가 가득 찼습니다. {displayName}을(를) 가져올 수 없습니다."
+                    );
                     return false;
             }
         }
@@ -352,10 +427,14 @@ namespace ViewModels.UI
         /// </summary>
         private void ShowEquipmentLimitNotification(string itemName)
         {
-            var universalHUD = UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
+            var universalHUD =
+                UnityEngine.GameObject.FindFirstObjectByType<UniversalHUDController>();
             if (universalHUD != null && universalHUD.notificationViewModel != null)
             {
-                universalHUD.notificationViewModel.ShowNotification($"{itemName}은(는) 최대 3개까지만 보유할 수 있습니다!", 2.5f);
+                universalHUD.notificationViewModel.ShowNotification(
+                    $"{itemName}은(는) 최대 3개까지만 보유할 수 있습니다!",
+                    2.5f
+                );
                 Debug.Log($"[ChestViewModel] 장비 아이템 제한 알림 표시: {itemName}");
             }
         }
@@ -388,7 +467,9 @@ namespace ViewModels.UI
             }
             else
             {
-                Debug.LogWarning("[ChestViewModel] Multiple instances detected! Using first instance.");
+                Debug.LogWarning(
+                    "[ChestViewModel] Multiple instances detected! Using first instance."
+                );
             }
         }
 

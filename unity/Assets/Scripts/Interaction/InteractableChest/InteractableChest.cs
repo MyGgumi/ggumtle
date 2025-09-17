@@ -1,8 +1,8 @@
 using System.Collections.Generic;
-using UnityEngine;
 using Config;
 using Interfaces;
 using Managers;
+using UnityEngine;
 
 // 클릭 기반 상자 상호작용
 public class InteractableChest : MonoBehaviour, IUIInteractable
@@ -15,7 +15,8 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
     public bool isOpen = false;
 
     [Header("Trigger 설정")]
-    [SerializeField] private bool autoSetupTrigger = true; // Trigger Collider 자동 설정
+    [SerializeField]
+    private bool autoSetupTrigger = true; // Trigger Collider 자동 설정
 
     // 기존 chestItems는 호환성을 위해 유지하되, 실제로는 ChestInventoryManager 사용
 
@@ -59,7 +60,9 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
         }
         else
         {
-            Debug.LogWarning($"[InteractableChest] autoSetupTrigger가 false여서 Trigger Collider 설정 안함: {gameObject.name}");
+            Debug.LogWarning(
+                $"[InteractableChest] autoSetupTrigger가 false여서 Trigger Collider 설정 안함: {gameObject.name}"
+            );
         }
 
         // 매니저 초기화 대기 후 등록
@@ -222,19 +225,25 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
     public void AddItem(ChestItem item)
     {
         // DEPRECATED: ChestViewModel.Instance.UpdateSlot() 사용
-        Debug.LogWarning("[InteractableChest] AddItem은 deprecated입니다. ChestViewModel 사용하세요.");
+        Debug.LogWarning(
+            "[InteractableChest] AddItem은 deprecated입니다. ChestViewModel 사용하세요."
+        );
     }
 
     public void RemoveItem(ChestItem item)
     {
         // DEPRECATED: ChestViewModel.Instance.TakeItemFromSlot() 사용
-        Debug.LogWarning("[InteractableChest] RemoveItem은 deprecated입니다. ChestViewModel 사용하세요.");
+        Debug.LogWarning(
+            "[InteractableChest] RemoveItem은 deprecated입니다. ChestViewModel 사용하세요."
+        );
     }
 
     public void RemoveItemAt(int index)
     {
         // DEPRECATED: ChestViewModel.Instance.TakeItemFromSlot() 사용
-        Debug.LogWarning("[InteractableChest] RemoveItemAt은 deprecated입니다. ChestViewModel 사용하세요.");
+        Debug.LogWarning(
+            "[InteractableChest] RemoveItemAt은 deprecated입니다. ChestViewModel 사용하세요."
+        );
     }
 
     /// <summary>
@@ -377,7 +386,9 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
                 bool success = chestViewModel.OpenChest(chestId);
                 if (!success)
                 {
-                    Debug.LogWarning($"[InteractableChest] ChestViewModel.OpenChest() 실패: {chestId}");
+                    Debug.LogWarning(
+                        $"[InteractableChest] ChestViewModel.OpenChest() 실패: {chestId}"
+                    );
                 }
                 OpenChest(); // 상자 애니메이션 재생
             }
@@ -400,8 +411,11 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
     }
 
     public void OnHoldStart() { }
+
     public void OnHoldProgress(float progress) { }
+
     public void OnHoldComplete() { }
+
     public void OnHoldCancelled() { }
 
     public float GetInteractionRange()
@@ -425,67 +439,6 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
     /// <summary>
     /// 상호작용 범위 반환 (상자가 열려있으면 범위를 더 넓게)
     /// </summary>
-    public float GetInteractionRange()
-    {
-        // 상자가 열려있으면 범위를 1.5배 넓게 해서 UI가 안 꺼지도록
-        return isOpen ? InteractionConfig.ChestInteractionRange * 1.5f : InteractionConfig.ChestInteractionRange;
-    }
-
-    /// <summary>
-    /// Transform 반환
-    /// </summary>
-    public Transform GetTransform()
-    {
-        return transform;
-    }
-
-    /// <summary>
-    /// 상호작용 객체 이름 반환
-    /// </summary>
-    public string GetInteractableName()
-    {
-        return chestName;
-    }
-
-    /// <summary>
-    /// 홀드 시작 - 상자는 홀드가 필요하지 않으므로 빈 구현
-    /// </summary>
-    public void OnHoldStart()
-    {
-        // 상자는 홀드가 필요하지 않음
-    }
-
-    /// <summary>
-    /// 홀드 진행 - 상자는 홀드가 필요하지 않으므로 빈 구현
-    /// </summary>
-    public void OnHoldProgress(float progress)
-    {
-        // 상자는 홀드가 필요하지 않음
-    }
-
-    /// <summary>
-    /// 홀드 완료 - 상자는 홀드가 필요하지 않으므로 빈 구현
-    /// </summary>
-    public void OnHoldComplete()
-    {
-        // 상자는 홀드가 필요하지 않음
-    }
-
-    /// <summary>
-    /// 홀드 취소 - 상자는 홀드가 필요하지 않으므로 빈 구현
-    /// </summary>
-    public void OnHoldCancelled()
-    {
-        // 상자는 홀드가 필요하지 않음
-    }
-
-    /// <summary>
-    /// 홀드 필요 시간 - 상자는 홀드가 필요하지 않으므로 0 반환
-    /// </summary>
-    public float GetHoldDuration()
-    {
-        return 0f; // 홀드 불필요
-    }
 
     /// <summary>
     /// 매니저가 준비될 때까지 대기 후 상자 등록
@@ -510,7 +463,9 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
         }
         else
         {
-            Debug.LogWarning($"[InteractableChest] ChestViewModel.Instance가 null이어서 {chestId} 등록 실패");
+            Debug.LogWarning(
+                $"[InteractableChest] ChestViewModel.Instance가 null이어서 {chestId} 등록 실패"
+            );
         }
     }
 
@@ -550,7 +505,9 @@ public class InteractableChest : MonoBehaviour, IUIInteractable
             Debug.Log($"[InteractableChest] 레이어를 상호작용 레이어(7)로 변경: {gameObject.name}");
         }
 
-        Debug.Log($"[InteractableChest] Trigger 설정 완료 - 범위: {InteractionConfig.ChestInteractionRange}, 레이어: {gameObject.layer}");
+        Debug.Log(
+            $"[InteractableChest] Trigger 설정 완료 - 범위: {InteractionConfig.ChestInteractionRange}, 레이어: {gameObject.layer}"
+        );
     }
 
     #endregion

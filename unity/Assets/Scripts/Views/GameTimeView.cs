@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
+using MVVM.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVVM.UI;
 
 namespace Views
 {
@@ -13,7 +13,8 @@ namespace Views
     public class GameTimeView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
-        [SerializeField] private GameTimeViewModel viewModel;
+        [SerializeField]
+        private GameTimeViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -27,8 +28,11 @@ namespace Views
         private Label _countLabel;
 
         [Header("Animation Settings")]
-        [SerializeField] private float progressAnimationDuration = 0.3f;
-        [SerializeField] private AnimationCurve progressAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+        [SerializeField]
+        private float progressAnimationDuration = 0.3f;
+
+        [SerializeField]
+        private AnimationCurve progressAnimationCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
         /// <summary>
         /// UniversalHUDController에서 호출하는 초기화 메서드
@@ -81,15 +85,18 @@ namespace Views
                 }
             }
 
-            Debug.Log($"[GameTimeView] UI 요소 캐싱 완료: " +
-                     $"시간라벨={(_timeLabel != null ? "OK" : "NULL")}, " +
-                     $"상태라벨={(_statusLabel != null ? "OK" : "NULL")}, " +
-                     $"꿈틀영역={(_ggumtleArea != null ? "OK" : "NULL")}");
+            Debug.Log(
+                $"[GameTimeView] UI 요소 캐싱 완료: "
+                    + $"시간라벨={(_timeLabel != null ? "OK" : "NULL")}, "
+                    + $"상태라벨={(_statusLabel != null ? "OK" : "NULL")}, "
+                    + $"꿈틀영역={(_ggumtleArea != null ? "OK" : "NULL")}"
+            );
         }
 
         private void SubscribeToViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.TimeChanged += OnTimeChanged;
             viewModel.StatusMessageChanged += OnStatusMessageChanged;
@@ -101,7 +108,8 @@ namespace Views
 
         private void UnsubscribeFromViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.TimeChanged -= OnTimeChanged;
             viewModel.StatusMessageChanged -= OnStatusMessageChanged;
@@ -181,7 +189,8 @@ namespace Views
             // 각 단계별 fill 요소 업데이트
             for (int i = 0; i < _fills.Length; i++)
             {
-                if (_fills[i] == null) continue;
+                if (_fills[i] == null)
+                    continue;
 
                 float targetHeight = 0f;
 
@@ -206,7 +215,8 @@ namespace Views
 
         private void AnimateProgressFill(VisualElement fillElement, float targetHeightPercent)
         {
-            if (fillElement == null) return;
+            if (fillElement == null)
+                return;
 
             // 현재 높이 값 가져오기
             var currentHeight = fillElement.resolvedStyle.height;
@@ -231,7 +241,8 @@ namespace Views
 
         private void UpdateAllUI()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             UpdateTimeDisplay(viewModel.CurrentTime);
             UpdateStatusDisplay(viewModel.StatusMessage);
@@ -329,11 +340,13 @@ namespace Views
         [ContextMenu("Log Current UI State")]
         public void LogCurrentUIState()
         {
-            Debug.Log($"[GameTimeView] UI State:\n" +
-                     $"  TimeLabel: {(_timeLabel?.text ?? "NULL")}\n" +
-                     $"  StatusLabel: {(_statusLabel?.text ?? "NULL")}\n" +
-                     $"  CountLabel: {(_countLabel?.text ?? "NULL")}\n" +
-                     $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[GameTimeView] UI State:\n"
+                    + $"  TimeLabel: {(_timeLabel?.text ?? "NULL")}\n"
+                    + $"  StatusLabel: {(_statusLabel?.text ?? "NULL")}\n"
+                    + $"  CountLabel: {(_countLabel?.text ?? "NULL")}\n"
+                    + $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}"
+            );
         }
 
         #endregion

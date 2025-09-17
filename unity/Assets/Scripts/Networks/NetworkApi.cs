@@ -19,11 +19,15 @@ namespace Networks
     public class NetworkApi : MonoBehaviour
     {
         [Header("Client")]
-        [SerializeField] private Client client;
-        
+        [SerializeField]
+        private Client client;
+
         // 비동기 응답 처리를 위한 TaskCompletionSource 딕셔너리
-        private readonly ConcurrentDictionary<PacketType, TaskCompletionSource<object>> _pendingRequests = new();
-        
+        private readonly ConcurrentDictionary<
+            PacketType,
+            TaskCompletionSource<object>
+        > _pendingRequests = new();
+
         // 싱글톤 인스턴스
         public static NetworkApi Instance { get; private set; }
 
@@ -212,7 +216,7 @@ namespace Networks
             try
             {
                 Debug.Log("[NetworkApi] 꿈틀이 파기 종료 시작");
-                
+
                 if (client == null || !client.IsConnected)
                 {
                     Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
@@ -257,38 +261,41 @@ namespace Networks
             try
             {
                 Debug.Log($"[NetworkApi] 방 조인 시작: RoomId={roomId}");
-                
+
                 // Client 연결 상태 확인
                 if (client == null || !client.IsConnected)
                 {
                     Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
-                
+
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.RoomJoinResponse] = tcs;
-                
+
                 Debug.Log($"[NetworkApi] 응답 대기 등록: {PacketType.RoomJoinResponse}");
                 Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
 
                 var roomJoinRequest = new RoomJoinSend(roomId);
                 client.Send(roomJoinRequest);
-                
+
                 Debug.Log($"[NetworkApi] 방 조인 요청 전송: RoomId={roomId}");
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                cts.Token.Register(() => {
+                cts.Token.Register(() =>
+                {
                     Debug.LogWarning("[NetworkApi] 방 조인 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
-                
+
                 Debug.Log("[NetworkApi] 방 조인 응답 대기");
                 var response = await tcs.Task;
                 Debug.Log("[NetworkApi] 방 조인 응답 수신");
 
                 if (response is RoomJoinCommand roomJoinResponse)
                 {
-                    Debug.Log($"[NetworkApi] 방 조인 응답 처리: Result={roomJoinResponse.Result}, Success={roomJoinResponse.Success}");
+                    Debug.Log(
+                        $"[NetworkApi] 방 조인 응답 처리: Result={roomJoinResponse.Result}, Success={roomJoinResponse.Success}"
+                    );
                     return roomJoinResponse;
                 }
 
@@ -309,7 +316,7 @@ namespace Networks
                 _pendingRequests.TryRemove(PacketType.RoomJoinResponse, out _);
             }
         }
-        
+
         /// <summary>
         /// 토큰 검증을 비동기로 수행합니다.
         /// </summary>
@@ -320,44 +327,47 @@ namespace Networks
             try
             {
                 Debug.Log($"[NetworkApi] 토큰 검증 시작: {accessToken}");
-                
+
                 // TaskCompletionSource 생성
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.VerifyTokenResponse] = tcs;
-                
+
                 Debug.Log($"[NetworkApi] 응답 대기 등록: {PacketType.VerifyTokenResponse}");
                 Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
-                
+
                 // Client 연결 상태 확인
                 if (client == null || !client.IsConnected)
                 {
                     Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
-                
+
                 // 요청 전송
                 var verifyTokenRequest = new VerifyTokenSend(accessToken);
                 client.Send(verifyTokenRequest);
-                
+
                 Debug.Log($"[NetworkApi] 토큰 검증 요청 전송: {accessToken}");
-                
+
                 // 응답 대기 (타임아웃 10초)
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                cts.Token.Register(() => {
+                cts.Token.Register(() =>
+                {
                     Debug.LogWarning("[NetworkApi] 토큰 검증 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
-                
+
                 Debug.Log("[NetworkApi] 토큰 검증 응답 대기");
                 var response = await tcs.Task;
                 Debug.Log("[NetworkApi] 토큰 검증 응답 수신");
-                
+
                 if (response is VerifyTokenCommand verifyTokenResponse)
                 {
-                    Debug.Log($"[NetworkApi] 토큰 검증 응답 처리: SessionId={verifyTokenResponse.SessionId}");
+                    Debug.Log(
+                        $"[NetworkApi] 토큰 검증 응답 처리: SessionId={verifyTokenResponse.SessionId}"
+                    );
                     return verifyTokenResponse;
                 }
-                
+
                 throw new InvalidOperationException("VerifyToken 예상하지 못한 응답 타입입니다.");
             }
             catch (TimeoutException)
@@ -376,7 +386,7 @@ namespace Networks
                 _pendingRequests.TryRemove(PacketType.VerifyTokenResponse, out _);
             }
         }
-        
+
         /// <summary>
         /// 씬 전환 완료 알림
         /// </summary>
@@ -386,38 +396,41 @@ namespace Networks
             try
             {
                 Debug.Log("[NetworkApi] 씬 전환 시작");
-                
+
                 // Client 연결 상태 확인
                 if (client == null || !client.IsConnected)
                 {
                     Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
-                
+
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.SceneChangeResponse] = tcs;
-                
+
                 Debug.Log($"[NetworkApi] 응답 대기 등록: {PacketType.SceneChangeResponse}");
                 Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
 
                 var sceneChangeRequest = new SceneChangeSend();
                 client.Send(sceneChangeRequest);
-                
+
                 Debug.Log("[NetworkApi] 씬 전환 요청 전송");
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                cts.Token.Register(() => {
+                cts.Token.Register(() =>
+                {
                     Debug.LogWarning("[NetworkApi] 씬 전환 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
-                
+
                 Debug.Log("[NetworkApi] 씬 전환 응답 대기");
                 var response = await tcs.Task;
                 Debug.Log("[NetworkApi] 씬 전환 응답 수신");
 
                 if (response is SceneChangeCommand sceneChangeResponse)
                 {
-                    Debug.Log($"[NetworkApi] 씬 전환 응답 처리: Result={sceneChangeResponse.Result}, Success={sceneChangeResponse.Success}");
+                    Debug.Log(
+                        $"[NetworkApi] 씬 전환 응답 처리: Result={sceneChangeResponse.Result}, Success={sceneChangeResponse.Success}"
+                    );
                     return sceneChangeResponse;
                 }
 
@@ -487,7 +500,10 @@ namespace Networks
                 client.Send(send);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                cts.Token.Register(() => { tcs.TrySetCanceled(); });
+                cts.Token.Register(() =>
+                {
+                    tcs.TrySetCanceled();
+                });
 
                 var response = await tcs.Task;
 
@@ -513,7 +529,7 @@ namespace Networks
                 _pendingRequests.TryRemove(PacketType.ChestCloseResponse, out _);
             }
         }
-        
+
         /// <summary>
         /// CommandDispatcher에서 호출되는 응답 처리 메서드
         /// </summary>
@@ -530,8 +546,10 @@ namespace Networks
 
                 var attackRequest = new MongdungAttackSend(direction, targetId);
                 client.Send(attackRequest);
-                
-                Debug.Log($"[NetworkApi] 몽둥이 공격 전송: Direction={direction}, TargetId={targetId}");
+
+                Debug.Log(
+                    $"[NetworkApi] 몽둥이 공격 전송: Direction={direction}, TargetId={targetId}"
+                );
             }
             catch (Exception e)
             {
@@ -551,7 +569,7 @@ namespace Networks
 
                 var getItemRequest = new GetItemSend(chestId, index);
                 client.Send(getItemRequest);
-                
+
                 Debug.Log($"[NetworkApi] 아이템 획득 요청 전송: ChestId={chestId}, Index={index}");
             }
             catch (Exception e)
@@ -572,7 +590,7 @@ namespace Networks
 
                 var putItemRequest = new PutItemSend(itemId);
                 client.Send(putItemRequest);
-                
+
                 Debug.Log($"[NetworkApi] 아이템 넣기 요청 전송: ItemId={itemId}");
             }
             catch (Exception e)
@@ -613,7 +631,9 @@ namespace Networks
                     return command;
                 }
 
-                throw new InvalidOperationException("MonggingRevivalStart에서 예상치 못한 응답 타입입니다.");
+                throw new InvalidOperationException(
+                    "MonggingRevivalStart에서 예상치 못한 응답 타입입니다."
+                );
             }
             catch (TimeoutException)
             {
@@ -663,7 +683,9 @@ namespace Networks
                     return command;
                 }
 
-                throw new InvalidOperationException("MonggingRevivalStop에서 예상치 못한 응답 타입입니다.");
+                throw new InvalidOperationException(
+                    "MonggingRevivalStop에서 예상치 못한 응답 타입입니다."
+                );
             }
             catch (TimeoutException)
             {
@@ -685,7 +707,9 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"[NetworkApi] 몽깅이 아이템 사용 시작: Direction={direction}, ItemId={itemId}");
+                Debug.Log(
+                    $"[NetworkApi] 몽깅이 아이템 사용 시작: Direction={direction}, ItemId={itemId}"
+                );
 
                 if (client == null || !client.IsConnected)
                 {
@@ -713,7 +737,9 @@ namespace Networks
                     return command;
                 }
 
-                throw new InvalidOperationException("MonggingItemUse에서 예상치 못한 응답 타입입니다.");
+                throw new InvalidOperationException(
+                    "MonggingItemUse에서 예상치 못한 응답 타입입니다."
+                );
             }
             catch (TimeoutException)
             {
@@ -763,7 +789,9 @@ namespace Networks
                     return command;
                 }
 
-                throw new InvalidOperationException("MonggingFieldItemUse에서 예상치 못한 응답 타입입니다.");
+                throw new InvalidOperationException(
+                    "MonggingFieldItemUse에서 예상치 못한 응답 타입입니다."
+                );
             }
             catch (TimeoutException)
             {
@@ -795,7 +823,7 @@ namespace Networks
 
                 var mongdungSkillRequest = new MongdungSkillSend(skillType);
                 client.Send(mongdungSkillRequest);
-                
+
                 Debug.Log($"[NetworkApi] 몽둥이 스킬 요청 전송 완료: SkillType={skillType}");
             }
             catch (Exception e)
@@ -858,7 +886,7 @@ namespace Networks
         {
             Debug.Log($"[NetworkApi] 응답 처리 시작: {command.Type}");
             Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
-            
+
             if (_pendingRequests.TryGetValue(command.Type, out var tcs))
             {
                 Debug.Log($"[NetworkApi] 응답 대기 객체 발견: {command.Type}");

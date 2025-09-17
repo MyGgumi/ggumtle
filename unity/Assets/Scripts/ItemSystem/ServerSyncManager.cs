@@ -316,7 +316,9 @@ public class ServerSyncManager : MonoBehaviour
                 {
                     // PlayerInventory.OnServerActionResponse()에서 처리하므로 여기서는 제거
                     // 직접 조작하면 슬롯 순서가 파괴됨
-                    Debug.Log($"[ServerSyncManager] 인벤토리 동기화는 PlayerInventory에서 처리됨 - 슬롯{i} 스킵");
+                    Debug.Log(
+                        $"[ServerSyncManager] 인벤토리 동기화는 PlayerInventory에서 처리됨 - 슬롯{i} 스킵"
+                    );
                 }
             }
         }
@@ -325,7 +327,10 @@ public class ServerSyncManager : MonoBehaviour
     /// <summary>
     /// 서버 데이터를 ChestService를 통해 MVVM 시스템으로 전달
     /// </summary>
-    private void UpdateChestServiceFromServer(ChestInventoryData serverData, ViewModels.UI.ChestViewModel chestViewModel)
+    private void UpdateChestServiceFromServer(
+        ChestInventoryData serverData,
+        ViewModels.UI.ChestViewModel chestViewModel
+    )
     {
         if (serverData == null || chestViewModel == null)
             return;
@@ -350,7 +355,9 @@ public class ServerSyncManager : MonoBehaviour
         chestViewModel.SyncChestData(serverData.chestId, chestSlots);
 
         if (enableDebugLogs)
-            Debug.Log($"[ServerSyncManager] ChestService를 통해 상자 데이터 동기화: {serverData.chestId}, {serverData.items.Length}개 아이템");
+            Debug.Log(
+                $"[ServerSyncManager] ChestService를 통해 상자 데이터 동기화: {serverData.chestId}, {serverData.items.Length}개 아이템"
+            );
     }
 
     /// <summary>

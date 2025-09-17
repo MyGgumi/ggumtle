@@ -12,7 +12,7 @@ namespace Networks.Pipelines
     {
         private readonly CommandFactoryMapper _commandFactoryMapper = CommandFactoryMapper.Instance;
         private readonly CommandDispatcher _commandDispatcher = CommandDispatcher.Instance;
-        
+
         protected override void ChannelRead0(IChannelHandlerContext ctx, Packet packet)
         {
             Debug.Log($"Packet Received: {packet.Header.Type}");
@@ -56,7 +56,7 @@ namespace Networks.Pipelines
             
             base.ChannelActive(context);
         }
-        
+
         public override void ChannelInactive(IChannelHandlerContext context)
         {
             Debug.Log("Channel Inactive");

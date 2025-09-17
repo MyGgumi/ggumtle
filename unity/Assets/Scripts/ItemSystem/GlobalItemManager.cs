@@ -87,8 +87,12 @@ public class GlobalItemManager : MonoBehaviour
                 // 원래 이름으로도 확인
                 if (!database.HasItem(itemName))
                 {
-                    Debug.LogWarning($"[GlobalItemManager] 존재하지 않는 아이템: {itemName} (변환: {actualItemName})");
-                    Debug.LogWarning($"[GlobalItemManager] ItemDatabase에 아이템을 등록해주세요: taser, flashbang, defibrillator, light");
+                    Debug.LogWarning(
+                        $"[GlobalItemManager] 존재하지 않는 아이템: {itemName} (변환: {actualItemName})"
+                    );
+                    Debug.LogWarning(
+                        $"[GlobalItemManager] ItemDatabase에 아이템을 등록해주세요: taser, flashbang, defibrillator, light"
+                    );
                     // 경고만 하고 계속 진행 (테스트를 위해)
                 }
                 else

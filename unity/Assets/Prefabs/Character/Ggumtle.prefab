@@ -87,14 +87,17 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 9059601358578232455}
+      addedObject: {fileID: 7091827288686689075}
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 4339435741332300067}
   m_SourcePrefab: {fileID: 100100000, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
 --- !u!1 &8030916614624953053 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
   m_PrefabInstance: {fileID: 7184057025977778060}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &9059601358578232455
+--- !u!114 &7091827288686689075
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -103,18 +106,40 @@ MonoBehaviour:
   m_GameObject: {fileID: 8030916614624953053}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b6bc0544c8c60f04a9637b2f3e6d7ad1, type: 3}
+  m_Script: {fileID: 11500000, guid: 40682e6df76911344b80b79b36afb709, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   ggumtleName: "\uAFC8\uD2C0\uC774"
   ggumtleId: 
-  interactionRange: 2
-  autoSetupTrigger: 1
   ggumtleAnimator: {fileID: 0}
-  diggingAnimationTrigger: Dig
-  feedingAnimationTrigger: Feed
-  purifiedAnimationTrigger: Purify
-  interactionIcon: {fileID: 0}
-  feedingIcon: {fileID: 0}
   diggingEffect: {fileID: 0}
   purificationEffect: {fileID: 0}
+  feedingEffect: {fileID: 0}
+  diggingAnimationTrigger: Dig
+  emergingAnimationTrigger: Emerge
+  feedingAnimationTrigger: Feed
+  purifiedAnimationTrigger: Purify
+  enableDebugLogs: 1
+--- !u!136 &4339435741332300067
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8030916614624953053}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0
+  m_Height: 1
+  m_Direction: 1
+  m_Center: {x: 0, y: 0, z: 0}

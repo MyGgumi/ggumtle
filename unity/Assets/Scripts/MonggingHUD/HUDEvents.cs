@@ -1,6 +1,6 @@
 using System;
-using UnityEngine;
 using Models;
+using UnityEngine;
 
 /// <summary>
 /// 모든 HUD 관련 이벤트들을 중앙집중식으로 관리하는 클래스
@@ -29,9 +29,9 @@ public static class HUDEvents
     public static event Action OnPlayerRevived;
 
     // ==== 상호작용 이벤트 ====
-    public static event Action<Models.InteractionType, float, bool> OnInteractionStarted;
-    public static event Action<Models.InteractionType, float> OnInteractionProgress;
-    public static event Action<Models.InteractionType, bool> OnInteractionCompleted;
+    // public static event Action<Models.InteractionType, float, bool> OnInteractionStarted; // InteractionType 삭제로 인해 주석 처리
+    // public static event Action<Models.InteractionType, float> OnInteractionProgress; // InteractionType 삭제로 인해 주석 처리
+    // public static event Action<Models.InteractionType, bool> OnInteractionCompleted; // InteractionType 삭제로 인해 주석 처리
     public static event Action OnInteractionCancelled;
 
     // ==== 플레이어 이벤트 ====
@@ -78,18 +78,18 @@ public static class HUDEvents
         bool isCountdown
     )
     {
-        // 문자열을 InteractionType으로 변환
-        InteractionType type = interactionName.ToLower() switch
-        {
-            "dig" => InteractionType.Dig,
-            "revive" => InteractionType.Revive,
-            "feeding" => InteractionType.Feeding,
-            "faint" => InteractionType.Faint,
-            _ => InteractionType.Dig,
-        };
+        // // 문자열을 InteractionType으로 변환
+        // InteractionType type = interactionName.ToLower() switch
+        // {
+        //     "dig" => InteractionType.Dig,
+        //     "revive" => InteractionType.Revive,
+        //     "feeding" => InteractionType.Feeding,
+        //     "faint" => InteractionType.Faint,
+        //     _ => InteractionType.Dig,
+        // };
 
-        // 기존 이벤트 호출
-        OnInteractionStarted?.Invoke(type, duration, isCountdown);
+        // // 기존 이벤트 호출
+        // OnInteractionStarted?.Invoke(type, duration, isCountdown);
 
         Debug.Log(
             $"[HUDEvents] 상호작용 트리거: {interactionName} ({duration}초, 카운트다운: {isCountdown})"
@@ -99,11 +99,12 @@ public static class HUDEvents
     // 기절 이벤트용 (OnFaintStateChanged에서 호출됨)
     public static void TriggerFaintInteraction(float duration)
     {
-        OnInteractionStarted?.Invoke(InteractionType.Faint, duration, true);
+        // OnInteractionStarted?.Invoke(InteractionType.Faint, duration, true); // InteractionType 삭제로 인해 주석 처리
         Debug.Log($"[HUDEvents] 기절 상호작용 트리거: {duration}초");
     }
 
-    // 기존 메서드들 (하위 호환성)
+    // 기존 메서드들 (하위 호환성) - InteractionType 삭제로 인해 주석 처리
+    /*
     public static void TriggerInteractionStart(
         Models.InteractionType type,
         float duration,
@@ -112,9 +113,10 @@ public static class HUDEvents
 
     public static void TriggerInteractionProgress(Models.InteractionType type, float progress) =>
         OnInteractionProgress?.Invoke(type, progress);
+    */
 
-    public static void TriggerInteractionComplete(Models.InteractionType type, bool success) =>
-        OnInteractionCompleted?.Invoke(type, success);
+    // public static void TriggerInteractionComplete(Models.InteractionType type, bool success) =>
+    //     OnInteractionCompleted?.Invoke(type, success); // InteractionType 삭제로 인해 주석 처리
 
     public static void TriggerInteractionCancel() => OnInteractionCancelled?.Invoke();
 

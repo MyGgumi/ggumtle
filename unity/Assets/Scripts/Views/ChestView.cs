@@ -12,6 +12,7 @@ namespace Views
         [Header("Chest UI Elements")]
         [SerializeField]
         private string _chestInstanceName = "chestBoxUI"; // Template Instance 이름 (변경 가능)
+
         [SerializeField]
         private string _chestContainerName = "chestBoxPanel";
 
@@ -97,7 +98,9 @@ namespace Views
 
             if (_chestContainer == null)
             {
-                Debug.LogError($"[ChestView] Failed to find chest container '{_chestContainerName}'");
+                Debug.LogError(
+                    $"[ChestView] Failed to find chest container '{_chestContainerName}'"
+                );
             }
 
             if (_closeButton != null)
@@ -123,7 +126,6 @@ namespace Views
 
             if (_chestSlotsContainer != null)
             {
-
                 for (int i = 0; i < 9; i++)
                 {
                     // UXML에서 미리 정의된 슬롯 요소들을 찾기
@@ -190,7 +192,7 @@ namespace Views
             }
         }
 
-        void OnDestroy()
+        protected override void OnDestroy()
         {
             if (_closeButton != null)
             {
@@ -383,7 +385,9 @@ namespace Views
                     }
                     else
                     {
-                        Debug.LogWarning($"[ChestView] 아이템 아이콘을 찾을 수 없음: {itemId} / {actualItemId}");
+                        Debug.LogWarning(
+                            $"[ChestView] 아이템 아이콘을 찾을 수 없음: {itemId} / {actualItemId}"
+                        );
                         iconElement.style.backgroundImage = null;
                     }
                 }

@@ -41,14 +41,16 @@ namespace Models
 
         public bool TakeAll()
         {
-            if (isEmpty) return false;
+            if (isEmpty)
+                return false;
             Clear();
             return true;
         }
 
         public bool TakeAmount(int amount)
         {
-            if (isEmpty || count < amount) return false;
+            if (isEmpty || count < amount)
+                return false;
 
             count -= amount;
             if (count <= 0)
@@ -106,7 +108,8 @@ namespace Models
             {
                 foreach (var slot in slots)
                 {
-                    if (!slot.isEmpty) return true;
+                    if (!slot.isEmpty)
+                        return true;
                 }
                 return false;
             }
@@ -119,7 +122,8 @@ namespace Models
                 int total = 0;
                 foreach (var slot in slots)
                 {
-                    if (!slot.isEmpty) total += slot.count;
+                    if (!slot.isEmpty)
+                        total += slot.count;
                 }
                 return total;
             }
@@ -135,7 +139,8 @@ namespace Models
 
         public bool TakeSlot(int index, int amount = -1)
         {
-            if (index < 0 || index >= slots.Length) return false;
+            if (index < 0 || index >= slots.Length)
+                return false;
 
             if (amount == -1)
             {
@@ -200,9 +205,15 @@ namespace Models
 
         #region Chest Management
 
-        public void RegisterChest(string chestId, string chestName, Vector3 position, GameObject chestObject = null)
+        public void RegisterChest(
+            string chestId,
+            string chestName,
+            Vector3 position,
+            GameObject chestObject = null
+        )
         {
-            if (string.IsNullOrEmpty(chestId)) return;
+            if (string.IsNullOrEmpty(chestId))
+                return;
 
             var chestData = new ChestData(chestId, chestName, position, chestObject);
             chests[chestId] = chestData;
@@ -275,7 +286,8 @@ namespace Models
 
         public bool TakeItemFromCurrentChest(int slotIndex, int amount = -1)
         {
-            if (currentChest == null) return false;
+            if (currentChest == null)
+                return false;
             bool result = currentChest.TakeSlot(slotIndex, amount);
 
             // 아이템 제거 후 자동 인덱스 조정 (빈 슬롯을 뒤로 보내기)
@@ -332,7 +344,8 @@ namespace Models
 
         public void SyncChestData(string chestId, ChestSlot[] serverSlots)
         {
-            if (!chests.ContainsKey(chestId)) return;
+            if (!chests.ContainsKey(chestId))
+                return;
 
             var chest = chests[chestId];
             for (int i = 0; i < Mathf.Min(chest.slots.Length, serverSlots.Length); i++)
@@ -343,7 +356,8 @@ namespace Models
 
         public void SyncChestSlot(string chestId, int slotIndex, string itemId, int count)
         {
-            if (!chests.ContainsKey(chestId)) return;
+            if (!chests.ContainsKey(chestId))
+                return;
 
             var chest = chests[chestId];
             if (slotIndex >= 0 && slotIndex < chest.slots.Length)

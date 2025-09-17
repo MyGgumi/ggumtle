@@ -1,14 +1,15 @@
 using System;
+using MVVM.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVVM.UI;
 
 namespace Views
 {
     public class ResourceView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
-        [SerializeField] private ResourceViewModel viewModel;
+        [SerializeField]
+        private ResourceViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -56,10 +57,12 @@ namespace Views
                 _counters[i] = _root.Q<VisualElement>($"slot{slotNum}Counter");
             }
 
-            Debug.Log($"[ResourceView] UI 요소 캐싱 완료: " +
-                     $"빛영역={(_lightArea != null ? "OK" : "NULL")}, " +
-                     $"빛라벨={(_lightCountLabel != null ? "OK" : "NULL")}, " +
-                     $"슬롯들={(_slots[0] != null && _slots[1] != null && _slots[2] != null ? "OK" : "NULL")}");
+            Debug.Log(
+                $"[ResourceView] UI 요소 캐싱 완료: "
+                    + $"빛영역={(_lightArea != null ? "OK" : "NULL")}, "
+                    + $"빛라벨={(_lightCountLabel != null ? "OK" : "NULL")}, "
+                    + $"슬롯들={(_slots[0] != null && _slots[1] != null && _slots[2] != null ? "OK" : "NULL")}"
+            );
         }
 
         private void SetupSlotEvents()
@@ -82,7 +85,8 @@ namespace Views
 
         private void SubscribeToViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.LightCountChanged += OnLightCountChanged;
             viewModel.InventorySlotChanged += OnInventorySlotChanged;
@@ -94,7 +98,8 @@ namespace Views
 
         private void UnsubscribeFromViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.LightCountChanged -= OnLightCountChanged;
             viewModel.InventorySlotChanged -= OnInventorySlotChanged;
@@ -143,7 +148,8 @@ namespace Views
 
         private void UpdateSlotUI(int slotNumber, int count)
         {
-            if (slotNumber < 1 || slotNumber > 3) return;
+            if (slotNumber < 1 || slotNumber > 3)
+                return;
 
             int index = slotNumber - 1;
 
@@ -183,7 +189,8 @@ namespace Views
 
         private void UpdateAllUI()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             UpdateLightDisplay(viewModel.LightCount);
             UpdateSlotUI(1, viewModel.Slot1.itemCount);
@@ -290,13 +297,15 @@ namespace Views
         [ContextMenu("Log Current UI State")]
         public void LogCurrentUIState()
         {
-            Debug.Log($"[ResourceView] UI State:\n" +
-                     $"  LightCount: {(_lightCountLabel?.text ?? "NULL")}\n" +
-                     $"  Slot1Count: {(_countLabels[0]?.text ?? "NULL")}\n" +
-                     $"  Slot2Count: {(_countLabels[1]?.text ?? "NULL")}\n" +
-                     $"  Slot3Count: {(_countLabels[2]?.text ?? "NULL")}\n" +
-                     $"  LightArea Visible: {(_lightArea?.style.display.value == DisplayStyle.Flex)}\n" +
-                     $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[ResourceView] UI State:\n"
+                    + $"  LightCount: {(_lightCountLabel?.text ?? "NULL")}\n"
+                    + $"  Slot1Count: {(_countLabels[0]?.text ?? "NULL")}\n"
+                    + $"  Slot2Count: {(_countLabels[1]?.text ?? "NULL")}\n"
+                    + $"  Slot3Count: {(_countLabels[2]?.text ?? "NULL")}\n"
+                    + $"  LightArea Visible: {(_lightArea?.style.display.value == DisplayStyle.Flex)}\n"
+                    + $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}"
+            );
         }
 
         #endregion

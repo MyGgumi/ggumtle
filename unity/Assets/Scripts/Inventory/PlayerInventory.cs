@@ -142,7 +142,7 @@ public class PlayerInventory : MonoBehaviour
         if (totalAdded > 0)
         {
             OnInventoryMessage?.Invoke($"{item.itemName} {totalAdded}개 획득!");
-            
+
             // HUD 이벤트 트리거
             HUDEvents.TriggerItemObtained(item.itemName, totalAdded);
 
@@ -310,7 +310,7 @@ public class PlayerInventory : MonoBehaviour
 
         // HUD 이벤트 트리거
         HUDEvents.TriggerItemUsed(item.itemName, 1);
-        
+
         // 서버에 아이템 사용 요청
         if (ServerSimulator.Instance != null)
         {
@@ -350,7 +350,7 @@ public class PlayerInventory : MonoBehaviour
         // UI 업데이트
         OnInventoryChanged?.Invoke(0);
         OnInventoryChanged?.Invoke(slotIndex);
-        
+
         // HUD 이벤트 트리거
         HUDEvents.TriggerSlotSwapped(0, slotIndex);
 

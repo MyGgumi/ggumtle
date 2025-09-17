@@ -1,5 +1,5 @@
-﻿using UnityEngine;
-using MVVM.Movement;
+﻿using MVVM.Movement;
+using UnityEngine;
 
 namespace StarterAssets
 {
@@ -74,17 +74,26 @@ namespace StarterAssets
 
             if (_movementViewModel != null)
             {
-                Debug.Log($"[ThirdPersonController] PlayerMovementViewModel 싱글톤 인스턴스 연결 완료!");
+                Debug.Log(
+                    $"[ThirdPersonController] PlayerMovementViewModel 싱글톤 인스턴스 연결 완료!"
+                );
 
                 // 싱글톤이 플레이어 GameObject에 있지 않으면 옮기기
-                if (_movementViewModel.gameObject != gameObject && !_movementViewModel.transform.IsChildOf(transform))
+                if (
+                    _movementViewModel.gameObject != gameObject
+                    && !_movementViewModel.transform.IsChildOf(transform)
+                )
                 {
-                    Debug.Log($"[ThirdPersonController] PlayerMovementViewModel이 다른 GameObject에 있음: {_movementViewModel.gameObject.name}");
+                    Debug.Log(
+                        $"[ThirdPersonController] PlayerMovementViewModel이 다른 GameObject에 있음: {_movementViewModel.gameObject.name}"
+                    );
                 }
             }
             else
             {
-                Debug.LogError("[ThirdPersonController] PlayerMovementViewModel 싱글톤 인스턴스를 가져올 수 없습니다!");
+                Debug.LogError(
+                    "[ThirdPersonController] PlayerMovementViewModel 싱글톤 인스턴스를 가져올 수 없습니다!"
+                );
             }
 
             AssignAnimationIDs();
@@ -144,11 +153,16 @@ namespace StarterAssets
             }
             else
             {
-                Debug.LogWarning("[ThirdPersonController] Move() - PlayerMovementViewModel이 null입니다!");
+                Debug.LogWarning(
+                    "[ThirdPersonController] Move() - PlayerMovementViewModel이 null입니다!"
+                );
             }
 
             // 스프린트 여부에 따른 목표 속도 설정
-            float targetSpeed = (_movementViewModel != null && _movementViewModel.SprintInput) ? SprintSpeed : MoveSpeed;
+            float targetSpeed =
+                (_movementViewModel != null && _movementViewModel.SprintInput)
+                    ? SprintSpeed
+                    : MoveSpeed;
 
             if (_movementViewModel == null || _movementViewModel.MoveInput == Vector2.zero)
                 targetSpeed = 0.0f;
@@ -161,7 +175,10 @@ namespace StarterAssets
             ).magnitude;
 
             float speedOffset = 0.1f;
-            float inputMagnitude = (_movementViewModel != null && _movementViewModel.AnalogMovement) ? _movementViewModel.MoveInput.magnitude : 1f;
+            float inputMagnitude =
+                (_movementViewModel != null && _movementViewModel.AnalogMovement)
+                    ? _movementViewModel.MoveInput.magnitude
+                    : 1f;
 
             // 속도 가속/감속
             if (
@@ -192,7 +209,8 @@ namespace StarterAssets
                 _animationBlend = 0f;
 
             // 입력 방향 정규화
-            Vector2 moveInput = _movementViewModel != null ? _movementViewModel.MoveInput : Vector2.zero;
+            Vector2 moveInput =
+                _movementViewModel != null ? _movementViewModel.MoveInput : Vector2.zero;
             Vector3 inputDirection = new Vector3(moveInput.x, 0.0f, moveInput.y).normalized;
 
             // 이동 시 플레이어 회전

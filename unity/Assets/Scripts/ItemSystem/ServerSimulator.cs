@@ -77,63 +77,288 @@ public class ServerSimulator : MonoBehaviour
         {
             ["Chest_0"] = new List<ChestItemData>
             {
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "taser", quantity = 1, description = "테이저건" },
-                new ChestItemData { itemName = "taser", quantity = 1, description = "테이저건" },
-                new ChestItemData { itemName = "flashbang", quantity = 1, description = "섬광탄" },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "taser",
+                    quantity = 1,
+                    description = "테이저건",
+                },
+                new ChestItemData
+                {
+                    itemName = "taser",
+                    quantity = 1,
+                    description = "테이저건",
+                },
+                new ChestItemData
+                {
+                    itemName = "flashbang",
+                    quantity = 1,
+                    description = "섬광탄",
+                },
             },
             ["Chest_1"] = new List<ChestItemData>
             {
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "taser", quantity = 1, description = "테이저건" },
-                new ChestItemData { itemName = "flashbang", quantity = 1, description = "섬광탄" },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "taser",
+                    quantity = 1,
+                    description = "테이저건",
+                },
+                new ChestItemData
+                {
+                    itemName = "flashbang",
+                    quantity = 1,
+                    description = "섬광탄",
+                },
             },
             ["Chest_2"] = new List<ChestItemData>
             {
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "defibrillator", quantity = 1, description = "자가제세동기" },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "defibrillator",
+                    quantity = 1,
+                    description = "자가제세동기",
+                },
             },
             ["Chest_3"] = new List<ChestItemData>
             {
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "flashbang", quantity = 1, description = "섬광탄" },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "flashbang",
+                    quantity = 1,
+                    description = "섬광탄",
+                },
             },
             ["Chest_4"] = new List<ChestItemData>
             {
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "light", quantity = 1, description = "빛젤리" },
-                new ChestItemData { itemName = "taser", quantity = 1, description = "테이저건" },
-                new ChestItemData { itemName = "flashbang", quantity = 1, description = "섬광탄" },
-                new ChestItemData { itemName = "defibrillator", quantity = 1, description = "자가제세동기" },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "light",
+                    quantity = 1,
+                    description = "빛젤리",
+                },
+                new ChestItemData
+                {
+                    itemName = "taser",
+                    quantity = 1,
+                    description = "테이저건",
+                },
+                new ChestItemData
+                {
+                    itemName = "flashbang",
+                    quantity = 1,
+                    description = "섬광탄",
+                },
+                new ChestItemData
+                {
+                    itemName = "defibrillator",
+                    quantity = 1,
+                    description = "자가제세동기",
+                },
             },
         };
 
@@ -237,7 +462,7 @@ public class ServerSimulator : MonoBehaviour
         {
             // Mushroom은 먹이 인벤토리로 (제한 없음)
             addedAmount = request.quantity;
-            
+
             // 실제로 InventoryViewModel에 추가
             if (ViewModels.UI.InventoryViewModel.Instance != null)
             {
@@ -487,7 +712,7 @@ public class ServerSimulator : MonoBehaviour
                 int canAdd = Mathf.Min(remainingAmount, maxStack - slot.quantity);
                 slot.quantity += canAdd;
                 remainingAmount -= canAdd;
-                
+
                 // 해당 아이템이 있는 슬롯에서만 스택하고 종료 (다른 슬롯에는 같은 아이템 추가 안함)
                 break;
             }
@@ -506,7 +731,7 @@ public class ServerSimulator : MonoBehaviour
                     slot.quantity = Mathf.Min(remainingAmount, maxStack);
                     slot.isEmpty = false;
                     remainingAmount -= slot.quantity;
-                    
+
                     // 한 슬롯에만 추가하고 종료
                     break;
                 }
@@ -547,7 +772,7 @@ public class ServerSimulator : MonoBehaviour
             {
                 randomItem = "Stone";
             }
-            
+
             // 모든 아이템은 1개씩만 (겹치지 않음)
             int randomQuantity = 1;
 

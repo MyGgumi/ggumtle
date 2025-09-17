@@ -1,15 +1,16 @@
 using System;
 using System.Collections.Generic;
+using MVVM.UI;
 using UnityEngine;
 using UnityEngine.UIElements;
-using MVVM.UI;
 
 namespace Views
 {
     public class ChatView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
-        [SerializeField] private ChatViewModel viewModel;
+        [SerializeField]
+        private ChatViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -45,13 +46,16 @@ namespace Views
         {
             _chatIconArea = _root.Q<VisualElement>("chatIconArea");
 
-            Debug.Log($"[ChatView] UI 요소 캐싱 완료: " +
-                     $"채팅아이콘={(_chatIconArea != null ? "OK" : "NULL")}");
+            Debug.Log(
+                $"[ChatView] UI 요소 캐싱 완료: "
+                    + $"채팅아이콘={(_chatIconArea != null ? "OK" : "NULL")}"
+            );
         }
 
         private void SubscribeToViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.ChatToggled += OnChatToggled;
             viewModel.MessageAdded += OnMessageAdded;
@@ -64,7 +68,8 @@ namespace Views
 
         private void UnsubscribeFromViewModel()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             viewModel.ChatToggled -= OnChatToggled;
             viewModel.MessageAdded -= OnMessageAdded;
@@ -215,7 +220,8 @@ namespace Views
 
         private void UpdateQuickChatButtons(string[] messages)
         {
-            if (_quickChatArea == null) return;
+            if (_quickChatArea == null)
+                return;
 
             // 기존 버튼들 제거
             _quickChatArea.Clear();
@@ -250,7 +256,8 @@ namespace Views
 
         private void CreateMessageElement(ChatMessage message)
         {
-            if (_chatMessages == null) return;
+            if (_chatMessages == null)
+                return;
 
             var messageElement = new VisualElement();
             messageElement.AddToClassList("chat-message");
@@ -262,7 +269,9 @@ namespace Views
             Color messageColor = viewModel.GetMessageColor(message.type);
 
             // 플레이어 이름과 시간
-            var headerLabel = new Label($"[{message.timestamp.ToString("HH:mm")}] {message.playerName}:");
+            var headerLabel = new Label(
+                $"[{message.timestamp.ToString("HH:mm")}] {message.playerName}:"
+            );
             headerLabel.style.color = messageColor;
             headerLabel.style.fontSize = 12;
             headerLabel.style.unityFontStyleAndWeight = FontStyle.Bold;
@@ -293,10 +302,12 @@ namespace Views
             if (_chatMessages != null && _chatMessages is ScrollView scrollView)
             {
                 // UI Toolkit에서 스크롤을 맨 아래로 이동
-                _chatMessages.schedule.Execute(() =>
-                {
-                    scrollView.verticalScroller.value = scrollView.verticalScroller.highValue;
-                }).ExecuteLater(10); // 다음 프레임에 실행
+                _chatMessages
+                    .schedule.Execute(() =>
+                    {
+                        scrollView.verticalScroller.value = scrollView.verticalScroller.highValue;
+                    })
+                    .ExecuteLater(10); // 다음 프레임에 실행
             }
         }
 
@@ -334,7 +345,8 @@ namespace Views
         private void OnSendButtonClicked()
         {
             string message = _chatInput.text.Trim();
-            if (string.IsNullOrEmpty(message)) return;
+            if (string.IsNullOrEmpty(message))
+                return;
 
             if (viewModel != null)
             {
@@ -382,7 +394,8 @@ namespace Views
 
         public void RefreshChatHistory()
         {
-            if (viewModel == null) return;
+            if (viewModel == null)
+                return;
 
             ClearMessageElements();
 
@@ -438,13 +451,15 @@ namespace Views
         [ContextMenu("Log Current UI State")]
         public void LogCurrentUIState()
         {
-            Debug.Log($"[ChatView] UI State:\n" +
-                     $"  ChatPanel Visible: {(_chatPanel?.style.display.value == DisplayStyle.Flex)}\n" +
-                     $"  ChatIcon Visible: {(_chatIconArea?.style.display.value == DisplayStyle.Flex)}\n" +
-                     $"  MessageCount: {_chatMessages?.childCount ?? 0}\n" +
-                     $"  QuickChatButtons: {_quickChatButtons.Count}\n" +
-                     $"  CurrentInput: '{_chatInput?.value ?? "NULL"}'\n" +
-                     $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}");
+            Debug.Log(
+                $"[ChatView] UI State:\n"
+                    + $"  ChatPanel Visible: {(_chatPanel?.style.display.value == DisplayStyle.Flex)}\n"
+                    + $"  ChatIcon Visible: {(_chatIconArea?.style.display.value == DisplayStyle.Flex)}\n"
+                    + $"  MessageCount: {_chatMessages?.childCount ?? 0}\n"
+                    + $"  QuickChatButtons: {_quickChatButtons.Count}\n"
+                    + $"  CurrentInput: '{_chatInput?.value ?? "NULL"}'\n"
+                    + $"  ViewModel: {(viewModel != null ? "Connected" : "NULL")}"
+            );
         }
 
         #endregion

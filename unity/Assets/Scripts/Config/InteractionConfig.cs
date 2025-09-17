@@ -17,7 +17,7 @@ namespace Config
         /// <summary>
         /// 꿈틀이 상호작용 범위
         /// </summary>
-        public static float GgumtleInteractionRange = 5f;
+        public static float GgumtleInteractionRange = 10f;
 
         /// <summary>
         /// 상자 상호작용 범위

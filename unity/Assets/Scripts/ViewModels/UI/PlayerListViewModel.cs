@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
 using MVVM.Core;
+using UnityEngine;
 
 namespace MVVM.UI
 {
@@ -27,7 +27,12 @@ namespace MVVM.UI
             isHost = false;
         }
 
-        public PlayerListData(int id, string name, string color = "yellow", string playerStatus = "default")
+        public PlayerListData(
+            int id,
+            string name,
+            string color = "yellow",
+            string playerStatus = "default"
+        )
         {
             playerId = id;
             nickname = name;
@@ -42,13 +47,22 @@ namespace MVVM.UI
     public class PlayerListViewModel : BaseViewModel
     {
         [Header("Player Data")]
-        [SerializeField] private Dictionary<int, PlayerListData> _playerDataCache = new Dictionary<int, PlayerListData>();
+        [SerializeField]
+        private Dictionary<int, PlayerListData> _playerDataCache =
+            new Dictionary<int, PlayerListData>();
 
         [Header("Sprites")]
-        [SerializeField] private Sprite _iconMongingDefault;
-        [SerializeField] private Sprite _iconMongingFaint;
-        [SerializeField] private Sprite _iconMongingDead;
-        [SerializeField] private Sprite _iconMongingEscape;
+        [SerializeField]
+        private Sprite _iconMongingDefault;
+
+        [SerializeField]
+        private Sprite _iconMongingFaint;
+
+        [SerializeField]
+        private Sprite _iconMongingDead;
+
+        [SerializeField]
+        private Sprite _iconMongingEscape;
 
         public event Action<int, PlayerListData> PlayerUpdated; // playerId, playerData
         public event Action<int, string> PlayerStatusChanged; // playerId, status
@@ -59,7 +73,8 @@ namespace MVVM.UI
 
         #region Properties
 
-        public Dictionary<int, PlayerListData> PlayerListDataCache => new Dictionary<int, PlayerListData>(_playerDataCache);
+        public Dictionary<int, PlayerListData> PlayerListDataCache =>
+            new Dictionary<int, PlayerListData>(_playerDataCache);
 
         public Sprite IconMongingDefault
         {
@@ -68,7 +83,12 @@ namespace MVVM.UI
             {
                 if (SetProperty(ref _iconMongingDefault, value))
                 {
-                    SpritesUpdated?.Invoke(_iconMongingDefault, _iconMongingFaint, _iconMongingDead, _iconMongingEscape);
+                    SpritesUpdated?.Invoke(
+                        _iconMongingDefault,
+                        _iconMongingFaint,
+                        _iconMongingDead,
+                        _iconMongingEscape
+                    );
                     UpdateAllPlayerSprites();
                 }
             }
@@ -81,7 +101,12 @@ namespace MVVM.UI
             {
                 if (SetProperty(ref _iconMongingFaint, value))
                 {
-                    SpritesUpdated?.Invoke(_iconMongingDefault, _iconMongingFaint, _iconMongingDead, _iconMongingEscape);
+                    SpritesUpdated?.Invoke(
+                        _iconMongingDefault,
+                        _iconMongingFaint,
+                        _iconMongingDead,
+                        _iconMongingEscape
+                    );
                     UpdateAllPlayerSprites();
                 }
             }
@@ -94,7 +119,12 @@ namespace MVVM.UI
             {
                 if (SetProperty(ref _iconMongingDead, value))
                 {
-                    SpritesUpdated?.Invoke(_iconMongingDefault, _iconMongingFaint, _iconMongingDead, _iconMongingEscape);
+                    SpritesUpdated?.Invoke(
+                        _iconMongingDefault,
+                        _iconMongingFaint,
+                        _iconMongingDead,
+                        _iconMongingEscape
+                    );
                     UpdateAllPlayerSprites();
                 }
             }
@@ -107,7 +137,12 @@ namespace MVVM.UI
             {
                 if (SetProperty(ref _iconMongingEscape, value))
                 {
-                    SpritesUpdated?.Invoke(_iconMongingDefault, _iconMongingFaint, _iconMongingDead, _iconMongingEscape);
+                    SpritesUpdated?.Invoke(
+                        _iconMongingDefault,
+                        _iconMongingFaint,
+                        _iconMongingDead,
+                        _iconMongingEscape
+                    );
                     UpdateAllPlayerSprites();
                 }
             }
@@ -126,9 +161,11 @@ namespace MVVM.UI
             string colorTheme,
             string status = "default",
             bool isOnline = true,
-            bool isHost = false)
+            bool isHost = false
+        )
         {
-            if (playerId < 1 || playerId > 4) return;
+            if (playerId < 1 || playerId > 4)
+                return;
 
             var playerData = new PlayerListData
             {
@@ -153,7 +190,9 @@ namespace MVVM.UI
 
             if (EnableDebugLogs)
             {
-                Debug.Log($"[PlayerListViewModel] 플레이어 {playerId} 업데이트: {nickname} ({status})");
+                Debug.Log(
+                    $"[PlayerListViewModel] 플레이어 {playerId} 업데이트: {nickname} ({status})"
+                );
             }
         }
 
@@ -169,7 +208,7 @@ namespace MVVM.UI
                     status = "default",
                     avatarSprite = _iconMongingDefault,
                     isOnline = true,
-                    isHost = i == 1
+                    isHost = i == 1,
                 };
 
                 _playerDataCache[i] = playerData;
@@ -220,7 +259,9 @@ namespace MVVM.UI
 
                     if (EnableDebugLogs)
                     {
-                        Debug.Log($"[PlayerListViewModel] 플레이어 {playerId} 상태 변경: {oldStatus} → {status}");
+                        Debug.Log(
+                            $"[PlayerListViewModel] 플레이어 {playerId} 상태 변경: {oldStatus} → {status}"
+                        );
                     }
                 }
             }
@@ -243,7 +284,9 @@ namespace MVVM.UI
 
                     if (EnableDebugLogs)
                     {
-                        Debug.Log($"[PlayerListViewModel] 플레이어 {playerId} 접속 상태 변경: {isOnline}");
+                        Debug.Log(
+                            $"[PlayerListViewModel] 플레이어 {playerId} 접속 상태 변경: {isOnline}"
+                        );
                     }
                 }
             }
@@ -251,13 +294,16 @@ namespace MVVM.UI
 
         public void HighlightPlayer(int playerId, bool highlight, float duration = 1f)
         {
-            if (playerId < 1 || playerId > 4) return;
+            if (playerId < 1 || playerId > 4)
+                return;
 
             PlayerHighlighted?.Invoke(playerId, highlight, duration);
 
             if (EnableDebugLogs)
             {
-                Debug.Log($"[PlayerListViewModel] 플레이어 {playerId} 하이라이트: {highlight} ({duration}초)");
+                Debug.Log(
+                    $"[PlayerListViewModel] 플레이어 {playerId} 하이라이트: {highlight} ({duration}초)"
+                );
             }
         }
 
@@ -334,7 +380,7 @@ namespace MVVM.UI
                 2 => "mint",
                 3 => "pink",
                 4 => "blue",
-                _ => "yellow"
+                _ => "yellow",
             };
         }
 
@@ -364,7 +410,12 @@ namespace MVVM.UI
 
         #region Sprite Management
 
-        public void SetSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
+        public void SetSprites(
+            Sprite defaultIcon,
+            Sprite faintIcon,
+            Sprite deadIcon,
+            Sprite escapeIcon
+        )
         {
             bool changed = false;
 
@@ -394,9 +445,18 @@ namespace MVVM.UI
 
             if (changed)
             {
-                OnPropertiesChanged(nameof(IconMongingDefault), nameof(IconMongingFaint),
-                                  nameof(IconMongingDead), nameof(IconMongingEscape));
-                SpritesUpdated?.Invoke(_iconMongingDefault, _iconMongingFaint, _iconMongingDead, _iconMongingEscape);
+                OnPropertiesChanged(
+                    nameof(IconMongingDefault),
+                    nameof(IconMongingFaint),
+                    nameof(IconMongingDead),
+                    nameof(IconMongingEscape)
+                );
+                SpritesUpdated?.Invoke(
+                    _iconMongingDefault,
+                    _iconMongingFaint,
+                    _iconMongingDead,
+                    _iconMongingEscape
+                );
                 UpdateAllPlayerSprites();
             }
         }
@@ -442,15 +502,19 @@ namespace MVVM.UI
         [ContextMenu("Log Current State")]
         public void LogCurrentState()
         {
-            Debug.Log($"[PlayerListViewModel] State:\n" +
-                     $"  TotalPlayers: {TotalPlayerCount}\n" +
-                     $"  OnlinePlayers: {OnlinePlayerCount}\n" +
-                     $"  Players: {string.Join(", ", _playerDataCache.Keys)}");
+            Debug.Log(
+                $"[PlayerListViewModel] State:\n"
+                    + $"  TotalPlayers: {TotalPlayerCount}\n"
+                    + $"  OnlinePlayers: {OnlinePlayerCount}\n"
+                    + $"  Players: {string.Join(", ", _playerDataCache.Keys)}"
+            );
 
             foreach (var kvp in _playerDataCache)
             {
                 var player = kvp.Value;
-                Debug.Log($"    Player{player.playerId}: {player.nickname} ({player.status}, {player.colorTheme}, Online: {player.isOnline})");
+                Debug.Log(
+                    $"    Player{player.playerId}: {player.nickname} ({player.status}, {player.colorTheme}, Online: {player.isOnline})"
+                );
             }
         }
 

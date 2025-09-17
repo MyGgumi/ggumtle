@@ -57,7 +57,7 @@ namespace Networks
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"MainThreadDispatcher Action 실행 중 오류: {ex.Message}");
+                    Debug.LogError($"[MainThreadDispatcher] Action 실행 중 오류: {ex.Message}");
                 }
             }
 
@@ -70,7 +70,7 @@ namespace Networks
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"MainThreadDispatcher Task 실행 중 오류: {ex.Message}");
+                    Debug.LogError($"[MainThreadDispatcher] Task 실행 중 오류: {ex.Message}");
                 }
             }
         }

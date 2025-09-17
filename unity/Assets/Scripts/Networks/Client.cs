@@ -19,31 +19,31 @@ namespace Networks
 
         private void Awake()
         {
-            Debug.Log("Client Awake");
+            Debug.Log("[Client] 초기화 시작");
             
             DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
         {
-            Debug.Log("Client Start");
+            Debug.Log("[Client] 시작");
         }
 
         public async Task ConnectAsync(string host, int port)
         {
             try
             {
-                Debug.Log($"Client 연결 시도: {host}:{port}");
+                Debug.Log($"[Client] 서버 연결 시도: {host}:{port}");
                 
                 if (string.IsNullOrEmpty(host))
                 {
-                    Debug.LogError("Host가 설정되지 않았습니다. Inspector에서 Host를 설정해주세요.");
+                    Debug.LogError("[Client] Host가 설정되지 않았습니다. Inspector에서 Host를 설정해주세요.");
                     return;
                 }
                 
                 if (port <= 0)
                 {
-                    Debug.LogError($"Port가 올바르지 않습니다: {port}. Inspector에서 Port를 설정해주세요.");
+                    Debug.LogError($"[Client] Port가 올바르지 않습니다: {port}. Inspector에서 Port를 설정해주세요.");
                     return;
                 }
                 
@@ -63,15 +63,15 @@ namespace Networks
                             .AddLast(_packetHandler);
                     }));
                 
-                Debug.Log($"서버 연결 중... {host}:{port}");
+                Debug.Log($"[Client] 서버 연결 중: {host}:{port}");
                 _channel = await bootstrap.ConnectAsync(host, port);
                 
-                Debug.Log($"{host}:{port} 서버에 연결되었습니다.");
+                Debug.Log($"[Client] 서버 연결 성공: {host}:{port}");
             }
             catch (Exception ex)
             {
-                Debug.LogError($"Client 연결 실패: {ex.Message}");
-                Debug.LogError($"연결 시도한 주소: {host}:{port}");
+                Debug.LogError($"[Client] 서버 연결 실패: {ex.Message}");
+                Debug.LogError($"[Client] 연결 시도한 주소: {host}:{port}");
                 throw;
             }
         }

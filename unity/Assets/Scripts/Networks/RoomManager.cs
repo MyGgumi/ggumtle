@@ -42,7 +42,7 @@ namespace Networks
 
         void Awake()
         {
-            Debug.Log("RoomManager Awake");
+            Debug.Log("[RoomManager] 초기화 시작");
             _instance = this;
             DontDestroyOnLoad(gameObject);
         }
@@ -50,7 +50,7 @@ namespace Networks
         // Start is called before the first frame update
         async void Start()
         {
-            Debug.Log("RoomManager Start");
+            Debug.Log("[RoomManager] 시작");
             
             _roomStorage = RoomStorage.Instance;
 
@@ -58,18 +58,18 @@ namespace Networks
 
             if (_room == null || !_room.IsInitialized())
             {
-                Debug.LogError("Room 초기화 안 됨!");
+                Debug.LogError("[RoomManager] 방 초기화 실패");
                 return;
             }
             
-            Debug.Log("Room 초기화 완료!");
+            Debug.Log("[RoomManager] 방 초기화 완료");
             
             var go = GameObject.Find("NetworkApi");
             _networkApi = go.GetComponent<NetworkApi>();
 
             if (_networkApi == null)
             {
-                Debug.LogError("[RoomManager] NetworkApi 초기화 안 됨!!");
+                Debug.LogError("[RoomManager] NetworkApi 초기화 실패");
             }
 
             try
@@ -78,16 +78,16 @@ namespace Networks
 
                 if (command.Success)
                 {
-                    Debug.Log("씬 전환 성공!!!");
+                    Debug.Log("[RoomManager] 씬 전환 성공");
                 }
                 else
                 {
-                    Debug.Log("씬 전환 실패 ㅜㅜ");
+                    Debug.LogError("[RoomManager] 씬 전환 실패");
                 }
             }
             catch (Exception e)
             {
-                Debug.Log($"{e.Message}");
+                Debug.LogError($"[RoomManager] 씬 전환 오류: {e.Message}");
                 throw;
             }
         }
@@ -95,49 +95,49 @@ namespace Networks
         [CommandHandler(PacketType.GameStart)]
         public async void GameStart(GameStartCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log("게임 시작 들어옴");
+            Debug.Log("[RoomManager] 게임 시작 수신");
         }
 
         [CommandHandler(PacketType.PlayerMoveResponse)]
         public async void PlayerMove(PlayerMoveCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"PlayerMoveCommand: [{command.PlayerId}] : {command.Position.ToString()}");
+            Debug.Log($"[RoomManager] 플레이어 이동: PlayerId={command.PlayerId}, Position={command.Position}");
         }
 
         [CommandHandler(PacketType.DiggingDoneResponse)]
         public async void DiggingDone(DiggingDoneCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"DiggingDoneCommand: [{command.Id}] : {command.IsRealGgumtle}");
+            Debug.Log($"[RoomManager] 꿈틀이 파기 완료: Id={command.Id}, IsRealGgumtle={command.IsRealGgumtle}");
         }
 
-        [CommandHandler(PacketType.FeedForceQuitResponse)]
-        public async void FeedForceQuit(FeedForceQuitCommand command, IChannelHandlerContext ctx)
+        [CommandHandler(PacketType.JellyForceQuitResponse)]
+        public async void JellyForceQuit(JellyForceQuitCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"FeedForceQuitCommand: GgumtleId [{command.GgumtleId}] - LeftFeedCount: {command.LeftFeedCount}");
+            Debug.Log($"[RoomManager] 젤리 강제 종료: GgumtleId={command.GgumtleId}, LeftJellyCount={command.LeftJellyCount}");
         }
 
         [CommandHandler(PacketType.MongdungAttackResponse)]
         public async void MongdungAttackResult(MongdungAttackCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"MongdungAttackResult: Result [{command.result}] - LeftHp: {command.leftHp}");
+            Debug.Log($"[RoomManager] 몽둥이 공격 결과: Result={command.Result}, LeftHp={command.leftHp}");
         }
 
         [CommandHandler(PacketType.GetItemResponse)]
         public async void GetItemResult(GetItemCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"GetItemResult: Result [{command.Result}] - Items: [{string.Join(", ", command.Items)}]");
+            Debug.Log($"[RoomManager] 아이템 획득 결과: Result={command.Result}, Items=[{string.Join(", ", command.Items)}]");
         }
 
         [CommandHandler(PacketType.PutItemResponse)]
         public async void PutItemResult(PutItemCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"PutItemResult: Result [{command.Result}] - Items: [{string.Join(", ", command.Items)}]");
+            Debug.Log($"[RoomManager] 아이템 넣기 결과: Result={command.Result}, Items=[{string.Join(", ", command.Items)}]");
         }
 
         [CommandHandler(PacketType.MonggingRevivalComplete)]
         public async void MonggingRevivalComplete(MonggingRevivalCompleteCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"MonggingRevivalComplete: RevivedMonggingId [{command.revivedMonggingId}]");
+            Debug.Log($"[RoomManager] 몽깅이 부활 완료: RevivedMonggingId={command.revivedMonggingId}");
             
             // 몽깅이 부활 완료 처리 로직을 여기에 추가
             // 예: UI 업데이트, 게임 상태 변경 등
@@ -146,18 +146,18 @@ namespace Networks
         [CommandHandler(PacketType.MongdungSkillResponse)]
         public async void MongdungSkillResult(MongdungSkillCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"MongdungSkillResult: SkillType [{command.skillType}] - Result [{command.result}]");
+            Debug.Log($"[RoomManager] 몽둥이 스킬 결과: SkillType={command.skillType}, Result={command.Result}");
             
             // 몽둥이 스킬 결과 처리 로직을 여기에 추가
             if (command.skillType == 1) // 공포 스킬
             {
-                Debug.Log($"공포 스킬 결과: {command.result}");
+                Debug.Log($"[RoomManager] 공포 스킬 결과: {command.Result}");
                 // 공포 스킬 성공 시 모든 플레이어에게 전송됨
                 // 공포 스킬 실패 시 몽둥이에게만 전송됨
             }
             else if (command.skillType == 2) // 꿈틀이 심기
             {
-                Debug.Log($"꿈틀이 심기 결과: {command.result}");
+                Debug.Log($"[RoomManager] 꿈틀이 심기 결과: {command.Result}");
                 // 꿈틀이 심기는 성공/실패 모두 몽둥이에게만 전송됨
             }
         }
@@ -165,7 +165,7 @@ namespace Networks
         [CommandHandler(PacketType.GgumtleSpawn)]
         public async void GgumtleSpawn(GgumtleSpawnCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"GgumtleSpawn: ID [{command.id}] - Position [{command.position}]");
+            Debug.Log($"[RoomManager] 꿈틀이 스폰: Id={command.id}, Position={command.position}");
             
             // 꿈틀이 스폰 처리 로직을 여기에 추가
             // 예: 꿈틀이 오브젝트 생성, UI 업데이트 등
@@ -174,7 +174,7 @@ namespace Networks
         [CommandHandler(PacketType.GgumtleNirvana)]
         public async void GgumtleNirvana(GgumtleNirvanaCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"GgumtleNirvana: ID [{command.id}]");
+            Debug.Log($"[RoomManager] 꿈틀이 성불: Id={command.id}");
             
             // 꿈틀이 성불 처리 로직을 여기에 추가
             // 예: 꿈틀이 오브젝트 제거, UI 업데이트, 효과 재생 등
@@ -183,7 +183,7 @@ namespace Networks
         [CommandHandler(PacketType.MonggingStateBroadcast)]
         public async void MonggingStateBroadcast(MonggingStateBroadcastCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"MonggingStateBroadcast: PlayerId [{command.playerId}] - Type [{command.type}]");
+            Debug.Log($"[RoomManager] 몽깅이 상태 전파: PlayerId={command.playerId}, Type={command.type}");
             
             // 몽깅이 상태 전파 처리 로직을 여기에 추가
             // 예: 몽깅이 상태 변경, UI 업데이트, 애니메이션 재생 등
@@ -192,7 +192,7 @@ namespace Networks
         [CommandHandler(PacketType.ExitOpen)]
         public async void ExitOpen(ExitOpenCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"ExitOpen: Count [{command.count}] - Exits [{string.Join(", ", command.exits)}]");
+            Debug.Log($"[RoomManager] 탈출구 오픈: Count={command.count}, Exits=[{string.Join(", ", command.exits)}]");
             
             // 탈출구 오픈 처리 로직을 여기에 추가
             // 예: 탈출구 오브젝트 활성화, UI 업데이트, 효과 재생 등
@@ -201,12 +201,12 @@ namespace Networks
         [CommandHandler(PacketType.GameEnd)]
         public async void GameEnd(GameEndCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"GameEnd: Result [{command.result}] - PlayerSize [{command.playerSize}]");
+            Debug.Log($"[RoomManager] 게임 종료: Result={command.result}, PlayerSize={command.playerSize}");
             
             // 플레이어 결과 출력
             foreach (var playerResult in command.playerResults)
             {
-                Debug.Log($"Player: ID [{playerResult.id}] - Status [{playerResult.status}]");
+                Debug.Log($"[RoomManager] 플레이어 결과: Id={playerResult.id}, Status={playerResult.status}");
             }
             
             // 게임 종료 처리 로직을 여기에 추가

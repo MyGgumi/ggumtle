@@ -29,7 +29,7 @@ namespace Networks
 
         private void Awake()
         {
-            Debug.Log("NetworkApi Awake");
+            Debug.Log("[NetworkApi] 초기화 시작");
 
             if (Instance != null && Instance != this)
             {
@@ -42,17 +42,17 @@ namespace Networks
 
         void Start()
         {
-            Debug.Log("NetworkApi Start");
+            Debug.Log("[NetworkApi] 시작");
 
             if (!client.IsConnected)
             {
-                Debug.Log("Client 연결 안 되어 있음");
+                Debug.LogWarning("[NetworkApi] 클라이언트 연결 상태 확인 필요");
             }
         }
 
         public async Task InitializeNetwork(string host, int port)
         {
-            Debug.Log("NetworkApi InitializeNetwork");
+            Debug.Log("[NetworkApi] 네트워크 초기화 시작");
 
             await client.ConnectAsync(host, port);
         }
@@ -61,11 +61,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"DiggingStart 시작");
+                Debug.Log($"[NetworkApi] 꿈틀이 파기 시작: GgumtleId={ggumtleId}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -78,7 +78,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("DiggingStart 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 꿈틀이 파기 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -93,12 +93,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("DiggingStart 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 꿈틀이 파기 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.Log($"DiggingStart 패킷 전송 실패");
+                Debug.LogError($"[NetworkApi] 꿈틀이 파기 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -107,103 +107,103 @@ namespace Networks
             }
         }
 
-        public async Task<FeedStartCommand> FeedStart(int ggumtleId)
+        public async Task<JellyStartCommand> JellyStart(int ggumtleId)
         {
             try
             {
-                Debug.Log($"FeedStart 시작: {ggumtleId}");
+                Debug.Log($"[NetworkApi] 젤리 시작: GgumtleId={ggumtleId}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
                 var tcs = new TaskCompletionSource<object>();
-                _pendingRequests[PacketType.FeedStartResponse] = tcs;
+                _pendingRequests[PacketType.JellyStartResponse] = tcs;
 
-                var feedStartRequest = new FeedStartSend(ggumtleId);
-                client.Send(feedStartRequest);
+                var jellyStartRequest = new JellyStartSend(ggumtleId);
+                client.Send(jellyStartRequest);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("FeedStart 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 젤리 시작 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
                 var response = await tcs.Task;
 
-                if (response is FeedStartCommand command)
+                if (response is JellyStartCommand command)
                 {
                     return command;
                 }
 
-                throw new InvalidOperationException("FeedStart에서 예상치 못한 응답 타입입니다.");
+                throw new InvalidOperationException("JellyStart에서 예상치 못한 응답 타입입니다.");
             }
             catch (TimeoutException)
             {
-                Debug.LogError("FeedStart 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 젤리 시작 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"FeedStart 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 젤리 시작 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
             {
-                _pendingRequests.TryRemove(PacketType.FeedStartResponse, out _);
+                _pendingRequests.TryRemove(PacketType.JellyStartResponse, out _);
             }
         }
 
-        public async Task<FeedQuitCommand> FeedQuit()
+        public async Task<JellyQuitCommand> JellyQuit()
         {
             try
             {
-                Debug.Log("FeedQuit 시작");
+                Debug.Log("[NetworkApi] 젤리 종료 시작");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
                 var tcs = new TaskCompletionSource<object>();
-                _pendingRequests[PacketType.FeedQuitResponse] = tcs;
+                _pendingRequests[PacketType.JellyQuitResponse] = tcs;
 
-                var feedQuitRequest = new FeedQuitSend();
-                client.Send(feedQuitRequest);
+                var jellyQuitRequest = new JellyQuitSend();
+                client.Send(jellyQuitRequest);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("FeedQuit 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 젤리 종료 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
                 var response = await tcs.Task;
 
-                if (response is FeedQuitCommand command)
+                if (response is JellyQuitCommand command)
                 {
                     return command;
                 }
 
-                throw new InvalidOperationException("FeedQuit에서 예상치 못한 응답 타입입니다.");
+                throw new InvalidOperationException("JellyQuit에서 예상치 못한 응답 타입입니다.");
             }
             catch (TimeoutException)
             {
-                Debug.LogError("FeedQuit 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 젤리 종료 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"FeedQuit 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 젤리 종료 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
             {
-                _pendingRequests.TryRemove(PacketType.FeedQuitResponse, out _);
+                _pendingRequests.TryRemove(PacketType.JellyQuitResponse, out _);
             }
         }
 
@@ -211,11 +211,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"DiggingQuit 시작");
+                Debug.Log("[NetworkApi] 꿈틀이 파기 종료 시작");
                 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -228,7 +228,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("DiggingQuit 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 꿈틀이 파기 종료 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -243,7 +243,7 @@ namespace Networks
             }
             catch (Exception e)
             {
-                Debug.Log($"DiggingQuit 패킷 전송 실패");
+                Debug.LogError($"[NetworkApi] 꿈틀이 파기 종료 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -256,39 +256,39 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"RoomJoin 시작: {roomId}");
+                Debug.Log($"[NetworkApi] 방 조인 시작: RoomId={roomId}");
                 
                 // Client 연결 상태 확인
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
                 
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.RoomJoinResponse] = tcs;
                 
-                Debug.Log($"TaskCompletionSource 등록됨: {PacketType.RoomJoinResponse}");
-                Debug.Log($"현재 대기 중인 요청 수: {_pendingRequests.Count}");
+                Debug.Log($"[NetworkApi] 응답 대기 등록: {PacketType.RoomJoinResponse}");
+                Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
 
                 var roomJoinRequest = new RoomJoinSend(roomId);
                 client.Send(roomJoinRequest);
                 
-                Debug.Log($"RoomJoin 요청 전송: {roomId}");
+                Debug.Log($"[NetworkApi] 방 조인 요청 전송: RoomId={roomId}");
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() => {
-                    Debug.LogWarning("RoomJoin 타임아웃 발생");
+                    Debug.LogWarning("[NetworkApi] 방 조인 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
                 
-                Debug.Log("RoomJoin 응답 대기 시작...");
+                Debug.Log("[NetworkApi] 방 조인 응답 대기");
                 var response = await tcs.Task;
-                Debug.Log("RoomJoin 응답 수신됨");
+                Debug.Log("[NetworkApi] 방 조인 응답 수신");
 
                 if (response is RoomJoinCommand roomJoinResponse)
                 {
-                    Debug.Log($"RoomJoin 응답 수신: Result = {roomJoinResponse.Result}, Success = {roomJoinResponse.Success}");
+                    Debug.Log($"[NetworkApi] 방 조인 응답 처리: Result={roomJoinResponse.Result}, Success={roomJoinResponse.Success}");
                     return roomJoinResponse;
                 }
 
@@ -296,12 +296,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("RoomJoin 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 방 조인 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"RoomJoin 요청 중 오류 발생: {e.Message}");
+                Debug.LogError($"[NetworkApi] 방 조인 요청 실패: {e.Message}");
                 throw;
             }
             finally
@@ -319,19 +319,19 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"VerifyToken 시작: {accessToken}");
+                Debug.Log($"[NetworkApi] 토큰 검증 시작: {accessToken}");
                 
                 // TaskCompletionSource 생성
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.VerifyTokenResponse] = tcs;
                 
-                Debug.Log($"TaskCompletionSource 등록됨: {PacketType.VerifyTokenResponse}");
-                Debug.Log($"현재 대기 중인 요청 수: {_pendingRequests.Count}");
+                Debug.Log($"[NetworkApi] 응답 대기 등록: {PacketType.VerifyTokenResponse}");
+                Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
                 
                 // Client 연결 상태 확인
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
                 
@@ -339,22 +339,22 @@ namespace Networks
                 var verifyTokenRequest = new VerifyTokenSend(accessToken);
                 client.Send(verifyTokenRequest);
                 
-                Debug.Log($"VerifyToken 요청 전송: {accessToken}");
+                Debug.Log($"[NetworkApi] 토큰 검증 요청 전송: {accessToken}");
                 
                 // 응답 대기 (타임아웃 10초)
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() => {
-                    Debug.LogWarning("VerifyToken 타임아웃 발생");
+                    Debug.LogWarning("[NetworkApi] 토큰 검증 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
                 
-                Debug.Log("응답 대기 시작...");
+                Debug.Log("[NetworkApi] 토큰 검증 응답 대기");
                 var response = await tcs.Task;
-                Debug.Log("응답 수신됨");
+                Debug.Log("[NetworkApi] 토큰 검증 응답 수신");
                 
                 if (response is VerifyTokenCommand verifyTokenResponse)
                 {
-                    Debug.Log($"VerifyToken 응답 수신: SessionId = {verifyTokenResponse.SessionId}");
+                    Debug.Log($"[NetworkApi] 토큰 검증 응답 처리: SessionId={verifyTokenResponse.SessionId}");
                     return verifyTokenResponse;
                 }
                 
@@ -362,12 +362,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("VerifyToken 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 토큰 검증 요청 타임아웃");
                 throw;
             }
             catch (Exception ex)
             {
-                Debug.LogError($"VerifyToken 요청 중 오류 발생: {ex.Message}");
+                Debug.LogError($"[NetworkApi] 토큰 검증 요청 실패: {ex.Message}");
                 throw;
             }
             finally
@@ -385,39 +385,39 @@ namespace Networks
         {
             try
             {
-                Debug.Log("SceneChange 시작");
+                Debug.Log("[NetworkApi] 씬 전환 시작");
                 
                 // Client 연결 상태 확인
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
                 
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.SceneChangeResponse] = tcs;
                 
-                Debug.Log($"TaskCompletionSource 등록됨: {PacketType.SceneChangeResponse}");
-                Debug.Log($"현재 대기 중인 요청 수: {_pendingRequests.Count}");
+                Debug.Log($"[NetworkApi] 응답 대기 등록: {PacketType.SceneChangeResponse}");
+                Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
 
                 var sceneChangeRequest = new SceneChangeSend();
                 client.Send(sceneChangeRequest);
                 
-                Debug.Log("SceneChange 요청 전송");
+                Debug.Log("[NetworkApi] 씬 전환 요청 전송");
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() => {
-                    Debug.LogWarning("SceneChange 타임아웃 발생");
+                    Debug.LogWarning("[NetworkApi] 씬 전환 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
                 
-                Debug.Log("SceneChange 응답 대기 시작...");
+                Debug.Log("[NetworkApi] 씬 전환 응답 대기");
                 var response = await tcs.Task;
-                Debug.Log("SceneChange 응답 수신됨");
+                Debug.Log("[NetworkApi] 씬 전환 응답 수신");
 
                 if (response is SceneChangeCommand sceneChangeResponse)
                 {
-                    Debug.Log($"SceneChange 응답 수신: Result = {sceneChangeResponse.Result}, Success = {sceneChangeResponse.Success}");
+                    Debug.Log($"[NetworkApi] 씬 전환 응답 처리: Result={sceneChangeResponse.Result}, Success={sceneChangeResponse.Success}");
                     return sceneChangeResponse;
                 }
 
@@ -425,12 +425,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("SceneChange 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 씬 전환 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"SceneChange 요청 중 오류 발생: {e.Message}");
+                Debug.LogError($"[NetworkApi] 씬 전환 요청 실패: {e.Message}");
                 throw;
             }
             finally
@@ -466,12 +466,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("ChestOpen 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 상자 열기 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"상자 열기에 실패했습니다. {e.Message}");
+                Debug.LogError($"[NetworkApi] 상자 열기 실패: {e.Message}");
                 throw;
             }
         }
@@ -500,12 +500,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("ChestClose 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 상자 닫기 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"상자 닫기에 실패했습니다. {e.Message}");
+                Debug.LogError($"[NetworkApi] 상자 닫기 실패: {e.Message}");
                 throw;
             }
             finally
@@ -524,18 +524,18 @@ namespace Networks
             {
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     return;
                 }
 
                 var attackRequest = new MongdungAttackSend(direction, targetId);
                 client.Send(attackRequest);
                 
-                Debug.Log($"몽둥이 공격 전송: direction={direction}, targetId={targetId}");
+                Debug.Log($"[NetworkApi] 몽둥이 공격 전송: Direction={direction}, TargetId={targetId}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"몽둥이 공격 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 몽둥이 공격 패킷 전송 실패: {e.Message}");
             }
         }
 
@@ -545,18 +545,18 @@ namespace Networks
             {
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     return;
                 }
 
                 var getItemRequest = new GetItemSend(chestId, index);
                 client.Send(getItemRequest);
                 
-                Debug.Log($"아이템 획득 요청 전송: chestId={chestId}, index={index}");
+                Debug.Log($"[NetworkApi] 아이템 획득 요청 전송: ChestId={chestId}, Index={index}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"아이템 획득 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 아이템 획득 패킷 전송 실패: {e.Message}");
             }
         }
 
@@ -566,18 +566,18 @@ namespace Networks
             {
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     return;
                 }
 
                 var putItemRequest = new PutItemSend(itemId);
                 client.Send(putItemRequest);
                 
-                Debug.Log($"아이템 넣기 요청 전송: itemId={itemId}");
+                Debug.Log($"[NetworkApi] 아이템 넣기 요청 전송: ItemId={itemId}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"아이템 넣기 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 아이템 넣기 패킷 전송 실패: {e.Message}");
             }
         }
 
@@ -585,11 +585,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"MonggingRevivalStart 시작: {targetMonggingId}");
+                Debug.Log($"[NetworkApi] 몽깅이 부활 시작: TargetMonggingId={targetMonggingId}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -602,7 +602,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("MonggingRevivalStart 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 몽깅이 부활 시작 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -617,12 +617,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("MonggingRevivalStart 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 몽깅이 부활 시작 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"MonggingRevivalStart 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 몽깅이 부활 시작 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -635,11 +635,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log("MonggingRevivalStop 시작");
+                Debug.Log("[NetworkApi] 몽깅이 부활 중지 시작");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -652,7 +652,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("MonggingRevivalStop 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 몽깅이 부활 중지 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -667,12 +667,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("MonggingRevivalStop 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 몽깅이 부활 중지 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"MonggingRevivalStop 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 몽깅이 부활 중지 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -685,11 +685,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"MonggingItemUse 시작: direction={direction}, itemId={itemId}");
+                Debug.Log($"[NetworkApi] 몽깅이 아이템 사용 시작: Direction={direction}, ItemId={itemId}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -702,7 +702,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("MonggingItemUse 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 몽깅이 아이템 사용 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -717,12 +717,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("MonggingItemUse 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 몽깅이 아이템 사용 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"MonggingItemUse 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 몽깅이 아이템 사용 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -735,11 +735,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"MonggingFieldItemUse 시작: fieldItemId={fieldItemId}");
+                Debug.Log($"[NetworkApi] 몽깅이 필드 아이템 사용 시작: FieldItemId={fieldItemId}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -752,7 +752,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("MonggingFieldItemUse 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 몽깅이 필드 아이템 사용 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -767,12 +767,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("MonggingFieldItemUse 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 몽깅이 필드 아이템 사용 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"MonggingFieldItemUse 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 몽깅이 필드 아이템 사용 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -785,22 +785,22 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"MongdungSkill 시작: skillType={skillType}");
+                Debug.Log($"[NetworkApi] 몽둥이 스킬 시작: SkillType={skillType}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     return;
                 }
 
                 var mongdungSkillRequest = new MongdungSkillSend(skillType);
                 client.Send(mongdungSkillRequest);
                 
-                Debug.Log($"몽둥이 스킬 요청 전송 완료: skillType={skillType}");
+                Debug.Log($"[NetworkApi] 몽둥이 스킬 요청 전송 완료: SkillType={skillType}");
             }
             catch (Exception e)
             {
-                Debug.LogError($"몽둥이 스킬 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 몽둥이 스킬 패킷 전송 실패: {e.Message}");
             }
         }
 
@@ -808,11 +808,11 @@ namespace Networks
         {
             try
             {
-                Debug.Log($"ExitAttempt 시작: exitId={exitId}");
+                Debug.Log($"[NetworkApi] 탈출 시도 시작: ExitId={exitId}");
 
                 if (client == null || !client.IsConnected)
                 {
-                    Debug.LogError("Client가 연결되지 않았습니다.");
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
                     throw new Exception("Client가 연결되지 않았습니다.");
                 }
 
@@ -825,7 +825,7 @@ namespace Networks
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
                 cts.Token.Register(() =>
                 {
-                    Debug.LogError("ExitAttempt 타임아웃 발생");
+                    Debug.LogError("[NetworkApi] 탈출 시도 요청 타임아웃");
                     tcs.TrySetCanceled();
                 });
 
@@ -840,12 +840,12 @@ namespace Networks
             }
             catch (TimeoutException)
             {
-                Debug.LogError("ExitAttempt 요청이 타임아웃되었습니다.");
+                Debug.LogError("[NetworkApi] 탈출 시도 요청 타임아웃");
                 throw;
             }
             catch (Exception e)
             {
-                Debug.LogError($"ExitAttempt 패킷 전송 실패: {e.Message}");
+                Debug.LogError($"[NetworkApi] 탈출 시도 패킷 전송 실패: {e.Message}");
                 throw;
             }
             finally
@@ -856,22 +856,22 @@ namespace Networks
 
         public void HandleResponse(Command command)
         {
-            Debug.Log($"HandleResponse 호출됨: {command.Type}");
-            Debug.Log($"대기 중인 요청 수: {_pendingRequests.Count}");
+            Debug.Log($"[NetworkApi] 응답 처리 시작: {command.Type}");
+            Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
             
             if (_pendingRequests.TryGetValue(command.Type, out var tcs))
             {
-                Debug.Log($"TaskCompletionSource 찾음: {command.Type}");
+                Debug.Log($"[NetworkApi] 응답 대기 객체 발견: {command.Type}");
                 tcs.SetResult(command);
-                Debug.Log($"응답 처리 완료: {command.Type}");
+                Debug.Log($"[NetworkApi] 응답 처리 완료: {command.Type}");
             }
             else
             {
-                Debug.LogWarning($"대기 중인 요청이 없습니다: {command.Type}");
-                Debug.LogWarning($"현재 대기 중인 요청들:");
+                Debug.LogWarning($"[NetworkApi] 대기 중인 요청 없음: {command.Type}");
+                Debug.LogWarning($"[NetworkApi] 현재 대기 중인 요청들:");
                 foreach (var kvp in _pendingRequests)
                 {
-                    Debug.LogWarning($"  - {kvp.Key}");
+                    Debug.LogWarning($"[NetworkApi]   - {kvp.Key}");
                 }
             }
         }

@@ -5,6 +5,22 @@ using Networks.Packets;
 
 namespace Networks.Ggumtle
 {
+    public enum DiggingStartResult : byte
+    {
+        Fail = 0,                           // 실패
+        Success = 1,                        // 성공
+        GgumtleNotFound = 2,                // ID에 대응하는 꿈틀이가 없음
+        PlayerNotFoundOrNotMongging = 3,    // 플레이어가 없거나 몽깅이가 아님
+        AlreadyDug = 10,                    // 이미 판 꿈틀이
+        TooFar = 11                         // 인근에 없음
+    }
+
+    public enum DiggingQuitResult : byte
+    {
+        Fail = 0,                           // 실패
+        Success = 1,                        // 성공
+        NotDigging = 2                      // 파고있지 않음
+    }
     public class DiggingStartSend : Sendable
     {
         public override PacketType Type => PacketType.DiggingStart;
@@ -33,12 +49,14 @@ namespace Networks.Ggumtle
     {
         public override PacketType Type => PacketType.DiggingStartResponse;
 
-        public byte Result { get; set; }
+        public DiggingStartResult Result { get; set; }
 
         public DiggingStartCommand(byte result)
         {
-            Result = result;
+            Result = (DiggingStartResult)result;
         }
+        
+        public bool Success => Result == DiggingStartResult.Success;
     }
 
     public class DiggingQuitSend : Sendable
@@ -51,12 +69,14 @@ namespace Networks.Ggumtle
     {
         public override PacketType Type => PacketType.DiggingQuitResponse;
         
-        public byte Result { get; set; }
+        public DiggingQuitResult Result { get; set; }
         
         public DiggingQuitCommand(byte result)
         {
-            Result = result;
+            Result = (DiggingQuitResult)result;
         }
+        
+        public bool Success => Result == DiggingQuitResult.Success;
     }
 
     public class DiggingDoneCommand : Command

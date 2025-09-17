@@ -6,6 +6,12 @@ using UnityEngine;
 
 namespace Networks.Rooms
 {
+    public enum RoomJoinResult
+    {
+        Fail = 0,
+        Success = 1
+    }
+
     public class RoomJoinSend : Sendable
     {
         public override PacketType Type => PacketType.RoomJoin;
@@ -39,16 +45,16 @@ namespace Networks.Rooms
 
     public class RoomJoinCommand : Command
     {
-        public int Result { get; set; }
+        public RoomJoinResult Result { get; set; }
 
         public RoomJoinCommand(int result)
         {
-            Result = result;
+            Result = (RoomJoinResult)result;
         }
 
         public override PacketType Type => PacketType.RoomJoinResponse;
 
-        public bool Success => Result == 1;
+        public bool Success => Result == RoomJoinResult.Success;
     }
 
     public class GameStartCommand : Command

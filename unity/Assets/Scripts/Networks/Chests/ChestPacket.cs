@@ -5,6 +5,19 @@ using Networks.Packets;
 
 namespace Networks.chests
 {
+    public enum ChestOpenResult
+    {
+        Fail = 0,
+        Success = 1
+    }
+
+    public enum ChestCloseResult
+    {
+        Fail = 0,
+        Success = 1,
+        NotWatching = 2
+    }
+
     public class ChestOpenSend : Sendable
     {
         public override PacketType Type => PacketType.ChestOpen;
@@ -33,18 +46,20 @@ namespace Networks.chests
     {
         public override PacketType Type => PacketType.ChestOpenResponse;
         
-        public int Success { get; set; }
+        public ChestOpenResult Result { get; set; }
         public int ChestId { get; set; }
         public int ItemSize { get; set; }
         public List<int> Items { get; set; }
         
-        public ChestOpenCommand(int success, int chestId, int itemSize, List<int> items)
+        public ChestOpenCommand(int result, int chestId, int itemSize, List<int> items)
         {
-            Success = success;
+            Result = (ChestOpenResult)result;
             ChestId = chestId;
             ItemSize = itemSize;
             Items = items;
         }
+        
+        public bool Success => Result == ChestOpenResult.Success;
     }
 
     public class ChestCloseSend : Sendable
@@ -75,11 +90,13 @@ namespace Networks.chests
     {
         public override PacketType Type => PacketType.ChestCloseResponse;
 
-        public int Result { get; set; }
+        public ChestCloseResult Result { get; set; }
 
         public ChestCloseCommand(int result)
         {
-            Result = result;
+            Result = (ChestCloseResult)result;
         }
+        
+        public bool Success => Result == ChestCloseResult.Success;
     }
 }

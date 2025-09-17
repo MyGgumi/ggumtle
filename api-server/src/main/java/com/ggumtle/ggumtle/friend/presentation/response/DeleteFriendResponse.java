@@ -4,6 +4,6 @@ public record DeleteFriendResponse(
         Long followerid,
         String followerNickname,
         Long followeeId,
-        String followweeNickname
+        String followeeNickname
 ) {
 }

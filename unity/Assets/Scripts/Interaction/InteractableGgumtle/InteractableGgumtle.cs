@@ -2,13 +2,18 @@ using System.Collections;
 using UnityEngine;
 using Models;
 using Services;
+using Config;
+using Interfaces;
+using Managers;
 
-public class InteractableGgumtle : MonoBehaviour, IInteractable
+public class InteractableGgumtle : MonoBehaviour, IUIInteractable
 {
     [Header("꿈틀이 설정")]
     public string ggumtleName = "꿈틀이";
     public string ggumtleId; // 고유 ID
-    public float interactionRange = 2.0f;
+
+    [Header("Trigger 설정")]
+    [SerializeField] private bool autoSetupTrigger = true; // Trigger Collider 자동 설정
 
     // 설정값들은 GgumtleService에서 관리하므로 제거
 
@@ -18,18 +23,14 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
     public string feedingAnimationTrigger = "Feed";
     public string purifiedAnimationTrigger = "Purify";
 
-    [Header("UI 힌트")]
-    public GameObject interactionIcon;
-    public GameObject feedingIcon; // 먹이주기 상태일 때 표시할 아이콘
+    // UI 힌트는 더 이상 필요 없음 (트리거 기반 UI로 대체됨)
 
     [Header("이펙트")]
     public ParticleSystem diggingEffect;
     public ParticleSystem purificationEffect;
 
-    // 서비스 참조
-    private GgumtleService ggumtleService;
+    // Service 참조
     private GgumtleData ggumtleData;
-    private Transform playerTransform;
 
     void Start()
     {
@@ -44,55 +45,52 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         if (ggumtleAnimator == null)
             ggumtleAnimator = GetComponent<Animator>();
 
-        // 서비스 초기화
+        // Trigger Collider 자동 설정
+        Debug.Log($"[InteractableGgumtle] autoSetupTrigger: {autoSetupTrigger}");
+        if (autoSetupTrigger)
+        {
+            SetupTriggerCollider();
+        }
+        else
+        {
+            Debug.LogWarning($"[InteractableGgumtle] autoSetupTrigger가 false여서 Trigger Collider 설정 안함: {gameObject.name}");
+        }
+
+        // Service 초기화
         InitializeService();
+
+        // UIInteractionManager에 등록
+        RegisterToUIManager();
     }
 
-    void Update()
-    {
-        UpdateInteractionIcon();
-    }
+    // Update 제거 - 더 이상 아이콘 업데이트나 범위 체크 불필요
 
     private void InitializeService()
     {
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} InitializeService 시작");
+        Debug.Log($"[InteractableGgumtle] {ggumtleName} Service 연결 시도");
 
-        // 서비스 인스턴스 획득
-        ggumtleService = GgumtleService.Instance;
-        if (ggumtleService == null)
+        // Service 인스턴스 획득
+        if (GgumtleService.Instance == null)
         {
-            Debug.LogError("[InteractableGgumtle] GgumtleService가 없습니다! 코루틴으로 대기합니다.");
+            Debug.LogWarning("[InteractableGgumtle] GgumtleService를 찾을 수 없습니다.");
             StartCoroutine(WaitForServiceAndInitialize());
             return;
         }
 
-        // 서비스에 꿈틀이 등록
-        ggumtleService.RegisterGgumtle(ggumtleId, ggumtleName, transform.position);
-        ggumtleData = ggumtleService.GetGgumtleData(ggumtleId);
+        // Service에 꿈틀이 등록
+        GgumtleService.Instance.RegisterGgumtle(ggumtleId, ggumtleName, transform.position);
+        ggumtleData = GgumtleService.Instance.GetGgumtleData(ggumtleId);
 
         if (ggumtleData == null)
         {
-            Debug.LogError($"[InteractableGgumtle] {ggumtleName} ggumtleData를 가져올 수 없습니다!");
+            Debug.LogError($"[InteractableGgumtle] {ggumtleName} 데이터를 가져올 수 없습니다!");
             return;
         }
 
-        // 플레이어 찾기
-        GameObject player = GameObject.FindGameObjectWithTag("Player");
-        if (player != null)
-            playerTransform = player.transform;
+        // Service 이벤트 구독
+        GgumtleService.Instance.OnGgumtleStateChanged += OnStateChanged;
 
-        // 서비스 이벤트 구독
-        ggumtleService.OnGgumtleStateChanged += OnStateChanged;
-        ggumtleService.OnGgumtleFoodAdded += OnFoodAdded;
-        ggumtleService.OnGgumtlePurified += OnPurified;
-
-        // UI 아이콘 초기화
-        if (interactionIcon != null)
-            interactionIcon.SetActive(false);
-        if (feedingIcon != null)
-            feedingIcon.SetActive(false);
-
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 서비스 등록 완료 - ID: {ggumtleId}, 상태: {ggumtleData.currentState}");
+        Debug.Log($"[InteractableGgumtle] {ggumtleName} Service 연결 완료 - ID: {ggumtleId}, 상태: {ggumtleData.currentState}");
     }
 
     private System.Collections.IEnumerator WaitForServiceAndInitialize()
@@ -111,17 +109,43 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         InitializeService();
     }
 
+    private void RegisterToUIManager()
+    {
+        if (UIInteractionManager.Instance != null)
+        {
+            UIInteractionManager.Instance.RegisterInteractable(this);
+            Debug.Log($"[InteractableGgumtle] UIInteractionManager에 등록: {ggumtleName}");
+        }
+        else
+        {
+            StartCoroutine(WaitForUIManagerAndRegister());
+        }
+    }
+
+    private System.Collections.IEnumerator WaitForUIManagerAndRegister()
+    {
+        while (UIInteractionManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        UIInteractionManager.Instance.RegisterInteractable(this);
+        Debug.Log($"[InteractableGgumtle] UIInteractionManager에 등록: {ggumtleName}");
+    }
+
     void OnDestroy()
     {
-        // 서비스 이벤트 구독 해제
-        if (ggumtleService != null)
+        // UIInteractionManager에서 해제
+        if (UIInteractionManager.Instance != null)
         {
-            ggumtleService.OnGgumtleStateChanged -= OnStateChanged;
-            ggumtleService.OnGgumtleFoodAdded -= OnFoodAdded;
-            ggumtleService.OnGgumtlePurified -= OnPurified;
+            UIInteractionManager.Instance.UnregisterInteractable(this);
+        }
 
-            // 서비스에서 꿈틀이 등록 해제
-            ggumtleService.UnregisterGgumtle(ggumtleId);
+        // Service 이벤트 구독 해제
+        if (GgumtleService.Instance != null)
+        {
+            GgumtleService.Instance.OnGgumtleStateChanged -= OnStateChanged;
+            GgumtleService.Instance.UnregisterGgumtle(ggumtleId);
         }
     }
 
@@ -148,7 +172,6 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
                 break;
 
             case GgumtleState.Emerging:
-                // 나오는 중 애니메이션 (추후 추가)
                 if (diggingEffect != null)
                 {
                     diggingEffect.Stop();
@@ -169,134 +192,16 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
                 {
                     purificationEffect.Play();
                 }
+                StartCoroutine(DestroyAfterPurification());
                 break;
         }
-
-        // UI 업데이트를 위해 InteractionViewModel에게 알림 (Digging, Emerging 상태 제외)
-        if (newState != GgumtleState.Digging && newState != GgumtleState.Emerging)
-        {
-            UpdateNearbyInteractionUI();
-        }
     }
 
-    private void OnFoodAdded(string id, int currentAmount, int maxAmount)
-    {
-        if (id != ggumtleId) return;
-
-        Debug.Log($"[InteractableGgumtle] 먹이 추가: {currentAmount}/{maxAmount}");
-
-        // UI 텍스트만 업데이트 (전체 UI 제거/재추가 방지)
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
-        {
-            var newText = GetInteractionText();
-            bool updated = ViewModels.UI.InteractionViewModel.Instance.UpdateNearbyInteractionText(
-                Models.InteractionType.Feeding, gameObject, newText);
-
-            if (updated)
-            {
-                Debug.Log($"[InteractableGgumtle] UI 텍스트 업데이트 완료: {newText}");
-
-                // 먹이주기 후 프로그레스 바 리셋 요청
-                ViewModels.UI.InteractionViewModel.Instance.ResetFeedingProgressBar();
-            }
-        }
-    }
-
-    private void OnPurified(string id)
-    {
-        if (id != ggumtleId) return;
-
-        Debug.Log($"[InteractableGgumtle] 정화 완료: {id}");
-
-        // 일정 시간 후 오브젝트 제거
-        StartCoroutine(DestroyAfterPurification());
-    }
 
     #endregion
 
-    private void UpdateInteractionIcon()
-    {
-        if (playerTransform == null || ggumtleData == null) return;
-
-        float distance = Vector3.Distance(transform.position, playerTransform.position);
-        bool isInRange = distance <= ggumtleData.interactionRange;
-
-        // 상태에 따른 아이콘 표시
-        switch (ggumtleData.currentState)
-        {
-            case GgumtleState.Buried:
-                if (interactionIcon != null)
-                    interactionIcon.SetActive(isInRange);
-                if (feedingIcon != null)
-                    feedingIcon.SetActive(false);
-                break;
-
-            case GgumtleState.Feeding:
-                if (interactionIcon != null)
-                    interactionIcon.SetActive(false);
-                if (feedingIcon != null)
-                    feedingIcon.SetActive(isInRange);
-                break;
-
-            default:
-                if (interactionIcon != null)
-                    interactionIcon.SetActive(false);
-                if (feedingIcon != null)
-                    feedingIcon.SetActive(false);
-                break;
-        }
-    }
-
-    private bool IsPlayerInRange()
-    {
-        if (playerTransform == null || ggumtleData == null) return false;
-        float distance = Vector3.Distance(transform.position, playerTransform.position);
-        return distance <= ggumtleData.interactionRange;
-    }
 
 
-
-    // CompleteDigging은 서비스에서 처리하므로 제거
-
-    private void UpdateNearbyInteractionUI()
-    {
-        if (ggumtleData == null) return;
-
-        // InteractionViewModel에게 상태 변경 알림
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
-        {
-            // 상태에 따른 올바른 타입 설정
-            Models.InteractionType interactionType;
-            switch (ggumtleData.currentState)
-            {
-                case GgumtleState.Buried:
-                    interactionType = Models.InteractionType.Dig;
-                    break;
-                case GgumtleState.Feeding:
-                    interactionType = Models.InteractionType.Feeding;
-                    break;
-                default:
-                    return; // Digging, Purified 상태에서는 상호작용 불가
-            }
-
-            var text = GetInteractionText();
-            if (string.IsNullOrEmpty(text)) return;
-
-            // 기존 상호작용 제거 후 새로 추가 (텍스트 업데이트)
-            ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Dig, gameObject);
-            ViewModels.UI.InteractionViewModel.Instance.RemoveNearbyInteraction(Models.InteractionType.Feeding, gameObject);
-
-            ViewModels.UI.InteractionViewModel.Instance.AddNearbyInteraction(interactionType, text, gameObject);
-            Debug.Log($"[InteractableGgumtle] UI 업데이트: {text}, 타입: {interactionType}");
-        }
-    }
-
-
-    // FeedOnce 제거 - 이제 홀드 방식으로 통일
-    // StopFeeding 제거 - 홀드 기반으로 변경됨
-    // ContinuousFeeding은 GgumtleService에서 처리하므로 제거
-
-    // StartPurification은 OnPurified 이벤트에서 처리
 
     private IEnumerator DestroyAfterPurification()
     {
@@ -306,17 +211,15 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         Destroy(gameObject);
     }
 
-    // 아래 메서드들은 이제 GgumtleService에서 처리됨 (DEPRECATED)
-    // CanPlayerFeed(), TryConsumeFoodFromPlayer() 메서드들은 GgumtleService로 이동됨
 
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.green;
-        float range = ggumtleData?.interactionRange ?? 2f;
+        float range = InteractionConfig.GgumtleInteractionRange;
         Gizmos.DrawWireSphere(transform.position, range);
     }
 
-    #region IInteractable 구현
+    #region IUIInteractable 구현
     public bool CanInteract()
     {
         if (ggumtleData == null)
@@ -325,7 +228,8 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
             return false;
         }
 
-        bool canInteract = ggumtleData.CanInteract() && IsPlayerInRange();
+        // Trigger 방식에서는 이미 범위 안에 있다는 것이 확실하므로 거리 검사 제거
+        bool canInteract = ggumtleData.CanInteract();
         return canInteract;
     }
 
@@ -340,66 +244,48 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         return ggumtleData.GetInteractionText();
     }
 
-    public void Interact()
+    public void OnInteract()
     {
-        if (!CanInteract()) return;
-
-        Debug.Log($"[InteractableGgumtle] Interact 호출됨 - 상태: {ggumtleData.currentState}");
-
-        // 즉시 실행되는 상호작용은 없음 - 모든 상호작용이 홀드 필요
-        Debug.Log($"[InteractableGgumtle] 모든 상호작용이 홀드 필요 - Handler에서 처리됨");
+        // UIInteractionManager에서 홀드가 필요한지 확인하고 처리하므로
+        // 즉시 실행 상호작용은 없음
+        Debug.Log($"[InteractableGgumtle] OnInteract 호출됨 - 홀드 필요");
     }
 
-    public void OnInteractionEnd()
+    public bool RequiresHold()
     {
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 상호작용 종료");
-
-        // 홀드 중이었다면 취소
-        if (ggumtleData != null && ggumtleData.isHoldInProgress)
-        {
-            OnHoldCancelled();
-        }
-
-        // 홀드 기반으로 변경되어 별도 중단 불필요
-
-        Debug.Log($"[InteractableGgumtle] {ggumtleName} 상태 완전 초기화");
+        // 모든 꿈틀이 상호작용은 홀드 필요
+        return true;
     }
-
-    #region IInteractable Hold Methods
 
     public void OnHoldStart()
     {
-        // MVVM 패턴: ViewModel을 통해 서비스 호출
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        if (GgumtleService.Instance != null)
         {
-            ViewModels.UI.InteractionViewModel.Instance.StartGgumtleHold(ggumtleId);
+            GgumtleService.Instance.StartHold(ggumtleId);
         }
     }
 
     public void OnHoldProgress(float progress)
     {
-        // MVVM 패턴: ViewModel을 통해 서비스 호출
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        if (GgumtleService.Instance != null)
         {
-            ViewModels.UI.InteractionViewModel.Instance.UpdateGgumtleHoldProgress(ggumtleId, progress);
+            GgumtleService.Instance.UpdateHoldProgress(ggumtleId, progress);
         }
     }
 
     public void OnHoldComplete()
     {
-        // MVVM 패턴: ViewModel을 통해 서비스 호출
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        if (GgumtleService.Instance != null)
         {
-            ViewModels.UI.InteractionViewModel.Instance.CompleteGgumtleHold(ggumtleId);
+            GgumtleService.Instance.CompleteHold(ggumtleId);
         }
     }
 
     public void OnHoldCancelled()
     {
-        // MVVM 패턴: ViewModel을 통해 서비스 호출
-        if (ViewModels.UI.InteractionViewModel.Instance != null)
+        if (GgumtleService.Instance != null)
         {
-            ViewModels.UI.InteractionViewModel.Instance.CancelGgumtleHold(ggumtleId);
+            GgumtleService.Instance.CancelHold(ggumtleId);
         }
     }
 
@@ -424,8 +310,7 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
 
     public float GetInteractionRange()
     {
-        if (ggumtleData == null) return 2f;
-        return ggumtleData.interactionRange;
+        return InteractionConfig.GgumtleInteractionRange;
     }
 
     public Transform GetTransform()
@@ -433,13 +318,51 @@ public class InteractableGgumtle : MonoBehaviour, IInteractable
         return transform;
     }
 
-    public string GetInteractableName()
+
+    /// <summary>
+    /// Trigger Collider 자동 설정 (새로운 상호작용 시스템용)
+    /// </summary>
+    private void SetupTriggerCollider()
     {
-        if (ggumtleData == null) return ggumtleName;
-        return ggumtleData.GetInteractableName();
+        // 기존 Trigger Collider가 있는지 확인
+        SphereCollider triggerCollider = null;
+        var colliders = GetComponents<Collider>();
+
+        foreach (var col in colliders)
+        {
+            if (col.isTrigger && col is SphereCollider sphere)
+            {
+                triggerCollider = sphere;
+                break;
+            }
+        }
+
+        // Trigger Collider가 없으면 새로 생성
+        if (triggerCollider == null)
+        {
+            triggerCollider = gameObject.AddComponent<SphereCollider>();
+            triggerCollider.isTrigger = true;
+            Debug.Log($"[InteractableGgumtle] Trigger Collider 자동 생성: {gameObject.name}");
+        }
+
+        // Config에서 범위 가져오기
+        float configRange = InteractionConfig.GgumtleInteractionRange;
+        triggerCollider.radius = configRange;
+        Debug.Log($"[InteractableGgumtle] 트리거 반지름 설정: {configRange} (Config에서 가져옴)");
+
+        // 꿈틀이가 땅에 박혀있을 때는 Trigger의 중심을 위로 올림
+        triggerCollider.center = Vector3.up * (InteractionConfig.GgumtleBuriedHeightOffset * 0.5f);
+
+        // GameObject를 상호작용 레이어로 설정 (Layer 7 = Interaction)
+        if (gameObject.layer != 7)
+        {
+            gameObject.layer = 7;
+            Debug.Log($"[InteractableGgumtle] 레이어를 상호작용 레이어(7)로 변경: {gameObject.name}");
+        }
+
+        Debug.Log($"[InteractableGgumtle] Trigger 설정 완료 - 범위: {configRange}, 레이어: {gameObject.layer}");
     }
 
-    // SendFeedingStatusToServer는 GgumtleService에서 처리하므로 제거
 
     #endregion
 }

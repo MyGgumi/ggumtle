@@ -22,15 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 61.484238
+      value: 49.72726
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.273463
+      value: 4.5864315
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 8.766233
+      value: 12.349185
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalRotation.w
@@ -72,6 +72,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Ggumtle
       objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
+      propertyPath: m_Layer
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_Controller
       value: 
@@ -105,10 +109,7 @@ MonoBehaviour:
   ggumtleName: "\uAFC8\uD2C0\uC774"
   ggumtleId: 
   interactionRange: 2
-  currentState: 0
-  maxFoodRequired: 100
-  feedingRate: 5
-  currentFoodAmount: 0
+  autoSetupTrigger: 1
   ggumtleAnimator: {fileID: 0}
   diggingAnimationTrigger: Dig
   feedingAnimationTrigger: Feed

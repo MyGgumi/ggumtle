@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using Config;
 
 namespace Models
 {
@@ -28,7 +29,6 @@ namespace Models
 
         [Header("상태")]
         public GgumtleState currentState;
-        public float interactionRange;
 
         [Header("파내기 설정")]
         public float diggingHoldTime;
@@ -54,7 +54,6 @@ namespace Models
             ggumtleName = "꿈틀이";
             position = Vector3.zero;
             currentState = GgumtleState.Buried;
-            interactionRange = 2.0f;
             diggingHoldTime = 3f;
             maxFoodRequired = 30;
             currentFoodAmount = 0;
@@ -75,7 +74,6 @@ namespace Models
             ggumtleName = name;
             position = pos;
             currentState = GgumtleState.Buried;
-            interactionRange = 2.0f;
             diggingHoldTime = 3f;
             maxFoodRequired = 30;
             currentFoodAmount = 0;
@@ -99,9 +97,9 @@ namespace Models
                 case GgumtleState.Digging:
                     return $"{ggumtleName} 파내는 중...";
                 case GgumtleState.Emerging:
-                    return $"{ggumtleName} 나오는 중...";
+                    return "꿈틀거리는중...";
                 case GgumtleState.Feeding:
-                    return $"{ggumtleName}에게 빛젤리 먹이기 ({currentFoodAmount}/{maxFoodRequired})";
+                    return $"빛젤리 먹이기 ({currentFoodAmount}/{maxFoodRequired})";
                 case GgumtleState.Purified:
                 default:
                     return "";
@@ -133,9 +131,9 @@ namespace Models
             {
                 case GgumtleState.Buried:
                 case GgumtleState.Digging:
+                case GgumtleState.Emerging: // UI 표시를 위해 true (실제 상호작용은 핸들러에서 처리)
                 case GgumtleState.Feeding:
                     return true;
-                case GgumtleState.Emerging:
                 case GgumtleState.Purified:
                 default:
                     return false;
@@ -200,7 +198,6 @@ namespace Models
                 ggumtleName = this.ggumtleName,
                 position = this.position,
                 currentState = this.currentState,
-                interactionRange = this.interactionRange,
                 diggingHoldTime = this.diggingHoldTime,
                 maxFoodRequired = this.maxFoodRequired,
                 currentFoodAmount = this.currentFoodAmount,

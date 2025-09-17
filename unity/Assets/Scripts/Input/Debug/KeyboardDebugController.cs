@@ -82,10 +82,7 @@ namespace InputSystem.Debug
             _currentMoveInput = moveInput;
             _movementViewModel.SetMoveInput(moveInput);
 
-            if (showDebugLogs)
-            {
-                UnityEngine.Debug.Log($"[KeyboardDebug] 이동: {moveInput}");
-            }
+            // 로그 제거됨
         }
 
         private void OnMoveCanceled(InputAction.CallbackContext context)
@@ -95,10 +92,7 @@ namespace InputSystem.Debug
             _currentMoveInput = Vector2.zero;
             _movementViewModel.SetMoveInput(Vector2.zero);
 
-            if (showDebugLogs)
-            {
-                UnityEngine.Debug.Log($"[KeyboardDebug] 이동 정지");
-            }
+            // 로그 제거됨
         }
 
         private void OnJumpPerformed(InputAction.CallbackContext context)
@@ -108,10 +102,7 @@ namespace InputSystem.Debug
             _movementViewModel.SetJumpInput(true);
             _wasJumping = true;
 
-            if (showDebugLogs)
-            {
-                UnityEngine.Debug.Log($"[KeyboardDebug] 점프 시작");
-            }
+            // 로그 제거됨
         }
 
         private void OnJumpCanceled(InputAction.CallbackContext context)
@@ -121,10 +112,7 @@ namespace InputSystem.Debug
             _movementViewModel.SetJumpInput(false);
             _wasJumping = false;
 
-            if (showDebugLogs)
-            {
-                UnityEngine.Debug.Log($"[KeyboardDebug] 점프 정지");
-            }
+            // 로그 제거됨
         }
 
         #endregion

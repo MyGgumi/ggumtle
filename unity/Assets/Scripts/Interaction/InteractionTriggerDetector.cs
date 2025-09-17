@@ -1,9 +1,9 @@
 using System;
 using Config;
-using Interaction.InteractableGgumtle;
+using Features.Ggumtle.Messages;
+using Features.Ggumtle.Models;
+using Features.Ggumtle.Views;
 using MessagePipe;
-using Messages;
-using Models;
 using UnityEngine;
 using VContainer;
 
@@ -33,10 +33,10 @@ namespace Interaction
 
         // MessagePipe Publishers (VContainer로 주입)
         [Inject]
-        private IPublisher<GgumtleDetectedMessage> _ggumtleDetectedPublisher;
+        private IPublisher<Features.Ggumtle.Messages.GgumtleDetectedMessage> _ggumtleDetectedPublisher;
 
         [Inject]
-        private IPublisher<GgumtleLeftMessage> _ggumtleLeftPublisher;
+        private IPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage> _ggumtleLeftPublisher;
 
         // 기존 C# Event도 호환성을 위해 유지 (다른 상호작용 객체용)
         public event Action<IInteractable> OnInteractableEntered;
@@ -76,14 +76,20 @@ namespace Interaction
                 try
                 {
                     // GlobalMessagePipe로 수동 해결 시도
-                    _ggumtleDetectedPublisher ??= GlobalMessagePipe.GetPublisher<Messages.GgumtleDetectedMessage>();
-                    _ggumtleLeftPublisher ??= GlobalMessagePipe.GetPublisher<Messages.GgumtleLeftMessage>();
+                    _ggumtleDetectedPublisher ??=
+                        GlobalMessagePipe.GetPublisher<Features.Ggumtle.Messages.GgumtleDetectedMessage>();
+                    _ggumtleLeftPublisher ??=
+                        GlobalMessagePipe.GetPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage>();
 
-                    Debug.Log($"[InteractionTriggerDetector] GlobalMessagePipe로 수동 주입 완료 - {gameObject.name}");
+                    Debug.Log(
+                        $"[InteractionTriggerDetector] GlobalMessagePipe로 수동 주입 완료 - {gameObject.name}"
+                    );
                 }
                 catch (System.Exception ex)
                 {
-                    Debug.LogError($"[InteractionTriggerDetector] 수동 주입 실패: {ex.Message} - {gameObject.name}");
+                    Debug.LogError(
+                        $"[InteractionTriggerDetector] 수동 주입 실패: {ex.Message} - {gameObject.name}"
+                    );
                 }
             }
 
@@ -194,7 +200,9 @@ namespace Interaction
             }
 
             if (enableDebugLogs)
-                Debug.Log($"[InteractionTriggerDetector] 상호작용 객체 감지: {other.gameObject.name}");
+                Debug.Log(
+                    $"[InteractionTriggerDetector] 상호작용 객체 감지: {other.gameObject.name}"
+                );
 
             // 꿈틀이인지 확인하고 MessagePipe로 처리
             var ggumtleGameObject = other.GetComponent<GgumtleGameObject>();

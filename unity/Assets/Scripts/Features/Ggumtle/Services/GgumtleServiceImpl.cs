@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using MessagePipe;
-using Messages;
-using Models;
+using Features.Ggumtle.Messages;
+using Features.Ggumtle.Models;
 using UnityEngine;
 using VContainer;
 
-namespace Services
+namespace Features.Ggumtle.Services
 {
     /// <summary>
     /// 꿈틀이 비즈니스 로직 서비스 (순수 C# 클래스)

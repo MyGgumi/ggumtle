@@ -1,7 +1,7 @@
+using Features.Ggumtle.Models;
 using UnityEngine;
-using Models;
 
-namespace Messages
+namespace Features.Ggumtle.Messages
 {
     /// <summary>
     /// 꿈틀이가 플레이어 범위에 들어왔을 때 발행되는 메시지
@@ -13,7 +13,12 @@ namespace Messages
         public readonly float Distance;
         public readonly GgumtleState CurrentState;
 
-        public GgumtleDetectedMessage(string ggumtleId, Transform transform, float distance, GgumtleState currentState)
+        public GgumtleDetectedMessage(
+            string ggumtleId,
+            Transform transform,
+            float distance,
+            GgumtleState currentState
+        )
         {
             GgumtleId = ggumtleId;
             Transform = transform;
@@ -44,7 +49,11 @@ namespace Messages
         public readonly GgumtleState PreviousState;
         public readonly GgumtleState NewState;
 
-        public GgumtleStateChangedMessage(string ggumtleId, GgumtleState previousState, GgumtleState newState)
+        public GgumtleStateChangedMessage(
+            string ggumtleId,
+            GgumtleState previousState,
+            GgumtleState newState
+        )
         {
             GgumtleId = ggumtleId;
             PreviousState = previousState;
@@ -76,7 +85,11 @@ namespace Messages
         public readonly float Progress; // 0.0 ~ 1.0
         public readonly GgumtleState CurrentState;
 
-        public GgumtleHoldProgressMessage(string ggumtleId, float progress, GgumtleState currentState)
+        public GgumtleHoldProgressMessage(
+            string ggumtleId,
+            float progress,
+            GgumtleState currentState
+        )
         {
             GgumtleId = ggumtleId;
             Progress = progress;
@@ -110,7 +123,11 @@ namespace Messages
         public readonly float Duration;
         public readonly NotificationType Type;
 
-        public NotificationMessage(string text, float duration = 2f, NotificationType type = NotificationType.Info)
+        public NotificationMessage(
+            string text,
+            float duration = 2f,
+            NotificationType type = NotificationType.Info
+        )
         {
             Text = text;
             Duration = duration;
@@ -123,6 +140,6 @@ namespace Messages
         Info,
         Warning,
         Error,
-        Success
+        Success,
     }
 }

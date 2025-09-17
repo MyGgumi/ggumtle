@@ -24,7 +24,6 @@ fun LoginContent(
     onNavigateToMain: () -> Unit,
     isLoading: Boolean = false,
     isLoginSuccess: Boolean = false,
-    isNavigating: Boolean = false
 ) {
     Box(
         modifier = Modifier
@@ -41,33 +40,32 @@ fun LoginContent(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        if(!isNavigating){
-            Image(
-                painter = painterResource(id = R.drawable.ic_login_header),
-                contentDescription = "로그인 헤더",
-                modifier = Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 60.dp)
-                    .size(200.dp)
-            )
+        Image(
+            painter = painterResource(id = R.drawable.ic_login_header),
+            contentDescription = "로그인 헤더",
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 60.dp)
+                .size(200.dp)
+        )
 
-            if (isLoginSuccess) {
-                BlinkingText(
-                    text = "터치해서 시작",
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 100.dp)            )
-            } else {
-                GoogleLoginButton(
-                    onClick = onGoogleLoginClick,
-                    isLoading = isLoading,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 100.dp)
-                )
-            }
+        if (isLoginSuccess) {
+            BlinkingText(
+                text = "터치해서 시작",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 100.dp)
+            )
+        } else {
+            GoogleLoginButton(
+                onClick = onGoogleLoginClick,
+                isLoading = isLoading,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = 100.dp)
+            )
         }
     }
 }

@@ -15,6 +15,7 @@ fun SocialScreen(
     onRejectFriendRequest: (Long) -> Unit,
     onCancelSentRequest: (Long) -> Unit,
     onSendFriendRequest: (Long) -> Unit,
+    onSendFriendRequestAndCloseDialog: (Long) -> Unit,
     onOpenProfile: (Long) -> Unit,
     onRemoveFriend: (Long) -> Unit,
     onClickBack: () -> Unit
@@ -31,6 +32,7 @@ fun SocialScreen(
         onCancelSentRequest = onCancelSentRequest,
         onSendFriendRequest = onSendFriendRequest,
         onOpenProfile = onOpenProfile,
+        onSendFriendRequestAndCloseDialog = onSendFriendRequestAndCloseDialog,
         onRemoveFriend = onRemoveFriend,
         onClickBack = onClickBack
     )

@@ -1,6 +1,14 @@
 package com.ggumtle.data.websocket.repository
 
 import android.util.Log
+import com.example.data.websocket.model.social.request.CancelFriendRequestDto
+import com.example.data.websocket.model.social.request.DeleteFriendRequestDto
+import com.example.data.websocket.model.social.request.GetProfileFriendDto
+import com.example.data.websocket.model.social.response.CancelFriendRequestResponseDto
+import com.example.data.websocket.model.social.response.DeleteFriendResponseDto
+import com.example.data.websocket.model.social.response.GetProfileFriendResponseDto
+import com.example.data.websocket.model.social.response.GetSentFriendRequestsResponseDto
+import com.example.data.websocket.model.social.response.toEvent
 import com.ggumtle.data.websocket.model.social.request.AcceptFriendRequestDto
 import com.ggumtle.data.websocket.model.social.request.RejectFriendRequestDto
 import com.ggumtle.data.websocket.model.social.request.RequestFriendDto
@@ -95,6 +103,10 @@ class WebSocketRepositoryImpl @Inject constructor(
                 WebSocketMessageType.START_DREAM_RESULT -> handleMessage<StartGameResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.READY_DREAM_RESULT -> handleMessage<ReadyGameResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.MATCHING_CANCELLED_RESULT -> handleMessage<MatchingCancelledResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.GET_SENT_FRIEND_REQUESTS_RESULT -> handleMessage<GetSentFriendRequestsResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.CANCEL_FRIEND_REQUEST_RESULT -> handleMessage<CancelFriendRequestResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.DELETE_FRIEND_RESULT -> handleMessage<DeleteFriendResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.GET_PROFILE_FRIEND_RESULT -> handleMessage<GetProfileFriendResponseDto>(message){ it.toEvent() }
                 else -> {
                     Log.d("WebSocketRepository", "Ignored message type: ${message.type}")
                 }
@@ -251,4 +263,40 @@ class WebSocketRepositoryImpl @Inject constructor(
         )
         remoteDataSource.sendMessage(message)
     }
+
+    override suspend fun getSentFriendRequests() {
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.GET_SENT_FRIEND_REQUESTS,
+            data = null
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun cancelFriendRequest(friendId: Long){
+        val data = CancelFriendRequestDto(friendId)
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.CANCEL_FRIEND_REQUEST,
+            data = json.encodeToJsonElement(data)
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun deleteFriendRequest(friendId: Long){
+        val data = DeleteFriendRequestDto(friendId)
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.DELETE_FRIEND,
+            data = json.encodeToJsonElement(data)
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
+    override suspend fun getProfileFriend(friendId: Long){
+        val data = GetProfileFriendDto(friendId)
+        val message = WebSocketSendMessageDto(
+            type = WebSocketMessageType.GET_PROFILE_FRIEND,
+            data = json.encodeToJsonElement(data)
+        )
+        remoteDataSource.sendMessage(message)
+    }
+
 }

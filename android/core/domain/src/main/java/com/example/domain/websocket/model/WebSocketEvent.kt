@@ -1,5 +1,7 @@
 package com.ggumtle.domain.websocket.model
 
+import com.example.domain.websocket.model.MonggingClass
+import com.example.domain.websocket.model.SentRequest
 import com.ggumtle.domain.model.Member
 
 sealed class WebSocketEvent {
@@ -41,6 +43,30 @@ sealed class WebSocketEvent {
     data class RejectFriendRequestSuccess(
         val rejectedId: Long,
         val nickname: String
+    ) : WebSocketEvent()
+
+    data class GetSentFriendRequestsSuccess(
+        val sentFriendRequests: List<SentRequest>
+    ) : WebSocketEvent()
+
+    data class CancelFriendRequestSuccess(
+        val friendRequestId: Long,
+        val requesterId: Long,
+        val nickname: String
+    ) : WebSocketEvent()
+
+    data class DeleteFriendRequestSuccess(
+        val followerId: Long,
+        val followerNickname: String,
+        val followeeId: Long,
+        val followeeNickname: String,
+    ) : WebSocketEvent()
+
+    data class GetProfileFriendSuccess(
+        val memberId: Long,
+        val nickname: String,
+        val monggingClass: MonggingClass,
+        val monggingLevel: Int,
     ) : WebSocketEvent()
 
     // 대기방 이벤트

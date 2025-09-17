@@ -3,7 +3,7 @@ package com.ggumtle.social
 import androidx.compose.ui.text.input.TextFieldValue
 import com.ggumtle.domain.websocket.model.Friend
 import com.ggumtle.domain.websocket.model.FriendRequest
-import com.ggumtle.social.model.SentRequest
+import com.example.domain.websocket.model.SentRequest
 import com.ggumtle.social.model.User
 
 object SocialContract {

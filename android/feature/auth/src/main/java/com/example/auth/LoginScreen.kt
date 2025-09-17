@@ -1,10 +1,7 @@
 package com.ggumtle.auth
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import kotlinx.coroutines.Job
 
 @Composable
 fun LoginScreen(
@@ -15,17 +12,12 @@ fun LoginScreen(
     isLoginSuccess: Boolean = false,
     isNavigating: Boolean = false
 ) {
-
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
+    if(!isNavigating){
         LoginContent(
             onGoogleLoginClick = onGoogleLoginClick,
             onNavigateToMain = onNavigateToMain,
             isLoading = isLoading,
             isLoginSuccess = isLoginSuccess,
-            isNavigating = isNavigating
         )
     }
-
 }

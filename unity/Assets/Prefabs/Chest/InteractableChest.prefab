@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 709801526219695625}
   - component: {fileID: 3807907966562249250}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: InteractableChest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -49,6 +49,7 @@ MonoBehaviour:
   chestId: Chest_0
   interactionRange: 1.5
   isOpen: 0
+  autoSetupTrigger: 1
   chestAnimator: {fileID: 0}
   openAnimationTrigger: Open
   closeAnimationTrigger: Close
@@ -103,15 +104,27 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5256896747693522206, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6225071514147740668, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
       propertyPath: m_Name
       value: Chest
+      objectReference: {fileID: 0}
+    - target: {fileID: 6225071514147740668, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
+      propertyPath: m_Layer
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7524470034809781776, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8069967874999622765, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
+      propertyPath: m_Layer
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8759637889087846235, guid: 8629d3e264ecc5d438e8f9b6f905da91, type: 3}
       propertyPath: m_Layer
       value: 0
       objectReference: {fileID: 0}

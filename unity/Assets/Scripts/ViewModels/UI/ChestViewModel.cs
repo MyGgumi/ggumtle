@@ -5,6 +5,7 @@ using UnityEngine;
 using Models;
 using Services;
 using MVVM.Core;
+using Config;
 
 namespace ViewModels.UI
 {
@@ -59,10 +60,8 @@ namespace ViewModels.UI
             {
                 float distance = Vector3.Distance(_playerTransform.position, _currentChestObject.transform.position);
 
-                // 해당 상자의 상호작용 범위 사용 (fallback: _maxInteractionDistance)
-                float maxDistance = _currentChestObject.interactionRange > 0
-                    ? _currentChestObject.interactionRange
-                    : _maxInteractionDistance;
+                // Config에서 상자 상호작용 범위 사용
+                float maxDistance = InteractionConfig.ChestInteractionRange;
 
                 // 상호작용 범위를 벗어났을 때
                 if (distance > maxDistance)

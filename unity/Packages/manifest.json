@@ -1,5 +1,7 @@
 {
   "dependencies": {
+    "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+    "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
     "com.unity.ai.navigation": "2.0.8",
     "com.unity.burst": "1.8.24",
     "com.unity.cinemachine": "2.10.4",
@@ -28,6 +30,7 @@
     "com.unity.visualscripting": "1.9.7",
     "com.veriorpies.parrelsync": "https://github.com/VeriorPies/ParrelSync.git?path=/ParrelSync",
     "com.vovgou.dotnetty": "0.7.8",
+    "jp.hadashikick.vcontainer": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
     "com.unity.modules.accessibility": "1.0.0",
     "com.unity.modules.ai": "1.0.0",
     "com.unity.modules.androidjni": "1.0.0",
@@ -67,9 +70,7 @@
     {
       "name": "package.openupm.com",
       "url": "https://package.openupm.com",
-      "scopes": [
-        "com.vovgou.dotnetty"
-      ]
+      "scopes": ["com.vovgou.dotnetty"]
     }
   ]
 }

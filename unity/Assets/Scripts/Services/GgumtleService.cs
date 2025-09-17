@@ -78,6 +78,26 @@ namespace Services
         #region Ggumtle Management
 
         /// <summary>
+        /// 상태 변경 (중복 이벤트 방지)
+        /// </summary>
+        private void ChangeGgumtleState(string ggumtleId, GgumtleState newState)
+        {
+            var data = GetGgumtleData(ggumtleId);
+            if (data == null) return;
+
+            var previousState = data.currentState;
+            if (previousState == newState)
+            {
+                DebugLog($"[GgumtleService] 같은 상태 변경 시도 무시: {ggumtleId} - {newState}");
+                return;
+            }
+
+            data.currentState = newState;
+            DebugLog($"[GgumtleService] 상태 변경: {ggumtleId} - {previousState} → {newState}");
+            OnGgumtleStateChanged?.Invoke(ggumtleId, previousState, newState);
+        }
+
+        /// <summary>
         /// 꿈틀이 등록
         /// </summary>
         public void RegisterGgumtle(string ggumtleId, string name, Vector3 position)
@@ -138,13 +158,24 @@ namespace Services
 
             if (data.currentState == GgumtleState.Buried)
             {
-                // 파내기 홀드 시작
+                // 파내기 홀드 시작 - Buried → Digging
                 data.isHoldInProgress = true;
                 data.holdProgress = 0f;
-                data.currentState = GgumtleState.Digging;
-
-                DebugLog($"[GgumtleService] 파내기 홀드 시작: {ggumtleId}");
-                OnGgumtleStateChanged?.Invoke(ggumtleId, GgumtleState.Buried, GgumtleState.Digging);
+                ChangeGgumtleState(ggumtleId, GgumtleState.Digging);
+            }
+            else if (data.currentState == GgumtleState.Digging)
+            {
+                // 이미 Digging 상태 - 홀드만 시작 (상태 변경 없음)
+                if (!data.isHoldInProgress)
+                {
+                    data.isHoldInProgress = true;
+                    data.holdProgress = 0f;
+                    DebugLog($"[GgumtleService] 이미 Digging 상태 - 홀드만 재시작: {ggumtleId}");
+                }
+                else
+                {
+                    DebugLog($"[GgumtleService] 이미 홀드 진행 중: {ggumtleId}");
+                }
             }
             else if (data.currentState == GgumtleState.Feeding)
             {
@@ -152,6 +183,10 @@ namespace Services
                 data.isHoldInProgress = true;
                 data.holdProgress = 0f;
                 DebugLog($"[GgumtleService] 먹이주기 홀드 시작: {ggumtleId}");
+            }
+            else
+            {
+                DebugLog($"[GgumtleService] StartHold 불가능한 상태: {ggumtleId} - {data.currentState}");
             }
         }
 
@@ -182,12 +217,8 @@ namespace Services
 
             if (data.currentState == GgumtleState.Digging)
             {
-                // 파내기 완료
-                var previousState = data.currentState;
-                data.AdvanceToNextState(); // Digging → Emerging
-
-                DebugLog($"[GgumtleService] 홀드 완료: {ggumtleId} - {previousState} → {data.currentState}");
-                OnGgumtleStateChanged?.Invoke(ggumtleId, previousState, data.currentState);
+                // 파내기 완료 - Digging → Emerging
+                ChangeGgumtleState(ggumtleId, GgumtleState.Emerging);
 
                 // Emerging 상태에서 애니메이션 시간 후 Feeding 상태로 전환
                 StartCoroutine(TransitionToFeedingAfterDelay(ggumtleId, 2f)); // 2초 후 전환
@@ -231,11 +262,8 @@ namespace Services
             var data = GetGgumtleData(ggumtleId);
             if (data != null && data.currentState == GgumtleState.Emerging)
             {
-                var previousState = data.currentState;
-                data.AdvanceToNextState(); // Emerging → Feeding
-
-                DebugLog($"[GgumtleService] 나오기 완료: {ggumtleId} - {previousState} → {data.currentState}");
-                OnGgumtleStateChanged?.Invoke(ggumtleId, previousState, data.currentState);
+                // Emerging → Feeding
+                ChangeGgumtleState(ggumtleId, GgumtleState.Feeding);
             }
         }
 
@@ -254,12 +282,8 @@ namespace Services
 
                 if (data.currentState == GgumtleState.Digging)
                 {
-                    // 파내기 홀드 취소
-                    var previousState = data.currentState;
-                    data.currentState = GgumtleState.Buried;
-
-                    DebugLog($"[GgumtleService] 파내기 홀드 취소: {ggumtleId}");
-                    OnGgumtleStateChanged?.Invoke(ggumtleId, previousState, data.currentState);
+                    // 파내기 홀드 취소 - Digging → Buried
+                    ChangeGgumtleState(ggumtleId, GgumtleState.Buried);
                 }
                 else if (data.currentState == GgumtleState.Feeding)
                 {

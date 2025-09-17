@@ -137,13 +137,10 @@ namespace StarterAssets
             if (!canMove)
                 return;
 
-            // 디버그: ViewModel 상태 확인
+            // 디버그: ViewModel 상태 확인 (로그 제거됨)
             if (_movementViewModel != null)
             {
-                if (_movementViewModel.MoveInput.magnitude > 0.01f)
-                {
-                    Debug.Log($"[ThirdPersonController] Move Input: {_movementViewModel.MoveInput}, Jump: {_movementViewModel.JumpInput}");
-                }
+                // 로그 제거됨
             }
             else
             {
@@ -256,17 +253,14 @@ namespace StarterAssets
 
                 // 점프 디버그
                 bool jumpInput = _movementViewModel != null && _movementViewModel.JumpInput;
-                if (jumpInput)
-                {
-                    Debug.Log($"[ThirdPersonController] Jump Input Detected! JumpTimeoutDelta: {_jumpTimeoutDelta:F2}, Grounded: {Grounded}");
-                }
+                // 로그 제거됨
 
                 // 점프
                 if (jumpInput && _jumpTimeoutDelta <= 0.0f)
                 {
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
 
-                    Debug.Log($"[ThirdPersonController] 점프 실행! Velocity: {_verticalVelocity:F2}");
+                    // 로그 제거됨
 
                     // 점프 타임아웃 리셋 - 다음 점프까지 대기
                     _jumpTimeoutDelta = JumpTimeout;

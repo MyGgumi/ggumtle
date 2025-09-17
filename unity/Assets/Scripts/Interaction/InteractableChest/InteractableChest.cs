@@ -1,16 +1,21 @@
 using System.Collections.Generic;
 using UnityEngine;
+using Config;
+using Interfaces;
+using Managers;
 
 // 클릭 기반 상자 상호작용
-public class InteractableChest : MonoBehaviour, IInteractable
+public class InteractableChest : MonoBehaviour, IUIInteractable
 {
     [Header("상자 설정")]
     public string chestName = "상자";
     public string chestId; // 고유 상자 ID (Inspector에서 설정하거나 자동 생성)
 
     public string ChestId => chestId;
-    public float interactionRange = 2.0f;
     public bool isOpen = false;
+
+    [Header("Trigger 설정")]
+    [SerializeField] private bool autoSetupTrigger = true; // Trigger Collider 자동 설정
 
     // 기존 chestItems는 호환성을 위해 유지하되, 실제로는 ChestInventoryManager 사용
 
@@ -46,8 +51,22 @@ public class InteractableChest : MonoBehaviour, IInteractable
             Debug.Log($"[InteractableChest] Inspector에서 설정된 chestId: {chestId}");
         }
 
+        // Trigger Collider 자동 설정
+        Debug.Log($"[InteractableChest] autoSetupTrigger: {autoSetupTrigger}");
+        if (autoSetupTrigger)
+        {
+            SetupTriggerCollider();
+        }
+        else
+        {
+            Debug.LogWarning($"[InteractableChest] autoSetupTrigger가 false여서 Trigger Collider 설정 안함: {gameObject.name}");
+        }
+
         // 매니저 초기화 대기 후 등록
         StartCoroutine(RegisterChestWhenReady());
+
+        // UIInteractionManager에 등록
+        RegisterToUIManager();
 
         // 핸들러 찾기 - DEPRECATED
         // handler = FindFirstObjectByType<ChestInteractionHandler>();
@@ -72,10 +91,37 @@ public class InteractableChest : MonoBehaviour, IInteractable
         // }
     }
 
-    void Update()
+    void OnDestroy()
     {
-        // 상호작용 아이콘 표시 여부 결정 (선택사항)
-        UpdateInteractionIcon();
+        // UIInteractionManager에서 해제
+        if (UIInteractionManager.Instance != null)
+        {
+            UIInteractionManager.Instance.UnregisterInteractable(this);
+        }
+    }
+
+    private void RegisterToUIManager()
+    {
+        if (UIInteractionManager.Instance != null)
+        {
+            UIInteractionManager.Instance.RegisterInteractable(this);
+            Debug.Log($"[InteractableChest] UIInteractionManager에 등록: {chestName}");
+        }
+        else
+        {
+            StartCoroutine(WaitForUIManagerAndRegister());
+        }
+    }
+
+    private System.Collections.IEnumerator WaitForUIManagerAndRegister()
+    {
+        while (UIInteractionManager.Instance == null)
+        {
+            yield return null;
+        }
+
+        UIInteractionManager.Instance.RegisterInteractable(this);
+        Debug.Log($"[InteractableChest] UIInteractionManager에 등록: {chestName}");
     }
 
     private void UpdateInteractionIcon()
@@ -84,7 +130,7 @@ public class InteractableChest : MonoBehaviour, IInteractable
             return;
 
         float distance = Vector3.Distance(transform.position, playerTransform.position);
-        bool isInRange = distance <= interactionRange;
+        bool isInRange = distance <= InteractionConfig.ChestInteractionRange;
         bool shouldShow = !isOpen && isInRange;
 
         // 상호작용 아이콘 업데이트 (로컬 표시용)
@@ -100,7 +146,13 @@ public class InteractableChest : MonoBehaviour, IInteractable
     // UI 버튼에서 호출되는 상호작용 메서드 (레거시)
     public void TryInteract()
     {
-        Interact();
+        OnInteract();
+    }
+
+    // 레거시 호환성을 위한 메서드
+    public void Interact()
+    {
+        OnInteract();
     }
 
     private bool IsPlayerInRange()
@@ -109,7 +161,7 @@ public class InteractableChest : MonoBehaviour, IInteractable
             return false;
 
         float distance = Vector3.Distance(transform.position, playerTransform.position);
-        return distance <= interactionRange;
+        return distance <= InteractionConfig.ChestInteractionRange;
     }
 
     public void OpenChest()
@@ -250,17 +302,18 @@ public class InteractableChest : MonoBehaviour, IInteractable
     void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, interactionRange);
+        Gizmos.DrawWireSphere(transform.position, InteractionConfig.ChestInteractionRange);
     }
 
-    #region IInteractable 구현
+    #region IUIInteractable 구현
     /// <summary>
     /// 상호작용 가능한지 확인
     /// </summary>
     public bool CanInteract()
     {
-        // 플레이어가 범위 안에 있으면 상호작용 가능 (열린 상자는 닫기 가능)
-        return IsPlayerInRange();
+        // Trigger 방식에서는 이미 범위 안에 있다는 것이 확실하므로 항상 true
+        // 상자 상태와 관계없이 상호작용 가능 (열린 상자는 닫기 가능)
+        return true;
     }
 
     public string GetInteractionText()
@@ -271,16 +324,9 @@ public class InteractableChest : MonoBehaviour, IInteractable
     /// <summary>
     /// 상호작용 실행
     /// </summary>
-    public void Interact()
+    public void OnInteract()
     {
-        Debug.Log($"[InteractableChest] ⚡ Interact() 호출됨! - {chestName}, isOpen: {isOpen}");
-
-        // 이미 다른 상호작용 중이면 무시
-        if (ViewModels.UI.InteractionViewModel.Instance != null && ViewModels.UI.InteractionViewModel.Instance.IsInProgress)
-        {
-            Debug.Log("[InteractableChest] 다른 상호작용이 진행 중입니다.");
-            return;
-        }
+        Debug.Log($"[InteractableChest] ⚡ OnInteract() 호출됨! - {chestName}, isOpen: {isOpen}");
 
         // 상호작용 가능 체크
         if (!CanInteract())
@@ -288,8 +334,6 @@ public class InteractableChest : MonoBehaviour, IInteractable
             Debug.Log("[InteractableChest] 너무 멀어서 상자를 조작할 수 없습니다.");
             return;
         }
-
-        // 상호작용 실행 (nearby interaction은 이미 Update()에서 등록됨)
 
         if (isOpen)
         {
@@ -344,6 +388,32 @@ public class InteractableChest : MonoBehaviour, IInteractable
         }
     }
 
+    public bool RequiresHold()
+    {
+        // 상자는 클릭 기반 상호작용
+        return false;
+    }
+
+    public float GetHoldDuration()
+    {
+        return 0f;
+    }
+
+    public void OnHoldStart() { }
+    public void OnHoldProgress(float progress) { }
+    public void OnHoldComplete() { }
+    public void OnHoldCancelled() { }
+
+    public float GetInteractionRange()
+    {
+        return InteractionConfig.ChestInteractionRange;
+    }
+
+    public Transform GetTransform()
+    {
+        return transform;
+    }
+
     /// <summary>
     /// 상호작용 종료 (거리 멀어지거나 강제 종료시)
     /// </summary>
@@ -358,7 +428,7 @@ public class InteractableChest : MonoBehaviour, IInteractable
     public float GetInteractionRange()
     {
         // 상자가 열려있으면 범위를 1.5배 넓게 해서 UI가 안 꺼지도록
-        return isOpen ? interactionRange * 1.5f : interactionRange;
+        return isOpen ? InteractionConfig.ChestInteractionRange * 1.5f : InteractionConfig.ChestInteractionRange;
     }
 
     /// <summary>
@@ -443,5 +513,45 @@ public class InteractableChest : MonoBehaviour, IInteractable
             Debug.LogWarning($"[InteractableChest] ChestViewModel.Instance가 null이어서 {chestId} 등록 실패");
         }
     }
+
+    /// <summary>
+    /// Trigger Collider 자동 설정 (새로운 상호작용 시스템용)
+    /// </summary>
+    private void SetupTriggerCollider()
+    {
+        // 기존 Trigger Collider가 있는지 확인
+        SphereCollider triggerCollider = null;
+        var colliders = GetComponents<Collider>();
+
+        foreach (var col in colliders)
+        {
+            if (col.isTrigger && col is SphereCollider sphere)
+            {
+                triggerCollider = sphere;
+                break;
+            }
+        }
+
+        // Trigger Collider가 없으면 새로 생성
+        if (triggerCollider == null)
+        {
+            triggerCollider = gameObject.AddComponent<SphereCollider>();
+            triggerCollider.isTrigger = true;
+            Debug.Log($"[InteractableChest] Trigger Collider 자동 생성: {gameObject.name}");
+        }
+
+        // 상호작용 범위로 설정
+        triggerCollider.radius = InteractionConfig.ChestInteractionRange;
+
+        // GameObject를 상호작용 레이어로 설정 (Layer 7 = Interaction)
+        if (gameObject.layer != 7)
+        {
+            gameObject.layer = 7;
+            Debug.Log($"[InteractableChest] 레이어를 상호작용 레이어(7)로 변경: {gameObject.name}");
+        }
+
+        Debug.Log($"[InteractableChest] Trigger 설정 완료 - 범위: {InteractionConfig.ChestInteractionRange}, 레이어: {gameObject.layer}");
+    }
+
     #endregion
 }

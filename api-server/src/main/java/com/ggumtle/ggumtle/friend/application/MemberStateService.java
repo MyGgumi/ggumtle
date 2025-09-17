@@ -32,20 +32,17 @@ public class MemberStateService {
     }
 
     public void setOffline(Long memberId) {
-
         memberStateRepository.deleteById(String.valueOf(memberId));
     }
 
     public void heartBeat(Long memberId) {
-        memberStateRepository.findById(String.valueOf(memberId)).ifPresent(state -> {
-            MemberState updatedState = new MemberState(
-                    state.getMemberId(),
-                    state.getStatus(),
-                    Instant.now().toEpochMilli(),
-                    TTL_SECONDS
-            );
-            memberStateRepository.save(updatedState);
-        });
+        MemberState newState = new MemberState(
+                String.valueOf(memberId),
+                "ONLINE",
+                Instant.now().toEpochMilli(),
+                TTL_SECONDS
+        );
+        memberStateRepository.save(newState);
     }
 
     public State getState(Long memberId) {

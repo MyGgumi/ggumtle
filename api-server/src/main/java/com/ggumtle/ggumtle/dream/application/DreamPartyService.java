@@ -45,11 +45,15 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class DreamPartyService {
     private static final String WAITING_PARTY_KEY = "waiting_party";
+    private static final String ACTIVE_PARTY_INDEX_KEY = "party_participant:idx";
+    private static final String PARTY_PARTICIPANT_KEY_PREFIX = "party_participant:partyId:";
+
 
     private final PartyParticipantRepository partyParticipantRepository;
     private final PartyInvitationRepository partyInvitationRepository;
     private final MemberRepository memberRepository;
     private final RedisTemplate<String, WaitingParty> waitingPartyRedisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
 
     public CreatePartyResult createParty(CreatePartyCommand command) {
         if (partyParticipantRepository.existsById(command.memberId())) {
@@ -58,6 +62,7 @@ public class DreamPartyService {
 
         PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), true);
         partyParticipantRepository.save(partyParticipant);
+        redisTemplate.opsForSet().add(ACTIVE_PARTY_INDEX_KEY, partyParticipant.getPartyId());
 
         return new CreatePartyResult(List.of(partyParticipant.getMemberId()), partyParticipant.getPartyId());
     }
@@ -145,41 +150,39 @@ public class DreamPartyService {
 
         String partyId = requester.getPartyId();
 
-        // 드림 매칭 대기열에 있으면 나가기 불가
         Set<WaitingParty> waiting = waitingPartyRedisTemplate.opsForZSet()
-                .range(WAITING_PARTY_KEY,0,-1);
+                .range(WAITING_PARTY_KEY, 0, -1);
 
         boolean inQueue = waiting != null && waiting.stream()
                 .anyMatch(waitingParty -> Objects.equals(waitingParty.getPartyId(), partyId));
-        if (inQueue){
+        if (inQueue) {
             throw new GgumtleException(DreamErrorCode.CANNOT_LEAVE_WHILE_MATCHING);
         }
 
         List<PartyParticipant> members = partyParticipantRepository.findAllByPartyId(partyId);
-        List<Long> memberIds = members.stream().map(PartyParticipant::getMemberId).toList();
-
-        boolean wasLeader = requester.isLeader();
-        Long leftMemberId = requester.getMemberId();
+        List<Long> originalMemberIdsForEvent = members.stream().map(PartyParticipant::getMemberId).toList();
 
         partyParticipantRepository.delete(requester);
         Long newLeaderId = null;
 
-        // 나가는 참가자가 리더라면 다른사람에게 리더 양도
-        if (wasLeader){
-            List<PartyParticipant> others = members.stream()
-                    .filter(participant -> !participant.getMemberId().equals(leftMemberId))
-                    .toList();
-            if (!others.isEmpty()){
-                PartyParticipant newLeader = others.stream()
-                        .min(Comparator.comparing(PartyParticipant::getMemberId))
-                        .get();
-                newLeader.setAsLeader();
-                partyParticipantRepository.save(newLeader);
-                newLeaderId = newLeader.getMemberId();
-            }
+        List<PartyParticipant> remainingMembers = members.stream()
+                .filter(participant -> !participant.getMemberId().equals(command.requesterId()))
+                .toList();
+
+        if (remainingMembers.isEmpty()) {
+            // 파티에 아무도 남지 않았다면,파티를 제거
+            redisTemplate.opsForSet().remove(ACTIVE_PARTY_INDEX_KEY, partyId);
+        } else if (requester.isLeader()) {
+            // 나간 사람이 리더라면 새로운 리더를 위임
+            PartyParticipant newLeader = remainingMembers.stream()
+                    .min(Comparator.comparing(PartyParticipant::getMemberId))
+                    .get();
+            newLeader.setAsLeader();
+            partyParticipantRepository.save(newLeader);
+            newLeaderId = newLeader.getMemberId();
         }
 
-        return new LeavePartyResult(memberIds, leftMemberId, newLeaderId);
+        return new LeavePartyResult(originalMemberIdsForEvent, command.requesterId(), newLeaderId);
     }
 
     public GetInvitationsResult getInvitations(GetInvitationsCommand command) {
@@ -251,5 +254,25 @@ public class DreamPartyService {
                 .map(PartyParticipant::getMemberId)
                 .toList();
     }
+    public Set<Long> getAllActivePartyMemberIds() {
+        Set<String> activePartyUuids = redisTemplate.opsForSet().members(ACTIVE_PARTY_INDEX_KEY);
 
+        if (activePartyUuids == null || activePartyUuids.isEmpty()) {
+            return Set.of();
+        }
+
+        List<String> partyParticipantKeys = activePartyUuids.stream()
+                .map(uuid -> PARTY_PARTICIPANT_KEY_PREFIX + uuid)
+                .toList();
+
+        Set<String> memberIdsAsString = redisTemplate.opsForSet().union(partyParticipantKeys);
+
+        if (memberIdsAsString == null || memberIdsAsString.isEmpty()) {
+            return Set.of();
+        }
+
+        return memberIdsAsString.stream()
+                .map(Long::parseLong)
+                .collect(Collectors.toSet());
+    }
 }

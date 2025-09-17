@@ -1,6 +1,12 @@
 package com.ggumtle.ggumtle.presentation;
 
+import com.ggumtle.ggumtle.common.DisconnectedEventListener;
 import com.ggumtle.ggumtle.common.SocketType;
+import com.ggumtle.ggumtle.common.event.UserDisconnectedEvent;
+import com.ggumtle.ggumtle.dream.application.DreamPartyService;
+import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
+import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
+import com.ggumtle.ggumtle.dream.presentation.response.LeavePartyResponse;
 import com.ggumtle.ggumtle.friend.application.MemberStateService;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +28,9 @@ public class SocketHandler extends TextWebSocketHandler {
     private final SocketResponseDispatcher socketResponseDispatcher;
     private final ApplicationEventPublisher applicationEventPublisher;
     private final MemberStateService memberStateService;
+    private final DreamPartyService dreamPartyService;
+    private final DisconnectedEventListener disconnectedEventListener;
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         socketResponseDispatcher.registerSession(session);
@@ -38,6 +47,9 @@ public class SocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
         Long memberId = Long.parseLong(session.getPrincipal().getName());
+
+        applicationEventPublisher.publishEvent(new UserDisconnectedEvent(memberId));
+
         memberStateService.setOffline(memberId);
         socketResponseDispatcher.removeSession(session);
     }

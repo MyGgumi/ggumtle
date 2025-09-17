@@ -1,7 +1,7 @@
+using Features.Player.Services;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using VContainer;
-using Features.Player.Services;
 
 namespace Features.MobileControls.Testing
 {
@@ -12,8 +12,11 @@ namespace Features.MobileControls.Testing
     public class KeyboardDebugController : MonoBehaviour
     {
         [Header("Debug Settings")]
-        [SerializeField] private bool enableKeyboardInput = true;
-        [SerializeField] private bool showDebugLogs = true;
+        [SerializeField]
+        private bool enableKeyboardInput = true;
+
+        [SerializeField]
+        private bool showDebugLogs = false;
 
         private PlayerMovementService _playerMovementService;
         private Vector2 _currentMoveInput;
@@ -34,21 +37,26 @@ namespace Features.MobileControls.Testing
         {
             if (_playerMovementService == null)
             {
-                UnityEngine.Debug.LogError("[KeyboardDebugController] PlayerMovementService를 찾을 수 없습니다!");
+                UnityEngine.Debug.LogError(
+                    "[KeyboardDebugController] PlayerMovementService를 찾을 수 없습니다!"
+                );
                 return;
             }
 
             // Input Actions 설정
             SetupInputActions();
 
-            UnityEngine.Debug.Log("[KeyboardDebugController] 키보드 디버그 컨트롤러 초기화 완료 (WASD 이동, Space 점프)");
+            UnityEngine.Debug.Log(
+                "[KeyboardDebugController] 키보드 디버그 컨트롤러 초기화 완료 (WASD 이동, Space 점프)"
+            );
         }
 
         private void SetupInputActions()
         {
             // Move Action (WASD)
             _moveAction = new InputAction("Move", binding: "<Keyboard>/wasd");
-            _moveAction.AddCompositeBinding("2DVector")
+            _moveAction
+                .AddCompositeBinding("2DVector")
                 .With("Up", "<Keyboard>/w")
                 .With("Down", "<Keyboard>/s")
                 .With("Left", "<Keyboard>/a")
@@ -68,12 +76,12 @@ namespace Features.MobileControls.Testing
             _jumpAction.Enable();
         }
 
-
         #region Input Action Callbacks
 
         private void OnMovePerformed(InputAction.CallbackContext context)
         {
-            if (!enableKeyboardInput || _playerMovementService == null) return;
+            if (!enableKeyboardInput || _playerMovementService == null)
+                return;
 
             Vector2 moveInput = context.ReadValue<Vector2>();
             _currentMoveInput = moveInput;
@@ -87,7 +95,8 @@ namespace Features.MobileControls.Testing
 
         private void OnMoveCanceled(InputAction.CallbackContext context)
         {
-            if (!enableKeyboardInput || _playerMovementService == null) return;
+            if (!enableKeyboardInput || _playerMovementService == null)
+                return;
 
             _currentMoveInput = Vector2.zero;
             _playerMovementService.SetMoveInput(Vector2.zero);
@@ -100,7 +109,8 @@ namespace Features.MobileControls.Testing
 
         private void OnJumpPerformed(InputAction.CallbackContext context)
         {
-            if (!enableKeyboardInput || _playerMovementService == null) return;
+            if (!enableKeyboardInput || _playerMovementService == null)
+                return;
 
             _playerMovementService.SetJumpInput(true);
             _wasJumping = true;
@@ -113,7 +123,8 @@ namespace Features.MobileControls.Testing
 
         private void OnJumpCanceled(InputAction.CallbackContext context)
         {
-            if (!enableKeyboardInput || _playerMovementService == null) return;
+            if (!enableKeyboardInput || _playerMovementService == null)
+                return;
 
             _playerMovementService.SetJumpInput(false);
             _wasJumping = false;
@@ -163,7 +174,6 @@ namespace Features.MobileControls.Testing
                 _jumpAction.Dispose();
                 _jumpAction = null;
             }
-
         }
 
         #region Public Methods
@@ -181,7 +191,9 @@ namespace Features.MobileControls.Testing
                 _playerMovementService.SetJumpInput(false);
             }
 
-            UnityEngine.Debug.Log($"[KeyboardDebugController] 키보드 입력 {(enabled ? "활성화" : "비활성화")}");
+            UnityEngine.Debug.Log(
+                $"[KeyboardDebugController] 키보드 입력 {(enabled ? "활성화" : "비활성화")}"
+            );
         }
 
         /// <summary>

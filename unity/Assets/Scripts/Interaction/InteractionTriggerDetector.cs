@@ -206,6 +206,22 @@ namespace Interaction
 
             // 꿈틀이인지 확인하고 MessagePipe로 처리
             var ggumtleGameObject = other.GetComponent<GgumtleGameObject>();
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[InteractionTriggerDetector] GgumtleGameObject 컴포넌트 찾기: {other.gameObject.name}, 결과: {ggumtleGameObject != null}");
+                if (ggumtleGameObject == null)
+                {
+                    // 어떤 컴포넌트들이 있는지 확인
+                    var components = other.GetComponents<Component>();
+                    var componentNames = new string[components.Length];
+                    for (int i = 0; i < components.Length; i++)
+                    {
+                        componentNames[i] = components[i] != null ? components[i].GetType().Name : "NULL";
+                    }
+                    Debug.Log($"[InteractionTriggerDetector] {other.gameObject.name}의 컴포넌트들: {string.Join(", ", componentNames)}");
+                }
+            }
+
             if (ggumtleGameObject != null)
             {
                 if (enableDebugLogs)

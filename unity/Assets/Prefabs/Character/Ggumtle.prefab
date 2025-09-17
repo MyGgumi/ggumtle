@@ -87,39 +87,16 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 7091827288686689075}
+      addedObject: {fileID: 4339435741332300067}
     - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 4339435741332300067}
+      addedObject: {fileID: 5651645624035908834}
   m_SourcePrefab: {fileID: 100100000, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
 --- !u!1 &8030916614624953053 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
   m_PrefabInstance: {fileID: 7184057025977778060}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &7091827288686689075
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8030916614624953053}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 40682e6df76911344b80b79b36afb709, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  ggumtleName: "\uAFC8\uD2C0\uC774"
-  ggumtleId: 
-  ggumtleAnimator: {fileID: 0}
-  diggingEffect: {fileID: 0}
-  purificationEffect: {fileID: 0}
-  feedingEffect: {fileID: 0}
-  diggingAnimationTrigger: Dig
-  emergingAnimationTrigger: Emerge
-  feedingAnimationTrigger: Feed
-  purifiedAnimationTrigger: Purify
-  enableDebugLogs: 1
 --- !u!136 &4339435741332300067
 CapsuleCollider:
   m_ObjectHideFlags: 0
@@ -143,3 +120,26 @@ CapsuleCollider:
   m_Height: 1
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &5651645624035908834
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8030916614624953053}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6d09ce1e9be3a74f894c8a3172acc20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  ggumtleName: "\uAFC8\uD2C0\uC774"
+  ggumtleId: 
+  ggumtleAnimator: {fileID: 0}
+  diggingEffect: {fileID: 0}
+  purificationEffect: {fileID: 0}
+  feedingEffect: {fileID: 0}
+  diggingAnimationTrigger: Dig
+  emergingAnimationTrigger: Emerge
+  feedingAnimationTrigger: Feed
+  purifiedAnimationTrigger: Purify
+  enableDebugLogs: 0

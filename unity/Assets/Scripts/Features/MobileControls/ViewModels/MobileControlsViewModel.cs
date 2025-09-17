@@ -113,7 +113,7 @@ namespace Features.MobileControls.ViewModels
             UpdateControlVisibility();
 
             _isInitialized = true;
-            Debug.Log("[MobileControlsViewModel] 초기화 완료");
+            // Debug.Log("[MobileControlsViewModel] 초기화 완료");
         }
 
         #endregion
@@ -128,7 +128,7 @@ namespace Features.MobileControls.ViewModels
             _data.joystick.isDragging = true;
             JoystickDragging.Value = true;
 
-            Debug.Log($"[MobileControlsViewModel] 조이스틱 드래그 시작: {startPosition}");
+            // Debug.Log($"[MobileControlsViewModel] 조이스틱 드래그 시작: {startPosition}");
         }
 
         /// <summary>
@@ -161,7 +161,7 @@ namespace Features.MobileControls.ViewModels
             // MessagePipe로 종료 이벤트 발행
             _joystickEndPublisher.Publish(JoystickEndMessage.Instance);
 
-            Debug.Log("[MobileControlsViewModel] 조이스틱 드래그 종료");
+            // Debug.Log("[MobileControlsViewModel] 조이스틱 드래그 종료");
         }
 
         #endregion
@@ -183,7 +183,7 @@ namespace Features.MobileControls.ViewModels
             // MessagePipe로 이벤트 발행
             _buttonPressedPublisher.Publish(new MobileButtonPressedMessage(buttonType));
 
-            Debug.Log($"[MobileControlsViewModel] {buttonType} 버튼 눌림");
+            // Debug.Log($"[MobileControlsViewModel] {buttonType} 버튼 눌림");
         }
 
         /// <summary>
@@ -201,7 +201,7 @@ namespace Features.MobileControls.ViewModels
             // MessagePipe로 이벤트 발행
             _buttonReleasedPublisher.Publish(new MobileButtonReleasedMessage(buttonType));
 
-            Debug.Log($"[MobileControlsViewModel] {buttonType} 버튼 해제");
+            // Debug.Log($"[MobileControlsViewModel] {buttonType} 버튼 해제");
         }
 
         /// <summary>
@@ -213,7 +213,7 @@ namespace Features.MobileControls.ViewModels
                 return;
 
             _interactHoldStartPublisher.Publish(InteractHoldStartMessage.Instance);
-            Debug.Log("[MobileControlsViewModel] 상호작용 홀드 시작");
+            // Debug.Log("[MobileControlsViewModel] 상호작용 홀드 시작");
         }
 
         /// <summary>
@@ -222,7 +222,7 @@ namespace Features.MobileControls.ViewModels
         public void EndInteractHold()
         {
             _interactHoldEndPublisher.Publish(InteractHoldEndMessage.Instance);
-            Debug.Log("[MobileControlsViewModel] 상호작용 홀드 종료");
+            // Debug.Log("[MobileControlsViewModel] 상호작용 홀드 종료");
         }
 
         #endregion
@@ -273,9 +273,9 @@ namespace Features.MobileControls.ViewModels
             _data.interactButton.SetVisibility(msg.IsVisible);
             InteractButtonVisible.Value = msg.IsVisible;
 
-            Debug.Log(
-                $"[MobileControlsViewModel] 상호작용 버튼 가시성 변경: {msg.IsVisible} ({msg.Reason})"
-            );
+            // Debug.Log(
+            //     $"[MobileControlsViewModel] 상호작용 버튼 가시성 변경: {msg.IsVisible} ({msg.Reason})"
+            // );
         }
 
         #endregion
@@ -333,7 +333,7 @@ namespace Features.MobileControls.ViewModels
             bool shouldShow = _data.ShouldShowControls();
             ShouldShowControls.Value = shouldShow;
 
-            Debug.Log($"[MobileControlsViewModel] 컨트롤 표시 여부: {shouldShow} (isEnabled: {_data.isEnabled})");
+            // Debug.Log($"[MobileControlsViewModel] 컨트롤 표시 여부: {shouldShow} (isEnabled: {_data.isEnabled})");
         }
 
         #endregion
@@ -343,7 +343,7 @@ namespace Features.MobileControls.ViewModels
         public void Dispose()
         {
             _disposables.Dispose();
-            Debug.Log("[MobileControlsViewModel] Dispose 완료");
+            // Debug.Log("[MobileControlsViewModel] Dispose 완료");
         }
 
         #endregion

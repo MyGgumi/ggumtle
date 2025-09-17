@@ -1,12 +1,12 @@
-using Models;
+using Features.Ggumtle.Models;
+using Features.Ggumtle.ViewModels;
 using R3;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
-using ViewModels;
 using R3DisposableBag = R3.DisposableBag;
 
-namespace Interaction.InteractableGgumtle
+namespace Features.Ggumtle.Views
 {
     /// <summary>
     /// 꿈틀이 순수 View 컴포넌트 - 애니메이션과 시각적 이펙트만 처리

@@ -1,3 +1,4 @@
+using Features.Ggumtle.Messages;
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -15,21 +16,22 @@ namespace DI
             );
 
             // 꿈틀이 관련 메시지 타입들을 명시적으로 등록
-            builder.RegisterMessageBroker<Messages.GgumtleDetectedMessage>(options);
-            builder.RegisterMessageBroker<Messages.GgumtleLeftMessage>(options);
-            builder.RegisterMessageBroker<Messages.GgumtleStateChangedMessage>(options);
-            builder.RegisterMessageBroker<Messages.GgumtlePurifiedMessage>(options);
-            builder.RegisterMessageBroker<Messages.GgumtleHoldProgressMessage>(options);
-            builder.RegisterMessageBroker<Messages.GgumtleFoodAddedMessage>(options);
-            builder.RegisterMessageBroker<Messages.NotificationMessage>(options);
+            builder.RegisterMessageBroker<GgumtleLeftMessage>(options);
+            builder.RegisterMessageBroker<GgumtleStateChangedMessage>(options);
+            builder.RegisterMessageBroker<GgumtleDetectedMessage>(options);
+            builder.RegisterMessageBroker<GgumtlePurifiedMessage>(options);
+            builder.RegisterMessageBroker<GgumtleHoldProgressMessage>(options);
+            builder.RegisterMessageBroker<GgumtleFoodAddedMessage>(options);
+            builder.RegisterMessageBroker<NotificationMessage>(options);
 
             // Services 등록 (순수 C# 클래스)
-            builder.Register<Services.IGgumtleService, Services.GgumtleServiceImpl>(
-                Lifetime.Singleton
-            );
+            builder.Register<
+                Features.Ggumtle.Services.IGgumtleService,
+                Features.Ggumtle.Services.GgumtleServiceImpl
+            >(Lifetime.Singleton);
 
             // ViewModels 등록
-            builder.Register<ViewModels.GgumtleViewModel>(Lifetime.Singleton);
+            builder.Register<Features.Ggumtle.ViewModels.GgumtleViewModel>(Lifetime.Singleton);
 
             // Views는 Self-Resolving 패턴 사용 (수동 주입 불필요)
 
@@ -40,10 +42,10 @@ namespace DI
 
     public class GameInitializer : IStartable
     {
-        private readonly Services.IGgumtleService _ggumtleService;
+        private readonly Features.Ggumtle.Services.IGgumtleService _ggumtleService;
 
         [Inject]
-        public GameInitializer(Services.IGgumtleService ggumtleService)
+        public GameInitializer(Features.Ggumtle.Services.IGgumtleService ggumtleService)
         {
             _ggumtleService = ggumtleService;
         }
@@ -51,8 +53,6 @@ namespace DI
         public void Start()
         {
             UnityEngine.Debug.Log("[GameInitializer] VContainer DI 초기화 완료");
-
-            // Views는 각자 Self-Resolving으로 의존성 해결
 
             // 씬에 있는 모든 꿈틀이 자동 등록 (추후 구현)
             // var ggumtles = UnityEngine.GameObject.FindObjectsOfType<InteractableGgumtle>();

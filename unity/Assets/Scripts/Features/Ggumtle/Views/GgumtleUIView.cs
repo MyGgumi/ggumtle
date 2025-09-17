@@ -1,12 +1,13 @@
-using Models;
+using DI;
+using Features.Ggumtle.Models;
+using Features.Ggumtle.ViewModels;
 using R3;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
-using ViewModels;
 using R3DisposableBag = R3.DisposableBag;
 
-namespace Views
+namespace Features.Ggumtle.Views
 {
     /// <summary>
     /// 꿈틀이 상호작용 UI를 담당하는 View (UI Toolkit 기반)
@@ -29,17 +30,49 @@ namespace Views
         [SerializeField]
         private bool enableDebugLogs = false;
 
-        public void Initialize(VisualElement root, GgumtleViewModel viewModel)
+        public void Initialize(VisualElement root)
         {
             _root = root;
-            this.viewModel = viewModel;
 
-            CacheUIElements();
-            SubscribeToViewModel();
-            InitializeUI();
+            // VContainer에서 ViewModel 자동 해결
+            ResolveViewModel();
 
-            if (enableDebugLogs)
-                Debug.Log("[GgumtleUIView] 초기화 완료");
+            if (viewModel != null)
+            {
+                CacheUIElements();
+                SubscribeToViewModel();
+                InitializeUI();
+
+                if (enableDebugLogs)
+                    Debug.Log("[GgumtleUIView] 초기화 완료");
+            }
+            else
+            {
+                Debug.LogError("[GgumtleUIView] ViewModel을 해결할 수 없음");
+            }
+        }
+
+        private void ResolveViewModel()
+        {
+            try
+            {
+                // VContainer에서 직접 해결 (Self-Resolving 패턴)
+                var lifetimeScope = FindObjectOfType<DI.GameLifetimeScope>();
+                if (lifetimeScope != null && lifetimeScope.Container != null)
+                {
+                    viewModel = lifetimeScope.Container.Resolve<GgumtleViewModel>();
+                    if (enableDebugLogs)
+                        Debug.Log($"[GgumtleUIView] ViewModel 자동 해결 성공: {viewModel != null}");
+                }
+                else
+                {
+                    Debug.LogError("[GgumtleUIView] GameLifetimeScope를 찾을 수 없음");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GgumtleUIView] ViewModel 해결 실패: {ex.Message}");
+            }
         }
 
         private void CacheUIElements()

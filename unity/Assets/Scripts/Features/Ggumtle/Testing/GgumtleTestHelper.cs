@@ -1,9 +1,9 @@
-using Messages;
+using Features.Ggumtle.Messages;
+using Features.Ggumtle.ViewModels;
 using UnityEngine;
 using VContainer;
-using ViewModels;
 
-namespace TestDebug
+namespace Features.Ggumtle.Testing
 {
     /// <summary>
     /// 꿈틀이 시스템 테스트를 위한 헬퍼 클래스

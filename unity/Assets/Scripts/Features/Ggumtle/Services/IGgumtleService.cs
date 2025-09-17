@@ -1,8 +1,8 @@
-using UnityEngine;
-using Models;
 using System.Collections.Generic;
+using Features.Ggumtle.Models;
+using UnityEngine;
 
-namespace Services
+namespace Features.Ggumtle.Services
 {
     /// <summary>
     /// 꿈틀이 비즈니스 로직을 담당하는 서비스 인터페이스

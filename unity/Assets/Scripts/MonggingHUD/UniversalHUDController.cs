@@ -6,6 +6,7 @@ using MVVM.Movement;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.UIElements;
+using VContainer;
 
 [RequireComponent(typeof(UIDocument))]
 public class UniversalHUDController : MonoBehaviour
@@ -53,6 +54,7 @@ public class UniversalHUDController : MonoBehaviour
 
     // public Views.InteractionView interactionView; // InteractionView 삭제로 인해 주석 처리
     public Views.ChestView chestView;
+    public Features.Ggumtle.Views.GgumtleUIView ggumtleUIView;
 
     [Header("Input System")]
     private InputCoordinator inputCoordinator;
@@ -377,6 +379,10 @@ public class UniversalHUDController : MonoBehaviour
             chestView =
                 gameObject.GetComponent<Views.ChestView>()
                 ?? gameObject.AddComponent<Views.ChestView>();
+        if (ggumtleUIView == null)
+            ggumtleUIView =
+                gameObject.GetComponent<Features.Ggumtle.Views.GgumtleUIView>()
+                ?? gameObject.AddComponent<Features.Ggumtle.Views.GgumtleUIView>();
     }
 
     private void InitializeManagers()
@@ -398,20 +404,19 @@ public class UniversalHUDController : MonoBehaviour
         notificationView?.Initialize(_root, notificationViewModel);
         inventoryView?.Initialize(_root, inventoryViewModel);
 
-        // if (interactionView != null && interactionViewModel != null) // InteractionView/ViewModel 삭제로 인해 주석 처리
-        // {
-        //     Debug.Log("[UniversalHUDController] InteractionView 초기화 시작");
-        //     interactionView.Initialize(_root, interactionViewModel);
-        //     Debug.Log("[UniversalHUDController] InteractionView 초기화 완료");
-        // }
-        // else
-        // {
-        //     Debug.LogError(
-        //         $"[UniversalHUDController] InteractionView 초기화 실패 - View: {interactionView != null}, ViewModel: {interactionViewModel != null}"
-        //     );
-        // }
-
         chestView?.Initialize(_root, chestViewModel);
+
+        // GgumtleUIView 초기화 (View가 직접 ViewModel을 해결)
+        if (ggumtleUIView != null)
+        {
+            Debug.Log("[UniversalHUDController] GgumtleUIView 초기화 시작");
+            ggumtleUIView.Initialize(_root);
+            Debug.Log("[UniversalHUDController] GgumtleUIView 초기화 완료");
+        }
+        else
+        {
+            Debug.LogWarning("[UniversalHUDController] GgumtleUIView가 null입니다");
+        }
 
         // 체력바 강제 표시 (CSS 클래스 충돌 해결)
         healthBarView?.SetHealthBarVisibility(true);

@@ -2,14 +2,14 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using MessagePipe;
-using Messages;
-using Models;
+using Features.Ggumtle.Messages;
+using Features.Ggumtle.Models;
+using Features.Ggumtle.Services;
 using R3;
-using Services;
 using UnityEngine;
 using VContainer;
 
-namespace ViewModels
+namespace Features.Ggumtle.ViewModels
 {
     /// <summary>
     /// 꿈틀이 도메인 전체의 상태 관리를 담당하는 ViewModel

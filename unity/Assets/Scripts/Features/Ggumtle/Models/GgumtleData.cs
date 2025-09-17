@@ -1,19 +1,19 @@
 using System;
-using UnityEngine;
 using Config;
+using UnityEngine;
 
-namespace Models
+namespace Features.Ggumtle.Models
 {
     /// <summary>
     /// 꿈틀이 상태 정의
     /// </summary>
     public enum GgumtleState
     {
-        Buried,    // 땅에 묻혀있음 (초기 상태)
-        Digging,   // 파내는 중 (홀드 진행 중)
-        Emerging,  // 나오는 중 (애니메이션 실행 중, 상호작용 불가)
-        Feeding,   // 먹이 주기 가능 상태
-        Purified   // 정화 완료 (제거됨)
+        Buried, // 땅에 묻혀있음 (초기 상태)
+        Digging, // 파내는 중 (홀드 진행 중)
+        Emerging, // 나오는 중 (애니메이션 실행 중, 상호작용 불가)
+        Feeding, // 먹이 주기 가능 상태
+        Purified, // 정화 완료 (제거됨)
     }
 
     /// <summary>
@@ -206,7 +206,7 @@ namespace Models
                 holdProgress = this.holdProgress,
                 isHoldInProgress = this.isHoldInProgress,
                 isFeedingContinuously = this.isFeedingContinuously,
-                lastFeedTime = this.lastFeedTime
+                lastFeedTime = this.lastFeedTime,
             };
         }
     }

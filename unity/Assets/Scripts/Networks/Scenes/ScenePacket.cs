@@ -4,6 +4,12 @@ using Networks.Packets;
 
 namespace Networks.Scenes
 {
+    public enum SceneChangeResult
+    {
+        Fail = 0,
+        Success = 1
+    }
+
     /// <summary>
     /// 씬 전환 완료 알림 패킷 (빈 내용)
     /// </summary>
@@ -27,12 +33,12 @@ namespace Networks.Scenes
     /// </summary>
     public class SceneChangeCommand : Command
     {
-        public int Result { get; set; }
-        public bool Success => Result == 1;
+        public SceneChangeResult Result { get; set; }
+        public bool Success => Result == SceneChangeResult.Success;
 
         public SceneChangeCommand(int result)
         {
-            Result = result;
+            Result = (SceneChangeResult)result;
         }
 
         public override PacketType Type => PacketType.SceneChangeResponse;

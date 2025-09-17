@@ -5,6 +5,13 @@ using Networks.Packets;
 
 namespace Networks.Game
 {
+    public enum ExitAttemptResult : byte
+    {
+        Fail = 0,                           // 실패
+        Success = 1,                        // 성공
+        IdNotFound = 2,                     // ID not found
+        NotAtExitLocation = 10              // 탈출 위치에 없음
+    }
     public class ExitOpenCommand : Command
     {
         public override PacketType Type => PacketType.ExitOpen;
@@ -47,11 +54,13 @@ namespace Networks.Game
     {
         public override PacketType Type => PacketType.ExitAttemptResponse;
 
-        public byte result;
+        public ExitAttemptResult Result { get; set; }
 
         public ExitAttemptCommand(byte result)
         {
-            this.result = result;
+            this.Result = (ExitAttemptResult)result;
         }
+        
+        public bool Success => Result == ExitAttemptResult.Success;
     }
 }

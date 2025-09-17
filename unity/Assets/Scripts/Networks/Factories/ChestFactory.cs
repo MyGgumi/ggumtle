@@ -13,7 +13,7 @@ namespace Networks.Factories
         {
             var buffer = Unpooled.WrappedBuffer(bytes);
             
-            var success = buffer.ReadInt();
+            var result = buffer.ReadInt();
             var inventoryId = buffer.ReadInt();
             var itemSize = buffer.ReadInt();
 
@@ -23,7 +23,7 @@ namespace Networks.Factories
                 var item = buffer.ReadInt();
                 items.Add(item);
             }
-            return new ChestOpenCommand(success, inventoryId, itemSize, items);
+            return new ChestOpenCommand(result, inventoryId, itemSize, items);
         }
     }
     

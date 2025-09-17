@@ -78,8 +78,8 @@
 
 .camera-touch-zone {
     position: absolute;
-    top: 20%;
-    left: 50%;
+    top: 10%;
+    left: 40%;
     right: 0;
     bottom: 0;
     pointer-events: auto;

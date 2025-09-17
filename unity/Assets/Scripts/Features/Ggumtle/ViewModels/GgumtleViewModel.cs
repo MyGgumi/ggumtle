@@ -5,6 +5,7 @@ using MessagePipe;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
 using Features.Ggumtle.Services;
+using Features.MobileControls.Messages;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -49,6 +50,9 @@ namespace Features.Ggumtle.ViewModels
         private readonly ISubscriber<GgumtleHoldProgressMessage> _holdProgressSubscriber;
         private readonly ISubscriber<GgumtleFoodAddedMessage> _foodAddedSubscriber;
         private readonly IPublisher<NotificationMessage> _notificationPublisher;
+        private readonly IPublisher<InteractButtonVisibilityMessage> _interactButtonVisibilityPublisher;
+        private readonly ISubscriber<InteractHoldStartMessage> _interactHoldStartSubscriber;
+        private readonly ISubscriber<InteractHoldEndMessage> _interactHoldEndSubscriber;
 
         #endregion
 
@@ -70,7 +74,10 @@ namespace Features.Ggumtle.ViewModels
             ISubscriber<GgumtleStateChangedMessage> stateChangedSubscriber,
             ISubscriber<GgumtleHoldProgressMessage> holdProgressSubscriber,
             ISubscriber<GgumtleFoodAddedMessage> foodAddedSubscriber,
-            IPublisher<NotificationMessage> notificationPublisher
+            IPublisher<NotificationMessage> notificationPublisher,
+            IPublisher<InteractButtonVisibilityMessage> interactButtonVisibilityPublisher,
+            ISubscriber<InteractHoldStartMessage> interactHoldStartSubscriber,
+            ISubscriber<InteractHoldEndMessage> interactHoldEndSubscriber
         )
         {
             _ggumtleService = ggumtleService;
@@ -80,6 +87,9 @@ namespace Features.Ggumtle.ViewModels
             _holdProgressSubscriber = holdProgressSubscriber;
             _foodAddedSubscriber = foodAddedSubscriber;
             _notificationPublisher = notificationPublisher;
+            _interactButtonVisibilityPublisher = interactButtonVisibilityPublisher;
+            _interactHoldStartSubscriber = interactHoldStartSubscriber;
+            _interactHoldEndSubscriber = interactHoldEndSubscriber;
 
             Initialize();
         }
@@ -101,6 +111,10 @@ namespace Features.Ggumtle.ViewModels
 
             // 먹이 추가 이벤트 구독
             _foodAddedSubscriber.Subscribe(OnFoodAddedFiltered).AddTo(_disposables);
+
+            // 모바일 상호작용 버튼 이벤트 구독
+            _interactHoldStartSubscriber.Subscribe(_ => OnMobileInteractHoldStart()).AddTo(_disposables);
+            _interactHoldEndSubscriber.Subscribe(_ => OnMobileInteractHoldEnd()).AddTo(_disposables);
 
             // 상태 변경시 UI 텍스트 업데이트
             State.Subscribe(_ => UpdateInteractionText()).AddTo(_disposables);
@@ -133,6 +147,9 @@ namespace Features.Ggumtle.ViewModels
             // 수동으로 InteractionText 업데이트 (혹시 모를 타이밍 이슈 해결)
             UpdateInteractionText();
 
+            // 모바일 상호작용 버튼 표시 요청
+            _interactButtonVisibilityPublisher.Publish(new InteractButtonVisibilityMessage(true, "Ggumtle detected"));
+
             Debug.Log($"[GgumtleViewModel] 꿈틀이 감지: {msg.GgumtleId}, 상태: {msg.CurrentState}");
         }
 
@@ -142,6 +159,9 @@ namespace Features.Ggumtle.ViewModels
             {
                 IsInRange.Value = false;
                 CancelHold();
+
+                // 모바일 상호작용 버튼 숨김 요청
+                _interactButtonVisibilityPublisher.Publish(new InteractButtonVisibilityMessage(false, "Ggumtle left range"));
 
                 // 현재 정보 초기화
                 CurrentGgumtleId.Value = string.Empty;
@@ -196,6 +216,37 @@ namespace Features.Ggumtle.ViewModels
             if (msg.GgumtleId == CurrentGgumtleId.Value)
             {
                 OnFoodAdded(msg);
+            }
+        }
+
+        #endregion
+
+        #region Mobile Interaction Handlers
+
+        /// <summary>
+        /// 모바일 상호작용 버튼 홀드 시작 처리
+        /// </summary>
+        private async void OnMobileInteractHoldStart()
+        {
+            if (!IsInRange.Value || string.IsNullOrEmpty(CurrentGgumtleId.Value))
+            {
+                Debug.LogWarning("[GgumtleViewModel] 모바일 홀드 시작 실패: 범위 밖이거나 꿈틀이 없음");
+                return;
+            }
+
+            Debug.Log("[GgumtleViewModel] 모바일 상호작용 홀드 시작");
+            await StartHold();
+        }
+
+        /// <summary>
+        /// 모바일 상호작용 버튼 홀드 종료 처리
+        /// </summary>
+        private void OnMobileInteractHoldEnd()
+        {
+            if (IsHolding.Value)
+            {
+                Debug.Log("[GgumtleViewModel] 모바일 상호작용 홀드 종료");
+                CancelHold();
             }
         }
 

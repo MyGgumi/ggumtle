@@ -130,6 +130,9 @@ namespace Features.Ggumtle.ViewModels
             // 서비스에서 현재 데이터 가져오기
             UpdateFromService();
 
+            // 수동으로 InteractionText 업데이트 (혹시 모를 타이밍 이슈 해결)
+            UpdateInteractionText();
+
             Debug.Log($"[GgumtleViewModel] 꿈틀이 감지: {msg.GgumtleId}, 상태: {msg.CurrentState}");
         }
 
@@ -328,10 +331,11 @@ namespace Features.Ggumtle.ViewModels
             if (string.IsNullOrEmpty(CurrentGgumtleId.Value))
             {
                 InteractionText.Value = string.Empty;
+                Debug.Log("[GgumtleViewModel] InteractionText 비워짐 (ID 없음)");
                 return;
             }
 
-            InteractionText.Value = State.Value switch
+            var newText = State.Value switch
             {
                 GgumtleState.Buried => "파내기 (홀드)",
                 GgumtleState.Digging => "파내는 중...",
@@ -340,6 +344,9 @@ namespace Features.Ggumtle.ViewModels
                 GgumtleState.Purified => "정화 완료!",
                 _ => string.Empty,
             };
+
+            InteractionText.Value = newText;
+            Debug.Log($"[GgumtleViewModel] InteractionText 업데이트: '{newText}' (상태: {State.Value})");
         }
 
         #endregion

@@ -1,6 +1,8 @@
 using DI;
 using Features.Ggumtle.Models;
 using Features.Ggumtle.ViewModels;
+using InputSystem.Actions;
+using InputSystem.Core;
 using R3;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -19,6 +21,9 @@ namespace Features.Ggumtle.Views
         [SerializeField]
         private GgumtleViewModel viewModel;
 
+        [Header("Mobile Controls")]
+        private ActionButtonController actionButtonController;
+
         [Header("UI References")]
         private VisualElement _root;
         private VisualElement _interactionUI;
@@ -28,7 +33,7 @@ namespace Features.Ggumtle.Views
 
         [Header("Settings")]
         [SerializeField]
-        private bool enableDebugLogs = false;
+        private bool enableDebugLogs = true;
 
         public void Initialize(VisualElement root)
         {
@@ -36,6 +41,9 @@ namespace Features.Ggumtle.Views
 
             // VContainer에서 ViewModel 자동 해결
             ResolveViewModel();
+
+            // ActionButtonController 찾기
+            ResolveActionButtonController();
 
             if (viewModel != null)
             {
@@ -57,7 +65,7 @@ namespace Features.Ggumtle.Views
             try
             {
                 // VContainer에서 직접 해결 (Self-Resolving 패턴)
-                var lifetimeScope = FindObjectOfType<DI.GameLifetimeScope>();
+                var lifetimeScope = FindFirstObjectByType<GameLifetimeScope>();
                 if (lifetimeScope != null && lifetimeScope.Container != null)
                 {
                     viewModel = lifetimeScope.Container.Resolve<GgumtleViewModel>();
@@ -72,6 +80,41 @@ namespace Features.Ggumtle.Views
             catch (System.Exception ex)
             {
                 Debug.LogError($"[GgumtleUIView] ViewModel 해결 실패: {ex.Message}");
+            }
+        }
+
+        private void ResolveActionButtonController()
+        {
+            try
+            {
+                // UniversalHUDController에서 ActionButtonController 찾기
+                var hudController = FindFirstObjectByType<UniversalHUDController>();
+                if (hudController != null)
+                {
+                    var inputCoordinator = hudController.GetComponent<InputCoordinator>();
+                    if (inputCoordinator != null)
+                    {
+                        actionButtonController = inputCoordinator.GetLayer<ActionButtonController>();
+                        if (enableDebugLogs)
+                            Debug.Log($"[GgumtleUIView] ActionButtonController 해결 성공: {actionButtonController != null}");
+                    }
+                    else
+                    {
+                        // InputCoordinator가 없으면 직접 컴포넌트에서 찾기
+                        actionButtonController = hudController.GetComponent<ActionButtonController>();
+                        if (enableDebugLogs)
+                            Debug.Log($"[GgumtleUIView] ActionButtonController 직접 해결: {actionButtonController != null}");
+                    }
+                }
+
+                if (actionButtonController == null)
+                {
+                    Debug.LogWarning("[GgumtleUIView] ActionButtonController를 찾을 수 없음 - 모바일 상호작용 버튼이 작동하지 않을 수 있습니다");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GgumtleUIView] ActionButtonController 해결 실패: {ex.Message}");
             }
         }
 
@@ -125,7 +168,10 @@ namespace Features.Ggumtle.Views
 
             // R3로 ViewModel 구독 (최신 방식)
             viewModel
-                .IsInRange.Subscribe(inRange => ShowInteractionUI(inRange))
+                .IsInRange.Subscribe(inRange => {
+                    ShowInteractionUI(inRange);
+                    UpdateMobileInteractionButton(inRange);
+                })
                 .AddTo(ref _disposables);
             viewModel
                 .InteractionText.Subscribe(text => UpdateInteractionText(text))
@@ -133,6 +179,9 @@ namespace Features.Ggumtle.Views
             viewModel
                 .HoldProgress.Subscribe(progress => UpdateProgressBar(progress))
                 .AddTo(ref _disposables);
+
+            // 모바일 상호작용 버튼 이벤트 연결
+            ConnectMobileInteractionEvents();
 
             if (enableDebugLogs)
                 Debug.Log("[GgumtleUIView] ViewModel R3 구독 완료");
@@ -147,7 +196,19 @@ namespace Features.Ggumtle.Views
                 _interactionUI.style.display = show ? DisplayStyle.Flex : DisplayStyle.None;
 
                 if (enableDebugLogs)
+                {
                     Debug.Log($"[GgumtleUIView] 상호작용 UI {(show ? "표시" : "숨김")}");
+                    Debug.Log($"[GgumtleUIView] UI 요소 상태 - Display: {_interactionUI.style.display.value}, Position: {_interactionUI.worldBound}, Visible: {_interactionUI.visible}");
+
+                    if (show)
+                    {
+                        Debug.Log($"[GgumtleUIView] InteractionText: '{_interactionLabel?.text}', Label Visible: {_interactionLabel?.visible}");
+                    }
+                }
+            }
+            else
+            {
+                Debug.LogError("[GgumtleUIView] _interactionUI가 null입니다!");
             }
         }
 
@@ -178,10 +239,116 @@ namespace Features.Ggumtle.Views
 
         #endregion
 
+        #region Mobile Interaction Integration
+
+        /// <summary>
+        /// 모바일 상호작용 버튼 업데이트
+        /// </summary>
+        private void UpdateMobileInteractionButton(bool show)
+        {
+            if (actionButtonController != null)
+            {
+                actionButtonController.UpdateInteractionButtonVisibility(show);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[GgumtleUIView] 모바일 상호작용 버튼 {(show ? "표시" : "숨김")}");
+            }
+            else if (show)
+            {
+                // 버튼이 필요한데 ActionButtonController가 없으면 경고
+                Debug.LogWarning("[GgumtleUIView] ActionButtonController가 없어 모바일 상호작용 버튼을 표시할 수 없음");
+            }
+        }
+
+        /// <summary>
+        /// 모바일 상호작용 버튼 이벤트 연결
+        /// </summary>
+        private void ConnectMobileInteractionEvents()
+        {
+            if (actionButtonController == null || viewModel == null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[GgumtleUIView] 모바일 이벤트 연결 건너뛰기 - ActionButton: {actionButtonController != null}, ViewModel: {viewModel != null}");
+                return;
+            }
+
+            // 상호작용 버튼 이벤트 연결
+            actionButtonController.OnInteractPressed += OnMobileInteractPressed;
+            actionButtonController.OnInteractReleased += OnMobileInteractReleased;
+            actionButtonController.OnInteractHoldStart += OnMobileInteractHoldStart;
+            actionButtonController.OnInteractHoldEnd += OnMobileInteractHoldEnd;
+
+            if (enableDebugLogs)
+                Debug.Log("[GgumtleUIView] 모바일 상호작용 이벤트 연결 완료");
+        }
+
+        /// <summary>
+        /// 모바일 상호작용 버튼 이벤트 해제
+        /// </summary>
+        private void DisconnectMobileInteractionEvents()
+        {
+            if (actionButtonController != null)
+            {
+                actionButtonController.OnInteractPressed -= OnMobileInteractPressed;
+                actionButtonController.OnInteractReleased -= OnMobileInteractReleased;
+                actionButtonController.OnInteractHoldStart -= OnMobileInteractHoldStart;
+                actionButtonController.OnInteractHoldEnd -= OnMobileInteractHoldEnd;
+
+                if (enableDebugLogs)
+                    Debug.Log("[GgumtleUIView] 모바일 상호작용 이벤트 해제 완료");
+            }
+        }
+
+        private void OnMobileInteractPressed()
+        {
+            if (enableDebugLogs)
+                Debug.Log("[GgumtleUIView] 모바일 상호작용 버튼 누름");
+        }
+
+        private void OnMobileInteractReleased()
+        {
+            if (enableDebugLogs)
+                Debug.Log("[GgumtleUIView] 모바일 상호작용 버튼 떴");
+        }
+
+        private async void OnMobileInteractHoldStart()
+        {
+            if (viewModel != null && viewModel.IsInRange.Value && viewModel.CanInteract.Value)
+            {
+                if (enableDebugLogs)
+                    Debug.Log("[GgumtleUIView] 모바일 홀드 시작");
+
+                // ViewModel의 StartHold 메서드 호출
+                await viewModel.StartHold();
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"[GgumtleUIView] 홀드 시작 실패 - InRange: {viewModel?.IsInRange.Value}, CanInteract: {viewModel?.CanInteract.Value}");
+            }
+        }
+
+        private void OnMobileInteractHoldEnd()
+        {
+            if (viewModel != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log("[GgumtleUIView] 모바일 홀드 종료");
+
+                // ViewModel의 CancelHold 메서드 호출
+                viewModel.CancelHold();
+            }
+        }
+
+        #endregion
+
         #region Unity Lifecycle
 
         private void OnDestroy()
         {
+            // 모바일 이벤트 해제
+            DisconnectMobileInteractionEvents();
+
             // R3 구독 해제
             _disposables.Dispose();
 

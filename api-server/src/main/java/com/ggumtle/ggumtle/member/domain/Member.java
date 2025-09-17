@@ -39,6 +39,9 @@ public class Member {
     @Column(nullable = false)
     private LocalDateTime signUpAt;
 
+    private boolean isDeleted;
+
+    private int coin;
 
     @Builder
     public Member(String googleEmail, String name, String nickname, LocalDate birthDate) {
@@ -47,5 +50,7 @@ public class Member {
         this.nickname = nickname;
         this.birthDate = birthDate;
         this.signUpAt = LocalDateTime.now();
+        this.isDeleted = false;
+        this.coin = 0;
     }
 }

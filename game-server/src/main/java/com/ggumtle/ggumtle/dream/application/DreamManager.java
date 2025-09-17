@@ -416,7 +416,13 @@ public class DreamManager {
         log.error("[{} - {}] 몽깅이 아이템 공격 성공", session.getChannel().id(), room.id);
     }
 
+    /**
+     * 필드 아이템 사용
+     * @param itemId
+     * @param session
+     */
     public void useFieldItem(int itemId, Session session) {
+        // 몽깅이 존재 확인
         if (!(players.getOrDefault(session.getMemberId(), null) instanceof Mongging mongging)) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_MONGGING, itemId);
             Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
@@ -426,6 +432,7 @@ public class DreamManager {
             return;
         }
 
+        // 필드 아이템 존재 확인
         FieldItem fieldItem = fieldItems.getOrDefault(itemId, null);
         if (fieldItem == null) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_FOUND_FIELD_ITEM, itemId);
@@ -436,6 +443,7 @@ public class DreamManager {
             return;
         }
 
+        // 필드 아이템 사용 여부 확인
         if (fieldItem.isUsed()) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.ALREADY_USED, fieldItem.id);
             Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
@@ -445,15 +453,25 @@ public class DreamManager {
             return;
         }
 
-        // TODO: 필드템 인근인지 확인
+        // 필드템 인근인지 확인
+        if (!fieldItem.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
+            Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_NEAR, fieldItem.id);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
+            log.error("[{} - {}] 필드 아이템 사용 실패: {}번 필드 아이템이 몽깅이 근처에 없음", session.getChannel().id(), room.id, itemId);
+            return;
+        }
+
+        // 필드 아이템 사용
         fieldItem.use();
 
+        // 필드 아이템 사용은 모든 플레이어에게 전송되어야 함
         Body body = new UseFieldItemBody(UseFieldItemBody.Result.SUCCESS, fieldItem.id);
         Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
 
-        log.info("[{} - {}] 필드 아이템 사용 실패: {}번 필드 아이템 사용", session.getChannel().id(), room.id, itemId);
+        log.info("[{} - {}] 필드 아이템 사용 성공: {}번 필드 아이템 사용", session.getChannel().id(), room.id, itemId);
     }
 
     public void showBox(int boxId, Session session) {

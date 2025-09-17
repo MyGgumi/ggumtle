@@ -26,3 +26,20 @@ object GameColors {
     val warning = Color(0xFFFF6B6B)
     val success = Color(0xFF00D4AA)
 }
+
+
+//브랜드 그라디언트용 컬러
+
+object BrandColors {
+    // 메인 그라디언트 컬러
+    val GradientStart = Color(0xFFA78BFA)  // 왼쪽 (보라)
+    val GradientEnd = Color(0xFFEC4899)    // 오른쪽 (핑크)
+
+    // Growth 화면 전용
+    val CardBackground = Color(0xFF2A2A2A)
+
+    val PurpleDark =Color(0xFF2D1F43)
+    val PurpleLight=Color(0xFFC9B6E9)
+
+    val Mint = Color(0xFF68FFC2)  // 민트 컬러
+}

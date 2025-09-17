@@ -119,11 +119,9 @@ fun UserSearchDialog(
                                     user = user,
                                     onSendRequest = {
                                         onSendFriendRequest(user.id)
-                                        onDismiss()
                                     },
                                     onOpenProfile = {
                                         onOpenProfile(user.id)
-                                        onDismiss()
                                     }
                                 )
                             }

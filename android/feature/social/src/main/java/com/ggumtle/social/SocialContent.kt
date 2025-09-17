@@ -25,11 +25,11 @@ fun SocialContent(
     onRejectFriendRequest: (Long) -> Unit,
     onCancelSentRequest: (Long) -> Unit,
     onSendFriendRequest: (Long) -> Unit,
+    onSendFriendRequestAndCloseDialog: (Long) -> Unit,
     onOpenProfile: (Long) -> Unit,
     onRemoveFriend: (Long) -> Unit,
     onClickBack: () -> Unit
 ) {
-    var addFriendsSearchQuery by remember { mutableStateOf(TextFieldValue("")) }
 
     Box(
         modifier = Modifier
@@ -85,7 +85,7 @@ fun SocialContent(
                 onUpdateSearchQuery = { query ->
                     onUpdateAddFriendsSearchQuery(query)
                 },
-                onSendFriendRequest = onSendFriendRequest,
+                onSendFriendRequest = onSendFriendRequestAndCloseDialog,
                 onOpenProfile = onOpenProfile,
                 onDismiss = {
                     onDismissSearchDialog()

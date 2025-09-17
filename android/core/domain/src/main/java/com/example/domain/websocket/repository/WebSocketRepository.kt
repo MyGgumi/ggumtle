@@ -18,4 +18,8 @@ interface WebSocketRepository {
     suspend fun readyGame()
     suspend fun unReadyGame()
     suspend fun matchingCancelled()
+    suspend fun getSentFriendRequests()
+    suspend fun cancelFriendRequest(friendId: Long)
+    suspend fun deleteFriendRequest(friendId: Long)
+    suspend fun getProfileFriend(friendId: Long)
 }

@@ -6,7 +6,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -87,14 +87,35 @@ fun GameFriendItem(
                 }
             }
 
-            IconButton(
-                onClick = onRemoveFriend
-            ) {
-                Icon(
-                    Icons.Default.MoreVert,
-                    contentDescription = "더보기",
-                    tint = GameColors.textSecondary
-                )
+            Box {
+                var showMenu by remember { mutableStateOf(false) }
+
+                IconButton(
+                    onClick = { showMenu = true }
+                ) {
+                    Icon(
+                        Icons.Default.MoreVert,
+                        contentDescription = "더보기",
+                        tint = GameColors.textSecondary
+                    )
+                }
+
+                DropdownMenu(
+                    expanded = showMenu,
+                    onDismissRequest = { showMenu = false }
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("취소") },
+                        onClick = { showMenu = false }
+                    )
+                    DropdownMenuItem(
+                        text = { Text("삭제",) },
+                        onClick = {
+                            showMenu = false
+                            onRemoveFriend()
+                        }
+                    )
+                }
             }
         }
     }

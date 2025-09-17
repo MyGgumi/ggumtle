@@ -56,7 +56,7 @@ class GlobalInviteManager @Inject constructor(
                     }
                     .collect { result ->
                         if(result.followerId!=authManager.getMemberId()){
-                            val message = "${result.followerId}님이 파티에 초대했습니다"
+                            val message = "${result.followerId}님이 친구 요청을 보냈습니다."
                             emitNotification(
                                 message = message,
                                 senderName = result.followerNickname,

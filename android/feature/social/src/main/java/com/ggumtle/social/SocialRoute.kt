@@ -38,6 +38,7 @@ fun SocialRoute(
         onRejectFriendRequest = viewModel::onRejectFriendRequest,
         onCancelSentRequest = viewModel::onCancelSentRequest,
         onSendFriendRequest = viewModel::onSendFriendRequest,
+        onSendFriendRequestAndCloseDialog = viewModel::onSendFriendRequestAndCloseDialog,
         onOpenProfile = viewModel::onOpenProfile,
         onRemoveFriend = viewModel::onRemoveFriend,
         onClickBack = viewModel::onClickBack

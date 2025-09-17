@@ -16,6 +16,7 @@ import java.util.Map;
 @Slf4j
 public class Box {
     public static final int BOX_SIZE = 9;
+    public static final int DETECT_RADIUS = 10;
 
     public final int id;
 
@@ -144,5 +145,14 @@ public class Box {
         synchronized (this.viewer) {
             this.viewer.remove(session);
         }
+    }
+
+    /**
+     * 상자 근처에 있는지 확인
+     * @param position
+     * @return 상자 근처에 있는지 여부
+     */
+    public boolean detectPosition(Position position) {
+        return this.position.getDistanceSquareWith(position) <= DETECT_RADIUS;
     }
 }

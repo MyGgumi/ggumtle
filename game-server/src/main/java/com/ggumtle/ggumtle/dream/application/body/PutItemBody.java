@@ -19,7 +19,7 @@ public record PutItemBody(
     public enum Result {
         SUCCESS(1), FAIL(0),
         ILLEGAL_ITEM_ID(2), NOT_FOUND_BOX(3), NOT_FOUND_PLAYER(4), NOT_MONGGING(5),
-        NOT_FOUND_ITEM(10), FULL_ABOUT_ITEM(11)
+        NOT_FOUND_ITEM(10), FULL_ABOUT_ITEM(11), NOT_NEAR(12)
         ;
 
         private final int value;

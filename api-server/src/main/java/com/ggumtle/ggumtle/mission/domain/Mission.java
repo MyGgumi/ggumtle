@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.mission.domain;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -16,11 +17,13 @@ public class Mission {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
+    @Column(nullable = false)
     private String missionName;
 
     private String missionDescription;
 
     private int reward;
 
+    @Column(nullable = false)
     private int count;
 }

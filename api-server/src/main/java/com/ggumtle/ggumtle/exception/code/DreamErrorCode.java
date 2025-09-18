@@ -20,7 +20,7 @@ public enum DreamErrorCode implements ErrorCode {
     ALREADY_IN_PARTY("DR40902", "이미 파티에 속해 있습니다"),
     CANNOT_LEAVE_WHILE_MATCHING("DR40903", "드림 매칭 대기 중에는 파티를 나갈 수 없습니다"),
     ALREADY_MATCHING("DR40904", "이미 드림 매칭 중입니다"),
-
+    ALREADY_INVITED_USER("DR40905", "이미 초대한 멤버입니다"),
     ;
 
 

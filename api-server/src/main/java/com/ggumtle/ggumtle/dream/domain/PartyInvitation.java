@@ -15,6 +15,7 @@ public class PartyInvitation {
     @Id
     private String id;
 
+    @Indexed
     private String partyId;
 
     private Long inviterId;

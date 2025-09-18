@@ -30,31 +30,33 @@ fun HomeScreen(
     onSocialClick: () -> Unit,
     onGrowthClick: () -> Unit
 ) {
-    HomeContent(
-        state = state,
-        onProfileClick = onProfileClick,
-        onDismissProfileDialog = onDismissProfileDialog,
-        onEditNicknameClick = onEditNicknameClick,
-        onNicknameTextChange = onNicknameTextChange,
-        onSaveNickname = onSaveNickname,
-        onCancelNicknameEdit = onCancelNicknameEdit,
-        onSettingsClick = onSettingsClick,
-        onDismissSettingsDialog = onDismissSettingsDialog,
-        onLogout = onLogout,
-        onDeleteAccount = onDeleteAccount,
-        onInviteFriendsClick = onInviteFriendsClick,
-        onDismissInviteFriendsDialog = onDismissInviteFriendsDialog,
-        onInviteFriend = onInviteFriend,
-        onToggleReady = onToggleReady,
-        onStartGame = onStartGame,
-        onCancelGameSearch = onCancelGameSearch,
-        onMenuTabClick = onMenuTabClick,
-        onInviteListClick = onInviteListClick,
-        onLeaveParty = onLeaveParty,
-        onDismissInviteRequestsDialog = onDismissInviteRequestsDialog,
-        onAcceptInvite = onAcceptInvite,
-        onDeclineInvite = onDeclineInvite,
-        onSocialClick = onSocialClick,
-        onGrowthClick = onGrowthClick
-    )
+    if (!state.isNavigating) {
+        HomeContent(
+            state = state,
+            onProfileClick = onProfileClick,
+            onDismissProfileDialog = onDismissProfileDialog,
+            onEditNicknameClick = onEditNicknameClick,
+            onNicknameTextChange = onNicknameTextChange,
+            onSaveNickname = onSaveNickname,
+            onCancelNicknameEdit = onCancelNicknameEdit,
+            onSettingsClick = onSettingsClick,
+            onDismissSettingsDialog = onDismissSettingsDialog,
+            onLogout = onLogout,
+            onDeleteAccount = onDeleteAccount,
+            onInviteFriendsClick = onInviteFriendsClick,
+            onDismissInviteFriendsDialog = onDismissInviteFriendsDialog,
+            onInviteFriend = onInviteFriend,
+            onToggleReady = onToggleReady,
+            onStartGame = onStartGame,
+            onCancelGameSearch = onCancelGameSearch,
+            onMenuTabClick = onMenuTabClick,
+            onInviteListClick = onInviteListClick,
+            onLeaveParty = onLeaveParty,
+            onDismissInviteRequestsDialog = onDismissInviteRequestsDialog,
+            onAcceptInvite = onAcceptInvite,
+            onDeclineInvite = onDeclineInvite,
+            onSocialClick = onSocialClick,
+            onGrowthClick = onGrowthClick
+        )
+    }
 }

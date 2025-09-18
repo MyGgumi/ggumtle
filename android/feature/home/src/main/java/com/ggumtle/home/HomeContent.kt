@@ -1,12 +1,18 @@
 package com.ggumtle.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ggumtle.home.component.*
+import com.ggumtle.home.model.UserProfile
+import com.example.domain.websocket.model.PartyMember
+import com.ggumtle.core.designsystem.R
 
 @Composable
 fun HomeContent(
@@ -39,39 +45,49 @@ fun HomeContent(
     Box(
         modifier = Modifier.fillMaxSize()
     ) {
-        // 상단 UI 영역
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.Top
-        ) {
-            // 왼쪽 상단 - 프로필과 성장 버튼 섹션
-            Column {
+        Column {
+            // 상단 UI 영역
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(Color.Black.copy(alpha = 0.1f))
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
+            ) {
+                // 왼쪽 상단 - 프로필 섹션
                 ProfileSection(
                     userProfile = state.userProfile,
-                    onClick = onProfileClick
+                    onClick = onProfileClick,
+                    coin = state.coin
                 )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                GrowthButton(
-                    onClick = onGrowthClick
-                )
+
+                // 빈 공간
+                Spacer(modifier = Modifier.size(48.dp))
             }
 
-            // 오른쪽 상단 - 메뉴 탭
-            MenuTab(
-                isExpanded = state.isMenuExpanded,
-                isInParty = state.partyMembers.size >= 2,
-                onTabClick = onMenuTabClick,
-                onSettingsClick = onSettingsClick,
-                onInviteListClick = onInviteListClick,
-                onLeavePartyClick = onLeaveParty,
-                onSocialClick = onSocialClick
+            GrowthButton(
+                onClick = onGrowthClick
+            )
+
+            FriendButton(
+                onClick = onSocialClick
             )
         }
+
+        // 오른쪽 상단 - 메뉴 탭 (독립적 배치)
+        MenuTab(
+            isExpanded = state.isMenuExpanded,
+            isInParty = state.partyMembers.size >= 2,
+            onTabClick = onMenuTabClick,
+            onSettingsClick = onSettingsClick,
+            onInviteListClick = onInviteListClick,
+            onLeavePartyClick = onLeaveParty,
+            onSocialClick = onSocialClick,
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = 16.dp, top = 8.dp)
+        )
 
         // 하단 중앙 - 파티 섹션
         PartySection(
@@ -135,4 +151,65 @@ fun HomeContent(
             )
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF000000)
+@Composable
+fun HomeContentPreview() {
+    val sampleState = HomeContract.State(
+        userProfile = UserProfile(
+            id = 1L,
+            nickname = "플레이어1",
+            profileImageUrl = null
+        ),
+        partyMembers = listOf(
+            PartyMember(
+                id = 1L,
+                nickname = "플레이어1",
+                profileImageUrl = null,
+                isReady = false,
+                isLeader = true
+            ),
+            PartyMember(
+                id = 2L,
+                nickname = "플레이어2",
+                profileImageUrl = null,
+                isReady = true,
+                isLeader = false
+            )
+        ),
+        isPartyLeader = true,
+        canStartGame = true,
+        isReady = false,
+        coin = 9999,
+        isMenuExpanded = false
+    )
+
+    HomeContent(
+        state = sampleState,
+        onProfileClick = {},
+        onDismissProfileDialog = {},
+        onEditNicknameClick = {},
+        onNicknameTextChange = {},
+        onSaveNickname = {},
+        onCancelNicknameEdit = {},
+        onSettingsClick = {},
+        onDismissSettingsDialog = {},
+        onLogout = {},
+        onDeleteAccount = {},
+        onInviteFriendsClick = {},
+        onDismissInviteFriendsDialog = {},
+        onInviteFriend = {},
+        onToggleReady = {},
+        onStartGame = {},
+        onCancelGameSearch = {},
+        onMenuTabClick = {},
+        onInviteListClick = {},
+        onLeaveParty = {},
+        onDismissInviteRequestsDialog = {},
+        onAcceptInvite = {},
+        onDeclineInvite = {},
+        onSocialClick = {},
+        onGrowthClick = {}
+    )
 }

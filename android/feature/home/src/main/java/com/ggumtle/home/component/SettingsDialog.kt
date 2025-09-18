@@ -13,6 +13,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.ggumtle.designsystem.theme.GameColors
 
 @Composable
@@ -23,7 +24,12 @@ fun SettingsDialog(
 ) {
     var showDeleteConfirmation by remember { mutableStateOf(false) }
 
-    Dialog(onDismissRequest = onDismiss) {
+    Dialog(
+        onDismissRequest = onDismiss,
+//        properties = DialogProperties(
+//            decorFitsSystemWindows = true
+//        )
+    ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()

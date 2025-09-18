@@ -27,7 +27,7 @@ fun GrowthContent(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF2D1B69))
+            .background(Color.Transparent)
     ) {
         Column(
             modifier = Modifier

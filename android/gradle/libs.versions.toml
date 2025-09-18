@@ -1,6 +1,8 @@
 [versions]
 # ───── Android Gradle 플러그인 및 Kotlin 관련 버전 ─────
 androidGradlePlugin = "8.9.0"
+core = "1.50.0"
+coreVersion = "1.17.1"
 datastorePreferences = "1.1.7"
 kotlin = "2.1.10"
 jetbrainsKotlinJvm = "2.1.10"
@@ -103,6 +105,7 @@ androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navig
 accompanist-systemuicontroller = { group = "com.google.accompanist", name = "accompanist-systemuicontroller", version.ref = "accompanist" }
 
 # ───── 테스트 ─────
+core = { module = "com.google.ar:core", version.ref = "core" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -158,6 +161,7 @@ compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
+sceneform-core = { module = "com.google.ar.sceneform:core", version.ref = "coreVersion" }
 
 [plugins]
 # ───── 공식 Gradle 플러그인 ─────

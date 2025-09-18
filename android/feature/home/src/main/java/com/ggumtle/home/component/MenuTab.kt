@@ -19,8 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
-import com.ggumtle.designsystem.theme.GameColors
+import com.ggumtle.core.designsystem.R
 
 @Composable
 fun MenuTab(
@@ -34,8 +35,7 @@ fun MenuTab(
     modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = modifier.padding(8.dp),
         verticalAlignment = Alignment.Top
     ) {
         // 파티 나가기 버튼 (파티에 소속된 경우만 표시) TODO: isInParty로 최종적으로 수정 필요
@@ -45,10 +45,10 @@ fun MenuTab(
             exit = fadeOut() + slideOutVertically()
         ) {
             MenuButton(
-                icon = Icons.Default.ExitToApp,
+                icon = ImageVector.vectorResource(id = R.drawable.btn_exit_party),
                 contentDescription = "파티 나가기",
                 onClick = onLeavePartyClick,
-                backgroundColor = Color.Transparent
+                backgroundColor = Color.Transparent,
             )
         }
 
@@ -94,12 +94,6 @@ fun MenuTab(
                             )
 
                             MenuButton(
-                                icon = Icons.Default.SocialDistance,
-                                contentDescription = "설정",
-                                onClick = onSocialClick
-                            )
-
-                            MenuButton(
                                 icon = Icons.Default.Mail,
                                 contentDescription = "초대 목록 확인",
                                 onClick = onInviteListClick
@@ -131,7 +125,7 @@ private fun MenuButton(
         Icon(
             imageVector = icon,
             contentDescription = contentDescription,
-            tint = Color.Gray,
+            tint = Color.White,
             modifier = Modifier.size(24.dp)
         )
     }

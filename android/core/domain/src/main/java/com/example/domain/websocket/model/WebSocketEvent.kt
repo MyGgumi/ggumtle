@@ -1,6 +1,7 @@
 package com.ggumtle.domain.websocket.model
 
 import com.example.domain.websocket.model.MonggingClass
+import com.example.domain.websocket.model.PartyMember
 import com.example.domain.websocket.model.SentRequest
 import com.ggumtle.domain.model.Member
 
@@ -105,5 +106,9 @@ sealed class WebSocketEvent {
 
     data class MatchingCancelledSuccess(
         val message: String
+    ) : WebSocketEvent()
+
+    data class GetPartyParticipantsSuccess(
+        val participants: List<PartyMember>
     ) : WebSocketEvent()
 }

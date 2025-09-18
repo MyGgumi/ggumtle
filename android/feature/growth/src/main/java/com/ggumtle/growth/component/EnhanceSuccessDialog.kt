@@ -53,7 +53,7 @@ fun EnhanceSuccessDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.8f))
+                .background(Color.Transparent)
                 .clickable { onDismiss() },
             contentAlignment = Alignment.Center
         ) {

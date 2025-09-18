@@ -1,5 +1,6 @@
 package com.ggumtle.data.rest.di
 
+import com.example.data.rest.remote.service.UserService
 import com.ggumtle.data.rest.remote.service.AuthService
 import dagger.Module
 import dagger.Provides
@@ -18,4 +19,11 @@ internal object ServiceModule {
     fun provideAuthService(retrofit: Retrofit): AuthService {
         return retrofit.create(AuthService::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun provideUserService(retrofit: Retrofit): UserService {
+        return retrofit.create(UserService::class.java)
+    }
+
 }

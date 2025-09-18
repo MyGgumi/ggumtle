@@ -3,7 +3,7 @@ package com.ggumtle.startup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ggumtle.designsystem.dialog.DialogState
-import com.example.domain.unity.UnityStartupManager
+import com.example.domain.unity.UnityStartupObserveManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -18,7 +18,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StartUpViewModel @Inject constructor(
-    private val unityStartupManager: UnityStartupManager
+    private val unityStartupObserveManager: UnityStartupObserveManager
 ) : ContainerHost<StartUpContract.State, StartUpContract.SideEffect>, ViewModel() {
 
     override val container =
@@ -31,12 +31,12 @@ class StartUpViewModel @Inject constructor(
 
     private fun observeStartupManager() {
         combine(
-            unityStartupManager.progressFlow,
-            unityStartupManager.messageFlow
+            unityStartupObserveManager.progressFlow,
+            unityStartupObserveManager.messageFlow
         ) { progress, message -> updateProgress(progress, message)
         }.launchIn(viewModelScope)
 
-        unityStartupManager.completionFlow
+        unityStartupObserveManager.completionFlow
             .onEach { onLoadingComplete() }
             .launchIn(viewModelScope)
     }

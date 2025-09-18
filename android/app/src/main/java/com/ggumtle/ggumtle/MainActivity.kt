@@ -19,14 +19,17 @@ import com.ggumtle.designsystem.theme.AppTheme
 import com.ggumtle.domain.manager.GlobalInviteManager
 import com.ggumtle.domain.model.InviteNotification
 import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.UnityStartupManager
+import com.example.domain.unity.UnityStartupObserveManager
 import com.ggumtle.ggumtle.navigation.AppNavigation
 import com.ggumtle.ggumtle.unity.UnitySendManagerImpl
 import com.unity3d.player.UnityPlayer
+import com.unity3d.player.UnityPlayerForGameActivity
 import com.unity3d.player.UnityPlayerGameActivity
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import android.view.SurfaceView
+import android.view.View
 
 @AndroidEntryPoint
 //class MainActivity : ComponentActivity()
@@ -38,7 +41,7 @@ class MainActivity : UnityPlayerGameActivity()
     @Inject
     lateinit var unitySendManager: UnitySendManager
     @Inject
-    lateinit var unityStartupManager: UnityStartupManager
+    lateinit var unityStartupObserveManager: UnityStartupObserveManager
     @Inject
     lateinit var globalInviteManager: GlobalInviteManager
 
@@ -80,7 +83,9 @@ class MainActivity : UnityPlayerGameActivity()
                                 AppNavigation(
                                     isLoggedIn = isLoggedIn,
                                     authManager = authManager,
-                                    unitySendManager = unitySendManager
+                                    unitySendManager = unitySendManager,
+                                    showUnity = ::showUnity,
+                                    hideUnity = ::hideUnity
                                 )
                             }
                         )
@@ -120,13 +125,13 @@ class MainActivity : UnityPlayerGameActivity()
 
     fun updateLoadingProgress(progress: Int, message: String) {
         lifecycleScope.launch {
-            unityStartupManager.updateProgress(progress, message)
+            unityStartupObserveManager.updateProgress(progress, message)
         }
     }
 
     fun hideLoadingScreen() {
         lifecycleScope.launch {
-            unityStartupManager.completeLoading()
+            unityStartupObserveManager.completeLoading()
         }
     }
 
@@ -152,6 +157,18 @@ class MainActivity : UnityPlayerGameActivity()
         lifecycleScope.launch {
             // TODO: 인게임 로딩 완료 업데이트
         }
+    }
+
+    // ARCore 시작할 때
+    fun hideUnity() {
+        mUnityPlayer?.onPause()
+        findViewById<SurfaceView>(UnityPlayerForGameActivity.getUnityViewIdentifier(this)).visibility = View.INVISIBLE
+    }
+
+    // ARCore 끝날 때
+    fun showUnity() {
+        findViewById<SurfaceView>(UnityPlayerForGameActivity.getUnityViewIdentifier(this)).visibility = View.VISIBLE
+        mUnityPlayer?.onResume()
     }
 
 }

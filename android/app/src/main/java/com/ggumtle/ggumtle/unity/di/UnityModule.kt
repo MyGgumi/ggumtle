@@ -1,9 +1,9 @@
 package com.ggumtle.ggumtle.unity.di
 
 import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.UnityStartupManager
+import com.example.domain.unity.UnityStartupObserveManager
 import com.ggumtle.ggumtle.unity.UnitySendManagerImpl
-import com.ggumtle.ggumtle.unity.UnityStartupManagerImpl
+import com.ggumtle.ggumtle.unity.UnityStartupObserveObserveManagerImpl
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -15,8 +15,8 @@ abstract class UnityModule {
 
     @Binds
     abstract fun bindStartupManager(
-        unityStartupManagerImpl: UnityStartupManagerImpl
-    ): UnityStartupManager
+        unityStartupObserveManagerImpl: UnityStartupObserveObserveManagerImpl
+    ): UnityStartupObserveManager
 
     @Binds
     abstract fun bindUnitySendManager(

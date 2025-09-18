@@ -40,6 +40,7 @@ dependencies {
     implementation(projects.feature.social)
     implementation(projects.feature.home)
     implementation(projects.feature.growth)
+    implementation(projects.feature.mission)
 
     implementation(project(":unityLibrary"))
     implementation("androidx.games:games-activity:3.0.5")

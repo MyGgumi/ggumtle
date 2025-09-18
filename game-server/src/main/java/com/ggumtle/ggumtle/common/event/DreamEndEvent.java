@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.common.event;
 
-public record DreamStartEvent(
+public record DreamEndEvent(
         long roomId
 ) {
 }

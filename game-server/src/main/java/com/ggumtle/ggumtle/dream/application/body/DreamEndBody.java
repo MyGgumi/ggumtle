@@ -1,20 +1,16 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.dream.domain.player.Mongging;
-import com.ggumtle.ggumtle.dream.domain.player.Player;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Collection;
-import java.util.Set;
+import java.util.Map;
 
 public record DreamEndBody(
         Result result,
-        Set<Long> escapedMonggings,
-        Collection<Player> players
+        Map<Long, PlayerStatus> playerStatuses
 ) implements Body {
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -24,32 +20,24 @@ public record DreamEndBody(
         private final byte value;
     }
 
-    @Override
-    public byte[] toBytes(Charset charsets) {
-        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + 12 * players.size() - 1);
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    public enum PlayerStatus {
+        ALIVE(1),  DEAD(2), ESCAPED(3);
 
-        buffer.put(result.value);
-        buffer.putInt(players.size() - 1);
-        for (Player player : players) {
-            if (!(player instanceof Mongging mongging)) {
-                continue;
-            }
-            buffer.putLong(mongging.getId());
-            buffer.putInt(getStatus(mongging));
-        }
-
-        return new byte[0];
+        private final int value;
     }
 
-    private int getStatus(Mongging mongging) {
-        if (escapedMonggings.contains(mongging.getId())) {
-            return 1;
+    @Override
+    public byte[] toBytes(Charset charsets) {
+        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + 12 * playerStatuses.size());
+
+        buffer.put(result.value);
+        buffer.putInt(playerStatuses.size() - 1);
+        for (Map.Entry<Long, PlayerStatus> player : playerStatuses.entrySet()) {
+            buffer.putLong(player.getKey());
+            buffer.putInt(player.getValue().value);
         }
 
-        if (mongging.isNotDead()) {
-            return 3;
-        }
-
-        return 2;
+        return buffer.array();
     }
 }

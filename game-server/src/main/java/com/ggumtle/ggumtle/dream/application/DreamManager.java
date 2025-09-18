@@ -1,12 +1,13 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Body;
+import com.ggumtle.ggumtle.common.event.DreamEndEvent;
+import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
 import com.ggumtle.ggumtle.dream.application.body.DigUpBody;
 import com.ggumtle.ggumtle.dream.application.body.DoneReviveBody;
-import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
 import com.ggumtle.ggumtle.dream.application.body.ExitOpen;
 import com.ggumtle.ggumtle.dream.application.body.EscapeBody;
 import com.ggumtle.ggumtle.dream.application.body.FeedDoneBody;
@@ -53,6 +54,7 @@ import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import com.ggumtle.ggumtle.session.Session;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -62,7 +64,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -77,9 +78,13 @@ public class DreamManager {
     private static final int BOX_SPAWN_SIZE = 20;
     private static final int GGUMTLE_SPAWN_SIZE = 3;
     private static final int WINNING_MONGGING_COUNT = 2;
+    private static final long PLAY_TIME = 15 * 60 * 1000L;
 
     private final ScheduledExecutorService workerThreadPool;
     private final ConcurrentHashMap<Long, WorkingThread> workingThreads;
+    private final ScheduledExecutorService timerThread;
+    private ScheduledFuture<?> timerFuture;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     // 정적 데이터 캐싱
     private final SpawnCache spawnCache;
@@ -87,7 +92,6 @@ public class DreamManager {
     // 인게임 캐시
     private final Room room;
     private final Map<Long, Player> players;
-    private final Set<Long> escapedMonggings;
     private final ConcurrentHashMap<Integer, Ggumtle> ggumtles;
     private final AtomicInteger ggumtleIdGenerator;
     private final Map<Integer, Box> boxes;
@@ -95,13 +99,14 @@ public class DreamManager {
     private final Map<Integer, Exit> exits;
     private final AtomicBoolean isExitOpen;
 
-    public DreamManager(Room room, SpawnCache spawnCache) {
-        log.info("{}번 게임 생성 시작", room.id);
+    public DreamManager(Room room, SpawnCache spawnCache, ApplicationEventPublisher applicationEventPublisher) {
+        this.applicationEventPublisher = applicationEventPublisher;
+
+        log.info("{}번 드림 생성 시작", room.id);
 
         this.spawnCache = spawnCache;
         this.room = room;
         this.players = new HashMap<>();
-        this.escapedMonggings = ConcurrentHashMap.newKeySet();
         this.ggumtles = new ConcurrentHashMap<>();
         this.ggumtleIdGenerator = new AtomicInteger(0);
         this.boxes = new HashMap<>();
@@ -109,15 +114,24 @@ public class DreamManager {
         this.exits = new HashMap<>();
         this.isExitOpen = new AtomicBoolean(false);
 
-        log.info("{}번 게임의 초기화 시작", room.id);
+        log.info("{}번 드림의 초기화 시작", room.id);
 
         initializeMap();
         initializePlayers();
 
         this.workerThreadPool = Executors.newScheduledThreadPool(players.size());
         this.workingThreads = new ConcurrentHashMap<>();
+        this.timerThread = Executors.newScheduledThreadPool(1);
 
-        log.info("{}번 게임의 초기화 종료", room.id);
+        log.info("{}번 드림의 초기화 종료", room.id);
+    }
+
+    public void setTimer(long startTimestamp) {
+        long delay = startTimestamp + PLAY_TIME - System.currentTimeMillis();
+
+        timerFuture = timerThread.schedule(() -> endDream(false), delay, TimeUnit.MILLISECONDS);
+
+        log.info("{}번 드림의 타이머 설정 완료: 시작 시간 = {}, 딜레이 = {}", room.id, startTimestamp, delay);
     }
 
     public void movePlayer(Session session, int x, int y, int z) {
@@ -189,8 +203,8 @@ public class DreamManager {
             return;
         }
 
+        // 몽둥이 타격 범위 확인
         boolean isHit = mongdung.detectHit(command.vx(), command.vy(), command.vz(), System.currentTimeMillis(), targetMongging);
-
         if (!isHit) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.FAIL, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
@@ -200,17 +214,33 @@ public class DreamManager {
             return;
         }
 
-        int damage = mongdung.getDamage();
-        int leftHp = targetMongging.getHit(damage);
+        int leftHp = targetMongging.getHit(mongdung.damage);
 
         Body body = new HitMonggingBody(HitMonggingBody.Result.SUCCESS, leftHp);
         Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
         room.sendPacket(List.of(mongdung.getId(), targetMongging.getId()), packet);
 
-        log.info("[{} - {}] 몽둥이의 타격 성공: {}번 몽깅이 타격, 대미지: {}, 남은 HP: {}", session.getChannel().id(), room.id, command.targetId(), damage, leftHp);
+        log.info("[{} - {}] 몽둥이의 타격 성공: {}번 몽깅이 타격, 대미지: {}, 남은 HP: {}", session.getChannel().id(), room.id, command.targetId(), mongdung.damage, leftHp);
 
-        if (leftHp == 0) {
-            body = new MonggingStatusBody(targetMongging.getId(), targetMongging.isDead() ? MonggingStatusBody.Result.DEAD : MonggingStatusBody.Result.KNOCKOUT);
+        // 몽깅이 기절
+        if (targetMongging.isKnockout()) {
+            body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.KNOCKOUT);
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
+
+            WorkingThread removedThread = workingThreads.remove(session.getMemberId());
+            if (removedThread != null) {
+                removedThread.scheduledFuture.cancel(true);
+            }
+
+            distributeDroppedItem(targetMongging);
+
+            log.info("[{} - {}] {}번 몽깅이 기절!", session.getChannel().id(), room.id, command.targetId());
+        }
+
+        // 몽깅이 사망
+        if (targetMongging.isDead()) {
+            body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.DEAD);
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
 
@@ -222,6 +252,14 @@ public class DreamManager {
             distributeDroppedItem(targetMongging);
 
             log.info("[{} - {}] {}번 몽깅이 사망!", session.getChannel().id(), room.id, command.targetId());
+
+            long deadMonggingCount = players.values().stream().filter(p -> p instanceof Mongging m && m.isDead()).count();
+            if (deadMonggingCount >= players.size() - 1) {
+                endDream(false);
+
+                log.info("[{} - {}] 드림 종료: 모든 몽깅이가 사망함", session.getChannel().id(), room.id);
+
+            }
         }
     }
 
@@ -364,7 +402,7 @@ public class DreamManager {
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
-            log.error("[{} - {}] 몽깅이 아이템 공격 실패: 게임에 몽둥이가 없음", session.getChannel().id(), room.id);
+            log.error("[{} - {}] 몽깅이 아이템 공격 실패: 드림에 몽둥이가 없음", session.getChannel().id(), room.id);
             return;
         }
 
@@ -998,21 +1036,21 @@ public class DreamManager {
     public void tryOpenExit() {
         for (Ggumtle ggumtle : ggumtles.values()) {
             if (!ggumtle.isDone()) {
-                log.info("{}번 게임에 아직 정화되지 않은 꿈틀이가 있어 탈출구가 열리지 않음", this.room.id);
+                log.info("{}번 드림에 아직 정화되지 않은 꿈틀이가 있어 탈출구가 열리지 않음", this.room.id);
                 return;
             }
         }
 
         boolean isExpected = isExitOpen.compareAndSet(false, true);
         if (!isExpected) {
-            log.warn("{}번 게임의 탈출구 오픈이 다시 이루어졌습니다", this.room.id);
+            log.warn("{}번 드림의 탈출구 오픈이 다시 이루어졌습니다", this.room.id);
             return;
         }
 
         Body body = new ExitOpen(this.exits.values().stream().toList());
         Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
-        log.info("{}번 게임에 탈출구가 열림!", this.room.id);
+        log.info("{}번 드림에 탈출구가 열림!", this.room.id);
     }
 
     public void escape(int exitId, Session session) {
@@ -1062,7 +1100,6 @@ public class DreamManager {
 
         // 몽깅이 탈출
         mongging.escape();
-        escapedMonggings.add(mongging.getId());
 
         // 몽깅이 탈출 성공
         Body body = new EscapeBody(EscapeBody.Result.SUCCESS);
@@ -1077,11 +1114,9 @@ public class DreamManager {
         log.info("[{} - {}] 몽깅이 탈출 성공: {}번 몽깅이 탈출 성공", session.getChannel().id(), room.id, session.getMemberId());
 
         // 몽깅이 승리 조건 확인
-        if (escapedMonggings.size() >= WINNING_MONGGING_COUNT) {
-            body = new DreamEndBody(DreamEndBody.Result.MONGGING_WIN, escapedMonggings, players.values());
-            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-            this.room.broadcast(packet);
-
+        long escapedMonggingCount = players.values().stream().filter(p -> p instanceof Mongging m && m.isEscaped()).count();
+        if (escapedMonggingCount >= WINNING_MONGGING_COUNT) {
+            endDream(true);
             log.info("[{} - {}] 몽깅이 승리: 몽깅이가 탈출 조건보다 많이 탈출하여 승리", session.getChannel().id(), room.id);
         }
     }
@@ -1142,6 +1177,67 @@ public class DreamManager {
         }
     }
 
+    private void endDream(boolean isMonggingWin) {
+        // 플레이어별 상태 기록
+        Map<Long, DreamEndBody.PlayerStatus> playerStatuses = new HashMap<>();
+        for (Player player : players.values()) {
+            if (player instanceof Mongdung) {
+                playerStatuses.put(player.getId(), DreamEndBody.PlayerStatus.ALIVE);
+            }
+
+            if (player instanceof Mongging mongging) {
+                // 자원 정리
+                shutdownThread();
+
+                DreamEndBody.PlayerStatus status;
+                if (mongging.isDead()) {
+                    status = DreamEndBody.PlayerStatus.DEAD;
+                } else if (mongging.isEscaped()) {
+                    status = DreamEndBody.PlayerStatus.ESCAPED;
+                } else {
+                    status = DreamEndBody.PlayerStatus.ALIVE;
+                }
+
+                playerStatuses.put(mongging.getId(), status);
+            }
+        }
+
+        // 드림 종료 브로드캐스팅
+        Body body = new DreamEndBody(
+                isMonggingWin ? DreamEndBody.Result.MONGGING_WIN : DreamEndBody.Result.MONGDUNG_WIN,
+                playerStatuses);
+        Packet packet = Packet.of(SendPacketType.END, System.currentTimeMillis(), body);
+        room.broadcast(packet);
+
+        log.info("{}번 드림 종료: 몽깅이 우승 = {}", room.id, isMonggingWin);
+
+        // 드림 종료 이벤트 발행
+        applicationEventPublisher.publishEvent(new DreamEndEvent(this.room.id));
+    }
+
+    private void shutdownThread() {
+        // 스레드풀 정리
+        workerThreadPool.shutdownNow();
+        timerThread.shutdownNow();
+
+        // 작업 중인 스레드 정리
+        for (Map.Entry<Long, WorkingThread> entry : workingThreads.entrySet()) {
+            try {
+                entry.getValue().scheduledFuture.cancel(true);
+            } catch (Exception e) {
+                log.error("작업 스레드 종료에 실패했습니다: {}", entry.getValue());
+            }
+        }
+        workingThreads.clear();
+
+        // 타이머 스레드 정리
+        try {
+            timerFuture.cancel(true);
+        } catch (Exception e) {
+            log.error("타이머 스레드 종료에 실패했습니다");
+        }
+    }
+
     private void initializeMap() {
         // 꿈틀이 위치 초기화
         List<GgumtleSpawn> ggumtleSpawns = spawnCache.getRandomGgumtleSpawns(GGUMTLE_SPAWN_SIZE);
@@ -1175,7 +1271,7 @@ public class DreamManager {
             exits.put(i, new Exit(i, Position.from(exitSpawns.get(i))));
         }
 
-        log.info("{}번 게임의 맵 초기화 종료", room.id);
+        log.info("{}번 드림의 맵 초기화 종료", room.id);
 
         List<FieldItem> healPacks = new ArrayList<>();
         List<FieldItem> speedPacks = new ArrayList<>();
@@ -1228,8 +1324,8 @@ public class DreamManager {
             }
         }
 
-        log.info("{}번 게임의 플레이어 초기화 종료", room.id);
-        log.debug("{}번 게임의 플레이어: {}", room.id, this.players.values());
+        log.info("{}번 드림의 플레이어 초기화 종료", room.id);
+        log.debug("{}번 드림의 플레이어: {}", room.id, this.players.values());
 
         List<Player> players = this.players.values().stream().toList();
         for (long playerId : playerIds) {
@@ -1237,7 +1333,7 @@ public class DreamManager {
             Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), body);
             boolean success = room.sendPacket(playerId, packet);
             if (!success) {
-                log.error("{}번 사용자에게 {}번 게임의 플레이어 초기 정보를 전송하지 못했습니다", playerId, this.room.id);
+                log.error("{}번 사용자에게 {}번 드림의 플레이어 초기 정보를 전송하지 못했습니다", playerId, this.room.id);
             }
         }
     }

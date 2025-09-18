@@ -24,8 +24,7 @@ public class Mongdung extends Player {
     private final AtomicLong lastScareTime;
     private final AtomicInteger buryFakeGgumtleCount;
 
-    @Getter
-    protected int damage;
+    public final int damage;
 
     public Mongdung(long id, Position position) {
         super(id, position, BASE_MOVE_SPEED);

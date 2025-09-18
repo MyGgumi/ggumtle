@@ -12,13 +12,13 @@ public enum SendPacketType {
     // 방 관리
     ROOM_JOIN((short) 11),
 
-    // 게임 초기화
+    // 드림 초기화
     INITIALIZE_MAP((short) 20),
     INITIALIZE_PLAYER((short) 21),
     SCENE_CHANGE((short) 31),
     GAME_START((short) 35),
 
-    // 게임 플레이
+    // 드림 플레이
     PLAYER_MOVE_RELAY((short) 41),
     MONGGING_STATUS((short) 42),
     NEW_GGUMTLE((short) 43),
@@ -50,7 +50,7 @@ public enum SendPacketType {
     OPEN_EXIT((short) 130),
     ESCAPE_RESULT((short) 141),
 
-    // 게임 종료
+    // 드림 종료
     END((short) 200)
     ;
 

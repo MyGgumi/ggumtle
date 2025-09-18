@@ -2,7 +2,8 @@ package com.ggumtle.ggumtle.room.application;
 
 import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
-import com.ggumtle.ggumtle.common.event.DreamStartEvent;
+import com.ggumtle.ggumtle.common.event.CreateDreamEvent;
+import com.ggumtle.ggumtle.common.event.StartDreamEvent;
 import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
@@ -45,7 +46,7 @@ public class RoomService {
         session.sendPacket(packet);
 
         if (result == JoinRoomResult.DONE) {
-            applicationEventPublisher.publishEvent(new DreamStartEvent(command.roomId()));
+            applicationEventPublisher.publishEvent(new CreateDreamEvent(command.roomId()));
         }
     }
 
@@ -67,8 +68,10 @@ public class RoomService {
         session.sendPacket(packet);
 
         if (result.status() == SceneChangeResult.Status.DONE) {
-            packet = Packet.of(SendPacketType.GAME_START, System.currentTimeMillis(), null);
+            long now = System.currentTimeMillis();
+            packet = Packet.of(SendPacketType.GAME_START, now, null);
             roomManager.broadcast(result.roomId(), packet);
+            applicationEventPublisher.publishEvent(new StartDreamEvent(result.roomId(), now));
         }
     }
 

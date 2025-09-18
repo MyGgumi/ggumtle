@@ -167,6 +167,12 @@ public class Mongging extends Player {
         }
     }
 
+    public boolean isEscaped() {
+        synchronized (statusLock) {
+            return this.status == Status.ESCAPED;
+        }
+    }
+
     public void revive() {
         synchronized (statusLock) {
             this.hp = REVIVE_HP;

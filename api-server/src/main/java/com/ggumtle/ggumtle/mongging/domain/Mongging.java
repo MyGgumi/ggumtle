@@ -30,4 +30,12 @@ public class Mongging {
 
     private int level;
 
+    public static Mongging createMongging(Member owner, MonggingClass monggingClass) {
+        Mongging mongging = new Mongging();
+        mongging.owner = owner;
+        mongging.monggingClass = monggingClass;
+        mongging.level = 1;
+        return mongging;
+    }
+
 }

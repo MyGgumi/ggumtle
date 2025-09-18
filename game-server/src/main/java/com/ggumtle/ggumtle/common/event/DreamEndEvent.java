@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.common.event;
 
 public record DreamEndEvent(
-        long roomId
+        long roomId,
+        boolean isMonggingWin
 ) {
 }

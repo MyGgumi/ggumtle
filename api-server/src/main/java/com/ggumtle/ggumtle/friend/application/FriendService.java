@@ -4,6 +4,7 @@ package com.ggumtle.ggumtle.friend.application;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
+import com.ggumtle.ggumtle.friend.application.command.CancelFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.DeleteFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendRequestsCommand;
 import com.ggumtle.ggumtle.friend.application.command.GetFriendsCommand;
@@ -12,6 +13,7 @@ import com.ggumtle.ggumtle.friend.application.command.RejectFriendRequestCommand
 import com.ggumtle.ggumtle.friend.application.command.RequestFriendCommand;
 import com.ggumtle.ggumtle.friend.application.command.SearchMemberCommand;
 import com.ggumtle.ggumtle.friend.application.result.AcceptFriendRequestResult;
+import com.ggumtle.ggumtle.friend.application.result.CancelFriendRequestResult;
 import com.ggumtle.ggumtle.friend.application.result.DeleteFriendResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendRequestsResult;
 import com.ggumtle.ggumtle.friend.application.result.GetFriendsResult;
@@ -190,5 +192,26 @@ public class FriendService {
 
         friendRepository.deleteById(friendId);
         return new DeleteFriendResult(followerId,followerNickname,followeeId,followeeNickname);
+    }
+
+    @Transactional
+    public CancelFriendRequestResult cancelFriendRequest(CancelFriendRequestCommand command) {
+        Long friendId = command.friendId();
+
+        Friend friend = friendRepository.findById(friendId)
+                .orElseThrow(() -> new GgumtleException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        Long followerId = friend.getFollower().getId();
+        String followerNickname = friend.getFollower().getNickname();
+        Long followeeId = friend.getFollowee().getId();
+        String followeeNickname = friend.getFollowee().getNickname();
+
+        if (friend.getFollower().getId().equals(command.requesterId())){
+            friendRepository.deleteById(friendId);
+        }else{
+            throw new GgumtleException(FriendErrorCode.DELETE_FRIEND_FORBIDDEN);
+        }
+        return new CancelFriendRequestResult(friendId, followerId, followerNickname, followeeId, followeeNickname);
+
     }
 }

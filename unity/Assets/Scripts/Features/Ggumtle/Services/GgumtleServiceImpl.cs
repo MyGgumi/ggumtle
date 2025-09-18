@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
-using MessagePipe;
+using Cysharp.Threading.Tasks;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
+using Features.Ggumtle.NetworkSources;
+using MessagePipe;
 using UnityEngine;
 using VContainer;
 
@@ -21,6 +23,7 @@ namespace Features.Ggumtle.Services
         private readonly IPublisher<GgumtleFoodAddedMessage> _foodAddedPublisher;
         private readonly IPublisher<GgumtlePurifiedMessage> _purifiedPublisher;
         private readonly IPublisher<NotificationMessage> _notificationPublisher;
+        private readonly IGgumtleNetworkSource _networkSource;
 
         #endregion
 
@@ -39,7 +42,8 @@ namespace Features.Ggumtle.Services
             IPublisher<GgumtleHoldProgressMessage> holdProgressPublisher,
             IPublisher<GgumtleFoodAddedMessage> foodAddedPublisher,
             IPublisher<GgumtlePurifiedMessage> purifiedPublisher,
-            IPublisher<NotificationMessage> notificationPublisher
+            IPublisher<NotificationMessage> notificationPublisher,
+            IGgumtleNetworkSource networkSource
         )
         {
             _stateChangePublisher = stateChangePublisher;
@@ -47,6 +51,7 @@ namespace Features.Ggumtle.Services
             _foodAddedPublisher = foodAddedPublisher;
             _purifiedPublisher = purifiedPublisher;
             _notificationPublisher = notificationPublisher;
+            _networkSource = networkSource;
 
             DebugLog("[GgumtleServiceImpl] 서비스 초기화 완료");
         }
@@ -70,7 +75,13 @@ namespace Features.Ggumtle.Services
 
         public GgumtleData GetGgumtleData(string ggumtleId)
         {
-            return _ggumtleDataMap.TryGetValue(ggumtleId, out GgumtleData data) ? data : null;
+            DebugLog($"[GgumtleServiceImpl] GetGgumtleData 호출: {ggumtleId}");
+            DebugLog($"[GgumtleServiceImpl] 등록된 꿈틀이 목록: [{string.Join(", ", _ggumtleDataMap.Keys)}]");
+
+            var result = _ggumtleDataMap.TryGetValue(ggumtleId, out GgumtleData data) ? data : null;
+            DebugLog($"[GgumtleServiceImpl] GetGgumtleData 결과: {(result != null ? $"찾음 - {result.ggumtleName}" : "없음")}");
+
+            return result;
         }
 
         public Dictionary<string, GgumtleData> GetAllGgumtleData()
@@ -326,6 +337,301 @@ namespace Features.Ggumtle.Services
             {
                 Debug.Log(message);
             }
+        }
+
+        #endregion
+
+        #region Network Integration
+
+        /// <summary>
+        /// 네트워크를 통해 꿈틀이 파기 시작
+        /// </summary>
+        public async UniTask<bool> StartNetworkDiggingAsync(string ggumtleId)
+        {
+            try
+            {
+                var data = GetGgumtleData(ggumtleId);
+                if (data == null)
+                {
+                    DebugLog($"[GgumtleServiceImpl] 꿈틀이를 찾을 수 없음: {ggumtleId}");
+                    return false;
+                }
+
+                // int로 변환 (서버에서는 int ID를 사용)
+                if (!int.TryParse(ggumtleId, out int numericId))
+                {
+                    DebugLog($"[GgumtleServiceImpl] 잘못된 꿈틀이 ID 형식: {ggumtleId}");
+                    return false;
+                }
+
+                var result = await _networkSource.StartDiggingAsync(numericId);
+
+                if (result.Success)
+                {
+                    DebugLog($"[GgumtleServiceImpl] 네트워크 파기 시작 성공: {ggumtleId}");
+                    StartHold(ggumtleId);
+                    return true;
+                }
+                else
+                {
+                    DebugLog($"[GgumtleServiceImpl] 네트워크 파기 실패: {result.Result}");
+                    HandleDiggingError(result.Result);
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 네트워크 파기 시작 오류: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 네트워크를 통해 꿈틀이 파기 중단
+        /// </summary>
+        public async UniTask<bool> StopNetworkDiggingAsync()
+        {
+            try
+            {
+                var result = await _networkSource.QuitDiggingAsync();
+
+                if (result.Success)
+                {
+                    DebugLog("[GgumtleServiceImpl] 네트워크 파기 중단 성공");
+                    // 현재 파고 있던 꿈틀이 찾아서 홀드 취소
+                    foreach (var kvp in _ggumtleDataMap)
+                    {
+                        if (kvp.Value.currentState == GgumtleState.Digging)
+                        {
+                            CancelHold(kvp.Key);
+                            break;
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    DebugLog($"[GgumtleServiceImpl] 네트워크 파기 중단 실패: {result.Result}");
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 네트워크 파기 중단 오류: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 네트워크를 통해 빛젤리 먹이기 시작
+        /// </summary>
+        public async UniTask<bool> StartNetworkFeedingAsync(string ggumtleId)
+        {
+            try
+            {
+                var data = GetGgumtleData(ggumtleId);
+                if (data == null)
+                {
+                    DebugLog($"[GgumtleServiceImpl] 꿈틀이를 찾을 수 없음: {ggumtleId}");
+                    return false;
+                }
+
+                // int로 변환
+                if (!int.TryParse(ggumtleId, out int numericId))
+                {
+                    DebugLog($"[GgumtleServiceImpl] 잘못된 꿈틀이 ID 형식: {ggumtleId}");
+                    return false;
+                }
+
+                var result = await _networkSource.StartJellyFeedingAsync(numericId);
+
+                if (result.Success)
+                {
+                    DebugLog($"[GgumtleServiceImpl] 네트워크 먹이기 시작 성공: {ggumtleId}");
+                    // 상태를 Feeding으로 변경
+                    ChangeGgumtleState(ggumtleId, GgumtleState.Feeding);
+                    return true;
+                }
+                else
+                {
+                    DebugLog($"[GgumtleServiceImpl] 네트워크 먹이기 실패: {result.Result}");
+                    HandleJellyError(result.Result);
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 네트워크 먹이기 시작 오류: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 네트워크를 통해 빛젤리 먹이기 중단
+        /// </summary>
+        public async UniTask<bool> StopNetworkFeedingAsync()
+        {
+            try
+            {
+                var result = await _networkSource.QuitJellyFeedingAsync();
+
+                if (result.Success)
+                {
+                    DebugLog(
+                        $"[GgumtleServiceImpl] 네트워크 먹이기 중단 성공, 남은 젤리: {result.LeftJellyCount}"
+                    );
+                    // 현재 먹이기 중인 꿈틀이 찾아서 홀드 취소
+                    foreach (var kvp in _ggumtleDataMap)
+                    {
+                        if (kvp.Value.currentState == GgumtleState.Feeding)
+                        {
+                            CancelHold(kvp.Key);
+                            break;
+                        }
+                    }
+                    return true;
+                }
+                else
+                {
+                    DebugLog($"[GgumtleServiceImpl] 네트워크 먹이기 중단 실패: {result.Result}");
+                    return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 네트워크 먹이기 중단 오류: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// 서버에서 파기 완료 이벤트 처리
+        /// </summary>
+        public void HandleDiggingDone(int ggumtleId, bool isRealGgumtle)
+        {
+            var ggumtleIdStr = ggumtleId.ToString();
+            DebugLog(
+                $"[GgumtleServiceImpl] 파기 완료 이벤트: {ggumtleIdStr}, 진짜 꿈틀이: {isRealGgumtle}"
+            );
+
+            if (isRealGgumtle)
+            {
+                CompleteHold(ggumtleIdStr);
+            }
+            else
+            {
+                // 가짜 꿈틀이인 경우
+                _notificationPublisher.Publish(
+                    new NotificationMessage("가짜 꿈틀이였습니다!", 2f, NotificationType.Info)
+                );
+                UnregisterGgumtle(ggumtleIdStr);
+            }
+        }
+
+        /// <summary>
+        /// 서버에서 강제 먹이기 종료 이벤트 처리
+        /// </summary>
+        public void HandleJellyForceQuit(int ggumtleId, int leftJellyCount)
+        {
+            var ggumtleIdStr = ggumtleId.ToString();
+            DebugLog(
+                $"[GgumtleServiceImpl] 강제 먹이기 종료: {ggumtleIdStr}, 남은 젤리: {leftJellyCount}"
+            );
+
+            CancelHold(ggumtleIdStr);
+            _notificationPublisher.Publish(
+                new NotificationMessage(
+                    $"먹이기가 중단되었습니다. 남은 젤리: {leftJellyCount}",
+                    2f,
+                    NotificationType.Warning
+                )
+            );
+        }
+
+        /// <summary>
+        /// 서버에서 꿈틀이 스폰 이벤트 처리
+        /// </summary>
+        public void HandleGgumtleSpawn(int ggumtleId, Vector3 position)
+        {
+            var ggumtleIdStr = ggumtleId.ToString();
+            var ggumtleName = $"Ggumtle_{ggumtleId}";
+
+            DebugLog($"[GgumtleServiceImpl] 꿈틀이 스폰: {ggumtleIdStr}, Position={position}");
+
+            // 꿈틀이 등록 (Buried 상태로 시작)
+            RegisterGgumtle(ggumtleIdStr, ggumtleName, position);
+
+            // 스폰 알림 발행
+            _notificationPublisher.Publish(
+                new NotificationMessage($"새로운 꿈틀이가 나타났습니다!", 2f, NotificationType.Info)
+            );
+        }
+
+        /// <summary>
+        /// 서버에서 꿈틀이 성불 이벤트 처리
+        /// </summary>
+        public void HandleGgumtleNirvana(int ggumtleId)
+        {
+            var ggumtleIdStr = ggumtleId.ToString();
+            var data = GetGgumtleData(ggumtleIdStr);
+
+            DebugLog($"[GgumtleServiceImpl] 꿈틀이 성불: {ggumtleIdStr}");
+
+            if (data != null)
+            {
+                // 성불 알림 발행
+                _notificationPublisher.Publish(
+                    new NotificationMessage(
+                        $"{data.ggumtleName}이(가) 성불했습니다!",
+                        3f,
+                        NotificationType.Success
+                    )
+                );
+
+                // 꿈틀이 제거
+                UnregisterGgumtle(ggumtleIdStr);
+            }
+            else
+            {
+                DebugLog($"[GgumtleServiceImpl] 성불할 꿈틀이를 찾을 수 없음: {ggumtleIdStr}");
+            }
+        }
+
+        private void HandleDiggingError(Networks.Ggumtle.DiggingStartResult result)
+        {
+            string message = result switch
+            {
+                Networks.Ggumtle.DiggingStartResult.GgumtleNotFound => "꿈틀이를 찾을 수 없습니다",
+                Networks.Ggumtle.DiggingStartResult.PlayerNotFoundOrNotMongging =>
+                    "몽깅이 상태가 아닙니다",
+                Networks.Ggumtle.DiggingStartResult.AlreadyDug => "이미 파낸 꿈틀이입니다",
+                Networks.Ggumtle.DiggingStartResult.TooFar => "꿈틀이가 너무 멀리 있습니다",
+                _ => "파기를 시작할 수 없습니다",
+            };
+
+            _notificationPublisher.Publish(
+                new NotificationMessage(message, 2f, NotificationType.Warning)
+            );
+        }
+
+        private void HandleJellyError(Networks.Ggumtle.JellyStartResult result)
+        {
+            string message = result switch
+            {
+                Networks.Ggumtle.JellyStartResult.GgumtleNotFound => "꿈틀이를 찾을 수 없습니다",
+                Networks.Ggumtle.JellyStartResult.PlayerNotFoundOrNotMongging =>
+                    "몽깅이 상태가 아닙니다",
+                Networks.Ggumtle.JellyStartResult.AlreadyPurified => "이미 정화된 꿈틀이입니다",
+                Networks.Ggumtle.JellyStartResult.AlreadyPurifiedGgumtle =>
+                    "이미 정화가 완료되었습니다",
+                Networks.Ggumtle.JellyStartResult.NoJelly => "빛젤리가 없습니다",
+                Networks.Ggumtle.JellyStartResult.TooFar => "꿈틀이가 너무 멀리 있습니다",
+                _ => "먹이를 줄 수 없습니다",
+            };
+
+            _notificationPublisher.Publish(
+                new NotificationMessage(message, 2f, NotificationType.Warning)
+            );
         }
 
         #endregion

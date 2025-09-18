@@ -48,6 +48,12 @@ namespace Networks
         {
             Debug.Log("[NetworkApi] 시작");
 
+            if (client == null)
+            {
+                Debug.LogWarning("[NetworkApi] Client가 설정되지 않았습니다. Inspector에서 Client를 설정해주세요.");
+                return;
+            }
+
             if (!client.IsConnected)
             {
                 Debug.LogWarning("[NetworkApi] 클라이언트 연결 상태 확인 필요");

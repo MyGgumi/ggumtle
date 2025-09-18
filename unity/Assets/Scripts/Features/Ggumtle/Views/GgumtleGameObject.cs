@@ -4,6 +4,7 @@ using R3;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using DI;
 using R3DisposableBag = R3.DisposableBag;
 
 namespace Features.Ggumtle.Views
@@ -22,10 +23,10 @@ namespace Features.Ggumtle.Views
         private string ggumtleName = "꿈틀이";
 
         [SerializeField]
-        private string ggumtleId; // 고유 ID (자동 생성됨)
+        private int ggumtleId; // 고유 ID (Inspector에서 설정 또는 자동 생성)
 
         // InteractionTriggerDetector에서 접근하기 위한 public property
-        public string GgumtleId => ggumtleId;
+        public int GgumtleId => ggumtleId;
 
         [Header("비주얼 컴포넌트")]
         [SerializeField]
@@ -77,6 +78,7 @@ namespace Features.Ggumtle.Views
             InitializeBasicComponents();
             SetupInteractionLayer(); // Layer 설정 추가
             ResolveDependencies();
+            RegisterToService(); // GgumtleService에 등록
             SubscribeToViewModel();
 
             // 최종 상태 확인
@@ -88,6 +90,9 @@ namespace Features.Ggumtle.Views
 
         void OnDestroy()
         {
+            // GgumtleService에서 해제
+            UnregisterFromService();
+
             // R3 구독 해제
             _disposables.Dispose();
 
@@ -101,10 +106,11 @@ namespace Features.Ggumtle.Views
 
         private void InitializeBasicComponents()
         {
-            // ID 자동 생성 (비어있으면)
-            if (string.IsNullOrEmpty(ggumtleId))
+            // ID 자동 생성 (0이면)
+            if (ggumtleId == 0)
             {
-                ggumtleId = System.Guid.NewGuid().ToString();
+                // 랜덤한 양수 int 생성 (1~999999)
+                ggumtleId = UnityEngine.Random.Range(1, 1000000);
                 if (enableDebugLogs)
                     Debug.Log($"[GgumtleGameObject] ID 자동 생성: {ggumtleId}");
             }
@@ -197,6 +203,66 @@ namespace Features.Ggumtle.Views
                 Debug.LogError(
                     $"[GgumtleGameObject] ViewModel 해결 실패: {gameObject.name}, 오류: {ex.Message}"
                 );
+            }
+        }
+
+        #endregion
+
+        #region Service Registration
+
+        /// <summary>
+        /// GgumtleService에 자신을 등록
+        /// </summary>
+        private void RegisterToService()
+        {
+            try
+            {
+                // VContainer에서 직접 IGgumtleService 해결
+                var scope = FindObjectOfType<GameLifetimeScope>();
+                if (scope != null && scope.Container != null)
+                {
+                    var ggumtleService = scope.Container.Resolve<Features.Ggumtle.Services.IGgumtleService>();
+
+                    // GgumtleService에 등록 (ID, 이름, 위치)
+                    ggumtleService.RegisterGgumtle(ggumtleId.ToString(), gameObject.name, transform.position);
+                    Debug.Log($"[GgumtleGameObject] GgumtleService 등록 완료: {gameObject.name}, ID: {ggumtleId}");
+                }
+                else
+                {
+                    Debug.LogError($"[GgumtleGameObject] GameLifetimeScope를 찾을 수 없어 등록 실패: {gameObject.name}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GgumtleGameObject] GgumtleService 등록 실패: {gameObject.name}, 오류: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// GgumtleService에서 자신을 해제
+        /// </summary>
+        private void UnregisterFromService()
+        {
+            try
+            {
+                // VContainer에서 직접 IGgumtleService 해결
+                var scope = FindObjectOfType<GameLifetimeScope>();
+                if (scope != null && scope.Container != null)
+                {
+                    var ggumtleService = scope.Container.Resolve<Features.Ggumtle.Services.IGgumtleService>();
+
+                    // GgumtleService에서 해제
+                    ggumtleService.UnregisterGgumtle(ggumtleId.ToString());
+                    Debug.Log($"[GgumtleGameObject] GgumtleService 해제 완료: {gameObject.name}, ID: {ggumtleId}");
+                }
+                else
+                {
+                    Debug.LogError($"[GgumtleGameObject] GameLifetimeScope를 찾을 수 없어 해제 실패: {gameObject.name}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[GgumtleGameObject] GgumtleService 해제 실패: {gameObject.name}, 오류: {ex.Message}");
             }
         }
 

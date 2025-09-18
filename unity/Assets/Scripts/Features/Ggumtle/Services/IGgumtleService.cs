@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Features.Ggumtle.Models;
 using UnityEngine;
 
@@ -74,6 +75,50 @@ namespace Features.Ggumtle.Services
         /// 정화 완료 처리
         /// </summary>
         void CompletePurification(string ggumtleId);
+
+        #endregion
+
+        #region Network Integration
+
+        /// <summary>
+        /// 네트워크를 통해 꿈틀이 파기 시작
+        /// </summary>
+        UniTask<bool> StartNetworkDiggingAsync(string ggumtleId);
+
+        /// <summary>
+        /// 네트워크를 통해 꿈틀이 파기 중단
+        /// </summary>
+        UniTask<bool> StopNetworkDiggingAsync();
+
+        /// <summary>
+        /// 네트워크를 통해 빛젤리 먹이기 시작
+        /// </summary>
+        UniTask<bool> StartNetworkFeedingAsync(string ggumtleId);
+
+        /// <summary>
+        /// 네트워크를 통해 빛젤리 먹이기 중단
+        /// </summary>
+        UniTask<bool> StopNetworkFeedingAsync();
+
+        /// <summary>
+        /// 서버에서 파기 완료 이벤트 처리
+        /// </summary>
+        void HandleDiggingDone(int ggumtleId, bool isRealGgumtle);
+
+        /// <summary>
+        /// 서버에서 강제 먹이기 종료 이벤트 처리
+        /// </summary>
+        void HandleJellyForceQuit(int ggumtleId, int leftJellyCount);
+
+        /// <summary>
+        /// 서버에서 꿈틀이 스폰 이벤트 처리
+        /// </summary>
+        void HandleGgumtleSpawn(int ggumtleId, Vector3 position);
+
+        /// <summary>
+        /// 서버에서 꿈틀이 성불 이벤트 처리
+        /// </summary>
+        void HandleGgumtleNirvana(int ggumtleId);
 
         #endregion
 

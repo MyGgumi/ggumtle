@@ -38,6 +38,41 @@ namespace DI
             builder.RegisterMessageBroker<MobileButtonStateMessage>(options);
             builder.RegisterMessageBroker<MobileInputMessage>(options);
 
+            // NetworkApi 등록 (팩토리 패턴으로 안전하게 처리)
+            builder.Register<Networks.NetworkApi>(container =>
+            {
+                var existingNetworkApi = UnityEngine.Object.FindObjectOfType<Networks.NetworkApi>();
+                if (existingNetworkApi != null)
+                {
+                    return existingNetworkApi;
+                }
+
+                // Client GameObject 생성
+                var clientObject = new UnityEngine.GameObject("Client");
+                var client = clientObject.AddComponent<Networks.Client>();
+
+                // NetworkApi GameObject 생성 및 Client 연결
+                var networkApiObject = new UnityEngine.GameObject("NetworkApi");
+                var networkApi = networkApiObject.AddComponent<Networks.NetworkApi>();
+
+                // Reflection을 사용하여 private client 필드 설정
+                var clientField = typeof(Networks.NetworkApi).GetField("client",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                clientField?.SetValue(networkApi, client);
+
+                UnityEngine.Debug.Log("[GameLifetimeScope] NetworkApi와 Client GameObject 팩토리에서 생성 완료");
+                return networkApi;
+            }, Lifetime.Singleton);
+
+            // NetworkSources 등록
+            builder.Register<
+                Features.Ggumtle.NetworkSources.IGgumtleNetworkSource,
+                Features.Ggumtle.NetworkSources.GgumtleNetworkSource
+            >(Lifetime.Singleton);
+
+            // NetworkEventHandlers 등록
+            builder.Register<Features.Ggumtle.NetworkSources.GgumtleNetworkEventHandler>(Lifetime.Singleton);
+
             // Services 등록 (순수 C# 클래스)
             builder.Register<
                 Features.Ggumtle.Services.IGgumtleService,

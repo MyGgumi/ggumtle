@@ -1,11 +1,11 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using MessagePipe;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
 using Features.Ggumtle.Services;
 using Features.MobileControls.Messages;
+using MessagePipe;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -113,8 +113,12 @@ namespace Features.Ggumtle.ViewModels
             _foodAddedSubscriber.Subscribe(OnFoodAddedFiltered).AddTo(_disposables);
 
             // 모바일 상호작용 버튼 이벤트 구독
-            _interactHoldStartSubscriber.Subscribe(_ => OnMobileInteractHoldStart()).AddTo(_disposables);
-            _interactHoldEndSubscriber.Subscribe(_ => OnMobileInteractHoldEnd()).AddTo(_disposables);
+            _interactHoldStartSubscriber
+                .Subscribe(_ => OnMobileInteractHoldStart())
+                .AddTo(_disposables);
+            _interactHoldEndSubscriber
+                .Subscribe(_ => OnMobileInteractHoldEnd())
+                .AddTo(_disposables);
 
             // 상태 변경시 UI 텍스트 업데이트
             State.Subscribe(_ => UpdateInteractionText()).AddTo(_disposables);
@@ -148,7 +152,9 @@ namespace Features.Ggumtle.ViewModels
             UpdateInteractionText();
 
             // 모바일 상호작용 버튼 표시 요청
-            _interactButtonVisibilityPublisher.Publish(new InteractButtonVisibilityMessage(true, "Ggumtle detected"));
+            _interactButtonVisibilityPublisher.Publish(
+                new InteractButtonVisibilityMessage(true, "Ggumtle detected")
+            );
 
             Debug.Log($"[GgumtleViewModel] 꿈틀이 감지: {msg.GgumtleId}, 상태: {msg.CurrentState}");
         }
@@ -161,7 +167,9 @@ namespace Features.Ggumtle.ViewModels
                 CancelHold();
 
                 // 모바일 상호작용 버튼 숨김 요청
-                _interactButtonVisibilityPublisher.Publish(new InteractButtonVisibilityMessage(false, "Ggumtle left range"));
+                _interactButtonVisibilityPublisher.Publish(
+                    new InteractButtonVisibilityMessage(false, "Ggumtle left range")
+                );
 
                 // 현재 정보 초기화
                 CurrentGgumtleId.Value = string.Empty;
@@ -228,13 +236,23 @@ namespace Features.Ggumtle.ViewModels
         /// </summary>
         private async void OnMobileInteractHoldStart()
         {
-            if (!IsInRange.Value || string.IsNullOrEmpty(CurrentGgumtleId.Value))
+            Debug.Log(
+                $"[GgumtleViewModel] OnMobileInteractHoldStart 호출됨 - IsInRange: {IsInRange.Value}, CurrentGgumtleId: '{CurrentGgumtleId.Value}'"
+            );
+
+            if (!IsInRange.Value)
             {
-                Debug.LogWarning("[GgumtleViewModel] 모바일 홀드 시작 실패: 범위 밖이거나 꿈틀이 없음");
+                Debug.LogWarning("[GgumtleViewModel] 모바일 홀드 시작 실패: 범위 밖");
                 return;
             }
 
-            Debug.Log("[GgumtleViewModel] 모바일 상호작용 홀드 시작");
+            if (string.IsNullOrEmpty(CurrentGgumtleId.Value))
+            {
+                Debug.LogWarning("[GgumtleViewModel] 모바일 홀드 시작 실패: 꿈틀이 ID 없음");
+                return;
+            }
+
+            Debug.Log("[GgumtleViewModel] 모바일 상호작용 홀드 시작 - StartHold() 호출");
             await StartHold();
         }
 
@@ -259,6 +277,10 @@ namespace Features.Ggumtle.ViewModels
         /// </summary>
         public async UniTask StartHold()
         {
+            Debug.Log(
+                $"[GgumtleViewModel] StartHold() 시작 - IsInRange: {IsInRange.Value}, CurrentGgumtleId: '{CurrentGgumtleId.Value}', IsHolding: {IsHolding.Value}"
+            );
+
             if (!IsInRange.Value || string.IsNullOrEmpty(CurrentGgumtleId.Value))
             {
                 Debug.LogWarning("[GgumtleViewModel] 홀드 시작 실패: 범위 밖이거나 꿈틀이 없음");
@@ -271,27 +293,89 @@ namespace Features.Ggumtle.ViewModels
                 return;
             }
 
+            Debug.Log("[GgumtleViewModel] 홀드 취소 토큰 생성 완료");
+
             _holdCts?.Cancel();
             _holdCts = new CancellationTokenSource();
 
             try
             {
+                Debug.Log("[GgumtleViewModel] 홀드 try 블록 진입");
                 IsHolding.Value = true;
                 HoldProgress.Value = 0f;
 
                 // 상태에 따라 다른 홀드 시간
-                var data = _ggumtleService.GetGgumtleData(CurrentGgumtleId.Value);
+                Debug.Log($"[GgumtleViewModel] 꿈틀이 데이터 조회 시작: {CurrentGgumtleId.Value}");
+
+                GgumtleData data = null;
+                try
+                {
+                    data = _ggumtleService.GetGgumtleData(CurrentGgumtleId.Value);
+                    Debug.Log(
+                        $"[GgumtleViewModel] GetGgumtleData 호출 완료, 결과: {(data != null ? "성공" : "null")}"
+                    );
+                }
+                catch (Exception e)
+                {
+                    Debug.LogError($"[GgumtleViewModel] GetGgumtleData 호출 중 예외: {e.Message}");
+                    IsHolding.Value = false;
+                    return;
+                }
+
                 if (data == null)
                 {
                     Debug.LogError("[GgumtleViewModel] 꿈틀이 데이터 없음");
+                    IsHolding.Value = false;
                     return;
                 }
+                Debug.Log(
+                    $"[GgumtleViewModel] 꿈틀이 데이터 조회 완료: {data.ggumtleName}, 상태: {data.currentState}"
+                );
 
                 float holdTime = GetHoldDuration(data);
                 HoldDuration.Value = holdTime;
 
-                // 서비스에 홀드 시작 알림
-                _ggumtleService.StartHold(CurrentGgumtleId.Value);
+                // 상태에 따라 네트워크 호출 또는 로컬 처리
+                Debug.Log(
+                    $"[GgumtleViewModel] 꿈틀이 현재 상태: {data.currentState}, ID: {CurrentGgumtleId.Value}"
+                );
+
+                if (data.currentState == GgumtleState.Buried)
+                {
+                    // 파기 시작 - 네트워크 호출
+                    Debug.Log("[GgumtleViewModel] 파기 네트워크 호출 시작");
+                    var success = await _ggumtleService.StartNetworkDiggingAsync(
+                        CurrentGgumtleId.Value
+                    );
+                    Debug.Log($"[GgumtleViewModel] 파기 네트워크 호출 결과: {success}");
+                    if (!success)
+                    {
+                        Debug.LogError("[GgumtleViewModel] 네트워크 파기 시작 실패");
+                        IsHolding.Value = false;
+                        return;
+                    }
+                }
+                else if (data.currentState == GgumtleState.Feeding)
+                {
+                    // 먹이주기 시작 - 네트워크 호출
+                    Debug.Log("[GgumtleViewModel] 먹이주기 네트워크 호출 시작");
+                    var success = await _ggumtleService.StartNetworkFeedingAsync(
+                        CurrentGgumtleId.Value
+                    );
+                    Debug.Log($"[GgumtleViewModel] 먹이주기 네트워크 호출 결과: {success}");
+                    if (!success)
+                    {
+                        Debug.LogError("[GgumtleViewModel] 네트워크 먹이주기 시작 실패");
+                        IsHolding.Value = false;
+                        return;
+                    }
+                }
+                else
+                {
+                    // 기타 상태는 로컬 처리
+                    Debug.Log($"[GgumtleViewModel] 로컬 홀드 처리 (상태: {data.currentState})");
+                    _ggumtleService.StartHold(CurrentGgumtleId.Value);
+                }
 
                 // 홀드 진행 (UniTask 사용)
                 await PerformHold(holdTime, _holdCts.Token);
@@ -318,18 +402,46 @@ namespace Features.Ggumtle.ViewModels
         /// <summary>
         /// 홀드 취소
         /// </summary>
-        public void CancelHold()
+        public async void CancelHold()
         {
-            if (IsHolding.Value)
+            if (!IsHolding.Value)
+                return;
+
+            Debug.Log($"[GgumtleViewModel] 홀드 취소: {CurrentGgumtleId.Value}");
+
+            // 홀드 작업 취소
+            _holdCts?.Cancel();
+
+            // 현재 상태에 따라 네트워크 종료 호출
+            var data = _ggumtleService.GetGgumtleData(CurrentGgumtleId.Value);
+            if (data != null)
             {
-                _holdCts?.Cancel();
-                _ggumtleService.CancelHold(CurrentGgumtleId.Value);
-
-                IsHolding.Value = false;
-                HoldProgress.Value = 0f;
-
-                Debug.Log("[GgumtleViewModel] 홀드 수동 취소");
+                if (data.currentState == GgumtleState.Digging)
+                {
+                    // 파기 중단
+                    var success = await _ggumtleService.StopNetworkDiggingAsync();
+                    if (!success)
+                    {
+                        Debug.LogError("[GgumtleViewModel] 네트워크 파기 중단 실패");
+                    }
+                }
+                else if (data.currentState == GgumtleState.Feeding)
+                {
+                    // 먹이주기 중단
+                    var success = await _ggumtleService.StopNetworkFeedingAsync();
+                    if (!success)
+                    {
+                        Debug.LogError("[GgumtleViewModel] 네트워크 먹이주기 중단 실패");
+                    }
+                }
             }
+
+            // 로컬 Service 취소 호출
+            _ggumtleService.CancelHold(CurrentGgumtleId.Value);
+
+            // UI 상태 리셋
+            IsHolding.Value = false;
+            HoldProgress.Value = 0f;
         }
 
         #endregion
@@ -397,7 +509,9 @@ namespace Features.Ggumtle.ViewModels
             };
 
             InteractionText.Value = newText;
-            Debug.Log($"[GgumtleViewModel] InteractionText 업데이트: '{newText}' (상태: {State.Value})");
+            Debug.Log(
+                $"[GgumtleViewModel] InteractionText 업데이트: '{newText}' (상태: {State.Value})"
+            );
         }
 
         #endregion

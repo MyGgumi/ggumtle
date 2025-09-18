@@ -78,6 +78,17 @@ public class SocketResponseDispatcher {
         }
     }
 
+    public void disconnect(Long memberId) {
+        WebSocketSession session = idToSession.get(memberId);
+        if (session != null && session.isOpen()) {
+            try {
+                session.close();
+            } catch (Exception e) {
+                log.error("세션 종료 중 예외 발생: memberId = {}", memberId, e);
+            }
+        }
+    }
+
     private record SocketResponse (
             String type,
             Boolean success,

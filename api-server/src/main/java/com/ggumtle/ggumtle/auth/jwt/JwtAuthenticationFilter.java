@@ -15,6 +15,7 @@ import java.io.IOException;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtProvider jwtProvider;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -22,7 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String token = resolveToken(request);
 
-        if (token != null && jwtProvider.validateToken(token)) {
+        if (token != null && !tokenBlacklistRepository.isBlacklisted(token) && jwtProvider.validateToken(token)) {
             Long memberId = jwtProvider.parseMemberId(token);
             request.setAttribute("memberId", memberId);
         }

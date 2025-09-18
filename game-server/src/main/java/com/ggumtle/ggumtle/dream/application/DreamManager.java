@@ -1204,18 +1204,28 @@ public class DreamManager {
         List<Long> playerIds = room.getPlayerIds().stream().toList();
         List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
 
-        int mongdungIndex = pickMongdungIndex(playerIds.size());
-
-        this.players.clear();
-        for (int i = 0; i < playerIds.size(); i++) {
-            if (i == mongdungIndex) {
-                Mongdung mongdung = new Mongdung(playerIds.get(i), Position.from(playerSpawns.get(i)));
-                this.players.put(mongdung.getId(), mongdung);
-                continue;
-            }
-
-            Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)));
+        if (this.room.id == -4) {
+            Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()));
             this.players.put(mongging.getId(), mongging);
+        }
+        else if (this.room.id == -5) {
+            Mongdung mongdung = new Mongdung(playerIds.getFirst(), Position.from(playerSpawns.getFirst()));
+            this.players.put(mongdung.getId(), mongdung);
+        }
+        else {
+            int mongdungIndex = pickMongdungIndex(playerIds.size());
+
+            this.players.clear();
+            for (int i = 0; i < playerIds.size(); i++) {
+                if (i == mongdungIndex) {
+                    Mongdung mongdung = new Mongdung(playerIds.get(i), Position.from(playerSpawns.get(i)));
+                    this.players.put(mongdung.getId(), mongdung);
+                    continue;
+                }
+
+                Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)));
+                this.players.put(mongging.getId(), mongging);
+            }
         }
 
         log.info("{}번 게임의 플레이어 초기화 종료", room.id);

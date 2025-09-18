@@ -18,8 +18,16 @@ public class RoomCreator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void createTestRoom() {
-        Room room = new Room(-1L, List.of(1L, 2L, 3L));
+        Room room3 = new Room(-1L, List.of(1L, 2L, 3L));
+        Room room4 = new Room(-2L, List.of(1L, 2L, 3L, 4L));
+        Room room5 = new Room(-3L, List.of(1L, 2L, 3L, 4L, 5L));
+        Room monggingRoom = new Room(-4L, List.of(1L));
+        Room mongdungRoom = new Room(-5L, List.of(1L));
 
-        roomManager.insertRoom(room);
+        roomManager.insertRoom(room3);
+        roomManager.insertRoom(room4);
+        roomManager.insertRoom(room5);
+        roomManager.insertRoom(monggingRoom);
+        roomManager.insertRoom(mongdungRoom);
     }
 }

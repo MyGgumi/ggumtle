@@ -9,4 +9,6 @@ import java.util.List;
 @Repository
 public interface PartyInvitationRepository extends CrudRepository<PartyInvitation, String> {
     List<PartyInvitation> findAllByInviteeId(Long inviteeId);
+
+    boolean existsByPartyIdAndInviteeId(String partyId, Long inviteeId);
 }

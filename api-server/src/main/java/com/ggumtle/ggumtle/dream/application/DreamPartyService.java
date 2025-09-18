@@ -73,15 +73,22 @@ public class DreamPartyService {
                         DreamErrorCode.NOT_FOUND_PARTY,
                         "현재 사용자가 속한 파티가 없어 다른 사용자를 파티에 초대할 수 없습니다"));
 
+        String partyId = inviter.getPartyId();
+        Long inviteeId = command.inviteeId();
+
+        boolean alreadyInvited = partyInvitationRepository.existsByPartyIdAndInviteeId(partyId, inviteeId);
+        if (alreadyInvited) {
+            throw new GgumtleException(DreamErrorCode.ALREADY_INVITED_USER);
+        }
+
         PartyInvitation partyInvitation = PartyInvitation.builder()
                 .id(UUID.randomUUID().toString())
-                .partyId(inviter.getPartyId())
-                .inviteeId(command.inviteeId())
+                .partyId(partyId)
+                .inviteeId(inviteeId)
                 .inviterId(command.requesterId())
                 .build();
         partyInvitationRepository.save(partyInvitation);
 
-        Long inviteeId = command.inviteeId();
         Optional<Member> invitee = memberRepository.findById(inviteeId);
         String inviteeNickname = invitee.get().getNickname();
         return new InvitePartyResult(inviteeId, partyInvitation.getId(), inviteeNickname);

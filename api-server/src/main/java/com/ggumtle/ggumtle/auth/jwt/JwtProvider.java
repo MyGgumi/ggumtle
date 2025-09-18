@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.auth.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
@@ -53,6 +54,22 @@ public class JwtProvider {
             return true;
         }catch (Exception e){
             return false;
+        }
+    }
+
+    public Long getRemainingMillis(String token) {
+        try {
+            Claims claims = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getPayload();
+
+            Date expiration = claims.getExpiration();
+            long now = System.currentTimeMillis();
+            return expiration.getTime() - now;
+        } catch (Exception e){
+            return 0L;
         }
     }
 }

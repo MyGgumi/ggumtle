@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.auth.application;
 
 import com.ggumtle.ggumtle.auth.application.command.LoginCommand;
 import com.ggumtle.ggumtle.auth.application.result.LoginResult;
+import com.ggumtle.ggumtle.auth.jwt.TokenBlacklistRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.AuthErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
@@ -9,15 +10,18 @@ import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.auth.jwt.JwtProvider;
 import com.ggumtle.ggumtle.mission.application.MissionService;
 import com.ggumtle.ggumtle.mongging.application.MonggingService;
+import com.ggumtle.ggumtle.presentation.SocketResponseDispatcher;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.concurrent.ThreadLocalRandom;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuthService {
@@ -27,6 +31,8 @@ public class AuthService {
     private final JwtProvider jwtProvider;
     private final MonggingService monggingService;
     private final MissionService missionService;
+    private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final SocketResponseDispatcher socketResponseDispatcher;
 
     /**
      * 로그인 + 자동 회원가입 (통합)
@@ -71,6 +77,18 @@ public class AuthService {
         }
         String accessToken = jwtProvider.issueAccessToken(member.getId());
         return new LoginResult(member.getId(), accessToken);
+    }
+
+    @Transactional
+    public void logout(String accessToken){
+        long remainingMillis = jwtProvider.getRemainingMillis(accessToken);
+
+        if (remainingMillis > 0) {
+            tokenBlacklistRepository.save(accessToken, remainingMillis);
+        }
+
+        Long memberId = jwtProvider.parseMemberId(accessToken);
+        socketResponseDispatcher.disconnect(memberId);
     }
 
     private String generateNickname() {

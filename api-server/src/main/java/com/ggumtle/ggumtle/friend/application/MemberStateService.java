@@ -1,9 +1,11 @@
 package com.ggumtle.ggumtle.friend.application;
 
+import com.ggumtle.ggumtle.common.event.MemberDreamOutEvent;
 import com.ggumtle.ggumtle.friend.domain.MemberState;
 import com.ggumtle.ggumtle.friend.persistence.MemberStateRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -35,6 +37,15 @@ public class MemberStateService {
         memberStateRepository.deleteById(String.valueOf(memberId));
     }
 
+    @EventListener
+    public void turnInGameToOnline(MemberDreamOutEvent event) {
+        long now = Instant.now().toEpochMilli();
+        for (Long memberId : event.memberIds()) {
+            MemberState state = new MemberState(String.valueOf(memberId), State.INGAME.name(), now,TTL_SECONDS);
+            memberStateRepository.save(state);
+        }
+    }
+
     public void heartBeat(Long memberId) {
         MemberState newState = new MemberState(
                 String.valueOf(memberId),
@@ -58,5 +69,4 @@ public class MemberStateService {
         }
         return result;
     }
-
 }

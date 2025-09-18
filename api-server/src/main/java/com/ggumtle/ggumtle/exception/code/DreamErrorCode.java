@@ -15,6 +15,7 @@ public enum DreamErrorCode implements ErrorCode {
     NOT_FOUND_PARTY("DR40401", "파티를 찾을 수 없습니다"),
     NOT_FOUND_INVITATION("DR40402", "파티 초대를 찾을 수 없습니다"),
     NOT_FOUND_MATCHING("DR40403", "매칭 대기 상태가 아니거나 이미 처리된 요청입니다"),
+    NOT_FOUND_DREAM("DR40404", "드림을 찾을 수 없습니다"),
 
     NOT_ALL_READY("DR40901", "아직 준비하지 않은 파티원이 존재합니다"),
     ALREADY_IN_PARTY("DR40902", "이미 파티에 속해 있습니다"),

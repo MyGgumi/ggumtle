@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.SocketType;
+import com.ggumtle.ggumtle.common.event.MemberDreamOutEvent;
 import com.ggumtle.ggumtle.dream.application.command.CancelMatchingCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.CancelMatchingResult;
@@ -15,6 +16,7 @@ import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
+import com.ggumtle.ggumtle.messaging.event.EndDreamEvent;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -137,6 +139,23 @@ public class DreamService {
 
         StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_DREAM, event.roomId(), event.dreamServerId());
         publishEvent(SocketType.START_DREAM, dream.get().getPlayerIds(), result);
+    }
+
+    /**
+     * 종료된 드림 핸들링
+     * @param event 드림 종료 이벤트
+     */
+    @EventListener
+    public void handleEndDream(EndDreamEvent event) {
+        Dream dream = dreamRepository.findById(event.roomId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_DREAM));
+
+        applicationEventPublisher.publishEvent(new MemberDreamOutEvent(dream.getPlayerIds()));
+
+        // TODO: 종료된 드림에 대한 처리
+
+
+        dreamRepository.delete(dream);
     }
 
     /**

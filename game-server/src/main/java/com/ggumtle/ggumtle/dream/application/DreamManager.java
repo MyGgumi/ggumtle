@@ -129,7 +129,11 @@ public class DreamManager {
     public void setTimer(long startTimestamp) {
         long delay = startTimestamp + PLAY_TIME - System.currentTimeMillis();
 
-        timerFuture = timerThread.schedule(() -> endDream(false), delay, TimeUnit.MILLISECONDS);
+        if (this.room.id == -4 || this.room.id == -5) {
+            timerFuture = timerThread.schedule(() -> log.info("테스트방이라서 게임이 종료되지 않음"), delay, TimeUnit.MILLISECONDS);
+        } else {
+            timerFuture = timerThread.schedule(() -> endDream(false), delay, TimeUnit.MILLISECONDS);
+        }
 
         log.info("{}번 드림의 타이머 설정 완료: 시작 시간 = {}, 딜레이 = {}", room.id, startTimestamp, delay);
     }
@@ -1212,7 +1216,7 @@ public class DreamManager {
         log.info("{}번 드림 종료: 몽깅이 우승 = {}", room.id, isMonggingWin);
 
         // 드림 종료 이벤트 발행
-        applicationEventPublisher.publishEvent(new DreamEndEvent(this.room.id));
+        applicationEventPublisher.publishEvent(new DreamEndEvent(this.room.id, isMonggingWin));
     }
 
     private void shutdownThread() {

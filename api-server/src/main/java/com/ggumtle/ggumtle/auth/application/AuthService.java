@@ -7,6 +7,7 @@ import com.ggumtle.ggumtle.exception.code.AuthErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.auth.jwt.JwtProvider;
+import com.ggumtle.ggumtle.mission.application.MissionService;
 import com.ggumtle.ggumtle.mongging.application.MonggingService;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken.Payload;
 import lombok.AccessLevel;
@@ -25,6 +26,7 @@ public class AuthService {
     private final MemberRepository memberRepository;
     private final JwtProvider jwtProvider;
     private final MonggingService monggingService;
+    private final MissionService missionService;
 
     /**
      * 로그인 + 자동 회원가입 (통합)
@@ -60,6 +62,7 @@ public class AuthService {
             try {
                 memberRepository.save(member);
                 monggingService.createMongging(member);
+                missionService.createMemberMission(member);
             } catch (DataIntegrityViolationException e) {
                 Member existing = memberRepository.findByGoogleEmail(googleEmail).orElse(null);
                 if (existing == null) throw e;

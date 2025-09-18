@@ -1,5 +1,7 @@
 package com.ggumtle.data.rest.di
 
+import com.example.data.rest.repository.UserRepositoryImpl
+import com.example.domain.rest.repository.UserRepository
 import com.ggumtle.data.rest.repository.AuthRepositoryImpl
 import com.ggumtle.domain.rest.repository.AuthRepository
 import dagger.Binds
@@ -17,4 +19,11 @@ internal interface DataModule {
     fun bindAuthRepository(
         authRepositoryImpl: AuthRepositoryImpl
     ): AuthRepository
+
+    @Binds
+    @Singleton
+    fun bindUserRepository(
+        userRepositoryImpl: UserRepositoryImpl
+    ): UserRepository
+
 }

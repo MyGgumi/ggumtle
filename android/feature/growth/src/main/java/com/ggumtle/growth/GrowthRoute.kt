@@ -12,6 +12,7 @@ import com.ggumtle.designsystem.dialog.DialogContainer
 @Composable
 fun GrowthRoute(
     onNavigateToHome: () -> Unit = {},
+    onNavigateToMission: () -> Unit = {},
     viewModel: GrowthViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -23,26 +24,27 @@ fun GrowthRoute(
                 Toast.makeText(context, sideEffect.message, Toast.LENGTH_SHORT).show()
             }
             is GrowthContract.SideEffect.NavigateToHome -> onNavigateToHome()
-            is GrowthContract.SideEffect.NavigateToAR -> {
-                // TODO: AR 화면으로 이동
-            }
+            is GrowthContract.SideEffect.NavigateToAR -> onNavigateToMission()
+
         }
     }
 
-    GrowthContent(
-        state = state,
-        onBackClick = viewModel::onBackClick,
-        onARClick = viewModel::onARClick,
-        onDailyMissionClick = viewModel::showDailyMissionDialog,
-        onCharacterSwipe = viewModel::onCharacterSwipe,
-        onEnhanceClick = viewModel::onEnhanceClick,
-        onHideEnhanceSuccessDialog = viewModel::hideEnhanceSuccessDialog,
-        onHideDailyMissionDialog = viewModel::hideDailyMissionDialog,
-        onClaimMissionReward = viewModel::claimMissionReward
-    )
+    if (!state.isNavigating) {
+        GrowthContent(
+            state = state,
+            onBackClick = viewModel::onBackClick,
+            onARClick = viewModel::onARClick,
+            onDailyMissionClick = viewModel::showDailyMissionDialog,
+            onCharacterSwipe = viewModel::onCharacterSwipe,
+            onEnhanceClick = viewModel::onEnhanceClick,
+            onHideEnhanceSuccessDialog = viewModel::hideEnhanceSuccessDialog,
+            onHideDailyMissionDialog = viewModel::hideDailyMissionDialog,
+            onClaimMissionReward = viewModel::claimMissionReward
+        )
 
-    DialogContainer(
-        dialogState = state.dialogState,
-        onDismiss = { viewModel.hideDialog() }
-    )
+        DialogContainer(
+            dialogState = state.dialogState,
+            onDismiss = { viewModel.hideDialog() }
+        )
+    }
 }

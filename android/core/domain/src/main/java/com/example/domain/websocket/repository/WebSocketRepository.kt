@@ -22,4 +22,5 @@ interface WebSocketRepository {
     suspend fun cancelFriendRequest(friendId: Long)
     suspend fun deleteFriendRequest(friendId: Long)
     suspend fun getProfileFriend(friendId: Long)
+    suspend fun getPartyParticipants()
 }

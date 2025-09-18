@@ -2,7 +2,10 @@ package com.ggumtle.growth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.domain.unity.UnitySendManager
 import com.ggumtle.designsystem.dialog.DialogState
+import com.ggumtle.domain.unity.model.UnityMethod
+import com.ggumtle.domain.unity.model.UnityTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -17,25 +20,29 @@ import kotlin.random.Random
 
 @HiltViewModel
 class GrowthViewModel @Inject constructor(
+    private val unitySendManager: UnitySendManager
 ) : ViewModel(), ContainerHost<GrowthContract.State, GrowthContract.SideEffect> {
 
     override val container: Container<GrowthContract.State, GrowthContract.SideEffect> =
         container(GrowthContract.State())
 
-    fun onBackClick() = intent { 
-        postSideEffect(GrowthContract.SideEffect.NavigateToHome) 
+    fun onBackClick() = intent {
+        reduce { state.copy(isNavigating = true) }
+        unitySendManager.goToHomeFromGrowth()
+        delay(1100)
+        postSideEffect(GrowthContract.SideEffect.NavigateToHome)
     }
-    
+
     fun onARClick() = intent {
         postSideEffect(GrowthContract.SideEffect.NavigateToAR)
     }
-    
-    
+
+
     fun onCharacterSwipe(index: Int) = intent {
         //캐릭터 선택
         reduce { state.copy(selectedCharacterIndex = index) }
     }
-    
+
     fun onEnhanceClick() = intent {
         val currentCharacter = state.characters.getOrNull(state.selectedCharacterIndex)
         currentCharacter?.let {
@@ -57,61 +64,57 @@ class GrowthViewModel @Inject constructor(
         }
     }
 
-    private fun performEnhancement(successRate: Int) {
-        viewModelScope.launch {
-            // 3초 대기 (유니티 애니메이션 대기)
-            delay(3000)
+    private fun performEnhancement(successRate: Int) = intent {
 
-            // TODO: 서버 API 호출하여 강화 결과 받기
-            // val result = enhancementRepository.enhance(characterId, ...)
+        // TODO: 서버 API 호출하여 강화 결과 받기
+        // val result = enhancementRepository.enhance(characterId, ...)
 
-            // 현재는 로컬 랜덤으로 처리
-            val isSuccess = Random.nextInt(100) < successRate
+        // 현재는 로컬 랜덤으로 처리
+        val isSuccess = Random.nextInt(100) < successRate
 
-            if (isSuccess) {
-                // 캐릭터 정보 업데이트 (레벨업, 스탯 증가, 성공확률 감소)
-                intent {
-                    val currentCharacter = state.characters.getOrNull(state.selectedCharacterIndex)
-                    currentCharacter?.let { character ->
-                        // 강화 전 정보 저장
-                        // TODO: 서버에서 받을 업데이트된 캐릭터 정보
-                        // val updatedCharacter = enhancementRepository.getUpdatedCharacter(characterId)
+        if (isSuccess) {
+            unitySendManager.playEnhanceSuccessEffect()
+            delay(6600)
+            // 캐릭터 정보 업데이트 (레벨업, 스탯 증가, 성공확률 감소)
+            val currentCharacter = state.characters.getOrNull(state.selectedCharacterIndex)
+            currentCharacter?.let { character ->
+                // 강화 전 정보 저장
+                // TODO: 서버에서 받을 업데이트된 캐릭터 정보
+                // val updatedCharacter = enhancementRepository.getUpdatedCharacter(characterId)
 
-                        // 현재는 로컬에서 계산
-                        val updatedCharacter = character.copy(
-                            level = character.level + 1,
-                            currentStat = character.nextLevelStat,
-                            nextLevelStat = character.nextLevelStat + 0.05f, // 다음 레벨 스탯
-                            successRate = maxOf(10, character.successRate - 5), // 성공확률 5% 감소 (최소 10%)
-                            enhancementCost = (character.enhancementCost * 1.5).toInt() // 강화비용 1.5배 증가
-                        )
+                // 현재는 로컬에서 계산
+                val updatedCharacter = character.copy(
+                    level = character.level + 1,
+                    currentStat = character.nextLevelStat,
+                    nextLevelStat = character.nextLevelStat + 0.05f, // 다음 레벨 스탯
+                    successRate = maxOf(10, character.successRate - 5), // 성공확률 5% 감소 (최소 10%)
+                    enhancementCost = (character.enhancementCost * 1.5).toInt() // 강화비용 1.5배 증가
+                )
 
-                        val updatedCharacters = state.characters.toMutableList()
-                        updatedCharacters[state.selectedCharacterIndex] = updatedCharacter
+                val updatedCharacters = state.characters.toMutableList()
+                updatedCharacters[state.selectedCharacterIndex] = updatedCharacter
 
-                        //강화 성공
-                        reduce {
-                            state.copy(
-                                characters = updatedCharacters,
-                                isShowingEnhanceSuccess = true,
-                                previousCharacterInfo = character // 강화 전 정보 저장
-                            )
-                        }
-                    }
-                }
-            } else {
-                // 강화 실패 오버레이 표시
-                intent {
-                    reduce { state.copy(isShowingEnhanceFailure = true) }
-                }
-
-                // 강화 실패 오버레이 자동 사라짐
-                delay(2000)
-                intent {
-                    reduce { state.copy(isShowingEnhanceFailure = false) }
+                //강화 성공
+                reduce {
+                    state.copy(
+                        characters = updatedCharacters,
+                        isShowingEnhanceSuccess = true,
+                        previousCharacterInfo = character // 강화 전 정보 저장
+                    )
                 }
             }
+        } else {
+            unitySendManager.playEnhanceFailEffect()
+            delay(3600)
+            // 강화 실패 오버레이 표시
+            reduce { state.copy(isShowingEnhanceFailure = true) }
+
+            // 강화 실패 오버레이 자동 사라짐
+            delay(2000)
+            reduce { state.copy(isShowingEnhanceFailure = false) }
+
         }
+
     }
 
     //다이얼로그 숨기기
@@ -147,7 +150,8 @@ class GrowthViewModel @Inject constructor(
         val rewardedMission = state.dailyMission.missions.find { it.id == missionId }
         rewardedMission?.let {
             // 완료된 미션 수 계산 (보상까지 받은 미션)
-            val newCompletedCount = updatedMissions.count { mission -> mission.isCompleted && mission.isRewarded }
+            val newCompletedCount =
+                updatedMissions.count { mission -> mission.isCompleted && mission.isRewarded }
 
             // 보상 지급
             reduce {

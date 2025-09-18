@@ -101,11 +101,8 @@ class LoginViewModel @Inject constructor(
         }
         connectWebSocketUseCase.invoke()
         Log.d("LoginViewModel", "START_TRANSITION 유니티로 전송")
-        unitySendManager.sendToUnity(
-            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-            UnityMethod.START_TRANSITION.value
-        )
-        delay(2000)
+        unitySendManager.goToHomeFromLogin()
+        delay(2500)
         Log.d("LoginViewModel", "메인으로 네비게이션 시작")
         postSideEffect(LoginContract.SideEffect.NavigateToMain)
     }

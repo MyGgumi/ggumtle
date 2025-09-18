@@ -1,6 +1,7 @@
 package com.ggumtle.home
 
 import androidx.lifecycle.ViewModel
+import com.example.domain.rest.usecase.user.GetUserInfoUseCase
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.domain.model.MemberConnectionState
 import com.ggumtle.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
@@ -14,16 +15,23 @@ import com.ggumtle.domain.websocket.usecase.home.ObserveLeavePartyUseCase
 import com.ggumtle.domain.websocket.usecase.social.GetFriendsUseCase
 import com.ggumtle.domain.websocket.usecase.social.ObserveGetFriendsUseCase
 import com.ggumtle.home.model.PartyInfo
-import com.ggumtle.home.model.PartyMember
+import com.example.domain.websocket.model.PartyMember
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.designsystem.dialog.DialogState
 import com.example.domain.unity.UnitySendManager
+import com.example.domain.websocket.usecase.home.GetPartyParticipantsUseCase
+import com.example.domain.websocket.usecase.home.ObserveGetPartyParticipantsUseCase
 import com.ggumtle.domain.websocket.usecase.home.ObserveReadyGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.ReadyGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.UnReadyGameUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.ggumtle.datastore.LogoutReason
+import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.unity.model.UnityMethod
+import com.ggumtle.domain.unity.model.UnityTarget
 import com.ggumtle.domain.websocket.model.DreamStatus
+import com.ggumtle.domain.websocket.usecase.home.MatchingCancelledUseCase
+import com.ggumtle.domain.websocket.usecase.home.ObserveMatchingCancelledUseCase
 import com.ggumtle.domain.websocket.usecase.home.ObserveStartGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.StartGameUseCase
 import kotlinx.coroutines.Job
@@ -56,7 +64,12 @@ class HomeViewModel @Inject constructor(
     private val observeReadyGameUseCase: ObserveReadyGameUseCase,
     private val unReadyGameUseCase: UnReadyGameUseCase,
     private val startGameUseCase: StartGameUseCase,
-    private val observeStartGameUseCase: ObserveStartGameUseCase
+    private val observeStartGameUseCase: ObserveStartGameUseCase,
+    private val matchingCancelledUseCase: MatchingCancelledUseCase,
+    private val observeMatchingCancelledUseCase: ObserveMatchingCancelledUseCase,
+    private val getPartyParticipantsUseCase: GetPartyParticipantsUseCase,
+    private val observeGetPartyParticipantsUseCase: ObserveGetPartyParticipantsUseCase,
+    private val getUserInfoUseCase: GetUserInfoUseCase
 ) : ViewModel(), ContainerHost<HomeContract.State, HomeContract.SideEffect> {
 
     override val container: Container<HomeContract.State, HomeContract.SideEffect> =
@@ -66,8 +79,8 @@ class HomeViewModel @Inject constructor(
     private var matchmakingTimerJob: Job? = null
 
     init {
-        createParty()
         loadProfile()
+        createParty()
         observeHomeEvent()
     }
 
@@ -85,14 +98,19 @@ class HomeViewModel @Inject constructor(
         observeAcceptPartyInvitationUseCase.invoke()
             .collect { result ->
                 if (result.joinedMemberId == myId) {
-                    // TODO: 파티 현황 API 호출 후 업데이트
-                    // TODO: Unity 통신 -> 파티 현황에 맞게 플레이어 업데이트
+                    getPartyParticipantsUseCase.invoke()
+                    val result = observeGetPartyParticipantsUseCase.invoke().first()
+                    // TODO: 실제 내 레벨과 상대방 레벨 가져오기
+                    enterMyCharacter(state.userProfile.nickname, 1)
+                    result.participants.forEach { enterOtherCharacter(it.nickname, 1) }
+                    reduce { state.copy(partyMembers = result.participants) }
                 } else {
-                    // TODO: Unity 통신 -> 입장한 플레이어 추가
                     val newPartyMember = PartyMember(
                         id = result.joinedMemberId,
                         nickname = result.joinedMemberNickname
                     )
+                    // TODO: 실제 상대방 레벨 가져오기
+                    enterOtherCharacter(result.joinedMemberNickname, 1)
                     reduce { state.copy(partyMembers = state.partyMembers + newPartyMember) }
                 }
             }
@@ -102,7 +120,11 @@ class HomeViewModel @Inject constructor(
         observeLeavePartyUseCase.invoke()
             .collect { result ->
                 if (result.leftMemberId == myId) return@collect
-
+                val leftMember = state.partyMembers.find { it.id == result.leftMemberId }
+                val leftMemberNickname = leftMember?.nickname
+                if(leftMemberNickname != null) {
+                    unitySendManager.removeTargetCharacter(leftMemberNickname)
+                }
                 val updatedMembers = state.partyMembers
                     .filterNot { it.id == result.leftMemberId }
                     .map { member ->
@@ -111,7 +133,6 @@ class HomeViewModel @Inject constructor(
                             else -> member
                         }
                     }
-                // TODO: Unity 통신 -> 나간 플레이어 삭제
                 reduce {
                     state.copy(
                         partyMembers = updatedMembers,
@@ -132,7 +153,7 @@ class HomeViewModel @Inject constructor(
                 nickname = state.userProfile.nickname,
                 isLeader = true
             )
-            // TODO: Unity 통신 -> 혼자 있는 상태로 플레이어 업데이트
+            enterMyCharacter(newPartyMember.nickname, 1)
             reduce {
                 state.copy(
                     partyInfo = PartyInfo(partyId = result.partyId),
@@ -249,6 +270,7 @@ class HomeViewModel @Inject constructor(
         }
     }
 
+    // 준비 옵저브
     fun observeReadyEvent(myId: Long?) = intent {
         observeReadyGameUseCase.invoke()
             .collect { result ->
@@ -271,13 +293,14 @@ class HomeViewModel @Inject constructor(
 
     // 게임 시작
     fun onStartGame() = intent {
-        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
-        try {
-            readyGameUseCase.invoke()
-            startGameUseCase.invoke()
-        } catch (e: Exception) {
-            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
-        }
+        unitySendManager.goToInGame("-1","12")
+//        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
+//        try {
+//            readyGameUseCase.invoke()
+//            startGameUseCase.invoke()
+//        } catch (e: Exception) {
+//            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
+//        }
     }
 
     // TODO: 게임 시작 observe
@@ -301,7 +324,7 @@ class HomeViewModel @Inject constructor(
     fun onCancelGameSearch() = intent {
         if (!state.isSearchingGame) return@intent
         try {
-            // TODO: 게임 검색 취소 API 호출
+            matchingCancelledUseCase.invoke()
             stopMatchmakingTimer()
             reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
         } catch (e: Exception) {
@@ -333,7 +356,26 @@ class HomeViewModel @Inject constructor(
 
     // 프로필 조회
     private fun loadProfile() = intent {
-        //todo 프로필(내 정보) 조회 API 연동
+//        getUserInfoUseCase.invoke().collect { resource ->
+//            when (resource) {
+//                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+//                is Resource.Success -> {
+//                    val myId = authManager.getMemberId()
+//                    if (myId != null) {
+//                        val userProfile = UserProfile(myId, resource.data.nickname)
+//                        reduce {
+//                            state.copy(
+//                                userProfile = userProfile,
+//                                isLoading = false
+//                            )
+//                        }
+//                        //TODO: 실제 레발 값 가져오기
+//                        enterMyCharacter(userProfile.nickname, 1)
+//                    }
+//                }
+//                is Resource.Failure -> reduce { state.copy(isLoading = false) }
+//            }
+//        }
         val userProfile = UserProfile(1, "몽깅이")
         reduce { state.copy(userProfile = userProfile) }
     }
@@ -423,8 +465,9 @@ class HomeViewModel @Inject constructor(
     }
 
     // 설정 다이얼 로그 끄기
-    fun onDismissSettingsDialog() =
-        intent { reduce { state.copy(isSettingsDialogVisible = false) } }
+    fun onDismissSettingsDialog() = intent {
+        reduce { state.copy(isSettingsDialogVisible = false) }
+    }
 
     fun onLogout() = intent {
         // TODO: 로그아웃 API 호출
@@ -457,7 +500,22 @@ class HomeViewModel @Inject constructor(
     fun onSocialClick() = intent { postSideEffect(HomeContract.SideEffect.NavigateToSocial) }
 
     // 성장 화면 열기
-    fun onGrowthClick() = intent { postSideEffect(HomeContract.SideEffect.NavigateToGrowth) }
+    fun onGrowthClick() = intent {
+        reduce { state.copy(isNavigating = true) }
+        unitySendManager.sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.ROTATE_CAMERA_TO_ENHANCE.value
+        )
+        delay(1100)
+        postSideEffect(HomeContract.SideEffect.NavigateToGrowth)
+    }
+
+    private fun enterMyCharacter(nickname: String, level: Int) =
+        unitySendManager.addMyCharacter(nickname, level)
+
+
+    private fun enterOtherCharacter(nickname: String, level: Int) =
+        unitySendManager.addOthersCharacter(nickname, level)
 
     override fun onCleared() {
         super.onCleared()

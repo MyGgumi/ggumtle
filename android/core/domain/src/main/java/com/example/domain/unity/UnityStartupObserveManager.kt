@@ -3,7 +3,7 @@ package com.example.domain.unity
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
-interface UnityStartupManager {
+interface UnityStartupObserveManager {
     val progressFlow: StateFlow<Int>
     val messageFlow: StateFlow<String>
 

@@ -70,7 +70,9 @@ object GrowthContract {
         val isShowingEnhanceFailure: Boolean = false,
         val isShowingEnhanceSuccess: Boolean = false,
         val previousCharacterInfo: CharacterInfo? = null, // 강화 전 캐릭터 정보
-        val isShowingDailyMission: Boolean = false
+        val isShowingDailyMission: Boolean = false,
+
+        val isNavigating: Boolean = false
     )
 
     sealed interface SideEffect {

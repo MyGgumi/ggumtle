@@ -1,7 +1,10 @@
 package com.ggumtle.ggumtle.unity
 
 import com.example.domain.unity.UnitySendManager
+import com.example.domain.websocket.model.MonggingClass
 import com.ggumtle.domain.unity.model.UnityMessage
+import com.ggumtle.domain.unity.model.UnityMethod
+import com.ggumtle.domain.unity.model.UnityTarget
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -13,6 +16,111 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
 
     private val _unityMessageFlow = MutableSharedFlow<UnityMessage>(replay = 1)
     override val unityMessageFlow: SharedFlow<UnityMessage> = _unityMessageFlow.asSharedFlow()
+    override fun goToHomeFromLogin() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.START_TRANSITION.value
+        )
+    }
+
+    override fun goToLoginFromHome() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.START_REVERSE.value
+        )
+    }
+
+    override fun goToGrowthFromHome() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.ROTATE_CAMERA_TO_ENHANCE.value
+        )
+    }
+
+    override fun goToHomeFromGrowth() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.RESET_CAMERA_ROTATION.value
+        )
+    }
+
+    override fun addMyCharacter(nickname: String, level: Int) {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.SET_FIRST_CHARACTER.value,
+            listOf(nickname, level)
+        )
+    }
+
+    override fun addOthersCharacter(nickname: String, level: Int) {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.ADD_CHARACTER_BY_NICKNAME.value,
+            listOf(nickname, level)
+        )
+    }
+
+    override fun removeTargetCharacter(nickname: String) {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.REMOVE_CHARACTER_BY_NICKNAME.value,
+            listOf(nickname)
+        )
+    }
+
+    override fun changeTargetCharacterType(
+        nickname: String,
+        characterType: MonggingClass
+    ) {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.ADD_CHARACTER_BY_NICKNAME.value,
+            listOf(nickname, characterType.type)
+        )
+    }
+
+    override fun changeGrowthCharacterTypeNext() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.MOVE_TO_NEXT_TYPE.value
+        )
+    }
+
+    override fun changeGrowthCharacterTypePrevious() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.MOVE_TO_PREVIOUS_TYPE.value
+        )
+    }
+
+    override fun playEnhanceSuccessEffect() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.PLAY_ENHANCE_SUCCESS_EFFECT.value
+        )
+    }
+
+    override fun playEnhanceFailEffect() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.PLAY_ENHANCE_FAIL_EFFECT.value
+        )
+    }
+
+    override fun goToInGame(partyId: String, accessToken: String) {
+        sendToUnity(
+            UnityTarget.MAIN_SCENE_MANAGER.value,
+            UnityMethod.GO_TO_IN_GAME_WITH_DATA.value,
+            listOf(partyId, accessToken)
+        )
+    }
+
+    override fun goToOutGame() {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.EXIT_TO_OUT_GAME.value
+        )
+    }
 
     override fun sendToUnity(target: String, methodName: String, params: List<Any>) {
         _unityMessageFlow.tryEmit(UnityMessage(target, methodName, params))

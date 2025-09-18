@@ -10,19 +10,20 @@ import com.ggumtle.auth.LoginRoute
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.datastore.LogoutReason
 import com.example.domain.unity.UnitySendManager
-import com.ggumtle.domain.unity.model.UnityMethod
-import com.ggumtle.domain.unity.model.UnityTarget
 import com.ggumtle.startup.StartUpRoute
 import com.ggumtle.home.HomeRoute
 import com.ggumtle.social.SocialRoute
 import com.ggumtle.growth.GrowthRoute
+import com.ggumtle.mission.MissionRoute
 import kotlinx.coroutines.delay
 
 @Composable
 fun AppNavigation(
     isLoggedIn: Boolean = false,
     authManager: AuthManager,
-    unitySendManager: UnitySendManager
+    unitySendManager: UnitySendManager,
+    showUnity: () -> Unit,
+    hideUnity: () -> Unit
 ) {
     val navController = rememberNavController()
     val context = LocalContext.current
@@ -36,10 +37,7 @@ fun AppNavigation(
                 is LogoutReason.SessionExpired -> "세션이 만료되었습니다. 다시 로그인해 주세요"
             }
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-            unitySendManager.sendToUnity(
-                UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-                UnityMethod.START_REVERSE.value
-            )
+            unitySendManager.goToLoginFromHome()
             delay(2000)
             navController.navigate(LoginRoute) {
                 popUpTo(0) { inclusive = true }
@@ -98,6 +96,23 @@ fun AppNavigation(
                 onNavigateToHome = {
                     navController.navigate(HomeRoute) {
                         popUpTo(GrowthRoute) { inclusive = true }
+                    }
+                },
+                onNavigateToMission = {
+                    hideUnity()
+                    navController.navigate(MissionRoute){
+                        popUpTo(GrowthRoute) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable<MissionRoute>{
+            MissionRoute(
+                onNavigateBack = {
+                    showUnity()
+                    navController.navigate(GrowthRoute){
+                        popUpTo(MissionRoute){inclusive = true}
                     }
                 }
             )

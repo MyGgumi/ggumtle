@@ -18,4 +18,4 @@ data object SocialRoute
 data object GrowthRoute
 
 @Serializable
-data object HomeTabRoute
+data object MissionRoute

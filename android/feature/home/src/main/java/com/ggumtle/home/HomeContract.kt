@@ -1,7 +1,7 @@
 package com.ggumtle.home
 
 import com.ggumtle.domain.websocket.model.Friend
-import com.ggumtle.home.model.PartyMember
+import com.example.domain.websocket.model.PartyMember
 import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.home.model.InviteRequest
@@ -24,7 +24,7 @@ object HomeContract {
         // 준비 여부
         val isReady: Boolean = false,
         // 게임 찾는 중 여부
-        val isSearchingGame: Boolean = false,
+        val isSearchingGame: Boolean = true,
         // 매칭 경과 시간 (초)
         val matchmakingTimeSeconds: Int = 0,
 
@@ -42,6 +42,9 @@ object HomeContract {
         val friends: List<Friend> = emptyList(),
         // 파티 초대 목록
         val inviteRequests: List<InviteRequest> = emptyList(),
+
+        val isNavigating: Boolean = false,
+        val coin: Int = 9999,
 
         val isLoading: Boolean = false,
         val errorMessage: String? = null

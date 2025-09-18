@@ -260,7 +260,7 @@ namespace Interaction
             // MessagePipe로 감지 이벤트 발행 (상태 정보는 ViewModel에서 관리)
             var distance = Vector3.Distance(transform.position, other.transform.position);
             var message = new GgumtleDetectedMessage(
-                ggumtle.GgumtleId,
+                ggumtle.GgumtleId.ToString(),
                 other.transform,
                 distance,
                 GgumtleState.Buried // ViewModel이 실제 상태를 관리하므로 기본값 전달
@@ -316,7 +316,7 @@ namespace Interaction
             }
 
             // MessagePipe로 벗어남 이벤트 발행
-            var message = new GgumtleLeftMessage(ggumtle.GgumtleId);
+            var message = new GgumtleLeftMessage(ggumtle.GgumtleId.ToString());
             _ggumtleLeftPublisher.Publish(message);
 
             if (enableDebugLogs)

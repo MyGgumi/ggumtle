@@ -4,6 +4,7 @@
     "com.cysharp.messagepipe.vcontainer": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
+    "com.unity.addressables": "2.6.0",
     "com.unity.ai.navigation": "2.0.8",
     "com.unity.burst": "1.8.24",
     "com.unity.cinemachine": "2.10.4",
@@ -72,7 +73,9 @@
     {
       "name": "package.openupm.com",
       "url": "https://package.openupm.com",
-      "scopes": ["com.vovgou.dotnetty"]
+      "scopes": [
+        "com.vovgou.dotnetty"
+      ]
     }
   ]
 }

@@ -2,7 +2,9 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
 import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
+import com.ggumtle.ggumtle.common.event.DreamEndEvent;
 import com.ggumtle.ggumtle.common.event.JoinRoomEvent;
+import com.ggumtle.ggumtle.common.event.StartDreamEvent;
 import com.ggumtle.ggumtle.dream.application.command.CloseBoxCommand;
 import com.ggumtle.ggumtle.dream.application.command.DigUpCommand;
 import com.ggumtle.ggumtle.dream.application.command.EscapeCommand;
@@ -17,7 +19,7 @@ import com.ggumtle.ggumtle.dream.application.command.StartFeedCommand;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.UseFieldItemCommand;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
-import com.ggumtle.ggumtle.common.event.DreamStartEvent;
+import com.ggumtle.ggumtle.common.event.CreateDreamEvent;
 import com.ggumtle.ggumtle.room.application.RoomManager;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
@@ -25,9 +27,11 @@ import com.ggumtle.ggumtle.session.Session;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,23 +44,64 @@ public class DreamService {
     private final ConcurrentHashMap<Long, DreamManager> dreamManagers = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, DreamManager> sessionIdToDreamManagers = new ConcurrentHashMap<>();
     private final SpawnCache spawnCache;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @EventListener
-    public void startDream(DreamStartEvent event) {
+    public void createDream(CreateDreamEvent event) {
         Optional<Room> optionalRoom = roomManager.getRoomById(event.roomId());
 
         if (optionalRoom.isEmpty()) {
-            log.error("{}번 방이 없어 게임을 시작하지 못했습니다", event.roomId());
+            log.error("{}번 방이 없어 드림을 생성하지 못했습니다", event.roomId());
             return;
         }
 
         Room room = optionalRoom.get();
-        DreamManager dreamManager = new DreamManager(room, spawnCache);
+        DreamManager dreamManager = new DreamManager(room, spawnCache, applicationEventPublisher);
 
         dreamManagers.put(room.id, dreamManager);
         room.getPlayerSessions()
                 .forEach(session -> sessionIdToDreamManagers.put(session.getSessionId(), dreamManager));
         log.debug(sessionIdToDreamManagers.toString());
+    }
+
+    @EventListener
+    public void startDream(StartDreamEvent event) {
+        DreamManager dreamManager = getDreamManager(event.roomId());
+
+        dreamManager.setTimer(event.timestamp());
+    }
+
+    @EventListener
+    public void endDream(DreamEndEvent event) {
+        Optional<Room> optionalRoom = roomManager.getRoomById(event.roomId());
+
+        if (optionalRoom.isEmpty()) {
+            log.error("{}번 방이 없어 드림을 종료하지 못했습니다", event.roomId());
+            return;
+        }
+
+        // 세션 관련 정보
+        Room room = optionalRoom.get();
+        List<Session> playerSessions = room.getPlayerSessions();
+        playerSessions.forEach(session -> {
+            sessionIdToDreamManagers.remove(session.getSessionId());
+            roomManager.removeSession(session);
+        });
+        roomManager.removeRoom(room.id);
+
+        // DreamManager 삭제
+        DreamManager dreamManager = dreamManagers.getOrDefault(event.roomId(), null);
+        if (dreamManager == null) {
+            log.error("{}번 방에 해당하는 DreamManager가 없어 Dream을 종료하지 못했습니다", event.roomId());
+            return;
+        }
+        dreamManagers.remove(room.id);
+
+        log.info("{}번 드림 삭제 완료", room.id);
+
+        playerSessions.forEach(session -> session.disconnect());
+
+        log.info("{}번 드림의 사용자들 연결 종료 완료", room.id);
     }
 
     @EventListener
@@ -198,5 +243,17 @@ public class DreamService {
         log.error("{}번 사용자의 {}번 세션의 플레이 중인 드림이 없습니다", session.getMemberId(), session.getSessionId());
 
         throw new RuntimeException(String.format("%d번 사용자의 %d번 세션의 플레이 중인 드림이 없습니다", session.getMemberId(), session.getSessionId()));
+    }
+
+    private DreamManager getDreamManager(long roomId) {
+        DreamManager dreamManager = dreamManagers.getOrDefault(roomId, null);
+
+        if (dreamManager != null) {
+            return dreamManager;
+        }
+
+        log.error("{}번 방에 해당하는 드림이 없습니다", roomId);
+
+        throw new RuntimeException(String.format("%d번 방에 해당하는 드림이 없습니다", roomId));
     }
 }

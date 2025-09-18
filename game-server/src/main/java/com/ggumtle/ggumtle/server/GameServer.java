@@ -36,7 +36,7 @@ public class GameServer {
 
     @PostConstruct
     public void start() throws Exception {
-        log.info("게임 서버를 시작합니다. 포트: {}", port);
+        log.info("드림 서버를 시작합니다. 포트: {}", port);
 
         bossGroup = new NioEventLoopGroup(1);
         workerGroup = new NioEventLoopGroup();
@@ -58,17 +58,17 @@ public class GameServer {
                     .childOption(ChannelOption.SO_KEEPALIVE, true);
 
             serverChannelFuture = bs.bind(port).sync();
-            log.info("게임 서버가 포트 {}에서 시작되었습니다.", port);
+            log.info("드림 서버가 포트 {}에서 시작되었습니다.", port);
 
         } catch (Exception e) {
-            log.error("게임 서버 시작 중 오류 발생", e);
+            log.error("드림 서버 시작 중 오류 발생", e);
             throw e;
         }
     }
 
     @PreDestroy
     public void stop() {
-        log.info("게임 서버를 종료합니다.");
+        log.info("드림 서버를 종료합니다.");
 
         if (serverChannelFuture != null) {
             serverChannelFuture.channel().close();

@@ -12,10 +12,10 @@ public enum ReceivePacketType {
     // 방 관리
     ROOM_JOIN((short) 10),
 
-    // 게임 초기화
+    // 드림 초기화
     SCENE_CHANGE((short) 30),
 
-    // 게임 운영
+    // 드림 운영
     PLAYER_MOVE((short) 40),
 
     // 플레이어 간 상호작용

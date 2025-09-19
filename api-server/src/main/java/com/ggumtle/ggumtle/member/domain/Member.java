@@ -41,9 +41,9 @@ public class Member {
     @Column(nullable = false)
     private LocalDateTime signUpAt;
 
-    private boolean isDeleted;
+    private Boolean isDeleted;
 
-    private int coin;
+    private Integer coin;
 
     @Builder
     public Member(String googleEmail, String name, String nickname, LocalDate birthDate) {
@@ -62,5 +62,15 @@ public class Member {
         }
 
         this.coin -= coin;
+    }
+
+    public void increaseCoinCappedToMax(int amount) {
+        long result = (long) this.coin + amount;
+
+        if (result > Integer.MAX_VALUE) {
+            this.coin = Integer.MAX_VALUE;
+        } else {
+            this.coin = (int) result;
+        }
     }
 }

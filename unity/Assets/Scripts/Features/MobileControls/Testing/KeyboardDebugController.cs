@@ -42,16 +42,16 @@ namespace Features.MobileControls.Testing
 
                 try
                 {
-                    var lifetimeScope = VContainer.Unity.LifetimeScope.Find<VContainer.Unity.LifetimeScope>();
-                    if (lifetimeScope != null)
+                    var lifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
+                    if (lifetimeScope != null && lifetimeScope.Container != null)
                     {
                         _playerMovementService = lifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
-                        UnityEngine.Debug.Log("[KeyboardDebugController] VContainer에서 PlayerMovementService 찾기 성공");
+                        UnityEngine.Debug.Log("[KeyboardDebugController] MainLifetimeScope에서 PlayerMovementService 찾기 성공");
                     }
                 }
                 catch (System.Exception e)
                 {
-                    UnityEngine.Debug.LogWarning($"[KeyboardDebugController] VContainer에서 PlayerMovementService 찾기 실패: {e.Message}");
+                    UnityEngine.Debug.LogWarning($"[KeyboardDebugController] MainLifetimeScope에서 PlayerMovementService 찾기 실패: {e.Message}");
                 }
             }
 

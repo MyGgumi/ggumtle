@@ -112,32 +112,16 @@ namespace Features.Player.Views
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
-            // PlayerMovementService가 주입되지 않은 경우 직접 찾기 시도
+            // VContainer 의존성 주입 확인
             if (_playerMovementService == null)
             {
-                Debug.LogWarning("[PlayerGameObject] PlayerMovementService가 주입되지 않음. 직접 찾기 시도...");
-                try
-                {
-                    var lifetimeScope = VContainer.Unity.LifetimeScope.Find<VContainer.Unity.LifetimeScope>();
-                    if (lifetimeScope != null)
-                    {
-                        _playerMovementService = lifetimeScope.Container.Resolve<PlayerMovementService>();
-
-                        // 점프 이벤트 구독
-                        _playerMovementService.JumpInputChanged += OnJumpInputChanged;
-
-                        Debug.Log("[PlayerGameObject] VContainer에서 PlayerMovementService 찾기 성공");
-                    }
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError($"[PlayerGameObject] VContainer에서 PlayerMovementService 찾기 실패: {e.Message}");
-                }
+                Debug.LogError("[PlayerGameObject] PlayerMovementService가 주입되지 않았습니다! VContainer 설정을 확인하세요.");
+                return;
             }
 
-            if (_playerMovementService == null)
+            if (enableDebugLogs)
             {
-                Debug.LogError("[PlayerGameObject] PlayerMovementService를 찾을 수 없어서 플레이어 이동이 작동하지 않습니다!");
+                Debug.Log("[PlayerGameObject] VContainer 의존성 주입 완료. 플레이어 초기화 시작.");
             }
 
             AssignAnimationIDs();

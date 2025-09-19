@@ -145,6 +145,8 @@ namespace Features.MobileControls.ViewModels
             _joystickInputPublisher.Publish(
                 new JoystickInputMessage(inputValue, _data.joystick.isDragging)
             );
+
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] JoystickInputMessage 발행: {inputValue}, isDragging: {_data.joystick.isDragging}");
         }
 
         /// <summary>

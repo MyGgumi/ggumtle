@@ -12,7 +12,7 @@ namespace Features.Player.Services
         #region Debug Settings
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = false;
+        public bool enableDebugLogs = true;
 
         #endregion
 

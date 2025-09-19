@@ -57,7 +57,7 @@ namespace Features.Ggumtle.Views
             try
             {
                 // VContainer에서 직접 해결 (Self-Resolving 패턴)
-                var lifetimeScope = FindFirstObjectByType<GameLifetimeScope>();
+                var lifetimeScope = FindFirstObjectByType<MainLifetimeScope>();
                 if (lifetimeScope != null && lifetimeScope.Container != null)
                 {
                     viewModel = lifetimeScope.Container.Resolve<GgumtleViewModel>();
@@ -66,7 +66,7 @@ namespace Features.Ggumtle.Views
                 }
                 else
                 {
-                    Debug.LogError("[GgumtleUIView] GameLifetimeScope를 찾을 수 없음");
+                    Debug.LogError("[GgumtleUIView] MainLifetimeScope를 찾을 수 없음");
                 }
             }
             catch (System.Exception ex)

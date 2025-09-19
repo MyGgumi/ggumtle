@@ -12,11 +12,31 @@ namespace DI
     {
         protected override void Awake()
         {
-            // GameLifetimeScope를 parent로 설정
-            var gameLifetimeScope = FindFirstObjectByType<GameLifetimeScope>();
+            // parent 설정을 base.Awake() 이전에 완료해야 함
+            SetupParentReference();
+            base.Awake();
+        }
+
+        private void SetupParentReference()
+        {
+            GameLifetimeScope gameLifetimeScope = null;
+
+            // 먼저 현재 씬에서 찾기
+            gameLifetimeScope = FindFirstObjectByType<GameLifetimeScope>();
+
+            // 없으면 DontDestroyOnLoad 씬에서 찾기
+            if (gameLifetimeScope == null)
+            {
+                var allGameObjects = UnityEngine.Object.FindObjectsOfType<GameLifetimeScope>(true);
+                if (allGameObjects.Length > 0)
+                {
+                    gameLifetimeScope = allGameObjects[0];
+                }
+            }
+
+            // parent 설정 (base.Awake() 이전에 설정해야 함)
             if (gameLifetimeScope != null && gameLifetimeScope != this)
             {
-                autoInjectGameObjects = new System.Collections.Generic.List<UnityEngine.GameObject>();
                 parentReference = new ParentReference { Object = gameLifetimeScope };
                 UnityEngine.Debug.Log("[LoadingLifetimeScope] GameLifetimeScope를 parent로 설정 완료");
             }
@@ -24,8 +44,6 @@ namespace DI
             {
                 UnityEngine.Debug.LogWarning("[LoadingLifetimeScope] GameLifetimeScope를 찾을 수 없음");
             }
-
-            base.Awake();
         }
 
         protected override void Configure(IContainerBuilder builder)
@@ -34,6 +52,9 @@ namespace DI
 
             // Loading 씬에 있는 컴포넌트들 등록
             builder.RegisterComponentInHierarchy<LoadingSceneManager>();
+
+            // Loading 씬 전용 ViewModel 등록
+            builder.Register<Features.Scenes.Loading.ViewModels.LoadingViewModel>(Lifetime.Scoped);
 
             UnityEngine.Debug.Log("[LoadingLifetimeScope] Configure 완료");
         }

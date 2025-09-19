@@ -17,31 +17,13 @@ namespace DI
                 GlobalMessagePipe.SetProvider(c.AsServiceProvider())
             );
 
-            // 꿈틀이 관련 메시지 타입들을 명시적으로 등록
-            builder.RegisterMessageBroker<GgumtleLeftMessage>(options);
-            builder.RegisterMessageBroker<GgumtleStateChangedMessage>(options);
-            builder.RegisterMessageBroker<GgumtleDetectedMessage>(options);
-            builder.RegisterMessageBroker<GgumtlePurifiedMessage>(options);
-            builder.RegisterMessageBroker<GgumtleHoldProgressMessage>(options);
-            builder.RegisterMessageBroker<GgumtleFoodAddedMessage>(options);
-            builder.RegisterMessageBroker<NotificationMessage>(options);
+
 
             // 로비 관련 메시지 타입들 등록
             builder.RegisterMessageBroker<TokenVerifiedMessage>(options);
             builder.RegisterMessageBroker<LobbyUIStateMessage>(options);
 
-            // MobileControls 관련 메시지 타입들 등록
-            builder.RegisterMessageBroker<JoystickInputMessage>(options);
-            builder.RegisterMessageBroker<JoystickEndMessage>(options);
-            builder.RegisterMessageBroker<MobileButtonPressedMessage>(options);
-            builder.RegisterMessageBroker<MobileButtonReleasedMessage>(options);
-            builder.RegisterMessageBroker<InteractHoldStartMessage>(options);
-            builder.RegisterMessageBroker<InteractHoldEndMessage>(options);
-            builder.RegisterMessageBroker<InteractButtonVisibilityMessage>(options);
-            builder.RegisterMessageBroker<CameraTouchMessage>(options);
-            builder.RegisterMessageBroker<MobileControlSettingsMessage>(options);
-            builder.RegisterMessageBroker<MobileButtonStateMessage>(options);
-            builder.RegisterMessageBroker<MobileInputMessage>(options);
+
 
             // NetworkApi 등록 (팩토리 패턴으로 안전하게 처리)
             builder.Register<Networks.NetworkApi>(
@@ -78,26 +60,9 @@ namespace DI
                 Lifetime.Singleton
             );
 
-            // NetworkSources 등록
-            builder.Register<
-                Features.Ggumtle.NetworkSources.IGgumtleNetworkSource,
-                Features.Ggumtle.NetworkSources.GgumtleNetworkSource
-            >(Lifetime.Singleton);
 
-            // NetworkEventHandlers 등록
-            builder.Register<Features.Ggumtle.NetworkSources.GgumtleNetworkEventHandler>(
-                Lifetime.Singleton
-            );
 
             // Services 등록 (순수 C# 클래스)
-            builder.Register<
-                Features.Ggumtle.Services.IGgumtleService,
-                Features.Ggumtle.Services.GgumtleServiceImpl
-            >(Lifetime.Singleton);
-            builder.Register<Features.MobileControls.Services.MobileInputService>(
-                Lifetime.Singleton
-            );
-            builder.Register<Features.Player.Services.PlayerMovementService>(Lifetime.Singleton);
 
             // Game Management Services
             builder.Register<
@@ -127,37 +92,15 @@ namespace DI
 
             // NetworkSources for new features
             builder.Register<
-                Features.Scenes.Lobby.NetworkSources.ILobbyNetworkSource,
-                Features.Scenes.Lobby.NetworkSources.LobbyNetworkSource
-            >(Lifetime.Singleton);
-            builder.Register<
                 Features.Room.NetworkSources.IRoomNetworkSource,
                 Features.Room.NetworkSources.RoomNetworkSource
             >(Lifetime.Singleton);
 
-            // ViewModels 등록
-            builder.Register<Features.Ggumtle.ViewModels.GgumtleViewModel>(Lifetime.Singleton);
-            builder.Register<Features.MobileControls.ViewModels.MobileControlsViewModel>(
-                Lifetime.Singleton
-            );
-            builder.Register<Features.Scenes.Lobby.ViewModels.LobbyViewModel>(Lifetime.Singleton);
-            builder.Register<Features.Scenes.Loading.ViewModels.LoadingViewModel>(
-                Lifetime.Singleton
-            );
+            // ViewModels 등록 (전역 ViewModels만)
 
             // Views 등록 (GameObject에 붙은 컴포넌트들) - 씬별 컴포넌트는 각 씬의 LifetimeScope에서 등록
             // builder.RegisterComponentInHierarchy<Features.Player.Views.PlayerGameObject>(); // Main 씬에만 존재
 
-            // KeyboardDebugController는 팩토리 패턴으로 안전하게 등록
-            builder.Register<Features.MobileControls.Testing.KeyboardDebugController>(
-                container =>
-                {
-                    var existingController =
-                        UnityEngine.Object.FindObjectOfType<Features.MobileControls.Testing.KeyboardDebugController>();
-                    return existingController; // null이어도 상관없음 (씬에 없을 수 있음)
-                },
-                Lifetime.Singleton
-            );
 
             // Managers 등록 (Factory 패턴으로 안전하게 처리)
             builder.Register<Features.Game.Managers.GameManager>(
@@ -190,26 +133,17 @@ namespace DI
 
     public class GameInitializer : IStartable
     {
-        private readonly Features.Ggumtle.Services.IGgumtleService _ggumtleService;
-        private readonly Features.MobileControls.Services.MobileInputService _mobileInputService;
-        private readonly Features.Player.Services.PlayerMovementService _playerMovementService;
         private readonly Features.Game.Services.IGameStateService _gameStateService;
         private readonly Features.Room.Services.IRoomService _roomService;
         private readonly Features.Map.Services.IAddressableLoadService _addressableLoadService;
 
         [Inject]
         public GameInitializer(
-            Features.Ggumtle.Services.IGgumtleService ggumtleService,
-            Features.MobileControls.Services.MobileInputService mobileInputService,
-            Features.Player.Services.PlayerMovementService playerMovementService,
             Features.Game.Services.IGameStateService gameStateService,
             Features.Room.Services.IRoomService roomService,
             Features.Map.Services.IAddressableLoadService addressableLoadService
         )
         {
-            _ggumtleService = ggumtleService;
-            _mobileInputService = mobileInputService;
-            _playerMovementService = playerMovementService;
             _gameStateService = gameStateService;
             _roomService = roomService;
             _addressableLoadService = addressableLoadService;
@@ -219,12 +153,6 @@ namespace DI
         {
             UnityEngine.Debug.Log("[GameInitializer] VContainer DI 초기화 완료");
             UnityEngine.Debug.Log(
-                $"[GameInitializer] MobileInputService: {_mobileInputService != null}"
-            );
-            UnityEngine.Debug.Log(
-                $"[GameInitializer] PlayerMovementService: {_playerMovementService != null}"
-            );
-            UnityEngine.Debug.Log(
                 $"[GameInitializer] GameStateService: {_gameStateService != null}"
             );
             UnityEngine.Debug.Log($"[GameInitializer] RoomService: {_roomService != null}");
@@ -232,25 +160,12 @@ namespace DI
                 $"[GameInitializer] AddressableLoadService: {_addressableLoadService != null}"
             );
 
-            // 디버그 로그 비활성화
-            if (_mobileInputService != null)
-                _mobileInputService.enableDebugLogs = false;
-            if (_playerMovementService != null)
-                _playerMovementService.enableDebugLogs = false;
-
             // Game state 초기화 (Lobby 상태로 시작)
             if (_gameStateService != null)
             {
                 _gameStateService.SetState(Features.Game.Models.GameState.Lobby);
                 UnityEngine.Debug.Log("[GameInitializer] 게임 상태를 Lobby로 초기화");
             }
-
-            // 씬에 있는 모든 꿈틀이 자동 등록 (추후 구현)
-            // var ggumtles = UnityEngine.GameObject.FindObjectsOfType<InteractableGgumtle>();
-            // foreach (var ggumtle in ggumtles)
-            // {
-            //     _ggumtleService.RegisterGgumtle(ggumtle.GgumtleId, ggumtle.name, ggumtle.transform.position);
-            // }
         }
     }
 }

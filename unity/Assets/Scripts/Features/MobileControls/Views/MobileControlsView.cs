@@ -62,50 +62,34 @@ namespace Features.MobileControls.Views
         private int _joystickPointerId = -1;
         private int _cameraPointerId = -1;
 
+        [Inject]
+        public void Construct(MobileControlsViewModel mobileControlsViewModel)
+        {
+            viewModel = mobileControlsViewModel;
+            if (enableDebugLogs)
+                Debug.Log($"[MobileControlsView] VContainer 의존성 주입 완료: {viewModel != null}");
+        }
+
         public void Initialize(VisualElement root)
         {
             _root = root;
 
-            // Resolve ViewModel via VContainer
-            ResolveViewModel();
-
-            if (viewModel != null)
+            // VContainer 의존성 주입 확인
+            if (viewModel == null)
             {
-                CacheUIElements();
-                SetupUIEvents();
-                SubscribeToViewModel();
-                InitializeUI();
+                Debug.LogError("[MobileControlsView] ViewModel이 주입되지 않았습니다! VContainer 설정을 확인하세요.");
+                return;
+            }
 
-                if (enableDebugLogs)
-                    Debug.Log("[MobileControlsView] Initialized successfully");
-            }
-            else
-            {
-                Debug.LogError("[MobileControlsView] Failed to resolve ViewModel");
-            }
+            CacheUIElements();
+            SetupUIEvents();
+            SubscribeToViewModel();
+            InitializeUI();
+
+            if (enableDebugLogs)
+                Debug.Log("[MobileControlsView] Initialized successfully");
         }
 
-        private void ResolveViewModel()
-        {
-            try
-            {
-                var lifetimeScope = FindFirstObjectByType<GameLifetimeScope>();
-                if (lifetimeScope != null && lifetimeScope.Container != null)
-                {
-                    viewModel = lifetimeScope.Container.Resolve<MobileControlsViewModel>();
-                    if (enableDebugLogs)
-                        Debug.Log($"[MobileControlsView] ViewModel resolved: {viewModel != null}");
-                }
-                else
-                {
-                    Debug.LogError("[MobileControlsView] GameLifetimeScope not found");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[MobileControlsView] ViewModel resolve failed: {ex.Message}");
-            }
-        }
 
         private void CacheUIElements()
         {

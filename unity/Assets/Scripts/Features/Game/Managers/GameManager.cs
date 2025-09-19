@@ -92,9 +92,10 @@ namespace Features.Game.Managers
             {
                 var scopeObject = new GameObject("GameLifetimeScope");
                 scopeObject.AddComponent<GameLifetimeScope>();
+                DontDestroyOnLoad(scopeObject); // 중요: DontDestroyOnLoad 설정
 
                 if (enableDebugLogs)
-                    Debug.Log("[GameManager] GameLifetimeScope 생성 완료");
+                    Debug.Log("[GameManager] GameLifetimeScope 생성 및 DontDestroyOnLoad 설정 완료");
             }
             else
             {

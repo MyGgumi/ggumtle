@@ -11,7 +11,7 @@ public record MonggingListResult(
         List<ResultMonggingDto> monggings
 ) {
 
-    public static MonggingListResult from(List<Mongging> monggings) {
+    public static MonggingListResult of(List<Mongging> monggings) {
         return new MonggingListResult(monggings.stream().map(ResultMonggingDto::from).toList());
     }
 

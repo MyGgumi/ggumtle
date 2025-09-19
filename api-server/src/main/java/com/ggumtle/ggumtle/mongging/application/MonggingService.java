@@ -69,7 +69,7 @@ public class MonggingService {
     public MonggingListResult fetchMonggings(Long memberId) {
         List<Mongging> monggings = monggingRepository.findAllByOwnerIdFetchClassAndOwner(memberId);
 
-        return MonggingListResult.from(monggings);
+        return MonggingListResult.of(monggings);
     }
 
     @Transactional

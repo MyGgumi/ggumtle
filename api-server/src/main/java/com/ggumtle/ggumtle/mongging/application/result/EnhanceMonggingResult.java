@@ -2,9 +2,10 @@ package com.ggumtle.ggumtle.mongging.application.result;
 
 import com.ggumtle.ggumtle.mongging.domain.EnhancePercentage;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
+import lombok.AccessLevel;
 import lombok.Builder;
 
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 public record EnhanceMonggingResult(
     boolean isSuccess,
     long monggingId,
@@ -59,7 +60,7 @@ public record EnhanceMonggingResult(
             .build();
     }
 
-    @Builder
+    @Builder(access = AccessLevel.PRIVATE)
     record Experience(
         long monggingId,
         String statisticName,

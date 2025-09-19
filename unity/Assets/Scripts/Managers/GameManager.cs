@@ -1,9 +1,9 @@
-using UnityEngine;
-using Services;
-using VContainer;
-using VContainer.Unity;
 using DI;
 using Networks;
+using Services;
+using UnityEngine;
+using VContainer;
+using VContainer.Unity;
 
 namespace Managers
 {
@@ -15,8 +15,11 @@ namespace Managers
         public static GameManager Instance { get; private set; }
 
         [Header("서비스 설정")]
-        [SerializeField] private bool autoInitializeServices = true;
-        [SerializeField] private bool enableDebugLogs = true;
+        [SerializeField]
+        private bool autoInitializeServices = true;
+
+        [SerializeField]
+        private bool enableDebugLogs = true;
 
         void Awake()
         {
@@ -82,7 +85,6 @@ namespace Managers
             }
         }
 
-
         /// <summary>
         /// 게임 종료 시 정리 작업
         /// </summary>
@@ -101,7 +103,6 @@ namespace Managers
         {
             InitializeServices();
         }
-
 
         #endregion
 

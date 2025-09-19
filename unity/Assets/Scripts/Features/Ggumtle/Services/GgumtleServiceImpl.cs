@@ -29,7 +29,7 @@ namespace Features.Ggumtle.Services
 
         #region Private Fields
 
-        private readonly Dictionary<string, GgumtleData> _ggumtleDataMap = new();
+        private readonly Dictionary<int, GgumtleData> _ggumtleDataMap = new();
         private readonly bool _enableDebugLogs = true;
 
         #endregion
@@ -60,7 +60,7 @@ namespace Features.Ggumtle.Services
 
         #region Ggumtle Management
 
-        public void RegisterGgumtle(string ggumtleId, string name, Vector3 position)
+        public void RegisterGgumtle(int ggumtleId, string name, Vector3 position)
         {
             if (_ggumtleDataMap.ContainsKey(ggumtleId))
             {
@@ -68,12 +68,34 @@ namespace Features.Ggumtle.Services
                 return;
             }
 
-            var data = new GgumtleData(ggumtleId, name, position);
+            var data = new GgumtleData(ggumtleId.ToString(), name, position);
             _ggumtleDataMap[ggumtleId] = data;
             DebugLog($"[GgumtleServiceImpl] 꿈틀이 등록: {ggumtleId} - {name}");
         }
 
+        public void RegisterGgumtle(string ggumtleId, string name, Vector3 position)
+        {
+            if (int.TryParse(ggumtleId, out int id))
+            {
+                RegisterGgumtle(id, name, position);
+            }
+            else
+            {
+                DebugLog($"[GgumtleServiceImpl] 잘못된 꿈틀이 ID 형식: {ggumtleId}");
+            }
+        }
+
         public GgumtleData GetGgumtleData(string ggumtleId)
+        {
+            if (int.TryParse(ggumtleId, out int id))
+            {
+                return GetGgumtleData(id);
+            }
+            DebugLog($"[GgumtleServiceImpl] 잘못된 꿈틀이 ID 형식: {ggumtleId}");
+            return null;
+        }
+
+        public GgumtleData GetGgumtleData(int ggumtleId)
         {
             DebugLog($"[GgumtleServiceImpl] GetGgumtleData 호출: {ggumtleId}");
             DebugLog($"[GgumtleServiceImpl] 등록된 꿈틀이 목록: [{string.Join(", ", _ggumtleDataMap.Keys)}]");
@@ -84,12 +106,20 @@ namespace Features.Ggumtle.Services
             return result;
         }
 
-        public Dictionary<string, GgumtleData> GetAllGgumtleData()
+        public Dictionary<int, GgumtleData> GetAllGgumtleData()
         {
-            return new Dictionary<string, GgumtleData>(_ggumtleDataMap);
+            return new Dictionary<int, GgumtleData>(_ggumtleDataMap);
         }
 
         public void UnregisterGgumtle(string ggumtleId)
+        {
+            if (int.TryParse(ggumtleId, out int id))
+            {
+                UnregisterGgumtle(id);
+            }
+        }
+
+        public void UnregisterGgumtle(int ggumtleId)
         {
             if (_ggumtleDataMap.Remove(ggumtleId))
             {
@@ -403,7 +433,7 @@ namespace Features.Ggumtle.Services
                     {
                         if (kvp.Value.currentState == GgumtleState.Digging)
                         {
-                            CancelHold(kvp.Key);
+                            CancelHold(kvp.Key.ToString());
                             break;
                         }
                     }
@@ -485,7 +515,7 @@ namespace Features.Ggumtle.Services
                     {
                         if (kvp.Value.currentState == GgumtleState.Feeding)
                         {
-                            CancelHold(kvp.Key);
+                            CancelHold(kvp.Key.ToString());
                             break;
                         }
                     }
@@ -553,13 +583,12 @@ namespace Features.Ggumtle.Services
         /// </summary>
         public void HandleGgumtleSpawn(int ggumtleId, Vector3 position)
         {
-            var ggumtleIdStr = ggumtleId.ToString();
             var ggumtleName = $"Ggumtle_{ggumtleId}";
 
-            DebugLog($"[GgumtleServiceImpl] 꿈틀이 스폰: {ggumtleIdStr}, Position={position}");
+            DebugLog($"[GgumtleServiceImpl] 꿈틀이 스폰: {ggumtleId}, Position={position}");
 
             // 꿈틀이 등록 (Buried 상태로 시작)
-            RegisterGgumtle(ggumtleIdStr, ggumtleName, position);
+            RegisterGgumtle(ggumtleId, ggumtleName, position);
 
             // 스폰 알림 발행
             _notificationPublisher.Publish(
@@ -572,10 +601,9 @@ namespace Features.Ggumtle.Services
         /// </summary>
         public void HandleGgumtleNirvana(int ggumtleId)
         {
-            var ggumtleIdStr = ggumtleId.ToString();
-            var data = GetGgumtleData(ggumtleIdStr);
+            var data = GetGgumtleData(ggumtleId);
 
-            DebugLog($"[GgumtleServiceImpl] 꿈틀이 성불: {ggumtleIdStr}");
+            DebugLog($"[GgumtleServiceImpl] 꿈틀이 성불: {ggumtleId}");
 
             if (data != null)
             {
@@ -589,11 +617,11 @@ namespace Features.Ggumtle.Services
                 );
 
                 // 꿈틀이 제거
-                UnregisterGgumtle(ggumtleIdStr);
+                UnregisterGgumtle(ggumtleId);
             }
             else
             {
-                DebugLog($"[GgumtleServiceImpl] 성불할 꿈틀이를 찾을 수 없음: {ggumtleIdStr}");
+                DebugLog($"[GgumtleServiceImpl] 성불할 꿈틀이를 찾을 수 없음: {ggumtleId}");
             }
         }
 

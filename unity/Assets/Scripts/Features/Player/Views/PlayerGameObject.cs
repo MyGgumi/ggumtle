@@ -112,6 +112,34 @@ namespace Features.Player.Views
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
+            // PlayerMovementService가 주입되지 않은 경우 직접 찾기 시도
+            if (_playerMovementService == null)
+            {
+                Debug.LogWarning("[PlayerGameObject] PlayerMovementService가 주입되지 않음. 직접 찾기 시도...");
+                try
+                {
+                    var lifetimeScope = VContainer.Unity.LifetimeScope.Find<VContainer.Unity.LifetimeScope>();
+                    if (lifetimeScope != null)
+                    {
+                        _playerMovementService = lifetimeScope.Container.Resolve<PlayerMovementService>();
+
+                        // 점프 이벤트 구독
+                        _playerMovementService.JumpInputChanged += OnJumpInputChanged;
+
+                        Debug.Log("[PlayerGameObject] VContainer에서 PlayerMovementService 찾기 성공");
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[PlayerGameObject] VContainer에서 PlayerMovementService 찾기 실패: {e.Message}");
+                }
+            }
+
+            if (_playerMovementService == null)
+            {
+                Debug.LogError("[PlayerGameObject] PlayerMovementService를 찾을 수 없어서 플레이어 이동이 작동하지 않습니다!");
+            }
+
             AssignAnimationIDs();
 
             _jumpTimeoutDelta = JumpTimeout;
@@ -146,21 +174,33 @@ namespace Features.Player.Views
             );
 
             bool wasGrounded = Grounded;
-            Grounded = Physics.CheckSphere(
-                spherePosition,
-                GroundedRadius,
-                GroundLayers,
-                QueryTriggerInteraction.Ignore
-            );
 
-            if (wasGrounded != Grounded)
+            // GroundLayers가 설정되지 않은 경우 기본 레이어로 체크
+            if (GroundLayers.value == 0)
             {
-                if (enableDebugLogs)
-                {
-                    Debug.Log(
-                        $"[PlayerGameObject] Grounded 상태 변화: {wasGrounded} → {Grounded}, 위치: {transform.position}, 체크 위치: {spherePosition}, 레이어: {GroundLayers.value}"
-                    );
-                }
+                Debug.LogWarning("[PlayerGameObject] GroundLayers가 설정되지 않음. 기본 레이어로 체크합니다.");
+                Grounded = Physics.CheckSphere(
+                    spherePosition,
+                    GroundedRadius,
+                    ~0, // 모든 레이어
+                    QueryTriggerInteraction.Ignore
+                );
+            }
+            else
+            {
+                Grounded = Physics.CheckSphere(
+                    spherePosition,
+                    GroundedRadius,
+                    GroundLayers,
+                    QueryTriggerInteraction.Ignore
+                );
+            }
+
+            if (wasGrounded != Grounded && enableDebugLogs)
+            {
+                Debug.Log(
+                    $"[PlayerGameObject] Grounded 상태 변화: {wasGrounded} → {Grounded}, 위치: {transform.position}, 체크 위치: {spherePosition}, 레이어: {GroundLayers.value}"
+                );
             }
 
             if (_hasAnimator)
@@ -172,16 +212,17 @@ namespace Features.Player.Views
         private void Move()
         {
             if (!canMove)
+            {
+                if (enableDebugLogs)
+                    Debug.Log("[PlayerGameObject] canMove가 false여서 이동하지 않습니다.");
                 return;
+            }
 
             if (_playerMovementService == null)
             {
-                if (enableDebugLogs)
-                {
-                    Debug.LogWarning(
-                        "[PlayerGameObject] Move() - PlayerMovementService가 null입니다!"
-                    );
-                }
+                Debug.LogError(
+                    "[PlayerGameObject] Move() - PlayerMovementService가 null입니다! 플레이어 이동이 작동하지 않습니다."
+                );
                 return;
             }
 
@@ -189,6 +230,8 @@ namespace Features.Player.Views
 
             if (_playerMovementService.MoveInput == Vector2.zero)
                 targetSpeed = 0.0f;
+            else if (enableDebugLogs)
+                Debug.Log($"[PlayerGameObject] 이동 입력 감지: {_playerMovementService.MoveInput}, targetSpeed: {targetSpeed}");
 
             float currentHorizontalSpeed = new Vector3(
                 _controller.velocity.x,

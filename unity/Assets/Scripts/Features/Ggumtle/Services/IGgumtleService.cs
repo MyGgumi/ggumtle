@@ -14,22 +14,37 @@ namespace Features.Ggumtle.Services
         #region Ggumtle Management
 
         /// <summary>
-        /// 꿈틀이 등록
+        /// 꿈틀이 등록 (서버 ID 기반)
+        /// </summary>
+        void RegisterGgumtle(int ggumtleId, string name, Vector3 position);
+
+        /// <summary>
+        /// 꿈틀이 등록 (기존 호환용)
         /// </summary>
         void RegisterGgumtle(string ggumtleId, string name, Vector3 position);
 
         /// <summary>
-        /// 꿈틀이 데이터 조회
+        /// 꿈틀이 데이터 조회 (서버 ID 기반)
+        /// </summary>
+        GgumtleData GetGgumtleData(int ggumtleId);
+
+        /// <summary>
+        /// 꿈틀이 데이터 조회 (기존 호환용)
         /// </summary>
         GgumtleData GetGgumtleData(string ggumtleId);
 
         /// <summary>
         /// 모든 꿈틀이 데이터 조회
         /// </summary>
-        Dictionary<string, GgumtleData> GetAllGgumtleData();
+        Dictionary<int, GgumtleData> GetAllGgumtleData();
 
         /// <summary>
-        /// 꿈틀이 제거
+        /// 꿈틀이 제거 (서버 ID 기반)
+        /// </summary>
+        void UnregisterGgumtle(int ggumtleId);
+
+        /// <summary>
+        /// 꿈틀이 제거 (기존 호환용)
         /// </summary>
         void UnregisterGgumtle(string ggumtleId);
 

@@ -13,10 +13,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Entity
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class MemberMission {
     @Id
@@ -38,13 +38,11 @@ public class MemberMission {
     @Column(nullable = false)
     private Integer doneCount;
 
-    public static MemberMission createMemberMission(Member member, Mission mission) {
-        MemberMission missionComplete = new MemberMission();
-        missionComplete.member = member;
-        missionComplete.mission = mission;
-        missionComplete.state = MissionState.BEFORE_SUCCESS;
-        missionComplete.doneCount = 0;
-        return missionComplete;
+    public MemberMission(Member member, Mission mission) {
+        this.member = member;
+        this.mission = mission;
+        this.state = MissionState.BEFORE_SUCCESS;
+        this.doneCount = 0;
     }
 
     public boolean doMission() {

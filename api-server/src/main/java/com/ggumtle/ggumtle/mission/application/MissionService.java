@@ -34,7 +34,7 @@ public class MissionService {
 
         List<MemberMission> missions = new ArrayList<>();
         for (Mission oneMission : allMissions) {
-            missions.add(MemberMission.createMemberMission(newMember, oneMission));
+            missions.add(new MemberMission(newMember, oneMission));
         }
         memberMissionRepository.saveAll(missions);
     }

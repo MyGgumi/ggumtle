@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.exception.code.MonggingErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.mongging.application.result.EnhanceMonggingResult;
 import com.ggumtle.ggumtle.mongging.application.result.MonggingDetailResult;
+import com.ggumtle.ggumtle.mongging.application.result.MonggingListResult;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
 import com.ggumtle.ggumtle.mongging.domain.MonggingClass;
 import com.ggumtle.ggumtle.mongging.persistence.EnhancePercentageRepository;
@@ -12,12 +13,14 @@ import com.ggumtle.ggumtle.mongging.persistence.MonggingClassRepository;
 import com.ggumtle.ggumtle.mongging.persistence.MonggingRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class MonggingService {
@@ -55,6 +58,18 @@ public class MonggingService {
         }
 
         return MonggingDetailResult.of(mongging, currentEnhancePercentage, nextEnhancePercentageOpt.get());
+    }
+
+    /**
+     * 유저의 모든 몽깅이 조회
+     * @param memberId 유저 아이디
+     * @return 유저가 가지고 있는 몽깅이 목록
+     */
+    @Transactional(readOnly = true)
+    public MonggingListResult fetchMonggings(Long memberId) {
+        List<Mongging> monggings = monggingRepository.findAllByOwnerIdFetchClassAndOwner(memberId);
+
+        return MonggingListResult.from(monggings);
     }
 
     @Transactional

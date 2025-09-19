@@ -34,4 +34,13 @@ public interface MonggingRepository extends JpaRepository<Mongging, Long> {
         where m.id in :ids
         """)
     List<Mongging> findAllByIdInFetchClassAndOwner(List<Long> ids);
+
+    @Query("""
+        select m
+        from Mongging m
+        join fetch m.monggingClass
+        join fetch m.owner
+        where m.owner.id = :ownerId
+        """)
+    List<Mongging> findAllByOwnerIdFetchClassAndOwner(Long ownerId);
 }

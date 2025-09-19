@@ -4,8 +4,10 @@ import com.ggumtle.ggumtle.common.LoginUser;
 import com.ggumtle.ggumtle.mongging.application.MonggingService;
 import com.ggumtle.ggumtle.mongging.application.result.EnhanceMonggingResult;
 import com.ggumtle.ggumtle.mongging.application.result.MonggingDetailResult;
+import com.ggumtle.ggumtle.mongging.application.result.MonggingListResult;
 import com.ggumtle.ggumtle.mongging.presentation.response.EnhanceMonggingResponse;
 import com.ggumtle.ggumtle.mongging.presentation.response.MonggingDetailResponse;
+import com.ggumtle.ggumtle.mongging.presentation.response.MonggingListResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,7 +30,16 @@ public class MonggingController {
     ) {
         MonggingDetailResult result = monggingService.fetchMonggingDetail(memberId, monggingId);
 
-        return ResponseEntity.ok(MonggingDetailResponse.of(result));
+        return ResponseEntity.ok(MonggingDetailResponse.from(result));
+    }
+    
+    @GetMapping
+    public ResponseEntity<MonggingListResponse> getMonggings(
+            @LoginUser Long memberId
+    ) {
+        MonggingListResult result = monggingService.fetchMonggings(memberId);
+
+        return ResponseEntity.ok(MonggingListResponse.from(result));
     }
 
     @PatchMapping("/{mongging-id}/enhance")

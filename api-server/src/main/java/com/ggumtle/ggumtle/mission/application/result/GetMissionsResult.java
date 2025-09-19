@@ -1,31 +1,34 @@
 package com.ggumtle.ggumtle.mission.application.result;
 
+import com.ggumtle.ggumtle.mission.domain.MemberMission;
+import com.ggumtle.ggumtle.mission.domain.MissionState;
+
 import java.util.List;
 
 public record GetMissionsResult(
     List<Mission> missions
 ) {
-    public static GetMissionsResult of(List<Mission> missions) {
+    public static GetMissionsResult of(List<MemberMission> missions) {
         return new GetMissionsResult(
                 missions == null ? List.of() :
                         missions.stream()
-                        .map(mission -> new Mission(
-                                mission.userMissionId(),
-                                mission.missionName(),
-                                mission.missionDescription(),
-                                mission.requiredCount(),
-                                mission.nowCount(),
-                                mission.state()))
+                        .map(memberMission -> new Mission(
+                                memberMission.getId(),
+                                memberMission.getMission().getName(),
+                                memberMission.getMission().getDescription(),
+                                memberMission.getMission().getId(),
+                                memberMission.getDoneCount(),
+                                memberMission.getState()))
                         .toList()
         );
     }
 
     public record Mission(
-            Long userMissionId,
-            String missionName,
-            String missionDescription,
-            int requiredCount,
-            int nowCount,
-            String state
+            Long memberMissionId,
+            String name,
+            String description,
+            Integer requiredCount,
+            Integer doneCount,
+            MissionState state
     ){}
 }

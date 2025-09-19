@@ -10,24 +10,28 @@ public record GetMissionsResponse(
     public static GetMissionsResponse from(GetMissionsResult result) {
         return new GetMissionsResponse(
                 result.missions().stream()
-                        .map(mission ->
-                            new Mission(
-                                mission.userMissionId(),
-                                mission.missionName(),
-                                mission.missionDescription(),
-                                mission.requiredCount(),
-                                mission.nowCount(),
-                                mission.state()))
+                        .map(Mission::from)
                         .toList()
         );
     }
 
     public record Mission(
-            Long userMissionId,
-            String missionName,
-            String missionDescription,
-            int requiredCount,
-            int nowCount,
+            Long memberMissionId,
+            String name,
+            String description,
+            Integer requiredCount,
+            Integer doneCount,
             String state
-    ){}
+    ) {
+        public static Mission from(GetMissionsResult.Mission result) {
+            return new Mission(
+                    result.memberMissionId(),
+                    result.name(),
+                    result.description(),
+                    result.requiredCount(),
+                    result.doneCount(),
+                    result.state().name()
+            );
+        }
+    }
 }

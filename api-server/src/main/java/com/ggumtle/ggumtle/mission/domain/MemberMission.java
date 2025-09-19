@@ -33,18 +33,29 @@ public class MemberMission {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private CompleteState completeState;
+    private MissionState state;
 
     @Column(nullable = false)
-    private int count;
+    private Integer doneCount;
 
     public static MemberMission createMemberMission(Member member, Mission mission) {
         MemberMission missionComplete = new MemberMission();
         missionComplete.member = member;
         missionComplete.mission = mission;
-        missionComplete.completeState = CompleteState.BEFORE_SUCCESS;
-        missionComplete.count = 0;
+        missionComplete.state = MissionState.BEFORE_SUCCESS;
+        missionComplete.doneCount = 0;
         return missionComplete;
     }
 
+    public boolean doMission() {
+        if (this.doneCount >= mission.getRequiredCount()) {
+            return false;
+        }
+
+        doneCount++;
+        if (this.doneCount >= mission.getRequiredCount()) {
+            this.state = MissionState.SUCCESS;
+        }
+        return true;
+    }
 }

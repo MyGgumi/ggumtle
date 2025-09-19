@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.mission.domain;
 
-public enum CompleteState {
+public enum MissionState {
     BEFORE_SUCCESS,
     SUCCESS,
-    AFTER_RECEIPT
+    AFTER_REWARD
 }

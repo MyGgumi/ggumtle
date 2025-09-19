@@ -1,13 +1,9 @@
 package com.ggumtle.ggumtle.mongging.domain;
 
+import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.MonggingErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -38,4 +34,18 @@ public class Mongging {
         return mongging;
     }
 
+    public boolean enhance(EnhancePercentage enhancePercentage) {
+        if (level >= 5) {
+            throw new GgumtleException(MonggingErrorCode.ALREADY_MAX_LEVEL);
+        }
+
+        owner.spend(enhancePercentage.getRequiredCoin());
+
+        if (Math.random() < enhancePercentage.getSuccessPercentage()) {
+            level++;
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

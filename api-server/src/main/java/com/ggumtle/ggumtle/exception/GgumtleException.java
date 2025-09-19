@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.exception;
 
 import com.ggumtle.ggumtle.exception.code.ErrorCode;
+import org.springframework.http.HttpStatus;
 
 public class GgumtleException extends RuntimeException {
     private final ErrorCode errorCode;
@@ -24,5 +25,9 @@ public class GgumtleException extends RuntimeException {
 
     public String getMessage() {
         return message;
+    }
+
+    public HttpStatus getHttpStatus() {
+        return errorCode.getHttpStatus();
     }
 }

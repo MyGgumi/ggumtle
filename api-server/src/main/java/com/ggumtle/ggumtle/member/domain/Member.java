@@ -1,5 +1,7 @@
 package com.ggumtle.ggumtle.member.domain;
 
+import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -52,5 +54,13 @@ public class Member {
         this.signUpAt = LocalDateTime.now();
         this.isDeleted = false;
         this.coin = 0;
+    }
+
+    public void spend(int coin) {
+        if (this.coin < coin) {
+            throw new GgumtleException(MemberErrorCode.NOT_ENOUGH_COIN);
+        }
+
+        this.coin -= coin;
     }
 }

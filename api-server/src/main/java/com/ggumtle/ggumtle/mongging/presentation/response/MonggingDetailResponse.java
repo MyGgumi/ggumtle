@@ -16,7 +16,7 @@ public record MonggingDetailResponse(
     Integer needCoin,
     Integer successPercentage
 ) {
-    public static MonggingDetailResponse of(MonggingDetailResult result) {
+    public static MonggingDetailResponse from(MonggingDetailResult result) {
         return MonggingDetailResponse.builder()
             .id(result.monggingId())
             .monggingClass(result.monggingClassName())

@@ -18,12 +18,15 @@ public class PartyParticipant {
 
     private boolean isLeader;
 
+    private Long monggingId;
+
     private boolean isReady;
 
-    public PartyParticipant(Long memberId, String partyId, boolean isLeader) {
+    public PartyParticipant(Long memberId, String partyId, Long monggingId, boolean isLeader) {
         this.memberId = memberId;
         this.partyId = partyId;
         this.isLeader = isLeader;
+        this.monggingId = monggingId;
         this.isReady = false;
     }
 
@@ -37,5 +40,9 @@ public class PartyParticipant {
 
     public void setAsLeader(){
         this.isLeader = true;
+    }
+
+    public void changeMongging(Long monggingId) {
+        this.monggingId = monggingId;
     }
 }

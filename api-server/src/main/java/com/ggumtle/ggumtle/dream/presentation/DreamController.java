@@ -6,6 +6,7 @@ import com.ggumtle.ggumtle.dream.application.DreamPartyService;
 import com.ggumtle.ggumtle.dream.application.DreamService;
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
 import com.ggumtle.ggumtle.dream.application.command.CancelMatchingCommand;
+import com.ggumtle.ggumtle.dream.application.command.ChangeMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetInvitationsCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetPartyParticipantsCommand;
@@ -15,6 +16,7 @@ import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
 import com.ggumtle.ggumtle.dream.application.result.CancelMatchingResult;
+import com.ggumtle.ggumtle.dream.application.result.ChangeMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.GetInvitationsResult;
 import com.ggumtle.ggumtle.dream.application.result.GetPartyParticipantsResult;
@@ -23,9 +25,11 @@ import com.ggumtle.ggumtle.dream.application.result.LeavePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.ReadyDreamResult;
 import com.ggumtle.ggumtle.dream.application.result.UnreadyDreamResult;
 import com.ggumtle.ggumtle.dream.presentation.request.AcceptPartyInvitationRequest;
+import com.ggumtle.ggumtle.dream.presentation.request.ChangeMonggingClassRequest;
 import com.ggumtle.ggumtle.dream.presentation.request.InvitePartyRequest;
 import com.ggumtle.ggumtle.dream.presentation.response.AcceptPartyInvitationResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.CancelMatchingResponse;
+import com.ggumtle.ggumtle.dream.presentation.response.ChangeMonggingResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.CreatePartyResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.GetInvitationsResponse;
 import com.ggumtle.ggumtle.dream.presentation.response.GetPartyParticipantsResponse;
@@ -60,40 +64,6 @@ public class DreamController {
 
         SendSocketEvent event = new SendSocketEvent(SocketType.CREATE_PARTY, result.clientMemberIds(), new CreatePartyResponse(result.partyId()));
         applicationEventPublisher.publishEvent(event);
-    }
-
-    @SocketCommandHandler(type = SocketType.INVITE_PARTY)
-    public void inviteParty(InvitePartyRequest request, WebSocketSession session) {
-        Long requesterId = Long.parseLong(session.getPrincipal().getName());
-
-        InvitePartyResult result = dreamPartyService.inviteParty(new InvitePartyCommand(requesterId, request.inviteeId()));
-
-        SendSocketEvent event = new SendSocketEvent(SocketType.INVITE_PARTY, List.of(requesterId, request.inviteeId()), new InvitePartyResponse(result.invitationId(), result.inviteeNickname()));
-        applicationEventPublisher.publishEvent(event);
-    }
-
-    @SocketCommandHandler(type = SocketType.ACCEPT_PARTY_INVITATION)
-    public void acceptPartyInvitation(AcceptPartyInvitationRequest request, WebSocketSession session) {
-        Long requesterId = Long.parseLong(session.getPrincipal().getName());
-
-        AcceptPartyInvitationCommand command = new AcceptPartyInvitationCommand(requesterId, request.invitationId());
-        AcceptPartyInvitationResult result = dreamPartyService.acceptPartyInvitation(command);
-
-        AcceptPartyInvitationResponse response = new AcceptPartyInvitationResponse(result.joinedMemberId(), result.joinedMemberNickname());
-        SendSocketEvent event = new SendSocketEvent(SocketType.ACCEPT_PARTY_INVITATION, result.memberIds(), response);
-        applicationEventPublisher.publishEvent(event);
-    }
-
-    @SocketCommandHandler(type = SocketType.START_DREAM)
-    public void startDream(WebSocketSession session) {
-        Long requesterId = Long.parseLong(session.getPrincipal().getName());
-
-        StartDreamCommand command = new StartDreamCommand(requesterId);
-        dreamService.startDream(command);
-        List<Long> partyMemberIds = dreamPartyService.getPartyMemberIds(requesterId);
-        partyMemberIds.forEach(memberId -> {
-            memberStateService.setInGame(memberId);
-        });
     }
 
     @SocketCommandHandler(type = SocketType.READY_DREAM)
@@ -134,6 +104,39 @@ public class DreamController {
         applicationEventPublisher.publishEvent(event);
     }
 
+    @SocketCommandHandler(type = SocketType.START_DREAM)
+    public void startDream(WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+
+        StartDreamCommand command = new StartDreamCommand(requesterId);
+        dreamService.startDream(command);
+        List<Long> partyMemberIds = dreamPartyService.getPartyMemberIds(requesterId);
+        partyMemberIds.forEach(memberId -> {
+            memberStateService.setInGame(memberId);
+        });
+    }
+
+    @SocketCommandHandler(type = SocketType.CANCELLED_MATCHING)
+    public void cancelMatching(WebSocketSession session) {
+        Long memberId = Long.parseLong(session.getPrincipal().getName());
+        CancelMatchingCommand command = new CancelMatchingCommand(memberId);
+        CancelMatchingResult result = dreamService.cancelMatching(command);
+        CancelMatchingResponse response = new CancelMatchingResponse(result.message());
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.CANCELLED_MATCHING, result.participantIds(), response);
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    @SocketCommandHandler(type = SocketType.INVITE_PARTY)
+    public void inviteParty(InvitePartyRequest request, WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+
+        InvitePartyResult result = dreamPartyService.inviteParty(new InvitePartyCommand(requesterId, request.inviteeId()));
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.INVITE_PARTY, List.of(requesterId, request.inviteeId()), new InvitePartyResponse(result.invitationId(), result.inviteeNickname()));
+        applicationEventPublisher.publishEvent(event);
+    }
+
     @SocketCommandHandler(type = SocketType.GET_INVITATIONS)
     public void getInvitations(WebSocketSession session) {
         Long requesterId = Long.parseLong(session.getPrincipal().getName());
@@ -146,25 +149,37 @@ public class DreamController {
         applicationEventPublisher.publishEvent(event);
     }
 
+    @SocketCommandHandler(type = SocketType.ACCEPT_PARTY_INVITATION)
+    public void acceptPartyInvitation(AcceptPartyInvitationRequest request, WebSocketSession session) {
+        Long requesterId = Long.parseLong(session.getPrincipal().getName());
+        AcceptPartyInvitationCommand command = new AcceptPartyInvitationCommand(requesterId, request.invitationId());
+
+        AcceptPartyInvitationResult result = dreamPartyService.acceptPartyInvitation(command);
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.ACCEPT_PARTY_INVITATION, result.memberIds(), AcceptPartyInvitationResponse.from(result));
+        applicationEventPublisher.publishEvent(event);
+    }
+
     @SocketCommandHandler(type = SocketType.GET_PARTY_PARTICIPANTS)
     public void getPartyParticipants(WebSocketSession session) {
         Long memberId =  Long.parseLong(session.getPrincipal().getName());
         GetPartyParticipantsCommand command = new GetPartyParticipantsCommand(memberId);
-        GetPartyParticipantsResult result = dreamPartyService.getPartyParticipants(command);
-        GetPartyParticipantsResponse response = GetPartyParticipantsResponse.from(result);
 
-        SendSocketEvent event = new SendSocketEvent(SocketType.GET_PARTY_PARTICIPANTS, List.of(memberId), response);
+        GetPartyParticipantsResult result = dreamPartyService.getPartyParticipants(command);
+
+        SendSocketEvent event = new SendSocketEvent(SocketType.GET_PARTY_PARTICIPANTS, List.of(memberId), GetPartyParticipantsResponse.from(result));
         applicationEventPublisher.publishEvent(event);
     }
 
-    @SocketCommandHandler(type = SocketType.CANCELLED_MATCHING)
-    public void cancelMatching(WebSocketSession session) {
-        Long memberId = Long.parseLong(session.getPrincipal().getName());
-        CancelMatchingCommand command = new CancelMatchingCommand(memberId);
-        CancelMatchingResult result = dreamService.cancelMatching(command);
-        CancelMatchingResponse response = new CancelMatchingResponse(result.message());
+    @SocketCommandHandler(type = SocketType.CHANGE_MONGGING)
+    public void changeMonggingClass(ChangeMonggingClassRequest request, WebSocketSession session) {
+        Long memberId =  Long.parseLong(session.getPrincipal().getName());
+        ChangeMonggingCommand command = request.toCommand(memberId);
 
-        SendSocketEvent event = new SendSocketEvent(SocketType.CANCELLED_MATCHING, result.participantIds(), response);
+        ChangeMonggingResult result = dreamPartyService.changeMongging(command);
+
+        ChangeMonggingResponse response = ChangeMonggingResponse.from(result);
+        SendSocketEvent event = new SendSocketEvent(SocketType.CHANGE_MONGGING, result.participantIds(), response);
         applicationEventPublisher.publishEvent(event);
     }
 }

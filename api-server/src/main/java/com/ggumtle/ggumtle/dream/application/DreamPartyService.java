@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.dream.application.command.AcceptPartyInvitationCommand;
+import com.ggumtle.ggumtle.dream.application.command.ChangeMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.command.CreatePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetPartyParticipantsCommand;
 import com.ggumtle.ggumtle.dream.application.command.InvitePartyCommand;
@@ -8,6 +9,7 @@ import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
 import com.ggumtle.ggumtle.dream.application.command.GetInvitationsCommand;
 import com.ggumtle.ggumtle.dream.application.command.ReadyDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.AcceptPartyInvitationResult;
+import com.ggumtle.ggumtle.dream.application.result.ChangeMonggingResult;
 import com.ggumtle.ggumtle.dream.application.result.CreatePartyResult;
 import com.ggumtle.ggumtle.dream.application.result.GetPartyParticipantsResult;
 import com.ggumtle.ggumtle.dream.application.result.InvitePartyResult;
@@ -25,13 +27,13 @@ import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
+import com.ggumtle.ggumtle.mongging.domain.Mongging;
+import com.ggumtle.ggumtle.mongging.persistence.MonggingRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -47,8 +49,9 @@ public class DreamPartyService {
     private static final String WAITING_PARTY_KEY = "waiting_party";
     private static final String ACTIVE_PARTY_INDEX_KEY = "party_participant:idx";
     private static final String PARTY_PARTICIPANT_KEY_PREFIX = "party_participant:partyId:";
+    private static final Long PHYSICAL_MONGGING_CLASS_ID = 2L;
 
-
+    private final MonggingRepository monggingRepository;
     private final PartyParticipantRepository partyParticipantRepository;
     private final PartyInvitationRepository partyInvitationRepository;
     private final MemberRepository memberRepository;
@@ -60,65 +63,14 @@ public class DreamPartyService {
             throw new GgumtleException(DreamErrorCode.ALREADY_IN_PARTY);
         }
 
-        PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), true);
+        Mongging mongging = monggingRepository.findByOwnerIdAndClassIdFetchClassAndOwner(command.memberId(), PHYSICAL_MONGGING_CLASS_ID)
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_MONGGING));
+
+        PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), mongging.getId(), true);
         partyParticipantRepository.save(partyParticipant);
         redisTemplate.opsForSet().add(ACTIVE_PARTY_INDEX_KEY, partyParticipant.getPartyId());
 
         return new CreatePartyResult(List.of(partyParticipant.getMemberId()), partyParticipant.getPartyId());
-    }
-
-    public InvitePartyResult inviteParty(InvitePartyCommand command) {
-        PartyParticipant inviter = partyParticipantRepository.findById(command.requesterId())
-                .orElseThrow(() -> new GgumtleException(
-                        DreamErrorCode.NOT_FOUND_PARTY,
-                        "현재 사용자가 속한 파티가 없어 다른 사용자를 파티에 초대할 수 없습니다"));
-
-        String partyId = inviter.getPartyId();
-        Long inviteeId = command.inviteeId();
-
-        boolean alreadyInvited = partyInvitationRepository.existsByPartyIdAndInviteeId(partyId, inviteeId);
-        if (alreadyInvited) {
-            throw new GgumtleException(DreamErrorCode.ALREADY_INVITED_USER);
-        }
-
-        PartyInvitation partyInvitation = PartyInvitation.builder()
-                .id(UUID.randomUUID().toString())
-                .partyId(partyId)
-                .inviteeId(inviteeId)
-                .inviterId(command.requesterId())
-                .build();
-        partyInvitationRepository.save(partyInvitation);
-
-        Optional<Member> invitee = memberRepository.findById(inviteeId);
-        String inviteeNickname = invitee.get().getNickname();
-        return new InvitePartyResult(inviteeId, partyInvitation.getId(), inviteeNickname);
-    }
-
-    public AcceptPartyInvitationResult acceptPartyInvitation(AcceptPartyInvitationCommand command) {
-        Member member = memberRepository.findById(command.requesterId())
-                .orElseThrow(() -> new GgumtleException(MemberErrorCode.NOT_FOUND, command.requesterId() + "번 사용자를 찾을 수 없습니다"));
-
-        if (partyParticipantRepository.existsById(command.requesterId())) {
-            throw new GgumtleException(DreamErrorCode.ALREADY_IN_PARTY);
-        }
-
-        PartyInvitation partyInvitation = partyInvitationRepository.findById(command.invitationId())
-                .orElseThrow(() -> new GgumtleException(
-                        DreamErrorCode.NOT_FOUND_INVITATION,
-                        "존재하지 않거나 이미 수락된 초대입니다"));
-
-        if (!partyInvitation.getInviteeId().equals(command.requesterId())) {
-            throw new GgumtleException(DreamErrorCode.NOT_MY_INVITATION);
-        }
-
-        partyInvitationRepository.delete(partyInvitation);
-        PartyParticipant joinedParticipant = new PartyParticipant(partyInvitation.getInviteeId(), partyInvitation.getPartyId(), false);
-        partyParticipantRepository.save(joinedParticipant);
-
-        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(joinedParticipant.getPartyId());
-        List<Long> participantIds = participants.stream().map(PartyParticipant::getMemberId).toList();
-
-        return new AcceptPartyInvitationResult(participantIds, joinedParticipant.getMemberId(), member.getNickname());
     }
 
     public ReadyDreamResult readyDream(ReadyDreamCommand command) {
@@ -192,6 +144,62 @@ public class DreamPartyService {
         return new LeavePartyResult(originalMemberIdsForEvent, command.requesterId(), newLeaderId);
     }
 
+    public GetPartyParticipantsResult getPartyParticipants(GetPartyParticipantsCommand command) {
+        PartyParticipant requester = partyParticipantRepository.findById(command.memberId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+        String partyId = requester.getPartyId();
+
+        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyId);
+        List<Long> monggingIds = participants.stream()
+                .map(PartyParticipant::getMonggingId)
+                .toList();
+
+        Map<Long, Mongging> monggings = monggingRepository.findAllByIdInFetchClassAndOwner(monggingIds).stream()
+                .collect(Collectors.toMap(mongging -> mongging.getOwner().getId(), mongging -> mongging));
+
+        return GetPartyParticipantsResult.of(participants, monggings);
+    }
+
+    public List<Long> getPartyMemberIds(Long memberId) {
+        PartyParticipant participant = partyParticipantRepository.findById(memberId)
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        String partyId = participant.getPartyId();
+
+        List<PartyParticipant> partyMembers = partyParticipantRepository.findAllByPartyId(partyId);
+
+        return partyMembers.stream()
+                .map(PartyParticipant::getMemberId)
+                .toList();
+    }
+
+    public InvitePartyResult inviteParty(InvitePartyCommand command) {
+        PartyParticipant inviter = partyParticipantRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(
+                        DreamErrorCode.NOT_FOUND_PARTY,
+                        "현재 사용자가 속한 파티가 없어 다른 사용자를 파티에 초대할 수 없습니다"));
+
+        String partyId = inviter.getPartyId();
+        Long inviteeId = command.inviteeId();
+
+        boolean alreadyInvited = partyInvitationRepository.existsByPartyIdAndInviteeId(partyId, inviteeId);
+        if (alreadyInvited) {
+            throw new GgumtleException(DreamErrorCode.ALREADY_INVITED_USER);
+        }
+
+        PartyInvitation partyInvitation = PartyInvitation.builder()
+                .id(UUID.randomUUID().toString())
+                .partyId(partyId)
+                .inviteeId(inviteeId)
+                .inviterId(command.requesterId())
+                .build();
+        partyInvitationRepository.save(partyInvitation);
+
+        Optional<Member> invitee = memberRepository.findById(inviteeId);
+        String inviteeNickname = invitee.get().getNickname();
+        return new InvitePartyResult(inviteeId, partyInvitation.getId(), inviteeNickname);
+    }
+
     public GetInvitationsResult getInvitations(GetInvitationsCommand command) {
         Long requester = command.requesterId();
 
@@ -215,52 +223,35 @@ public class DreamPartyService {
         return new GetInvitationsResult(invitationInfos);
     }
 
-    public GetPartyParticipantsResult getPartyParticipants(GetPartyParticipantsCommand command) {
-        Long memberId = command.memberId();
+    public AcceptPartyInvitationResult acceptPartyInvitation(AcceptPartyInvitationCommand command) {
+        Member member = memberRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(MemberErrorCode.NOT_FOUND, command.requesterId() + "번 사용자를 찾을 수 없습니다"));
 
-        PartyParticipant requester = partyParticipantRepository.findById(memberId)
-                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
-        String partyId = requester.getPartyId();
+        // 기존 파티가 존재하는지 확인
+        if (partyParticipantRepository.existsById(member.getId())) {
+            throw new GgumtleException(DreamErrorCode.ALREADY_IN_PARTY);
+        }
 
-        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyId);
+        // 파티 초대 확인
+        PartyInvitation partyInvitation = partyInvitationRepository.findById(command.invitationId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_INVITATION, "존재하지 않거나 이미 수락된 초대입니다"));
 
-        List<Long> memberIds = participants.stream()
-                .map(PartyParticipant::getMemberId)
-                .toList();
+        if (!partyInvitation.getInviteeId().equals(command.requesterId())) {
+            throw new GgumtleException(DreamErrorCode.NOT_MY_INVITATION);
+        }
 
-        Map<Long, Member> memberMap = memberRepository.findAllByIdIn(memberIds).stream()
-                .collect(Collectors.toMap(Member::getId, m -> m));
+        // PartyParticipant 생성
+        Mongging mongging = monggingRepository.findByOwnerIdAndClassIdFetchClassAndOwner(member.getId(), PHYSICAL_MONGGING_CLASS_ID)
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_MONGGING));
 
-        List<GetPartyParticipantsResult.Participant> participantDetails = participants.stream()
-                .map(p -> {
-                    Member memberInfo = memberMap.get(p.getMemberId());
-                    String nickname = memberInfo.getNickname();
+        PartyParticipant joinedParticipant = new PartyParticipant(member.getId(), partyInvitation.getPartyId(), mongging.getId(), false);
+        partyParticipantRepository.save(joinedParticipant);
+        redisTemplate.opsForSet().add(ACTIVE_PARTY_INDEX_KEY, joinedParticipant.getPartyId());
 
-                    return new GetPartyParticipantsResult.Participant(
-                            p.getMemberId(),
-                            nickname,
-                            p.isLeader(),
-                            p.isReady()
-                    );
-                })
-                .toList();
-
-        return new GetPartyParticipantsResult(participantDetails);
+        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(joinedParticipant.getPartyId());
+        return AcceptPartyInvitationResult.of(participants, mongging);
     }
 
-
-    public List<Long> getPartyMemberIds(Long memberId) {
-        PartyParticipant participant = partyParticipantRepository.findById(memberId)
-                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
-
-        String partyId = participant.getPartyId();
-
-        List<PartyParticipant> partyMembers = partyParticipantRepository.findAllByPartyId(partyId);
-
-        return partyMembers.stream()
-                .map(PartyParticipant::getMemberId)
-                .toList();
-    }
     public Set<Long> getAllActivePartyMemberIds() {
         Set<String> activePartyUuids = redisTemplate.opsForSet().members(ACTIVE_PARTY_INDEX_KEY);
 
@@ -281,5 +272,30 @@ public class DreamPartyService {
         return memberIdsAsString.stream()
                 .map(Long::parseLong)
                 .collect(Collectors.toSet());
+    }
+
+    public ChangeMonggingResult changeMongging(ChangeMonggingCommand command) {
+        PartyParticipant partyParticipant = partyParticipantRepository.findById(command.memberId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        Mongging mongging = monggingRepository.findByIdFetchClassAndOwner(command.monggingId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_MONGGING));
+
+        if (!mongging.getOwner().getId().equals(partyParticipant.getMemberId())) {
+            throw new GgumtleException(DreamErrorCode.NOT_OWNER_OF_MONGGING);
+        }
+
+        partyParticipant.changeMongging(mongging.getId());
+        partyParticipantRepository.save(partyParticipant);
+
+        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyParticipant.getPartyId());
+
+        return new ChangeMonggingResult(
+                participants.stream().map(PartyParticipant::getMemberId).toList(),
+                partyParticipant.getMemberId(),
+                mongging.getId(),
+                mongging.getMonggingClass().getId(),
+                mongging.getLevel()
+        );
     }
 }

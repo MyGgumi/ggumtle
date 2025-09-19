@@ -1,10 +1,15 @@
 package com.ggumtle.ggumtle.auth.jwt;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 
+import io.jsonwebtoken.security.SignatureException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
@@ -12,6 +17,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 @Component
+@Slf4j
 public class JwtProvider {
 
     private final SecretKey key;
@@ -39,13 +45,26 @@ public class JwtProvider {
     }
 
     public Long parseMemberId(String token) {
-        String sub = Jwts.parser()
-                .verifyWith(key)
-                .build()
-                .parseSignedClaims(token)
-                .getPayload()
-                .getSubject();
-        return Long.parseLong(sub);
+        try {
+            String sub = Jwts.parser()
+                    .verifyWith(key)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload()
+                    .getSubject();
+            return Long.parseLong(sub);
+        } catch (ExpiredJwtException e) {
+            log.error("JWT Token이 만료되었습니다: {}", token, e);
+        } catch (MalformedJwtException e) {
+            log.error("JWT Token 구조가 잘못되었습니다: {}", token, e);
+        } catch (SignatureException e) {
+            log.error("JWT Token 서명이 유효하지 않습니다: {}", token, e);
+        } catch (JwtException e) {
+            log.error("JWT Token 파싱 실패: {}", token, e);
+        } catch (NumberFormatException e) {
+            log.error("JWT Subject를 Long으로 변환할 수 없습니다: {}", token, e);
+        }
+        return null;
     }
 
     public boolean validateToken(String token) {

@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.dream.application.result;
 
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
-import com.ggumtle.ggumtle.member.domain.Member;
+import com.ggumtle.ggumtle.mongging.domain.Mongging;
 
 import java.util.List;
 import java.util.Map;
@@ -9,28 +9,33 @@ import java.util.Map;
 public record GetPartyParticipantsResult(
         List<Participant> participants
 ) {
-    public static GetPartyParticipantsResult of(List<PartyParticipant> participants, Map<Long, Member> memberMap){
-        return new GetPartyParticipantsResult(
-                participants == null ? List.of() :
-                        participants.stream()
-                                .map(p -> {
-                                    Member member = memberMap.get(p.getMemberId());
-                                    String nickname = member.getNickname();
-                                    return new Participant(
-                                            p.getMemberId(),
-                                            nickname,
-                                            p.isLeader(),
-                                            p.isReady()
-                                    );
-                                })
-                                .toList()
-        );
+    public static GetPartyParticipantsResult of(List<PartyParticipant> partyParticipants, Map<Long, Mongging> monggings){
+        if (partyParticipants == null) {
+            return new GetPartyParticipantsResult(List.of());
+        }
+
+        List<Participant> participants = partyParticipants.stream()
+                .map(participant ->
+                        new Participant(
+                                participant.getMemberId(),
+                                monggings.get(participant.getMemberId()).getOwner().getNickname(),
+                                participant.isLeader(),
+                                participant.isReady(),
+                                monggings.get(participant.getMemberId()).getMonggingClass().getId(),
+                                monggings.get(participant.getMemberId()).getLevel()
+                        )
+                )
+                .toList();
+        return new GetPartyParticipantsResult(participants);
     }
 
     public record Participant(
             Long memberId,
             String nickname,
             boolean isLeader,
-            boolean isReady
-    ){}
+            boolean isReady,
+            Long monggingClassId,
+            Integer monggingLevel
+    ) {
+    }
 }

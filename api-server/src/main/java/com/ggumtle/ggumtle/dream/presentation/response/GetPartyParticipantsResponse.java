@@ -13,16 +13,20 @@ public record GetPartyParticipantsResponse(
                         p.memberId(),
                         p.nickname(),
                         p.isLeader(),
-                        p.isReady()
+                        p.isReady(),
+                        p.monggingClassId(),
+                        p.monggingLevel()
                 ))
                 .toList()
         );
     }
 
     private record Participant(
-            Long memberid,
+            Long memberId,
             String nickname,
             boolean isLeader,
-            boolean isReady
+            boolean isReady,
+            Long monggingClassId,
+            Integer monggingLevel
     ){}
 }

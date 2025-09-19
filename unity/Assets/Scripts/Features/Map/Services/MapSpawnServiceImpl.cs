@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using VContainer;
+using VContainer.Unity;
 
 namespace Features.Map.Services
 {
@@ -293,6 +294,19 @@ namespace Features.Map.Services
                 {
                     ggumtleObject.name = $"Ggumtle_{id}";
 
+                    // VContainer 의존성 주입 (프리팹 인스턴스에 주입)
+                    var mainLifetimeScope = GameObject.FindFirstObjectByType<DI.MainLifetimeScope>();
+                    if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
+                    {
+                        mainLifetimeScope.Container.InjectGameObject(ggumtleObject);
+                        if (_enableDebugLogs)
+                            Debug.Log($"[MapSpawnService] GgumtleGameObject VContainer 의존성 주입 완료: ID={id}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[MapSpawnService] MainLifetimeScope를 찾을 수 없어 의존성 주입 실패: ID={id}");
+                    }
+
                     // 꿈틀이 ID 설정
                     var ggumtleComponent = ggumtleObject.GetComponent<Features.Ggumtle.Views.GgumtleGameObject>();
                     if (ggumtleComponent != null)
@@ -303,8 +317,7 @@ namespace Features.Map.Services
                         idField?.SetValue(ggumtleComponent, id);
                     }
 
-                    // GgumtleService에 등록
-                    _ggumtleService.RegisterGgumtle(id, $"Ggumtle_{id}", position);
+                    // GgumtleService에 등록은 GgumtleGameObject에서 자동으로 처리됨
 
                     _spawnedObjects["Ggumtle"].Add(ggumtleObject);
                     _spawnedGgumtles[id] = ggumtleObject;

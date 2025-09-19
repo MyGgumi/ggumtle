@@ -63,7 +63,23 @@ namespace Features.Ggumtle.Views
         #region 의존성 주입 & 데이터
 
         private GgumtleViewModel _viewModel;
+        private Features.Ggumtle.Services.IGgumtleService _ggumtleService;
         private R3DisposableBag _disposables = new();
+
+        /// <summary>
+        /// VContainer 의존성 주입
+        /// </summary>
+        [Inject]
+        public void Construct(GgumtleViewModel viewModel, Features.Ggumtle.Services.IGgumtleService ggumtleService)
+        {
+            _viewModel = viewModel;
+            _ggumtleService = ggumtleService;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[GgumtleGameObject] VContainer 의존성 주입 완료: {gameObject.name}");
+            }
+        }
 
         #endregion
 
@@ -75,9 +91,15 @@ namespace Features.Ggumtle.Views
                 $"[GgumtleGameObject] Start() 호출됨 - GameObject: {gameObject.name}, Layer: {gameObject.layer}"
             );
 
+            // VContainer 의존성 주입 확인
+            if (_viewModel == null || _ggumtleService == null)
+            {
+                Debug.LogError($"[GgumtleGameObject] VContainer 의존성 주입 실패: {gameObject.name}. ViewModel: {_viewModel != null}, Service: {_ggumtleService != null}");
+                return;
+            }
+
             InitializeBasicComponents();
             SetupInteractionLayer(); // Layer 설정 추가
-            ResolveDependencies();
             RegisterToService(); // GgumtleService에 등록
             SubscribeToViewModel();
 
@@ -177,34 +199,6 @@ namespace Features.Ggumtle.Views
             }
         }
 
-        private void ResolveDependencies()
-        {
-            try
-            {
-                // VContainer에서 직접 해결 (Self-Resolving 패턴)
-                var lifetimeScope = Object.FindFirstObjectByType<DI.GameLifetimeScope>();
-                if (lifetimeScope != null)
-                {
-                    _viewModel = lifetimeScope.Container.Resolve<GgumtleViewModel>();
-                    if (enableDebugLogs)
-                        Debug.Log(
-                            $"[GgumtleGameObject] ViewModel 자동 해결 성공: {gameObject.name}"
-                        );
-                }
-                else
-                {
-                    Debug.LogError(
-                        $"[GgumtleGameObject] GameLifetimeScope를 찾을 수 없음: {gameObject.name}"
-                    );
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError(
-                    $"[GgumtleGameObject] ViewModel 해결 실패: {gameObject.name}, 오류: {ex.Message}"
-                );
-            }
-        }
 
         #endregion
 
@@ -215,22 +209,17 @@ namespace Features.Ggumtle.Views
         /// </summary>
         private void RegisterToService()
         {
+            if (_ggumtleService == null)
+            {
+                Debug.LogError($"[GgumtleGameObject] GgumtleService가 주입되지 않아 등록 실패: {gameObject.name}");
+                return;
+            }
+
             try
             {
-                // VContainer에서 직접 IGgumtleService 해결
-                var scope = FindObjectOfType<GameLifetimeScope>();
-                if (scope != null && scope.Container != null)
-                {
-                    var ggumtleService = scope.Container.Resolve<Features.Ggumtle.Services.IGgumtleService>();
-
-                    // GgumtleService에 등록 (ID, 이름, 위치)
-                    ggumtleService.RegisterGgumtle(ggumtleId.ToString(), gameObject.name, transform.position);
-                    Debug.Log($"[GgumtleGameObject] GgumtleService 등록 완료: {gameObject.name}, ID: {ggumtleId}");
-                }
-                else
-                {
-                    Debug.LogError($"[GgumtleGameObject] GameLifetimeScope를 찾을 수 없어 등록 실패: {gameObject.name}");
-                }
+                // GgumtleService에 등록 (ID, 이름, 위치)
+                _ggumtleService.RegisterGgumtle(ggumtleId.ToString(), gameObject.name, transform.position);
+                Debug.Log($"[GgumtleGameObject] GgumtleService 등록 완료: {gameObject.name}, ID: {ggumtleId}");
             }
             catch (System.Exception ex)
             {
@@ -243,22 +232,17 @@ namespace Features.Ggumtle.Views
         /// </summary>
         private void UnregisterFromService()
         {
+            if (_ggumtleService == null)
+            {
+                Debug.LogError($"[GgumtleGameObject] GgumtleService가 주입되지 않아 해제 실패: {gameObject.name}");
+                return;
+            }
+
             try
             {
-                // VContainer에서 직접 IGgumtleService 해결
-                var scope = FindObjectOfType<GameLifetimeScope>();
-                if (scope != null && scope.Container != null)
-                {
-                    var ggumtleService = scope.Container.Resolve<Features.Ggumtle.Services.IGgumtleService>();
-
-                    // GgumtleService에서 해제
-                    ggumtleService.UnregisterGgumtle(ggumtleId.ToString());
-                    Debug.Log($"[GgumtleGameObject] GgumtleService 해제 완료: {gameObject.name}, ID: {ggumtleId}");
-                }
-                else
-                {
-                    Debug.LogError($"[GgumtleGameObject] GameLifetimeScope를 찾을 수 없어 해제 실패: {gameObject.name}");
-                }
+                // 주입된 GgumtleService 사용
+                _ggumtleService.UnregisterGgumtle(ggumtleId.ToString());
+                Debug.Log($"[GgumtleGameObject] GgumtleService 해제 완료: {gameObject.name}, ID: {ggumtleId}");
             }
             catch (System.Exception ex)
             {

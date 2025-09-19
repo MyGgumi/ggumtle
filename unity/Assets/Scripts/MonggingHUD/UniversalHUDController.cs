@@ -56,7 +56,6 @@ public class UniversalHUDController : MonoBehaviour
     // MessagePipe 구독 관리
     private readonly CompositeDisposable _messageSubscriptions = new();
 
-
     void Awake()
     {
         _doc = GetComponent<UIDocument>();
@@ -137,8 +136,8 @@ public class UniversalHUDController : MonoBehaviour
     {
         if (mobileControlsView != null)
         {
-            // MobileControlsView 디버그 활성화
-            mobileControlsView.SetDebugLogging(true);
+            // MobileControlsView 디버그 비활성화
+            mobileControlsView.SetDebugLogging(false);
 
             // MobileControlsView 초기화
             mobileControlsView.Initialize(_root);
@@ -226,9 +225,18 @@ public class UniversalHUDController : MonoBehaviour
                 gameObject.GetComponent<Features.Ggumtle.Views.GgumtleUIView>()
                 ?? gameObject.AddComponent<Features.Ggumtle.Views.GgumtleUIView>();
         if (mobileControlsView == null)
-            mobileControlsView =
-                gameObject.GetComponent<Features.MobileControls.Views.MobileControlsView>()
-                ?? gameObject.AddComponent<Features.MobileControls.Views.MobileControlsView>();
+        {
+            // 씬에서 MobileControlsView 찾기 (별도 GameObject에 배치됨)
+            mobileControlsView = FindFirstObjectByType<Features.MobileControls.Views.MobileControlsView>();
+            if (mobileControlsView == null)
+            {
+                Debug.LogError("[UniversalHUDController] 씬에서 MobileControlsView를 찾을 수 없습니다! MobileControlsView GameObject가 씬에 배치되어 있는지 확인하세요.");
+            }
+            else
+            {
+                Debug.Log($"[UniversalHUDController] MobileControlsView 찾기 완료: {mobileControlsView.gameObject.name}");
+            }
+        }
     }
 
     private void InitializeManagers()

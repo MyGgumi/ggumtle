@@ -18,12 +18,13 @@ public class Mission {
     private int id;
 
     @Column(nullable = false)
-    private String missionName;
+    private String name;
 
-    private String missionDescription;
+    private String description;
 
-    private int reward;
+    @Column(name = "reward_coin_amount", nullable = false)
+    private int rewardCoinAmount;
 
-    @Column(nullable = false)
-    private int count;
+    @Column(name = "required_count", nullable = false)
+    private int requiredCount;
 }

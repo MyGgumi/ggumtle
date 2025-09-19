@@ -1,9 +1,10 @@
 package com.ggumtle.ggumtle.mongging.presentation.response;
 
 import com.ggumtle.ggumtle.mongging.application.result.EnhanceMonggingResult;
+import lombok.AccessLevel;
 import lombok.Builder;
 
-@Builder
+@Builder(access = AccessLevel.PRIVATE)
 public record EnhanceMonggingResponse(
     boolean isSuccess,
     Experience experience
@@ -24,7 +25,7 @@ public record EnhanceMonggingResponse(
             .build();
     }
 
-    @Builder
+    @Builder(access = AccessLevel.PRIVATE)
     record Experience(
         long monggingId,
         String statisticName,

@@ -16,7 +16,7 @@ public record GetMissionsResult(
                                 memberMission.getId(),
                                 memberMission.getMission().getName(),
                                 memberMission.getMission().getDescription(),
-                                memberMission.getMission().getId(),
+                                memberMission.getMission().getRequiredCount(),
                                 memberMission.getDoneCount(),
                                 memberMission.getState()))
                         .toList()

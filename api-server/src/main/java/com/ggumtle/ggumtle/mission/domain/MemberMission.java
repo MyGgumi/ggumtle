@@ -58,4 +58,9 @@ public class MemberMission {
         }
         return true;
     }
+
+    public void getReward() {
+        this.member.increaseCoinCappedToMax(this.mission.getRewardCoinAmount());
+        this.state = MissionState.AFTER_REWARD;
+    }
 }

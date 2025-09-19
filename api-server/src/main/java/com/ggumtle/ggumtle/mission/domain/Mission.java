@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 public class Mission {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Column(nullable = false)
     private String name;
@@ -23,8 +23,8 @@ public class Mission {
     private String description;
 
     @Column(name = "reward_coin_amount", nullable = false)
-    private int rewardCoinAmount;
+    private Integer rewardCoinAmount;
 
     @Column(name = "required_count", nullable = false)
-    private int requiredCount;
+    private Integer requiredCount;
 }

@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.auth;
+package com.ggumtle.ggumtle.auth.presentation;
 
 import com.ggumtle.ggumtle.auth.application.AuthService;
 import com.ggumtle.ggumtle.auth.application.command.LoginCommand;

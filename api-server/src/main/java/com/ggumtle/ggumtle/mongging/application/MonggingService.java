@@ -4,6 +4,7 @@ import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.MonggingErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.mongging.application.result.EnhanceMonggingResult;
+import com.ggumtle.ggumtle.mongging.application.result.MonggingDetailResult;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
 import com.ggumtle.ggumtle.mongging.domain.MonggingClass;
 import com.ggumtle.ggumtle.mongging.persistence.EnhancePercentageRepository;
@@ -23,6 +24,38 @@ public class MonggingService {
     private final MonggingRepository monggingRepository;
     private final MonggingClassRepository monggingClassRepository;
     private final EnhancePercentageRepository enhancePercentageRepository;
+
+    /**
+     * 몽깅이 상세 조회
+     * @param memberId 멤버 아이디
+     * @param monggingId 몽깅이 아이디
+     * @return 몽깅이 상세 정보
+     */
+    @Transactional(readOnly = true)
+    public MonggingDetailResult fetchMonggingDetail(Long memberId, Long monggingId) {
+        // 몽깅이를 조회함
+        var mongging = monggingRepository.findById(monggingId)
+                .orElseThrow(() -> new GgumtleException(MonggingErrorCode.MONGGING_NOT_FOUND));
+
+        // 몽깅이 주인이 아니면 예외
+        if (!mongging.getOwner().getId().equals(memberId)) {
+            throw new GgumtleException(MonggingErrorCode.NOT_OWNER);
+        }
+
+        // 현재 레벨에 따른 강화 수치를 가져옴
+        var currentEnhancePercentage = enhancePercentageRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel())
+                .orElseThrow(() -> new GgumtleException(MonggingErrorCode.ENHANCE_PERCENTAGE_NOT_FOUND));
+
+        // 다음 레벨에 따른 강화 수치를 가져옴 (최대 레벨인 경우 없을 수 있음)
+        var nextEnhancePercentageOpt = enhancePercentageRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel() + 1);
+
+        // 최대 레벨인지 확인
+        if (nextEnhancePercentageOpt.isEmpty()) {
+            return MonggingDetailResult.ofMaxLevel(mongging, currentEnhancePercentage);
+        }
+
+        return MonggingDetailResult.of(mongging, currentEnhancePercentage, nextEnhancePercentageOpt.get());
+    }
 
     @Transactional
     public void createMongging(Member newMember){

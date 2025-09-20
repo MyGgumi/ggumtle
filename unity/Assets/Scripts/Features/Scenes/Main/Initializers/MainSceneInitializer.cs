@@ -31,8 +31,8 @@ namespace Features.Scenes.Main.Initializers
             if (_enableDebugLogs)
                 Debug.Log("[MainSceneInitializer] Main 씬 초기화 시작");
 
-            // 항상 기존 오브젝트들 정리 (씬에 미리 배치된 것들)
-            ClearExistingSpawnedObjects();
+            // 기존 오브젝트 삭제 로직 제거 - Loading에서 스폰된 오브젝트들 유지
+            // ClearExistingSpawnedObjects(); // 제거됨
 
             // RoomStorage에서 데이터 확인
             var room = RoomStorage.Instance.Room;

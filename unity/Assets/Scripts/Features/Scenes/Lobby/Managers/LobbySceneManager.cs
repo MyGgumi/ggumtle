@@ -41,6 +41,8 @@ namespace Features.Scenes.Lobby.Managers
         private LobbyViewModel _viewModel;
         private GameManager _gameManager;
         private ILobbyNetworkSource _lobbyNetworkSource;
+        private ISubscriber<TokenVerifiedMessage> _tokenVerifiedSubscriber;
+        private IPublisher<LobbyUIStateMessage> _lobbyUIStatePublisher;
         private readonly CompositeDisposable _disposables = new();
         private readonly System.Collections.Generic.List<System.IDisposable> _messageDisposables =
             new();
@@ -50,13 +52,17 @@ namespace Features.Scenes.Lobby.Managers
         public void Construct(
             LobbyViewModel viewModel,
             GameManager gameManager,
-            ILobbyNetworkSource lobbyNetworkSource
+            ILobbyNetworkSource lobbyNetworkSource,
+            ISubscriber<TokenVerifiedMessage> tokenVerifiedSubscriber,
+            IPublisher<LobbyUIStateMessage> lobbyUIStatePublisher
         )
         {
             Debug.Log("[LobbySceneManager] Construct 호출됨!");
             _viewModel = viewModel;
             _gameManager = gameManager;
             _lobbyNetworkSource = lobbyNetworkSource;
+            _tokenVerifiedSubscriber = tokenVerifiedSubscriber;
+            _lobbyUIStatePublisher = lobbyUIStatePublisher;
             Debug.Log(
                 $"[LobbySceneManager] ViewModel: {_viewModel != null}, GameManager: {_gameManager != null}, NetworkSource: {_lobbyNetworkSource != null}"
             );
@@ -206,8 +212,8 @@ namespace Features.Scenes.Lobby.Managers
         /// </summary>
         private void SubscribeToNetworkEvents()
         {
-            var tokenVerifiedSubscriber = GlobalMessagePipe.GetSubscriber<TokenVerifiedMessage>();
-            var subscription = tokenVerifiedSubscriber.Subscribe(OnTokenVerified);
+            // VContainer로 주입받은 Subscriber 사용
+            var subscription = _tokenVerifiedSubscriber.Subscribe(OnTokenVerified);
             _messageDisposables.Add(subscription);
 
             Debug.Log("[LobbySceneManager] 네트워크 이벤트 구독 완료");
@@ -278,8 +284,8 @@ namespace Features.Scenes.Lobby.Managers
         /// </summary>
         private void PublishUIState(LobbyUIStateMessage message)
         {
-            var publisher = GlobalMessagePipe.GetPublisher<LobbyUIStateMessage>();
-            publisher.Publish(message);
+            // VContainer로 주입받은 Publisher 사용
+            _lobbyUIStatePublisher.Publish(message);
             Debug.Log($"[LobbySceneManager] UI 상태 메시지 발행: {message.StatusMessage}");
         }
 

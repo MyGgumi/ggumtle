@@ -39,6 +39,12 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleFoodAddedMessage>(options);
             builder.RegisterMessageBroker<NotificationMessage>(options);
 
+            // 네트워크 이벤트 메시지 타입들 등록
+            builder.RegisterMessageBroker<GgumtleDiggingDoneMessage>(options);
+            builder.RegisterMessageBroker<GgumtleJellyForceQuitMessage>(options);
+            builder.RegisterMessageBroker<GgumtleSpawnMessage>(options);
+            builder.RegisterMessageBroker<GgumtleNirvanaMessage>(options);
+
             builder.RegisterMessageBroker<JoystickInputMessage>(options);
             builder.RegisterMessageBroker<JoystickEndMessage>(options);
             builder.RegisterMessageBroker<MobileButtonPressedMessage>(options);
@@ -56,6 +62,8 @@ namespace DI
             builder.RegisterComponentInHierarchy<GgumtleGameObject>();
             builder.RegisterComponentInHierarchy<UniversalHUDController>();
             builder.RegisterComponentInHierarchy<Features.MobileControls.Views.MobileControlsView>();
+            builder.RegisterComponentInHierarchy<Features.Ggumtle.Views.GgumtleUIView>();
+            builder.RegisterComponentInHierarchy<Interaction.InteractionTriggerDetector>();
 
 
             // Main 씬 전용 NetworkSources 등록

@@ -11,11 +11,10 @@ namespace Features.Map.Utils
     {
         /// <summary>
         /// 서버 좌표를 Unity 월드 좌표로 변환하는 스케일
-        /// 서버: 정수 좌표 (예: -12345, 0, 54321)
-        /// Unity: 실수 좌표 (예: 52.744, 5.371, 11.432)
+        /// 서버에서 이미 Unity 범위 좌표로 전송하도록 변경됨
         /// </summary>
         private const float COORDINATE_SCALE = 0.01f; // 1/100 스케일로 변환
-        private const float Y_OFFSET = 5.0f; // Y축 기본 오프셋
+        private const float Y_OFFSET = 0f; // Y축 오프셋 제거 (서버에서 직접 전송)
 
         /// <summary>
         /// GgumtlePacket의 XYZ를 Unity Vector3로 변환

@@ -30,50 +30,33 @@ namespace Features.Ggumtle.Views
         [SerializeField]
         private bool enableDebugLogs = true;
 
+        [Inject]
+        public void Construct(GgumtleViewModel ggumtleViewModel)
+        {
+            viewModel = ggumtleViewModel;
+            if (enableDebugLogs)
+                Debug.Log($"[GgumtleUIView] VContainer 의존성 주입 완료: {viewModel != null}");
+        }
+
         public void Initialize(VisualElement root)
         {
             _root = root;
 
-            // VContainer에서 ViewModel 자동 해결
-            ResolveViewModel();
-
-            if (viewModel != null)
+            // VContainer 의존성 주입 확인
+            if (viewModel == null)
             {
-                CacheUIElements();
-                SubscribeToViewModel();
-                InitializeUI();
+                Debug.LogError("[GgumtleUIView] ViewModel이 주입되지 않았습니다! VContainer 설정을 확인하세요.");
+                return;
+            }
 
-                if (enableDebugLogs)
-                    Debug.Log("[GgumtleUIView] 초기화 완료");
-            }
-            else
-            {
-                Debug.LogError("[GgumtleUIView] ViewModel을 해결할 수 없음");
-            }
+            CacheUIElements();
+            SubscribeToViewModel();
+            InitializeUI();
+
+            if (enableDebugLogs)
+                Debug.Log("[GgumtleUIView] 초기화 완료");
         }
 
-        private void ResolveViewModel()
-        {
-            try
-            {
-                // VContainer에서 직접 해결 (Self-Resolving 패턴)
-                var lifetimeScope = FindFirstObjectByType<MainLifetimeScope>();
-                if (lifetimeScope != null && lifetimeScope.Container != null)
-                {
-                    viewModel = lifetimeScope.Container.Resolve<GgumtleViewModel>();
-                    if (enableDebugLogs)
-                        Debug.Log($"[GgumtleUIView] ViewModel 자동 해결 성공: {viewModel != null}");
-                }
-                else
-                {
-                    Debug.LogError("[GgumtleUIView] MainLifetimeScope를 찾을 수 없음");
-                }
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogError($"[GgumtleUIView] ViewModel 해결 실패: {ex.Message}");
-            }
-        }
 
 
         private void CacheUIElements()
@@ -126,17 +109,42 @@ namespace Features.Ggumtle.Views
 
             // R3로 ViewModel 구독 (최신 방식)
             viewModel
-                .IsInRange.Subscribe(inRange => ShowInteractionUI(inRange))
+                .IsInRange.Subscribe(inRange => {
+                    Debug.Log($"[GgumtleUIView] IsInRange 변경됨: {inRange}");
+                    ShowInteractionUI(inRange);
+                })
                 .AddTo(ref _disposables);
             viewModel
-                .InteractionText.Subscribe(text => UpdateInteractionText(text))
+                .InteractionText.Subscribe(text => {
+                    Debug.Log($"[GgumtleUIView] InteractionText 변경됨: '{text}'");
+                    UpdateInteractionText(text);
+                })
                 .AddTo(ref _disposables);
             viewModel
-                .HoldProgress.Subscribe(progress => UpdateProgressBar(progress))
+                .HoldProgress.Subscribe(progress => {
+                    Debug.Log($"[GgumtleUIView] HoldProgress 변경됨: {progress:F2}");
+                    UpdateProgressBar(progress);
+                })
                 .AddTo(ref _disposables);
 
-            if (enableDebugLogs)
-                Debug.Log("[GgumtleUIView] ViewModel R3 구독 완료");
+            // 새로운 상태들 구독
+            viewModel
+                .IsDiggingInProgress.Subscribe(isDigging => {
+                    if (enableDebugLogs)
+                        Debug.Log($"[GgumtleUIView] IsDiggingInProgress 변경됨: {isDigging}");
+                    // 파기 진행 중일 때 UI 스타일 변경 등 가능
+                })
+                .AddTo(ref _disposables);
+
+            viewModel
+                .IsCancelRequested.Subscribe(isCancelRequested => {
+                    if (enableDebugLogs)
+                        Debug.Log($"[GgumtleUIView] IsCancelRequested 변경됨: {isCancelRequested}");
+                    // 취소 요청 시 UI 피드백 가능
+                })
+                .AddTo(ref _disposables);
+
+            Debug.Log($"[GgumtleUIView] ViewModel R3 구독 완료 - 현재 상태: IsInRange={viewModel.IsInRange.Value}, InteractionText='{viewModel.InteractionText.Value}'");
         }
 
         #region UI Update Methods (UI Toolkit)

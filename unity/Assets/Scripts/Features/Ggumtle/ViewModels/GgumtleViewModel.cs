@@ -35,6 +35,10 @@ namespace Features.Ggumtle.ViewModels
         public readonly ReactiveProperty<float> HoldProgress = new(0f);
         public readonly ReactiveProperty<float> HoldDuration = new(0f);
 
+        // 파기 타이밍 제어 관련
+        public readonly ReactiveProperty<bool> IsDiggingInProgress = new(false);
+        public readonly ReactiveProperty<bool> IsCancelRequested = new(false);
+
         // 먹이주기 관련
         public readonly ReactiveProperty<int> CurrentFood = new(0);
         public readonly ReactiveProperty<int> MaxFood = new(30);
@@ -49,6 +53,7 @@ namespace Features.Ggumtle.ViewModels
         private readonly ISubscriber<GgumtleStateChangedMessage> _stateChangedSubscriber;
         private readonly ISubscriber<GgumtleHoldProgressMessage> _holdProgressSubscriber;
         private readonly ISubscriber<GgumtleFoodAddedMessage> _foodAddedSubscriber;
+        private readonly ISubscriber<GgumtleDiggingDoneMessage> _diggingDoneSubscriber;
         private readonly IPublisher<NotificationMessage> _notificationPublisher;
         private readonly IPublisher<InteractButtonVisibilityMessage> _interactButtonVisibilityPublisher;
         private readonly ISubscriber<InteractHoldStartMessage> _interactHoldStartSubscriber;
@@ -74,6 +79,7 @@ namespace Features.Ggumtle.ViewModels
             ISubscriber<GgumtleStateChangedMessage> stateChangedSubscriber,
             ISubscriber<GgumtleHoldProgressMessage> holdProgressSubscriber,
             ISubscriber<GgumtleFoodAddedMessage> foodAddedSubscriber,
+            ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
             IPublisher<NotificationMessage> notificationPublisher,
             IPublisher<InteractButtonVisibilityMessage> interactButtonVisibilityPublisher,
             ISubscriber<InteractHoldStartMessage> interactHoldStartSubscriber,
@@ -86,6 +92,7 @@ namespace Features.Ggumtle.ViewModels
             _stateChangedSubscriber = stateChangedSubscriber;
             _holdProgressSubscriber = holdProgressSubscriber;
             _foodAddedSubscriber = foodAddedSubscriber;
+            _diggingDoneSubscriber = diggingDoneSubscriber;
             _notificationPublisher = notificationPublisher;
             _interactButtonVisibilityPublisher = interactButtonVisibilityPublisher;
             _interactHoldStartSubscriber = interactHoldStartSubscriber;
@@ -111,6 +118,9 @@ namespace Features.Ggumtle.ViewModels
 
             // 먹이 추가 이벤트 구독
             _foodAddedSubscriber.Subscribe(OnFoodAddedFiltered).AddTo(_disposables);
+
+            // 파기 완료 이벤트 구독
+            _diggingDoneSubscriber.Subscribe(OnDiggingDoneReceived).AddTo(_disposables);
 
             // 모바일 상호작용 버튼 이벤트 구독
             _interactHoldStartSubscriber
@@ -140,10 +150,14 @@ namespace Features.Ggumtle.ViewModels
 
         private void OnGgumtleDetected(GgumtleDetectedMessage msg)
         {
+            Debug.Log($"[GgumtleViewModel] 메시지 수신됨! GgumtleDetectedMessage: ID={msg.GgumtleId}, State={msg.CurrentState}, Distance={msg.Distance}");
+
             CurrentGgumtleId.Value = msg.GgumtleId;
             IsInRange.Value = true;
             Distance.Value = msg.Distance;
             State.Value = msg.CurrentState;
+
+            Debug.Log($"[GgumtleViewModel] ReactiveProperty 업데이트 완료 - IsInRange: {IsInRange.Value}, CurrentGgumtleId: '{CurrentGgumtleId.Value}'");
 
             // 서비스에서 현재 데이터 가져오기
             UpdateFromService();
@@ -156,7 +170,7 @@ namespace Features.Ggumtle.ViewModels
                 new InteractButtonVisibilityMessage(true, "Ggumtle detected")
             );
 
-            Debug.Log($"[GgumtleViewModel] 꿈틀이 감지: {msg.GgumtleId}, 상태: {msg.CurrentState}");
+            Debug.Log($"[GgumtleViewModel] 꿈틀이 감지 처리 완료: {msg.GgumtleId}, 상태: {msg.CurrentState}, InteractionText: '{InteractionText.Value}'");
         }
 
         private void OnGgumtleLeft(GgumtleLeftMessage msg)
@@ -227,6 +241,31 @@ namespace Features.Ggumtle.ViewModels
             }
         }
 
+        private void OnDiggingDoneReceived(GgumtleDiggingDoneMessage msg)
+        {
+            // 현재 꿈틀이의 파기 완료인지 확인
+            if (int.TryParse(CurrentGgumtleId.Value, out int currentId) && currentId == msg.GgumtleId)
+            {
+                Debug.Log(
+                    $"[GgumtleViewModel] 파기 완료 이벤트 수신: GgumtleId={msg.GgumtleId}, IsRealGgumtle={msg.IsRealGgumtle}, IsCancelRequested={IsCancelRequested.Value}"
+                );
+
+                // 중단 요청이 있었다면 완료 이벤트 무시
+                if (IsCancelRequested.Value)
+                {
+                    Debug.Log("[GgumtleViewModel] 중단 요청이 있었으므로 파기 완료 이벤트 무시");
+                    return;
+                }
+
+                // 파기 진행 중이었다면 완료 처리
+                if (IsDiggingInProgress.Value)
+                {
+                    Debug.Log("[GgumtleViewModel] 파기 완료 처리 시작");
+                    CompleteDigging(msg.IsRealGgumtle);
+                }
+            }
+        }
+
         #endregion
 
         #region Mobile Interaction Handlers
@@ -293,6 +332,10 @@ namespace Features.Ggumtle.ViewModels
                 return;
             }
 
+            // 파기 상태 플래그 초기화
+            IsCancelRequested.Value = false;
+            IsDiggingInProgress.Value = false;
+
             Debug.Log("[GgumtleViewModel] 홀드 취소 토큰 생성 완료");
 
             _holdCts?.Cancel();
@@ -318,14 +361,14 @@ namespace Features.Ggumtle.ViewModels
                 catch (Exception e)
                 {
                     Debug.LogError($"[GgumtleViewModel] GetGgumtleData 호출 중 예외: {e.Message}");
-                    IsHolding.Value = false;
+                    ResetHoldState();
                     return;
                 }
 
                 if (data == null)
                 {
                     Debug.LogError("[GgumtleViewModel] 꿈틀이 데이터 없음");
-                    IsHolding.Value = false;
+                    ResetHoldState();
                     return;
                 }
                 Debug.Log(
@@ -344,14 +387,17 @@ namespace Features.Ggumtle.ViewModels
                 {
                     // 파기 시작 - 네트워크 호출
                     Debug.Log("[GgumtleViewModel] 파기 네트워크 호출 시작");
+                    IsDiggingInProgress.Value = true;
+
                     var success = await _ggumtleService.StartNetworkDiggingAsync(
                         CurrentGgumtleId.Value
                     );
                     Debug.Log($"[GgumtleViewModel] 파기 네트워크 호출 결과: {success}");
+
                     if (!success)
                     {
                         Debug.LogError("[GgumtleViewModel] 네트워크 파기 시작 실패");
-                        IsHolding.Value = false;
+                        ResetHoldState();
                         return;
                     }
                 }
@@ -366,7 +412,7 @@ namespace Features.Ggumtle.ViewModels
                     if (!success)
                     {
                         Debug.LogError("[GgumtleViewModel] 네트워크 먹이주기 시작 실패");
-                        IsHolding.Value = false;
+                        ResetHoldState();
                         return;
                     }
                 }
@@ -380,22 +426,32 @@ namespace Features.Ggumtle.ViewModels
                 // 홀드 진행 (UniTask 사용)
                 await PerformHold(holdTime, _holdCts.Token);
 
-                // 홀드 완료
-                if (!_holdCts.Token.IsCancellationRequested)
+                // 홀드 완료 (파기가 아니거나 파기 완료 이벤트가 오지 않은 경우)
+                if (!_holdCts.Token.IsCancellationRequested && !IsCancelRequested.Value)
                 {
-                    _ggumtleService.CompleteHold(CurrentGgumtleId.Value);
+                    if (data.currentState == GgumtleState.Buried && IsDiggingInProgress.Value)
+                    {
+                        // 파기의 경우 서버 응답을 기다리므로 여기서는 완료하지 않음
+                        Debug.Log("[GgumtleViewModel] 파기 홀드 완료 - 서버 응답 대기 중");
+                    }
+                    else
+                    {
+                        _ggumtleService.CompleteHold(CurrentGgumtleId.Value);
+                    }
                 }
             }
             catch (OperationCanceledException)
             {
                 // 홀드 취소됨
                 Debug.Log("[GgumtleViewModel] 홀드 취소됨");
-                _ggumtleService.CancelHold(CurrentGgumtleId.Value);
+                await HandleHoldCancellation();
             }
             finally
             {
-                IsHolding.Value = false;
-                HoldProgress.Value = 0f;
+                if (!IsDiggingInProgress.Value || IsCancelRequested.Value)
+                {
+                    ResetHoldState();
+                }
             }
         }
 
@@ -409,16 +465,30 @@ namespace Features.Ggumtle.ViewModels
 
             Debug.Log($"[GgumtleViewModel] 홀드 취소: {CurrentGgumtleId.Value}");
 
+            // 중단 요청 플래그 설정
+            IsCancelRequested.Value = true;
+
             // 홀드 작업 취소
             _holdCts?.Cancel();
+
+            await HandleHoldCancellation();
+        }
+
+        /// <summary>
+        /// 홀드 취소 처리
+        /// </summary>
+        private async UniTask HandleHoldCancellation()
+        {
+            Debug.Log("[GgumtleViewModel] 홀드 취소 처리 시작");
 
             // 현재 상태에 따라 네트워크 종료 호출
             var data = _ggumtleService.GetGgumtleData(CurrentGgumtleId.Value);
             if (data != null)
             {
-                if (data.currentState == GgumtleState.Digging)
+                if (IsDiggingInProgress.Value && data.currentState == GgumtleState.Digging)
                 {
                     // 파기 중단
+                    Debug.Log("[GgumtleViewModel] 파기 중단 네트워크 호출");
                     var success = await _ggumtleService.StopNetworkDiggingAsync();
                     if (!success)
                     {
@@ -428,6 +498,7 @@ namespace Features.Ggumtle.ViewModels
                 else if (data.currentState == GgumtleState.Feeding)
                 {
                     // 먹이주기 중단
+                    Debug.Log("[GgumtleViewModel] 먹이주기 중단 네트워크 호출");
                     var success = await _ggumtleService.StopNetworkFeedingAsync();
                     if (!success)
                     {
@@ -439,9 +510,45 @@ namespace Features.Ggumtle.ViewModels
             // 로컬 Service 취소 호출
             _ggumtleService.CancelHold(CurrentGgumtleId.Value);
 
-            // UI 상태 리셋
+            Debug.Log("[GgumtleViewModel] 홀드 취소 처리 완료");
+        }
+
+        /// <summary>
+        /// 홀드 상태 리셋
+        /// </summary>
+        private void ResetHoldState()
+        {
             IsHolding.Value = false;
             HoldProgress.Value = 0f;
+            IsDiggingInProgress.Value = false;
+            IsCancelRequested.Value = false;
+
+            Debug.Log("[GgumtleViewModel] 홀드 상태 리셋 완료");
+        }
+
+        /// <summary>
+        /// 파기 완료 처리
+        /// </summary>
+        private void CompleteDigging(bool isRealGgumtle)
+        {
+            Debug.Log($"[GgumtleViewModel] 파기 완료 처리: IsRealGgumtle={isRealGgumtle}");
+
+            // 홀드 취소 (서버에서 완료되었으므로)
+            _holdCts?.Cancel();
+
+            // 완료 처리
+            _ggumtleService.CompleteHold(CurrentGgumtleId.Value);
+
+            // 상태 리셋
+            ResetHoldState();
+
+            // 성공/실패에 따른 알림
+            string message = isRealGgumtle ? "진짜 꿈틀이를 발견했습니다!" : "가짜 꿈틀이였습니다.";
+            var notificationType = isRealGgumtle ? NotificationType.Success : NotificationType.Info;
+
+            _notificationPublisher.Publish(new NotificationMessage(message, 3f, notificationType));
+
+            Debug.Log("[GgumtleViewModel] 파기 완료 처리 완료");
         }
 
         #endregion
@@ -452,7 +559,7 @@ namespace Features.Ggumtle.ViewModels
         {
             float elapsed = 0f;
 
-            while (elapsed < duration && !ct.IsCancellationRequested)
+            while (elapsed < duration && !ct.IsCancellationRequested && !IsCancelRequested.Value)
             {
                 elapsed += Time.deltaTime;
                 float progress = Mathf.Clamp01(elapsed / duration);
@@ -461,8 +568,17 @@ namespace Features.Ggumtle.ViewModels
                 // 서비스에 진행률 업데이트
                 _ggumtleService.UpdateHoldProgress(CurrentGgumtleId.Value, progress);
 
+                // 파기 완료 이벤트가 온 경우 조기 종료
+                if (IsDiggingInProgress.Value && !IsCancelRequested.Value)
+                {
+                    // 파기 진행 중이므로 서버 응답을 기다림
+                    // CompleteDigging에서 처리될 것임
+                }
+
                 await UniTask.Yield(ct);
             }
+
+            Debug.Log($"[GgumtleViewModel] PerformHold 완료 - elapsed: {elapsed:F2}s, duration: {duration:F2}s, cancelled: {ct.IsCancellationRequested}, cancelRequested: {IsCancelRequested.Value}");
         }
 
         private float GetHoldDuration(GgumtleData data)

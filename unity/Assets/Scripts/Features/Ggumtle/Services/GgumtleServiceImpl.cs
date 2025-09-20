@@ -14,7 +14,7 @@ namespace Features.Ggumtle.Services
     /// 꿈틀이 비즈니스 로직 서비스 (순수 C# 클래스)
     /// MonoBehaviour 의존성 제거하여 테스트 가능하고 DI 친화적으로 구현
     /// </summary>
-    public class GgumtleServiceImpl : IGgumtleService
+    public class GgumtleServiceImpl : IGgumtleService, IDisposable
     {
         #region Dependencies
 
@@ -25,12 +25,19 @@ namespace Features.Ggumtle.Services
         private readonly IPublisher<NotificationMessage> _notificationPublisher;
         private readonly IGgumtleNetworkSource _networkSource;
 
+        // 네트워크 이벤트 구독자들
+        private readonly ISubscriber<GgumtleDiggingDoneMessage> _diggingDoneSubscriber;
+        private readonly ISubscriber<GgumtleJellyForceQuitMessage> _jellyForceQuitSubscriber;
+        private readonly ISubscriber<GgumtleSpawnMessage> _spawnSubscriber;
+        private readonly ISubscriber<GgumtleNirvanaMessage> _nirvanaSubscriber;
+
         #endregion
 
         #region Private Fields
 
         private readonly Dictionary<int, GgumtleData> _ggumtleDataMap = new();
         private readonly bool _enableDebugLogs = true;
+        private readonly List<IDisposable> _disposables = new();
 
         #endregion
 
@@ -43,7 +50,11 @@ namespace Features.Ggumtle.Services
             IPublisher<GgumtleFoodAddedMessage> foodAddedPublisher,
             IPublisher<GgumtlePurifiedMessage> purifiedPublisher,
             IPublisher<NotificationMessage> notificationPublisher,
-            IGgumtleNetworkSource networkSource
+            IGgumtleNetworkSource networkSource,
+            ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
+            ISubscriber<GgumtleJellyForceQuitMessage> jellyForceQuitSubscriber,
+            ISubscriber<GgumtleSpawnMessage> spawnSubscriber,
+            ISubscriber<GgumtleNirvanaMessage> nirvanaSubscriber
         )
         {
             _stateChangePublisher = stateChangePublisher;
@@ -52,6 +63,16 @@ namespace Features.Ggumtle.Services
             _purifiedPublisher = purifiedPublisher;
             _notificationPublisher = notificationPublisher;
             _networkSource = networkSource;
+            _diggingDoneSubscriber = diggingDoneSubscriber;
+            _jellyForceQuitSubscriber = jellyForceQuitSubscriber;
+            _spawnSubscriber = spawnSubscriber;
+            _nirvanaSubscriber = nirvanaSubscriber;
+
+            // 네트워크 이벤트 구독
+            _disposables.Add(_diggingDoneSubscriber.Subscribe(OnDiggingDoneReceived));
+            _disposables.Add(_jellyForceQuitSubscriber.Subscribe(OnJellyForceQuitReceived));
+            _disposables.Add(_spawnSubscriber.Subscribe(OnSpawnReceived));
+            _disposables.Add(_nirvanaSubscriber.Subscribe(OnNirvanaReceived));
 
             DebugLog("[GgumtleServiceImpl] 서비스 초기화 완료");
         }
@@ -664,12 +685,84 @@ namespace Features.Ggumtle.Services
 
         #endregion
 
+        #region Network Event Handlers
+
+        private void OnDiggingDoneReceived(GgumtleDiggingDoneMessage message)
+        {
+            try
+            {
+                DebugLog(
+                    $"[GgumtleServiceImpl] 파기 완료 이벤트 수신: Id={message.GgumtleId}, IsRealGgumtle={message.IsRealGgumtle}"
+                );
+                HandleDiggingDone(message.GgumtleId, message.IsRealGgumtle);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 파기 완료 이벤트 처리 실패: {e.Message}");
+            }
+        }
+
+        private void OnJellyForceQuitReceived(GgumtleJellyForceQuitMessage message)
+        {
+            try
+            {
+                DebugLog(
+                    $"[GgumtleServiceImpl] 젤리 강제 종료 이벤트 수신: GgumtleId={message.GgumtleId}, LeftJellyCount={message.LeftJellyCount}"
+                );
+                HandleJellyForceQuit(message.GgumtleId, message.LeftJellyCount);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 젤리 강제 종료 이벤트 처리 실패: {e.Message}");
+            }
+        }
+
+        private void OnSpawnReceived(GgumtleSpawnMessage message)
+        {
+            try
+            {
+                DebugLog(
+                    $"[GgumtleServiceImpl] 꿈틀이 스폰 이벤트 수신: Id={message.GgumtleId}, Position={message.Position}"
+                );
+                HandleGgumtleSpawn(message.GgumtleId, message.Position);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 꿈틀이 스폰 이벤트 처리 실패: {e.Message}");
+            }
+        }
+
+        private void OnNirvanaReceived(GgumtleNirvanaMessage message)
+        {
+            try
+            {
+                DebugLog($"[GgumtleServiceImpl] 꿈틀이 성불 이벤트 수신: Id={message.GgumtleId}");
+                HandleGgumtleNirvana(message.GgumtleId);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 꿈틀이 성불 이벤트 처리 실패: {e.Message}");
+            }
+        }
+
+        #endregion
+
         #region Utility
 
         public void ResetService()
         {
             _ggumtleDataMap.Clear();
             DebugLog("[GgumtleServiceImpl] 서비스 리셋 완료");
+        }
+
+        public void Dispose()
+        {
+            foreach (var disposable in _disposables)
+            {
+                disposable?.Dispose();
+            }
+            _disposables.Clear();
+            DebugLog("[GgumtleServiceImpl] Dispose 완료");
         }
 
         #endregion

@@ -20,6 +20,7 @@ namespace Features.Map.Services
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IGgumtleService _ggumtleService;
         private readonly bool _enableDebugLogs = false; // 스폰 로그 비활성화
+        private readonly bool _useFixedGgumtlePositions = true; // 꿈틀이 고정 위치 사용 여부
 
         // 스폰된 오브젝트들을 타입별로 관리
         private readonly Dictionary<string, List<GameObject>> _spawnedObjects = new();
@@ -176,12 +177,14 @@ namespace Features.Map.Services
                     return;
                 }
 
-                foreach (var ggumtle in ggumtles)
+                // 고정 위치 사용 여부에 따라 분기
+                if (_useFixedGgumtlePositions)
                 {
-                    var ggumtleObject = await SpawnGgumtleAsync(ggumtle.Id, ggumtle.ToVector3());
-
-                    // 한 프레임 대기 (성능 최적화)
-                    await UniTask.Yield();
+                    await SpawnGgumtlesWithFixedPositions(ggumtles);
+                }
+                else
+                {
+                    await SpawnGgumtlesWithServerPositions(ggumtles);
                 }
             }
             catch (Exception e)
@@ -189,6 +192,61 @@ namespace Features.Map.Services
                 Debug.LogWarning($"[MapSpawnService] 꿈틀이 스폰 실패: {e.Message} - 다른 오브젝트 스폰은 계속 진행");
                 // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
             }
+        }
+
+        /// <summary>
+        /// 서버에서 받은 위치 그대로 꿈틀이 스폰
+        /// </summary>
+        private async UniTask SpawnGgumtlesWithServerPositions(List<GgumtlePacket> ggumtles)
+        {
+            Debug.Log($"[SERVER_ROOM_DATA] 서버 위치 그대로 꿈틀이 스폰 시작: {ggumtles.Count}개");
+
+            foreach (var ggumtle in ggumtles)
+            {
+                var serverPosition = ggumtle.ToVector3();
+                Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 스폰: ID={ggumtle.Id}, 서버 원본 좌표=({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z}), Unity 변환 좌표={serverPosition}");
+
+                var ggumtleObject = await SpawnGgumtleAsync(ggumtle.Id, serverPosition);
+
+                if (ggumtleObject != null)
+                {
+                    Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 스폰 완료: ID={ggumtle.Id}, 최종 GameObject 위치={ggumtleObject.transform.position}");
+                }
+
+                // 한 프레임 대기 (성능 최적화)
+                await UniTask.Yield();
+            }
+
+            Debug.Log("[SERVER_ROOM_DATA] 꿈틀이 서버 위치로 스폰 완료");
+        }
+
+        /// <summary>
+        /// 고정된 위치에 꿈틀이 스폰 (서버 위치 무시)
+        /// </summary>
+        private async UniTask SpawnGgumtlesWithFixedPositions(List<GgumtlePacket> ggumtles)
+        {
+            // 고정 위치 배열
+            Vector3[] fixedPositions = {
+                new Vector3(52.7443886f, 5.37099981f, 11.4316998f),
+                new Vector3(53.8800011f, 5.37099981f, 15.6700001f),
+                new Vector3(48.75f, 5.37099981f, 12.5f)
+            };
+
+            for (int i = 0; i < ggumtles.Count && i < fixedPositions.Length; i++)
+            {
+                var ggumtle = ggumtles[i];
+                var fixedPosition = fixedPositions[i];
+
+                Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 고정 위치 스폰: ID={ggumtle.Id}, 서버 원본 좌표=({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z}), 서버 Unity 변환={ggumtle.ToVector3()}, 고정 위치={fixedPosition}");
+
+                var ggumtleObject = await SpawnGgumtleAsync(ggumtle.Id, fixedPosition);
+
+                // 한 프레임 대기 (성능 최적화)
+                await UniTask.Yield();
+            }
+
+            if (_enableDebugLogs)
+                Debug.Log($"[MapSpawnService] 꿈틀이 고정 위치 스폰 완료: {Math.Min(ggumtles.Count, fixedPositions.Length)}개");
         }
 
         public async UniTask SpawnItemsAsync(List<HealPackPacket> healPacks, List<SpeedPackPacket> speedPacks)

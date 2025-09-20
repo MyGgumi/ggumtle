@@ -13,9 +13,12 @@ namespace DI
         {
             // MessagePipe 등록 및 옵션 반환
             var options = builder.RegisterMessagePipe();
-            builder.RegisterBuildCallback(c =>
-                GlobalMessagePipe.SetProvider(c.AsServiceProvider())
-            );
+
+            // MessagePipeBridge 동적 생성 및 등록
+            builder.RegisterBuildCallback(container =>
+            {
+                CreateMessagePipeBridge(container);
+            });
 
 
 
@@ -128,6 +131,28 @@ namespace DI
 
             // Entry Point 등록
             builder.RegisterEntryPoint<GameInitializer>();
+        }
+
+        /// <summary>
+        /// MessagePipeBridge를 동적으로 생성하고 DontDestroyOnLoad 설정
+        /// </summary>
+        private void CreateMessagePipeBridge(VContainer.IObjectResolver container)
+        {
+            try
+            {
+                // MessagePipeBridge GameObject 생성
+                var bridgeObject = new UnityEngine.GameObject("MessagePipeBridge");
+                var bridge = bridgeObject.AddComponent<Networks.MessagePipeBridge>();
+
+                // DontDestroyOnLoad 설정
+                UnityEngine.Object.DontDestroyOnLoad(bridgeObject);
+
+                UnityEngine.Debug.Log("[GameLifetimeScope] MessagePipeBridge 동적 생성 완료");
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogError($"[GameLifetimeScope] MessagePipeBridge 생성 실패: {e.Message}");
+            }
         }
     }
 

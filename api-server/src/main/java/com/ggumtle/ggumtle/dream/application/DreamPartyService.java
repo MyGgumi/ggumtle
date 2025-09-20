@@ -66,7 +66,7 @@ public class DreamPartyService {
         Mongging mongging = monggingRepository.findByOwnerIdAndClassIdFetchClassAndOwner(command.memberId(), PHYSICAL_MONGGING_CLASS_ID)
                 .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_MONGGING));
 
-        PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), mongging.getId(), true);
+        PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), mongging.getId(), mongging.getLevel(), true);
         partyParticipantRepository.save(partyParticipant);
         redisTemplate.opsForSet().add(ACTIVE_PARTY_INDEX_KEY, partyParticipant.getPartyId());
 
@@ -244,7 +244,7 @@ public class DreamPartyService {
         Mongging mongging = monggingRepository.findByOwnerIdAndClassIdFetchClassAndOwner(member.getId(), PHYSICAL_MONGGING_CLASS_ID)
                 .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_MONGGING));
 
-        PartyParticipant joinedParticipant = new PartyParticipant(member.getId(), partyInvitation.getPartyId(), mongging.getId(), false);
+        PartyParticipant joinedParticipant = new PartyParticipant(member.getId(), partyInvitation.getPartyId(), mongging.getId(), mongging.getLevel(), false);
         partyParticipantRepository.save(joinedParticipant);
         redisTemplate.opsForSet().add(ACTIVE_PARTY_INDEX_KEY, joinedParticipant.getPartyId());
 
@@ -285,7 +285,7 @@ public class DreamPartyService {
             throw new GgumtleException(DreamErrorCode.NOT_OWNER_OF_MONGGING);
         }
 
-        partyParticipant.changeMongging(mongging.getId());
+        partyParticipant.changeMongging(mongging.getId(), mongging.getLevel());
         partyParticipantRepository.save(partyParticipant);
 
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyParticipant.getPartyId());

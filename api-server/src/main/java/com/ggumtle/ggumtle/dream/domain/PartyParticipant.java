@@ -20,13 +20,16 @@ public class PartyParticipant {
 
     private Long monggingId;
 
+    private Integer monggingLevel;
+
     private boolean isReady;
 
-    public PartyParticipant(Long memberId, String partyId, Long monggingId, boolean isLeader) {
+    public PartyParticipant(Long memberId, String partyId, Long monggingId, Integer monggingLevel, boolean isLeader) {
         this.memberId = memberId;
         this.partyId = partyId;
         this.isLeader = isLeader;
         this.monggingId = monggingId;
+        this.monggingLevel = monggingLevel;
         this.isReady = false;
     }
 
@@ -42,7 +45,8 @@ public class PartyParticipant {
         this.isLeader = true;
     }
 
-    public void changeMongging(Long monggingId) {
+    public void changeMongging(Long monggingId, Integer monggingLevel) {
         this.monggingId = monggingId;
+        this.monggingLevel = monggingLevel;
     }
 }

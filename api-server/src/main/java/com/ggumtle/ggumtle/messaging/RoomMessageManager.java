@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ggumtle.ggumtle.dream.domain.DreamServer;
+import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
 import com.ggumtle.ggumtle.messaging.message.CreatedDreamMessage;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
@@ -26,9 +27,9 @@ public class RoomMessageManager implements MessageListener {
     private final MessageSender messageSender;
     private final ObjectMapper objectMapper;
 
-    public void sendMessage(DreamServer dreamServer, String requestId, List<Long> playerIds) {
+    public void sendMessage(DreamServer dreamServer, String requestId, List<PartyParticipant> participants) {
         String channel = DREAM_REQUEST_PREFIX + dreamServer.getId();
-        RequestRoomMessage message = new RequestRoomMessage(requestId, playerIds);
+        RequestRoomMessage message = RequestRoomMessage.of(requestId, participants);
 
         log.info("레디스에 메시지 발행: {} - {}", channel, message);
         messageSender.sendMessage(channel, message);

@@ -1243,15 +1243,46 @@ public class DreamManager {
     }
 
     private void initializeMap() {
+        List<GgumtleSpawn> ggumtleSpawns;
+        List<BoxSpawn> boxSpawns;
+        List<FieldItemSpawn> fieldItemSpawns;
+
+
+        if (this.room.id < 0) {
+            ggumtleSpawns = new ArrayList<>();
+            ggumtleSpawns.add(new GgumtleSpawn(0, 5000, 500, 1200));
+            ggumtleSpawns.add(new GgumtleSpawn(0, 5300, 500, 1200));
+            ggumtleSpawns.add(new GgumtleSpawn(0, 5000, 500, 1500));
+
+            boxSpawns = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                for (int j = 0; j < 5; j++) {
+                    boxSpawns.add(new BoxSpawn(0, (18 + i * 3) * -100, 50, j * 2 * -100));
+                }
+            }
+
+            fieldItemSpawns = new ArrayList<>();
+            for (int i = 0; i < 3; i++) {
+                fieldItemSpawns.add(new FieldItemSpawn(i, 4800, 550, 2 * i * 100, 1));
+            }
+            for (int i = 0; i < 5; i++) {
+                fieldItemSpawns.add(new FieldItemSpawn(i + 3, 4600, 550, (4 - i * 2) * 100, 2));
+            }
+            log.info("테스트용 맵 생성");
+        } else {
+            ggumtleSpawns = spawnCache.getRandomGgumtleSpawns(GGUMTLE_SPAWN_SIZE);
+            boxSpawns = spawnCache.getRandomBoxSpawns(BOX_SPAWN_SIZE);
+            fieldItemSpawns = spawnCache.getFieldItemSpawns();
+            log.info("무작의 맵 생성");
+        }
+
         // 꿈틀이 위치 초기화
-        List<GgumtleSpawn> ggumtleSpawns = spawnCache.getRandomGgumtleSpawns(GGUMTLE_SPAWN_SIZE);
         for (int i = 0; i < GGUMTLE_SPAWN_SIZE; i++) {
             ggumtles.put(i, new Ggumtle(i, Position.from(ggumtleSpawns.get(i))));
         }
         ggumtleIdGenerator.set(GGUMTLE_SPAWN_SIZE);
 
         // 상자 위치 초기화
-        List<BoxSpawn> boxSpawns = spawnCache.getRandomBoxSpawns(BOX_SPAWN_SIZE);
         for (int i = 0; i < BOX_SPAWN_SIZE; i++) {
             boxes.put(i, new Box(i, Position.from(boxSpawns.get(i))));
         }
@@ -1263,7 +1294,6 @@ public class DreamManager {
         }
 
         // 필드 아이템 초기화
-        List<FieldItemSpawn> fieldItemSpawns = spawnCache.getFieldItemSpawns();
         for (FieldItemSpawn spawn : fieldItemSpawns) {
             FieldItem fieldItem = new FieldItem(spawn);
             fieldItems.put(fieldItem.id, fieldItem);
@@ -1305,7 +1335,7 @@ public class DreamManager {
         List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
 
         if (this.room.id == -4) {
-            Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()));
+            Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()), this.room.getPlayerStat(playerIds.getFirst()));
             this.players.put(mongging.getId(), mongging);
         }
         else if (this.room.id == -5) {
@@ -1322,8 +1352,7 @@ public class DreamManager {
                     this.players.put(mongdung.getId(), mongdung);
                     continue;
                 }
-
-                Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)));
+                Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)), this.room.getPlayerStat(playerIds.get(i)));
                 this.players.put(mongging.getId(), mongging);
             }
         }

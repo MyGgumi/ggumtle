@@ -56,72 +56,88 @@ public class DreamService {
     public void startDream(StartDreamCommand command) {
         publishEvent(SocketType.START_DREAM, List.of(command.requesterId()), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
 
-        PartyParticipant leader = partyParticipantRepository.findById(command.requesterId())
+        // 리더의 요청인지 확인
+        PartyParticipant requester = partyParticipantRepository.findById(command.requesterId())
                 .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
-
-        if (!leader.isLeader()) {
+        if (!requester.isLeader()) {
             throw new GgumtleException(DreamErrorCode.NOT_LEADER, "파티의 리더만 드림을 시작할 수 있습니다");
         }
 
-        String partyId = leader.getPartyId();
-        List<PartyParticipant> participantsInParty = partyParticipantRepository.findAllByPartyId(partyId);
-        boolean allReady = participantsInParty.stream().allMatch(PartyParticipant::isReady);
+        // 모든 파티원이 준비 중인지 확인
+        String partyId = requester.getPartyId();
+        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyId);
+        boolean allReady = participants.stream().allMatch(PartyParticipant::isReady);
         if (!allReady) {
-            throw new GgumtleException((DreamErrorCode.NOT_ALL_READY)
-            );
+            throw new GgumtleException(DreamErrorCode.NOT_ALL_READY);
         }
 
-        // 중복 시작 방지
+        // 중복 시작 방지 - 이미 매칭 중인 파티인지 확인
         Set<WaitingParty> waitingParties = waitingPartyRedisTemplate.opsForZSet().range(WAITING_PARTY_KEY, 0, -1);
         if (waitingParties != null) {
-            boolean alreadyInMatch = waitingParties.stream()
-                    .anyMatch(waitingParty -> waitingParty.getPartyId().equals(partyId));
+            boolean alreadyInMatch = waitingParties.stream().anyMatch(waitingParty -> waitingParty.getPartyId().equals(partyId));
             if (alreadyInMatch) {
                 throw new GgumtleException(DreamErrorCode.ALREADY_MATCHING);
             }
         }
 
-        List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(leader.getPartyId());
+        // 드림 시작 요청을 수락해 매칭 시작
         List<Long> requesterPartyParticipantIds = convertToId(participants);
-        publishEvent(
-                SocketType.START_DREAM,
-                requesterPartyParticipantIds,
-                new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_MATCH, null));
-
-        log.info("드림 시작을 요청한 파티원: {}", participants);
+        publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_MATCH, null));
 
         // 요청한 파티가 드림 플레이어 인원 수와 일치하면 바로 시작
         if (participants.size() == DREAM_PLAYER_SIZE) {
             publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+            log.info("요청한 파티가 인원 수와 일치해 바로 시작함");
 
-            requestRoom(requesterPartyParticipantIds);
+            requestRoom(participants);
             publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
             return;
         }
 
-        // 다른 파티와 매칭 시도
+        // 인원이 부족하면 다른 파티와 매칭 시도
         List<WaitingParty> matchedParties = matchWithWaitingParties(participants.size());
-        log.info("매칭 결과: {}", matchedParties);
+        log.info("요청한 파티의 매칭 결과: {}", matchedParties);
 
         // 매칭 실패 시 대기열에 추가해 매칭 기다리기
         if (matchedParties.isEmpty()) {
             WaitingParty waitingParty = new WaitingParty(participants.getFirst().getPartyId(), participants.size());
             waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis());
+            log.info("매칭 실패 - 대기열에서 대기");
 
             publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
             return;
         }
 
         // 매칭 성공 시 매칭된 파티를 대기열에서 삭제하고 드림 시작
-        List<Long> matchedParticipantIds = convertToId(participants, matchedParties);
-        publishEvent(SocketType.START_DREAM, matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+        List<PartyParticipant> players = extendAndDeleteMatchedParty(participants, matchedParties);
+        List<Long> playerIds = convertToId(players);
+        publishEvent(SocketType.START_DREAM, playerIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+        log.info("매칭 성공 - 드림 시작");
 
-        for (WaitingParty matchedParty : matchedParties) {
-            waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, matchedParty, System.currentTimeMillis());
+        requestRoom(players);
+        publishEvent(SocketType.START_DREAM, playerIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+    }
+
+    /**
+     * 매칭 취소 요청 처리
+     */
+    public CancelMatchingResult cancelMatching(CancelMatchingCommand command) {
+        PartyParticipant requester = partyParticipantRepository.findById(command.requesterId())
+                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
+
+        List<PartyParticipant> allParticipants = partyParticipantRepository.findAllByPartyId(requester.getPartyId());
+        WaitingParty waitingParty = new WaitingParty(requester.getPartyId(), allParticipants.size());
+
+        Long removedCount = waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, waitingParty);
+        if (removedCount == null || removedCount == 0) {
+            throw new GgumtleException(DreamErrorCode.NOT_FOUND_MATCHING);
         }
 
-        requestRoom(matchedParticipantIds);
-        publishEvent(SocketType.START_DREAM, matchedParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+        List<Long> participantIds = allParticipants.stream().
+                map(PartyParticipant::getMemberId).
+                toList();
+
+        return new CancelMatchingResult(participantIds, "매칭이 취소되었습니다");
     }
 
     /**
@@ -195,60 +211,31 @@ public class DreamService {
         return participants.stream().map(PartyParticipant::getMemberId).toList();
     }
 
-    private List<Long> convertToId(List<PartyParticipant> participants, List<WaitingParty> matchedParties) {
-        List<Long> ids = new ArrayList<>();
-
-        for (PartyParticipant participant : participants) {
-            ids.add(participant.getMemberId());
-        }
+    private List<PartyParticipant> extendAndDeleteMatchedParty(List<PartyParticipant> requesterParticipants, List<WaitingParty> matchedParties) {
+        List<PartyParticipant> result = new ArrayList<>(requesterParticipants);
 
         for (WaitingParty matchedParty : matchedParties) {
-            List<PartyParticipant> matchedParticipants = partyParticipantRepository.findAllByPartyId(matchedParty.getPartyId());
-            for (PartyParticipant matchedParticipant : matchedParticipants) {
-                ids.add(matchedParticipant.getMemberId());
-            }
+            result.addAll(partyParticipantRepository.findAllByPartyId(matchedParty.getPartyId()));
+
+            waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, matchedParty, System.currentTimeMillis());
         }
 
-        return ids;
+        return result;
     }
 
-    private void requestRoom(List<Long> playerIds) {
+    private void requestRoom(List<PartyParticipant> participants) {
         // TODO: 요청할 드림 서버 선정
         DreamServer dreamServer = new DreamServer("1");
         String roomRequestId = UUID.randomUUID().toString();
 
-        Dream dream = new Dream(roomRequestId, playerIds);
+        Dream dream = new Dream(roomRequestId, participants.stream().map(PartyParticipant::getMemberId).toList());
         dreamRepository.save(dream);
 
-        roomMessageManager.sendMessage(dreamServer, roomRequestId, playerIds);
+        roomMessageManager.sendMessage(dreamServer, roomRequestId, participants);
     }
 
     private void publishEvent(SocketType socketType, List<Long> memberIds, Object data) {
         SendSocketEvent event = new SendSocketEvent(socketType, memberIds, data);
         applicationEventPublisher.publishEvent(event);
-    }
-
-    public CancelMatchingResult cancelMatching(CancelMatchingCommand command) {
-        Long requesterId = command.requesterId();
-
-        PartyParticipant requester = partyParticipantRepository.findById(requesterId)
-                .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_PARTY));
-
-        String partyId = requester.getPartyId();
-
-        List<PartyParticipant> allParticipants = partyParticipantRepository.findAllByPartyId(partyId);
-        WaitingParty waitingParty = new WaitingParty(partyId, allParticipants.size());
-
-        Long removedCount = waitingPartyRedisTemplate.opsForZSet().remove(WAITING_PARTY_KEY, waitingParty);
-
-        if (removedCount == null || removedCount == 0) {
-            throw new GgumtleException(DreamErrorCode.NOT_FOUND_MATCHING);
-        }
-
-        List<Long> participantIds = allParticipants.stream().
-                map(PartyParticipant::getMemberId).
-                collect(Collectors.toList());
-        String message = "매칭이 취소되었습니다";
-        return new CancelMatchingResult(participantIds, message);
     }
 }

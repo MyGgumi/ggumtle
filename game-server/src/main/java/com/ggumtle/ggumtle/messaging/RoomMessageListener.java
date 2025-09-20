@@ -40,7 +40,7 @@ public class RoomMessageListener implements MessageListener {
         try {
             RequestRoomMessage requestRoom = objectMapper.readValue(message.getBody(), RequestRoomMessage.class);
 
-            Room room = roomManager.createRoom(requestRoom.playerIds());
+            Room room = roomManager.createRoom(requestRoom);
 
             CreatedRoomMessage createdRoomMessage = new CreatedRoomMessage(room.id, requestRoom.requestId(), this.gameServerId);
             String json =  objectMapper.writeValueAsString(createdRoomMessage);

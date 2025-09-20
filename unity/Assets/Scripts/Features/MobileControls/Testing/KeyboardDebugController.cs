@@ -30,15 +30,20 @@ namespace Features.MobileControls.Testing
         public void Initialize(PlayerMovementService playerMovementService)
         {
             _playerMovementService = playerMovementService;
+
+            // VContainer 주입이 완료되면 즉시 초기화
+            SetupInputActions();
+
             UnityEngine.Debug.Log("[KeyboardDebugController] PlayerMovementService 연결 완료");
+            UnityEngine.Debug.Log("[KeyboardDebugController] 키보드 디버그 컨트롤러 초기화 완료 (WASD 이동, Space 점프)");
         }
 
         void Start()
         {
-            // VContainer 주입이 안된 경우 직접 찾기 시도
+            // VContainer 주입이 완료되지 않은 경우 대체 방법 시도
             if (_playerMovementService == null)
             {
-                UnityEngine.Debug.LogWarning("[KeyboardDebugController] PlayerMovementService가 주입되지 않음. 직접 찾기 시도...");
+                UnityEngine.Debug.LogWarning("[KeyboardDebugController] VContainer 주입 실패 - 직접 찾기 시도...");
 
                 try
                 {
@@ -46,6 +51,7 @@ namespace Features.MobileControls.Testing
                     if (lifetimeScope != null && lifetimeScope.Container != null)
                     {
                         _playerMovementService = lifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
+                        SetupInputActions();
                         UnityEngine.Debug.Log("[KeyboardDebugController] MainLifetimeScope에서 PlayerMovementService 찾기 성공");
                     }
                 }
@@ -57,22 +63,32 @@ namespace Features.MobileControls.Testing
 
             if (_playerMovementService == null)
             {
-                UnityEngine.Debug.LogError(
-                    "[KeyboardDebugController] PlayerMovementService를 찾을 수 없습니다!"
-                );
+                UnityEngine.Debug.LogError("[KeyboardDebugController] PlayerMovementService를 찾을 수 없습니다!");
                 return;
             }
 
-            // Input Actions 설정
-            SetupInputActions();
-
-            UnityEngine.Debug.Log(
-                "[KeyboardDebugController] 키보드 디버그 컨트롤러 초기화 완료 (WASD 이동, Space 점프)"
-            );
+            if (_moveAction == null)
+            {
+                // 아직 Input Action이 설정되지 않았다면 설정
+                SetupInputActions();
+            }
         }
 
         private void SetupInputActions()
         {
+            if (_playerMovementService == null)
+            {
+                UnityEngine.Debug.LogWarning("[KeyboardDebugController] PlayerMovementService가 null이어서 Input Actions 설정을 건너뜁니다.");
+                return;
+            }
+
+            // 이미 설정되었다면 중복 방지
+            if (_moveAction != null)
+            {
+                UnityEngine.Debug.LogWarning("[KeyboardDebugController] Input Actions 이미 설정됨 - 중복 방지");
+                return;
+            }
+
             // Move Action (WASD)
             _moveAction = new InputAction("Move", binding: "<Keyboard>/wasd");
             _moveAction
@@ -94,6 +110,8 @@ namespace Features.MobileControls.Testing
             // 활성화
             _moveAction.Enable();
             _jumpAction.Enable();
+
+            UnityEngine.Debug.Log("[KeyboardDebugController] Input Actions 설정 완료");
         }
 
         #region Input Action Callbacks

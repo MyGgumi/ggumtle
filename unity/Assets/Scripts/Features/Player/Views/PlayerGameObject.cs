@@ -36,7 +36,7 @@ namespace Features.Player.Views
         public bool canMove = true;
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = false;
+        public bool enableDebugLogs = true;
 
         private float _speed;
         private float _animationBlend;
@@ -67,9 +67,23 @@ namespace Features.Player.Views
 
         private void Awake()
         {
+            // 카메라 찾기 - 여러 방법 시도
             if (_mainCamera == null)
             {
                 _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                if (_mainCamera == null)
+                {
+                    var camera = Camera.main;
+                    if (camera != null)
+                    {
+                        _mainCamera = camera.gameObject;
+                        Debug.Log($"[PlayerGameObject] Camera.main으로 카메라 찾음: {_mainCamera.name}");
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[PlayerGameObject] Awake()에서 MainCamera를 찾을 수 없음 - Start()에서 재시도");
+                    }
+                }
             }
 
             // CinemachineFreeLook 카메라 찾기
@@ -112,11 +126,60 @@ namespace Features.Player.Views
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
-            // VContainer 의존성 주입 확인
+            // 카메라 재시도 (Awake에서 못 찾았을 경우)
+            if (_mainCamera == null)
+            {
+                _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
+                if (_mainCamera == null)
+                {
+                    var camera = Camera.main;
+                    if (camera != null)
+                    {
+                        _mainCamera = camera.gameObject;
+                        Debug.Log($"[PlayerGameObject] Start()에서 Camera.main으로 카메라 찾음: {_mainCamera.name}");
+                    }
+                    else
+                    {
+                        // 모든 카메라 검색
+                        var allCameras = FindObjectsOfType<Camera>();
+                        if (allCameras.Length > 0)
+                        {
+                            _mainCamera = allCameras[0].gameObject;
+                            Debug.LogWarning($"[PlayerGameObject] 첫 번째 Camera 컴포넌트 사용: {_mainCamera.name}");
+                        }
+                        else
+                        {
+                            Debug.LogError("[PlayerGameObject] 씬에 카메라가 없습니다!");
+                        }
+                    }
+                }
+            }
+
+            // VContainer 의존성 주입 확인 및 대체 방법 시도
             if (_playerMovementService == null)
             {
-                Debug.LogError("[PlayerGameObject] PlayerMovementService가 주입되지 않았습니다! VContainer 설정을 확인하세요.");
-                return;
+                Debug.LogWarning("[PlayerGameObject] PlayerMovementService가 주입되지 않음. MainLifetimeScope에서 직접 찾기 시도...");
+
+                try
+                {
+                    var mainLifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
+                    if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
+                    {
+                        var playerMovementService = mainLifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
+                        Initialize(playerMovementService);
+                        Debug.Log("[PlayerGameObject] MainLifetimeScope에서 PlayerMovementService 찾기 성공");
+                    }
+                    else
+                    {
+                        Debug.LogError("[PlayerGameObject] MainLifetimeScope를 찾을 수 없습니다!");
+                        return;
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[PlayerGameObject] PlayerMovementService 수동 해결 실패: {e.Message}");
+                    return;
+                }
             }
 
             if (enableDebugLogs)
@@ -132,6 +195,10 @@ namespace Features.Player.Views
 
         private void Update()
         {
+            // GameObject가 파괴되었는지 체크
+            if (this == null || gameObject == null)
+                return;
+
             _hasAnimator = TryGetComponent(out _animator);
 
             JumpAndGravity();
@@ -195,6 +262,10 @@ namespace Features.Player.Views
 
         private void Move()
         {
+            // GameObject와 Transform이 파괴되었는지 체크
+            if (this == null || gameObject == null || transform == null)
+                return;
+
             if (!canMove)
             {
                 if (enableDebugLogs)
@@ -207,6 +278,24 @@ namespace Features.Player.Views
                 Debug.LogError(
                     "[PlayerGameObject] Move() - PlayerMovementService가 null입니다! 플레이어 이동이 작동하지 않습니다."
                 );
+                return;
+            }
+
+            // 필수 컴포넌트들이 null인지 체크 - FreeLook 카메라 우선 사용
+            Transform cameraTransform = null;
+            if (_freeLookCamera != null)
+            {
+                cameraTransform = _freeLookCamera.transform;
+            }
+            else if (_mainCamera != null)
+            {
+                cameraTransform = _mainCamera.transform;
+            }
+
+            if (_controller == null || cameraTransform == null)
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"[PlayerGameObject] 필수 컴포넌트가 null입니다 - Controller: {_controller != null}, Camera: {cameraTransform != null}");
                 return;
             }
 
@@ -262,7 +351,7 @@ namespace Features.Player.Views
             {
                 _targetRotation =
                     Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg
-                    + _mainCamera.transform.eulerAngles.y;
+                    + cameraTransform.eulerAngles.y;
 
                 float rotation = Mathf.SmoothDampAngle(
                     transform.eulerAngles.y,

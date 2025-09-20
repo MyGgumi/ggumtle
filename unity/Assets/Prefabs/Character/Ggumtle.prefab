@@ -22,15 +22,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 49.72726
+      value: 52.74439
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.5864315
+      value: 5.371
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 12.349185
+      value: 11.4317
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 150b771c021f45d48873c0d8caddd485, type: 3}
       propertyPath: m_LocalRotation.w
@@ -116,10 +116,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0
-  m_Height: 1
+  m_Radius: 1.5
+  m_Height: 5
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 2.5, z: 0}
 --- !u!114 &5651645624035908834
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -133,7 +133,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   ggumtleName: "\uAFC8\uD2C0\uC774"
-  ggumtleId: 
+  ggumtleId: 0
   ggumtleAnimator: {fileID: 0}
   diggingEffect: {fileID: 0}
   purificationEffect: {fileID: 0}

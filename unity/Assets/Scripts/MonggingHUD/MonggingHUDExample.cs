@@ -33,6 +33,48 @@ public class MonggingHUDExample : MonoBehaviour
             }
         }
 
+        // Loading 씬이 활성 상태인지 확인
+        if (IsLoadingSceneActive())
+        {
+            Debug.Log("[MonggingHUDExample] Loading 씬이 활성 상태 - 로딩 완료 대기 중...");
+            StartCoroutine(WaitForLoadingComplete());
+        }
+        else
+        {
+            // Loading 씬이 없으면 즉시 초기화
+            StartCoroutine(InitializeHUD());
+        }
+    }
+
+    /// <summary>
+    /// Loading 씬이 현재 활성 상태인지 확인
+    /// </summary>
+    private bool IsLoadingSceneActive()
+    {
+        try
+        {
+            var loadingScene = UnityEngine.SceneManagement.SceneManager.GetSceneByName("Loading");
+            return loadingScene.IsValid() && loadingScene.isLoaded;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Loading 씬이 완전히 언로드될 때까지 대기
+    /// </summary>
+    IEnumerator WaitForLoadingComplete()
+    {
+        // Loading 씬이 언로드될 때까지 대기
+        while (IsLoadingSceneActive())
+        {
+            yield return new WaitForSeconds(0.1f);
+        }
+
+        Debug.Log("[MonggingHUDExample] Loading 씬 언로드 완료 - HUD 초기화 시작");
+        yield return new WaitForSeconds(0.5f); // 추가 안전 대기
         StartCoroutine(InitializeHUD());
     }
 

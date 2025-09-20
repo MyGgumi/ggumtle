@@ -4,11 +4,13 @@ using Features.Ggumtle.Services;
 using Features.Ggumtle.ViewModels;
 using Features.Ggumtle.Views;
 using Features.MobileControls.Messages;
+using Features.Map.Services;
 using Features.MobileControls.Services;
 using Features.MobileControls.Testing;
 using Features.MobileControls.ViewModels;
 using Features.Player.Services;
 using Features.Player.Views;
+using Features.Scenes.Main.Initializers;
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -55,8 +57,6 @@ namespace DI
             builder.RegisterComponentInHierarchy<UniversalHUDController>();
             builder.RegisterComponentInHierarchy<Features.MobileControls.Views.MobileControlsView>();
 
-            // KeyboardDebugController는 테스트용이므로 VContainer 등록 불필요
-            // 필요시 씬에 수동으로 추가하여 사용
 
             // Main 씬 전용 NetworkSources 등록
             builder.Register<IGgumtleNetworkSource, GgumtleNetworkSource>(Lifetime.Scoped);
@@ -66,15 +66,21 @@ namespace DI
 
             // Main 씬 전용 Services 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<PlayerMovementService>(Lifetime.Scoped);
+            UnityEngine.Debug.Log("[MainLifetimeScope] MobileInputService 등록 시도");
             builder.Register<MobileInputService>(Lifetime.Scoped);
+            UnityEngine.Debug.Log("[MainLifetimeScope] MobileInputService 등록 완료");
             builder.Register<IGgumtleService, GgumtleServiceImpl>(Lifetime.Scoped);
+            builder.Register<IMapSpawnService, MapSpawnServiceImpl>(Lifetime.Scoped);
 
             // Main 씬 전용 ViewModels 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<GgumtleViewModel>(Lifetime.Scoped).AsSelf();
             builder.Register<MobileControlsViewModel>(Lifetime.Scoped).AsSelf();
 
             // Entry Points 등록 (씬 시작 시 자동 실행)
+            UnityEngine.Debug.Log("[MainLifetimeScope] MobileInputService EntryPoint 등록 시도");
             builder.RegisterEntryPoint<MobileInputService>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] MobileInputService EntryPoint 등록 완료");
+            builder.RegisterEntryPoint<MainSceneInitializer>();
 
             UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료");
         }

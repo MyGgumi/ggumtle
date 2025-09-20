@@ -1,6 +1,6 @@
-using Cysharp.Threading.Tasks;
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
@@ -37,7 +37,9 @@ namespace Features.Map.Services
 
                 if (locations.Count == 0)
                 {
-                    Debug.LogWarning($"[AddressableLoadService] 태그에 해당하는 에셋이 없음: {tag}");
+                    Debug.LogWarning(
+                        $"[AddressableLoadService] 태그에 해당하는 에셋이 없음: {tag}"
+                    );
                     OnAllAssetsLoaded?.Invoke();
                     return;
                 }
@@ -65,12 +67,16 @@ namespace Features.Map.Services
                             OnAssetLoaded?.Invoke(location.PrimaryKey, asset);
 
                             if (_enableDebugLogs)
-                                Debug.Log($"[AddressableLoadService] 에셋 로딩 완료: {location.PrimaryKey}");
+                                Debug.Log(
+                                    $"[AddressableLoadService] 에셋 로딩 완료: {location.PrimaryKey}"
+                                );
                         }
                     }
                     catch (Exception e)
                     {
-                        Debug.LogError($"[AddressableLoadService] 에셋 로딩 실패: {location.PrimaryKey}, {e.Message}");
+                        Debug.LogError(
+                            $"[AddressableLoadService] 에셋 로딩 실패: {location.PrimaryKey}, {e.Message}"
+                        );
                     }
 
                     // 진행률 업데이트
@@ -86,7 +92,9 @@ namespace Features.Map.Services
                 _loadedAssetsByTag[tag] = loadedAssets;
 
                 if (_enableDebugLogs)
-                    Debug.Log($"[AddressableLoadService] 태그 로딩 완료: {tag}, 로딩된 에셋: {loadedAssets.Count}개");
+                    Debug.Log(
+                        $"[AddressableLoadService] 태그 로딩 완료: {tag}, 로딩된 에셋: {loadedAssets.Count}개"
+                    );
 
                 OnAllAssetsLoaded?.Invoke();
             }
@@ -97,7 +105,8 @@ namespace Features.Map.Services
             }
         }
 
-        public async UniTask<T> LoadAssetAsync<T>(string key) where T : UnityEngine.Object
+        public async UniTask<T> LoadAssetAsync<T>(string key)
+            where T : UnityEngine.Object
         {
             try
             {
@@ -118,7 +127,8 @@ namespace Features.Map.Services
             }
         }
 
-        public async UniTask<T> LoadAssetAsync<T>(AssetReference assetReference) where T : UnityEngine.Object
+        public async UniTask<T> LoadAssetAsync<T>(AssetReference assetReference)
+            where T : UnityEngine.Object
         {
             try
             {
@@ -128,18 +138,27 @@ namespace Features.Map.Services
                 var asset = await handle;
 
                 if (_enableDebugLogs && asset != null)
-                    Debug.Log($"[AddressableLoadService] AssetReference 로딩 완료: {assetReference.RuntimeKey}");
+                    Debug.Log(
+                        $"[AddressableLoadService] AssetReference 로딩 완료: {assetReference.RuntimeKey}"
+                    );
 
                 return asset;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[AddressableLoadService] AssetReference 로딩 실패: {assetReference.RuntimeKey}, {e.Message}");
+                Debug.LogError(
+                    $"[AddressableLoadService] AssetReference 로딩 실패: {assetReference.RuntimeKey}, {e.Message}"
+                );
                 throw;
             }
         }
 
-        public async UniTask<GameObject> InstantiateAsync(string key, Vector3 position, Quaternion rotation, Transform parent = null)
+        public async UniTask<GameObject> InstantiateAsync(
+            string key,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null
+        )
         {
             try
             {
@@ -160,7 +179,12 @@ namespace Features.Map.Services
             }
         }
 
-        public async UniTask<GameObject> InstantiateAsync(AssetReference assetReference, Vector3 position, Quaternion rotation, Transform parent = null)
+        public async UniTask<GameObject> InstantiateAsync(
+            AssetReference assetReference,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null
+        )
         {
             try
             {
@@ -170,13 +194,17 @@ namespace Features.Map.Services
                 var instance = await handle;
 
                 if (_enableDebugLogs && instance != null)
-                    Debug.Log($"[AddressableLoadService] AssetReference 인스턴스 생성 완료: {assetReference.RuntimeKey}");
+                    Debug.Log(
+                        $"[AddressableLoadService] AssetReference 인스턴스 생성 완료: {assetReference.RuntimeKey}"
+                    );
 
                 return instance;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[AddressableLoadService] AssetReference 인스턴스 생성 실패: {assetReference.RuntimeKey}, {e.Message}");
+                Debug.LogError(
+                    $"[AddressableLoadService] AssetReference 인스턴스 생성 실패: {assetReference.RuntimeKey}, {e.Message}"
+                );
                 throw;
             }
         }

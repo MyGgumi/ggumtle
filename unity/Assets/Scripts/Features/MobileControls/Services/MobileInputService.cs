@@ -47,6 +47,8 @@ namespace Features.MobileControls.Services
             IPublisher<MobileInputMessage> mobileInputPublisher
         )
         {
+            UnityEngine.Debug.Log("[MobileInputService] 생성자 호출됨 - VContainer 의존성 주입 시작");
+
             _mobileInputPublisher = mobileInputPublisher;
             _joystickInputSubscriber = joystickInputSubscriber;
             _joystickEndSubscriber = joystickEndSubscriber;
@@ -60,11 +62,12 @@ namespace Features.MobileControls.Services
         public void Start()
         {
             UnityEngine.Debug.Log("[MobileInputService] Entry Point Start() 호출됨");
+            UnityEngine.Debug.Log($"[MobileInputService] MessagePipe Subscribers - Joystick: {_joystickInputSubscriber != null}, Publisher: {_mobileInputPublisher != null}");
 
             // MessagePipe 구독 - 모바일 컨트롤 입력
             _joystickInputSubscriber
                 .Subscribe(msg => {
-                    UnityEngine.Debug.Log($"[MobileInputService] JoystickInputMessage 수신: {msg.InputValue}");
+                    UnityEngine.Debug.Log($"[MobileInputService] ✅ JoystickInputMessage 수신: {msg.InputValue}");
                     PublishMoveInput(msg.InputValue);
                 })
                 .AddTo(_disposables);

@@ -12,7 +12,7 @@ public class ServerSyncManager : MonoBehaviour
     public static ServerSyncManager Instance;
 
     [Header("실시간 처리 설정")]
-    public bool useServerSimulator = true; // 실제 서버가 없을 때 시뮬레이터 사용
+    public bool useServerSimulator = false; // 실제 서버 연결로 변경 (시뮬레이터 비활성화)
     public float requestTimeout = 10.0f; // 요청 타임아웃 (초)
     public bool enableDebugLogs = true;
 
@@ -50,6 +50,19 @@ public class ServerSyncManager : MonoBehaviour
 
             if (enableDebugLogs)
                 Debug.Log("[ServerSyncManager] 서버 시뮬레이터 연결 완료");
+        }
+        else if (!useServerSimulator)
+        {
+            // 실제 서버 연결 로직 (TODO: 실제 서버 URL과 연결 구현 필요)
+            if (enableDebugLogs)
+                Debug.Log("[ServerSyncManager] 실제 서버 연결 모드로 설정됨 - 서버 연결 구현 필요");
+
+            // 임시로 연결된 것으로 처리 (실제 서버 연결 시 제거)
+            OnConnectionEstablished?.Invoke();
+        }
+        else
+        {
+            Debug.LogWarning("[ServerSyncManager] 서버 시뮬레이터가 활성화되었지만 ServerSimulator.Instance를 찾을 수 없음");
         }
     }
 

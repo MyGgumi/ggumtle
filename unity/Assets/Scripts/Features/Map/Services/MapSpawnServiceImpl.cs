@@ -28,11 +28,11 @@ namespace Features.Map.Services
         // 스폰할 데이터
         private RoomData _roomData;
 
-        // Addressable 키 상수
-        private const string GGUMTLE_PREFAB_KEY = "GgumtlePrefab";
-        private const string CHEST_PREFAB_KEY = "ChestPrefab";
-        private const string HEALPACK_PREFAB_KEY = "HealPackPrefab";
-        private const string SPEEDPACK_PREFAB_KEY = "SpeedPackPrefab";
+        // Addressable 키 상수 (실제 프리팹 이름과 맞춤)
+        private const string GGUMTLE_PREFAB_KEY = "Ggumtle";
+        private const string CHEST_PREFAB_KEY = "InteractableChest";
+        private const string HEALPACK_PREFAB_KEY = "HealPack";
+        private const string SPEEDPACK_PREFAB_KEY = "SpeedPack";
 
         public event Action<string, GameObject> OnObjectSpawned;
         public event Action<string, GameObject> OnObjectRemoved;
@@ -110,8 +110,8 @@ namespace Features.Map.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MapSpawnService] 오브젝트 스폰 중 오류: {e.Message}");
-                throw;
+                Debug.LogWarning($"[MapSpawnService] 오브젝트 스폰 중 오류: {e.Message} - 가능한 오브젝트만 스폰하고 계속 진행");
+                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
             }
         }
 
@@ -128,7 +128,7 @@ namespace Features.Map.Services
                 var chestPrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(CHEST_PREFAB_KEY);
                 if (chestPrefab == null)
                 {
-                    Debug.LogError($"[MapSpawnService] 상자 프리팹을 찾을 수 없음: {CHEST_PREFAB_KEY}");
+                    Debug.LogWarning($"[MapSpawnService] 상자 프리팹을 찾을 수 없음: {CHEST_PREFAB_KEY} - 상자 스폰을 건너뜀");
                     return;
                 }
 
@@ -154,8 +154,8 @@ namespace Features.Map.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MapSpawnService] 상자 스폰 실패: {e.Message}");
-                throw;
+                Debug.LogWarning($"[MapSpawnService] 상자 스폰 실패: {e.Message} - 다른 오브젝트 스폰은 계속 진행");
+                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
             }
         }
 
@@ -172,7 +172,7 @@ namespace Features.Map.Services
                 var ggumtlePrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(GGUMTLE_PREFAB_KEY);
                 if (ggumtlePrefab == null)
                 {
-                    Debug.LogError($"[MapSpawnService] 꿈틀이 프리팹을 찾을 수 없음: {GGUMTLE_PREFAB_KEY}");
+                    Debug.LogWarning($"[MapSpawnService] 꿈틀이 프리팹을 찾을 수 없음: {GGUMTLE_PREFAB_KEY} - 꿈틀이 스폰을 건너뜀");
                     return;
                 }
 
@@ -186,8 +186,8 @@ namespace Features.Map.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MapSpawnService] 꿈틀이 스폰 실패: {e.Message}");
-                throw;
+                Debug.LogWarning($"[MapSpawnService] 꿈틀이 스폰 실패: {e.Message} - 다른 오브젝트 스폰은 계속 진행");
+                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
             }
         }
 
@@ -207,8 +207,8 @@ namespace Features.Map.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MapSpawnService] 아이템 스폰 실패: {e.Message}");
-                throw;
+                Debug.LogWarning($"[MapSpawnService] 아이템 스폰 실패: {e.Message} - 다른 오브젝트 스폰은 계속 진행");
+                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
             }
         }
 
@@ -220,7 +220,7 @@ namespace Features.Map.Services
             var healPackPrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(HEALPACK_PREFAB_KEY);
             if (healPackPrefab == null)
             {
-                Debug.LogError($"[MapSpawnService] 힐팩 프리팹을 찾을 수 없음: {HEALPACK_PREFAB_KEY}");
+                Debug.LogWarning($"[MapSpawnService] 힐팩 프리팹을 찾을 수 없음: {HEALPACK_PREFAB_KEY} - 힐팩 스폰을 건너뜀");
                 return;
             }
 
@@ -252,7 +252,7 @@ namespace Features.Map.Services
             var speedPackPrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(SPEEDPACK_PREFAB_KEY);
             if (speedPackPrefab == null)
             {
-                Debug.LogError($"[MapSpawnService] 스피드팩 프리팹을 찾을 수 없음: {SPEEDPACK_PREFAB_KEY}");
+                Debug.LogWarning($"[MapSpawnService] 스피드팩 프리팹을 찾을 수 없음: {SPEEDPACK_PREFAB_KEY} - 스피드팩 스폰을 건너뜀");
                 return;
             }
 

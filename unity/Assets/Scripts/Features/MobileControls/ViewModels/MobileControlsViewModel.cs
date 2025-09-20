@@ -93,6 +93,8 @@ namespace Features.MobileControls.ViewModels
             _cameraTouchPublisher = cameraTouchPublisher;
             _interactVisibilitySubscriber = interactVisibilitySubscriber;
 
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] VContainer 의존성 주입 완료 - JoystickPublisher: {joystickInputPublisher != null}");
+
             Initialize();
         }
 

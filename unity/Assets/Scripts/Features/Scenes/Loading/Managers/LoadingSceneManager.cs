@@ -27,6 +27,13 @@ namespace Features.Scenes.Loading.Managers
         [SerializeField]
         private float loadingDelay = 2f; // 로딩 시뮬레이션 시간
 
+        [Header("디버그 설정")]
+        [SerializeField]
+        private bool enableProgressLogs = false; // 진행률 로그 활성화
+
+        [SerializeField]
+        private bool enableDetailedLogs = false; // 상세 로그 활성화
+
         [Header("UI References")]
         [SerializeField]
         private UIDocument uiDocument; // InteractionUI.uxml을 담는 UIDocument
@@ -52,7 +59,8 @@ namespace Features.Scenes.Loading.Managers
             IRoomService roomService
         )
         {
-            Debug.Log("[LoadingSceneManager] Construct 호출됨!");
+            if (enableDetailedLogs)
+                Debug.Log("[LoadingSceneManager] Construct 호출됨!");
             _viewModel = viewModel;
             _gameManager = gameManager;
             _addressableLoadService = addressableLoadService;
@@ -61,7 +69,8 @@ namespace Features.Scenes.Loading.Managers
 
         async void Start()
         {
-            Debug.Log("[LoadingSceneManager] 로딩 씬 시작");
+            if (enableDetailedLogs)
+                Debug.Log("[LoadingSceneManager] 로딩 씬 시작");
 
             // Audio Listener 중복 문제 해결: Loading 씬의 Audio Listener 비활성화
             DisableLoadingSceneAudioListener();
@@ -109,7 +118,8 @@ namespace Features.Scenes.Loading.Managers
             _interactionUI.style.display = DisplayStyle.Flex;
             UpdateProgress(0f);
 
-            Debug.Log("[LoadingSceneManager] UI 초기화 완료");
+            if (enableDetailedLogs)
+                Debug.Log("[LoadingSceneManager] UI 초기화 완료");
         }
 
         /// <summary>
@@ -135,7 +145,8 @@ namespace Features.Scenes.Loading.Managers
             // 루트의 첫 번째 자식으로 추가 (다른 UI들 뒤에)
             root.Insert(0, _backgroundPanel);
 
-            Debug.Log("[LoadingSceneManager] 전체 화면 배경 생성 완료");
+            if (enableDetailedLogs)
+                Debug.Log("[LoadingSceneManager] 전체 화면 배경 생성 완료");
         }
 
         /// <summary>
@@ -158,7 +169,8 @@ namespace Features.Scenes.Loading.Managers
                         {
                             // UI는 작동하되 화면에만 안 보이게 함
                             uiDocument.rootVisualElement.style.display = DisplayStyle.None;
-                            Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에서 숨김: {hudController.name}");
+                            if (enableDetailedLogs)
+                                Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에서 숨김: {hudController.name}");
                         }
                     }
                 }
@@ -185,7 +197,8 @@ namespace Features.Scenes.Loading.Managers
                         {
                             // UI를 화면에 다시 표시
                             uiDocument.rootVisualElement.style.display = DisplayStyle.Flex;
-                            Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에 표시: {hudController.name}");
+                            if (enableDetailedLogs)
+                                Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에 표시: {hudController.name}");
                         }
                     }
                 }
@@ -199,10 +212,12 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] 로딩 프로세스 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 로딩 프로세스 시작");
 
                 // 1단계: RoomStorage에서 데이터 확인 (0% → 10%)
-                Debug.Log("📋 [LoadingSceneManager] === 1단계: Room 데이터 확인 ===");
+                if (enableDetailedLogs)
+                    Debug.Log("📋 [LoadingSceneManager] === 1단계: Room 데이터 확인 ===");
                 await UpdateProgressSmoothly(0.0f, 0.05f, 200);
 
                 var room = RoomStorage.Instance.Room;
@@ -215,18 +230,21 @@ namespace Features.Scenes.Loading.Managers
                 }
 
                 await UpdateProgressSmoothly(0.05f, 0.1f, 300);
-                Debug.Log($"✅ [LoadingSceneManager] Room 데이터 확인 완료: " +
-                         $"Ggumtles={room.ggumtles?.Count ?? 0}, " +
-                         $"Chests={room.chests?.Count ?? 0}");
+                if (enableDetailedLogs)
+                    Debug.Log($"✅ [LoadingSceneManager] Room 데이터 확인 완료: " +
+                             $"Ggumtles={room.ggumtles?.Count ?? 0}, " +
+                             $"Chests={room.chests?.Count ?? 0}");
 
                 // 2단계: Addressable 에셋 로딩 (10% → 50%)
-                Debug.Log("📦 [LoadingSceneManager] === 2단계: 에셋 로딩 시작 ===");
+                if (enableDetailedLogs)
+                    Debug.Log("📦 [LoadingSceneManager] === 2단계: 에셋 로딩 시작 ===");
                 await UpdateProgressSmoothly(0.1f, 0.15f, 200);
 
                 bool assetLoadSuccess = await LoadAddressableAssets();
                 if (assetLoadSuccess)
                 {
-                    Debug.Log("✅ [LoadingSceneManager] 2단계 성공: 에셋 로딩 완료");
+                    if (enableDetailedLogs)
+                        Debug.Log("✅ [LoadingSceneManager] 2단계 성공: 에셋 로딩 완료");
                 }
                 else
                 {
@@ -235,11 +253,13 @@ namespace Features.Scenes.Loading.Managers
                 }
 
                 // 3단계: 로딩 진행률 표시 (50% → 70%)
-                Debug.Log("🎬 [LoadingSceneManager] === 3단계: 로딩 진행률 시뮬레이션 ===");
+                if (enableDetailedLogs)
+                    Debug.Log("🎬 [LoadingSceneManager] === 3단계: 로딩 진행률 시뮬레이션 ===");
                 await UpdateProgressSmoothly(0.5f, 0.7f, 800);
 
                 // 4단계: Main 씬 Additive 로딩 (70% → 80%)
-                Debug.Log("🎯 [LoadingSceneManager] === 4단계: Main 씬 백그라운드 로딩 ===");
+                if (enableDetailedLogs)
+                    Debug.Log("🎯 [LoadingSceneManager] === 4단계: Main 씬 백그라운드 로딩 ===");
                 await UpdateProgressSmoothly(0.7f, 0.75f, 300);
 
                 // Main 씬을 Additive로 로딩
@@ -254,18 +274,21 @@ namespace Features.Scenes.Loading.Managers
                 }
 
                 await UpdateProgressSmoothly(0.75f, 0.8f, 300);
-                Debug.Log("[LoadingSceneManager] Main 씬 Additive 로딩 완료");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] Main 씬 Additive 로딩 완료");
 
                 // Main 씬 UI가 이미 숨겨져 있음
 
                 // 5단계: 오브젝트 스폰 (80% → 90%)
-                Debug.Log("🏗️ [LoadingSceneManager] === 5단계: 오브젝트 스폰 ===");
+                if (enableDetailedLogs)
+                    Debug.Log("🏗️ [LoadingSceneManager] === 5단계: 오브젝트 스폰 ===");
                 await UpdateProgressSmoothly(0.8f, 0.85f, 300);
                 await SpawnObjectsInMainScene(room);
                 await UpdateProgressSmoothly(0.85f, 0.9f, 300);
 
                 // 6단계: 최종 전환 (90% → 100%)
-                Debug.Log("🎬 [LoadingSceneManager] === 6단계: 씬 전환 완료 ===");
+                if (enableDetailedLogs)
+                    Debug.Log("🎬 [LoadingSceneManager] === 6단계: 씬 전환 완료 ===");
                 await UpdateProgressSmoothly(0.9f, 1.0f, 500);
 
                 // Main 씬 UI 다시 표시
@@ -274,7 +297,8 @@ namespace Features.Scenes.Loading.Managers
                 // Loading 씬 언로드
                 SceneManager.UnloadSceneAsync("Loading");
 
-                Debug.Log("🎉 [LoadingSceneManager] 전체 로딩 프로세스 성공!");
+                if (enableDetailedLogs)
+                    Debug.Log("🎉 [LoadingSceneManager] 전체 로딩 프로세스 성공!");
             }
             catch (System.Exception e)
             {
@@ -293,10 +317,12 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] 맵 데이터 로딩 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 맵 데이터 로딩 시작");
                 // 실제로는 RoomNetworkSource에서 데이터를 받아와야 하지만 여기서는 시뮬레이션
                 await UniTask.Delay(500);
-                Debug.Log("[LoadingSceneManager] 맵 데이터 로딩 완료");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 맵 데이터 로딩 완료");
                 return true;
             }
             catch (System.Exception e)
@@ -313,10 +339,12 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] 플레이어 데이터 로딩 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 플레이어 데이터 로딩 시작");
                 // 실제로는 RoomNetworkSource에서 데이터를 받아와야 하지만 여기서는 시뮬레이션
                 await UniTask.Delay(500);
-                Debug.Log("[LoadingSceneManager] 플레이어 데이터 로딩 완료");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 플레이어 데이터 로딩 완료");
                 return true;
             }
             catch (System.Exception e)
@@ -333,7 +361,8 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] Addressable 에셋 로딩 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] Addressable 에셋 로딩 시작");
 
                 // AddressableLoadService가 주입되지 않은 경우 VContainer에서 찾기 시도
                 if (_addressableLoadService == null)
@@ -375,7 +404,8 @@ namespace Features.Scenes.Loading.Managers
                         }
                     );
 
-                    Debug.Log("[LoadingSceneManager] Addressable 에셋 로딩 완료");
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] Addressable 에셋 로딩 완료");
                     return true;
                 }
                 else
@@ -389,7 +419,8 @@ namespace Features.Scenes.Loading.Managers
                         UpdateProgress(progress);
                         await UniTask.Delay(200);
                     }
-                    Debug.Log("[LoadingSceneManager] 에셋 로딩 단계 완료 (서비스 없음)");
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] 에셋 로딩 단계 완료 (서비스 없음)");
                     return true;
                 }
             }
@@ -421,7 +452,8 @@ namespace Features.Scenes.Loading.Managers
                 _interactionLabel.text = $"{percentage:F0}%";
             }
 
-            Debug.Log($"[LoadingSceneManager] 진행률: {percentage:F0}%");
+            if (enableProgressLogs)
+                Debug.Log($"[LoadingSceneManager] 진행률: {percentage:F0}%");
         }
 
         /// <summary>
@@ -453,7 +485,8 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] Main 씬에서 오브젝트 생성 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] Main 씬에서 오브젝트 생성 시작");
 
                 // RoomData로 변환
                 var roomData = RoomDataConverter.ConvertToRoomData(room);
@@ -475,7 +508,8 @@ namespace Features.Scenes.Loading.Managers
                     if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
                     {
                         mapSpawnService = mainLifetimeScope.Container.Resolve<IMapSpawnService>();
-                        Debug.Log("[LoadingSceneManager] MainLifetimeScope에서 IMapSpawnService 찾기 성공");
+                        if (enableDetailedLogs)
+                            Debug.Log("[LoadingSceneManager] MainLifetimeScope에서 IMapSpawnService 찾기 성공");
                     }
                     else
                     {
@@ -486,7 +520,8 @@ namespace Features.Scenes.Loading.Managers
                         if (anyLifetimeScope != null)
                         {
                             mapSpawnService = anyLifetimeScope.Container.Resolve<IMapSpawnService>();
-                            Debug.Log("[LoadingSceneManager] 대안 방법으로 IMapSpawnService 찾기 성공");
+                            if (enableDetailedLogs)
+                                Debug.Log("[LoadingSceneManager] 대안 방법으로 IMapSpawnService 찾기 성공");
                         }
                     }
                 }
@@ -504,14 +539,16 @@ namespace Features.Scenes.Loading.Managers
                     // 스폰된 오브젝트들을 DontDestroyOnLoad로 보호
                     ProtectSpawnedObjects();
 
-                    Debug.Log("[LoadingSceneManager] MapSpawnService를 통한 오브젝트 생성 완료 - DontDestroyOnLoad 적용됨");
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] MapSpawnService를 통한 오브젝트 생성 완료 - DontDestroyOnLoad 적용됨");
                 }
                 else
                 {
                     Debug.LogWarning("[LoadingSceneManager] IMapSpawnService를 찾을 수 없음 - Main 씬의 MainLifetimeScope 초기화 대기 필요");
 
                     // RoomStorage에 데이터를 저장해두고 MainSceneInitializer가 처리하도록 함
-                    Debug.Log("[LoadingSceneManager] MainSceneInitializer가 오브젝트 생성을 담당하도록 위임");
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] MainSceneInitializer가 오브젝트 생성을 담당하도록 위임");
                 }
 
                 await UniTask.Delay(200); // 오브젝트 생성 대기
@@ -529,7 +566,8 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] 로비 씬으로 복귀 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 로비 씬으로 복귀 시작");
 
                 // GameManager를 통한 로비 전환 시도
                 if (_gameManager != null)
@@ -544,7 +582,8 @@ namespace Features.Scenes.Loading.Managers
                 }
 
                 // 직접 로비 씬 로드
-                Debug.Log("[LoadingSceneManager] 직접 로비 씬 로드");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 직접 로비 씬 로드");
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Lobby");
             }
             catch (System.Exception e)
@@ -562,7 +601,8 @@ namespace Features.Scenes.Loading.Managers
         {
             try
             {
-                Debug.Log("[LoadingSceneManager] Main 씬으로 전환 시작");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] Main 씬으로 전환 시작");
 
                 // GameManager가 주입되지 않은 경우 직접 찾기 시도
                 if (_gameManager == null)
@@ -579,7 +619,8 @@ namespace Features.Scenes.Loading.Managers
                         if (lifetimeScope != null)
                         {
                             _gameManager = lifetimeScope.Container.Resolve<GameManager>();
-                            Debug.Log("[LoadingSceneManager] VContainer에서 GameManager 찾기 성공");
+                            if (enableDetailedLogs)
+                                Debug.Log("[LoadingSceneManager] VContainer에서 GameManager 찾기 성공");
                         }
                     }
                     catch (System.Exception resolveEx)
@@ -618,7 +659,8 @@ namespace Features.Scenes.Loading.Managers
                 Debug.LogError($"[LoadingSceneManager] 스택 트레이스: {e.StackTrace}");
 
                 // 마지막 수단으로 직접 씬 전환
-                Debug.Log("[LoadingSceneManager] 마지막 수단으로 직접 Main 씬 로드");
+                if (enableDetailedLogs)
+                    Debug.Log("[LoadingSceneManager] 마지막 수단으로 직접 Main 씬 로드");
                 UnityEngine.SceneManagement.SceneManager.LoadScene("Main");
             }
         }
@@ -631,7 +673,8 @@ namespace Features.Scenes.Loading.Managers
             try
             {
                 var audioListeners = GameObject.FindObjectsOfType<AudioListener>();
-                Debug.Log($"[LoadingSceneManager] 총 Audio Listener 개수: {audioListeners.Length}");
+                if (enableDetailedLogs)
+                    Debug.Log($"[LoadingSceneManager] 총 Audio Listener 개수: {audioListeners.Length}");
 
                 // Loading 씬의 Audio Listener들을 비활성화
                 foreach (var listener in audioListeners)
@@ -642,7 +685,8 @@ namespace Features.Scenes.Loading.Managers
                         listener.GetComponent<LoadingSceneManager>() != null ||
                         listener.transform.parent?.GetComponent<LoadingSceneManager>() != null)
                     {
-                        Debug.Log($"[LoadingSceneManager] Loading 씬의 Audio Listener 비활성화: {listener.gameObject.name}");
+                        if (enableDetailedLogs)
+                            Debug.Log($"[LoadingSceneManager] Loading 씬의 Audio Listener 비활성화: {listener.gameObject.name}");
                         listener.enabled = false;
                     }
                 }
@@ -665,7 +709,8 @@ namespace Features.Scenes.Loading.Managers
                 foreach (var ggumtle in ggumtles)
                 {
                     DontDestroyOnLoad(ggumtle.gameObject);
-                    Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {ggumtle.name}");
+                    if (enableDetailedLogs)
+                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {ggumtle.name}");
                 }
 
                 // 상자들 보호
@@ -675,7 +720,8 @@ namespace Features.Scenes.Loading.Managers
                     if (chest.name.Contains("Chest_")) // 스폰된 상자들만
                     {
                         DontDestroyOnLoad(chest.gameObject);
-                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {chest.name}");
+                        if (enableDetailedLogs)
+                            Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {chest.name}");
                     }
                 }
 
@@ -684,7 +730,8 @@ namespace Features.Scenes.Loading.Managers
                 foreach (var healPack in healPacks)
                 {
                     DontDestroyOnLoad(healPack);
-                    Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {healPack.name}");
+                    if (enableDetailedLogs)
+                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {healPack.name}");
                 }
 
                 // 스피드팩들 보호
@@ -692,10 +739,12 @@ namespace Features.Scenes.Loading.Managers
                 foreach (var speedPack in speedPacks)
                 {
                     DontDestroyOnLoad(speedPack);
-                    Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {speedPack.name}");
+                    if (enableDetailedLogs)
+                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {speedPack.name}");
                 }
 
-                Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용 완료: 꿈틀이={ggumtles.Length}개, 상자={chests.Length}개, 힐팩={healPacks.Length}개, 스피드팩={speedPacks.Length}개");
+                if (enableDetailedLogs)
+                    Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용 완료: 꿈틀이={ggumtles.Length}개, 상자={chests.Length}개, 힐팩={healPacks.Length}개, 스피드팩={speedPacks.Length}개");
             }
             catch (System.Exception e)
             {

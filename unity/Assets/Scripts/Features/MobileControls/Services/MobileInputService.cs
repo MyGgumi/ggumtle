@@ -17,7 +17,8 @@ namespace Features.MobileControls.Services
         #region Debug Settings
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = true;
+        public bool enableDebugLogs = false; // 이동 관련 로그 비활성화
+        public bool enableInitLogs = false; // 초기화 로그
 
         #endregion
 
@@ -47,7 +48,8 @@ namespace Features.MobileControls.Services
             IPublisher<MobileInputMessage> mobileInputPublisher
         )
         {
-            UnityEngine.Debug.Log("[MobileInputService] 생성자 호출됨 - VContainer 의존성 주입 시작");
+            if (enableInitLogs)
+                UnityEngine.Debug.Log("[MobileInputService] 생성자 호출됨 - VContainer 의존성 주입 시작");
 
             _mobileInputPublisher = mobileInputPublisher;
             _joystickInputSubscriber = joystickInputSubscriber;
@@ -56,18 +58,23 @@ namespace Features.MobileControls.Services
             _buttonReleasedSubscriber = buttonReleasedSubscriber;
             _cameraTouchSubscriber = cameraTouchSubscriber;
 
-            UnityEngine.Debug.Log($"[MobileInputService] VContainer 의존성 주입 완료 - JoystickSubscriber: {joystickInputSubscriber != null}, Publisher: {mobileInputPublisher != null}");
+            if (enableInitLogs)
+                UnityEngine.Debug.Log($"[MobileInputService] VContainer 의존성 주입 완료 - JoystickSubscriber: {joystickInputSubscriber != null}, Publisher: {mobileInputPublisher != null}");
         }
 
         public void Start()
         {
-            UnityEngine.Debug.Log("[MobileInputService] Entry Point Start() 호출됨");
-            UnityEngine.Debug.Log($"[MobileInputService] MessagePipe Subscribers - Joystick: {_joystickInputSubscriber != null}, Publisher: {_mobileInputPublisher != null}");
+            if (enableInitLogs)
+            {
+                UnityEngine.Debug.Log("[MobileInputService] Entry Point Start() 호출됨");
+                UnityEngine.Debug.Log($"[MobileInputService] MessagePipe Subscribers - Joystick: {_joystickInputSubscriber != null}, Publisher: {_mobileInputPublisher != null}");
+            }
 
             // MessagePipe 구독 - 모바일 컨트롤 입력
             _joystickInputSubscriber
                 .Subscribe(msg => {
-                    UnityEngine.Debug.Log($"[MobileInputService] ✅ JoystickInputMessage 수신: {msg.InputValue}");
+                    if (enableDebugLogs)
+                        UnityEngine.Debug.Log($"[MobileInputService] ✅ JoystickInputMessage 수신: {msg.InputValue}");
                     PublishMoveInput(msg.InputValue);
                 })
                 .AddTo(_disposables);

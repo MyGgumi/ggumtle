@@ -12,7 +12,8 @@ namespace Features.Player.Services
         #region Debug Settings
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = true;
+        public bool enableDebugLogs = false; // 입력 로그 비활성화
+        public bool enableInitLogs = false; // 초기화 로그
 
         #endregion
 

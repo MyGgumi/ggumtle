@@ -70,40 +70,32 @@ namespace Interaction
         {
             yield return null; // 한 프레임 대기
 
-            // VContainer 주입 확인 및 수동 해결
-            if (_ggumtleDetectedPublisher == null || _ggumtleLeftPublisher == null)
+            // VContainer 주입 확인
+            if (_ggumtleDetectedPublisher != null && _ggumtleLeftPublisher != null)
             {
-                try
-                {
-                    // GlobalMessagePipe로 수동 해결 시도
-                    _ggumtleDetectedPublisher ??=
-                        GlobalMessagePipe.GetPublisher<Features.Ggumtle.Messages.GgumtleDetectedMessage>();
-                    _ggumtleLeftPublisher ??=
-                        GlobalMessagePipe.GetPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage>();
+                Debug.Log(
+                    $"[InteractionTriggerDetector] VContainer MessagePipe 주입 성공 - {gameObject.name}"
+                );
+            }
+            else
+            {
+                Debug.LogError(
+                    $"[InteractionTriggerDetector] VContainer MessagePipe 주입 실패! GgumtleDetectedPublisher: {_ggumtleDetectedPublisher != null}, GgumtleLeftPublisher: {_ggumtleLeftPublisher != null} - {gameObject.name}"
+                );
 
-                    Debug.Log(
-                        $"[InteractionTriggerDetector] GlobalMessagePipe로 수동 주입 완료 - {gameObject.name}"
-                    );
-                }
-                catch (System.Exception ex)
-                {
-                    Debug.LogError(
-                        $"[InteractionTriggerDetector] 수동 주입 실패: {ex.Message} - {gameObject.name}"
-                    );
-                }
             }
 
             // 최종 확인
             if (_ggumtleDetectedPublisher == null)
             {
                 Debug.LogError(
-                    $"[InteractionTriggerDetector] GgumtleDetectedPublisher가 주입되지 않음! - {gameObject.name}"
+                    $"[InteractionTriggerDetector] GgumtleDetectedPublisher가 주입되지 않음! VContainer 등록을 확인하세요. - {gameObject.name}"
                 );
             }
             if (_ggumtleLeftPublisher == null)
             {
                 Debug.LogError(
-                    $"[InteractionTriggerDetector] GgumtleLeftPublisher가 주입되지 않음! - {gameObject.name}"
+                    $"[InteractionTriggerDetector] GgumtleLeftPublisher가 주입되지 않음! VContainer 등록을 확인하세요. - {gameObject.name}"
                 );
             }
 
@@ -250,10 +242,9 @@ namespace Interaction
         {
             if (_ggumtleDetectedPublisher == null)
             {
-                if (enableDebugLogs)
-                    Debug.LogWarning(
-                        "[InteractionTriggerDetector] GgumtleDetectedPublisher가 주입되지 않음"
-                    );
+                Debug.LogError(
+                    "[InteractionTriggerDetector] GgumtleDetectedPublisher가 주입되지 않아 메시지를 발행할 수 없습니다! VContainer 등록을 확인하세요."
+                );
                 return;
             }
 
@@ -308,10 +299,9 @@ namespace Interaction
         {
             if (_ggumtleLeftPublisher == null)
             {
-                if (enableDebugLogs)
-                    Debug.LogWarning(
-                        "[InteractionTriggerDetector] GgumtleLeftPublisher가 주입되지 않음"
-                    );
+                Debug.LogError(
+                    "[InteractionTriggerDetector] GgumtleLeftPublisher가 주입되지 않아 메시지를 발행할 수 없습니다! VContainer 등록을 확인하세요."
+                );
                 return;
             }
 

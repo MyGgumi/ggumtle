@@ -67,11 +67,23 @@ namespace Features.Room.Models
 
             if (_enableDebugLogs)
             {
-                Debug.Log($"[RoomData] 맵 초기화 완료:");
-                Debug.Log($"  - 상자: {Chests?.Count ?? 0}개");
-                Debug.Log($"  - 꿈틀이: {Ggumtles?.Count ?? 0}개");
-                Debug.Log($"  - 힐팩: {HealPacks?.Count ?? 0}개");
-                Debug.Log($"  - 스피드팩: {SpeedPacks?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA] RoomData 맵 초기화 완료:");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 상자: {Chests?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 꿈틀이: {Ggumtles?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 힐팩: {HealPacks?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 스피드팩: {SpeedPacks?.Count ?? 0}개");
+
+                // 꿈틀이 상세 정보
+                if (Ggumtles != null && Ggumtles.Count > 0)
+                {
+                    Debug.Log($"[SERVER_ROOM_DATA] RoomData 꿈틀이 상세 정보:");
+                    for (int i = 0; i < Ggumtles.Count; i++)
+                    {
+                        var ggumtle = Ggumtles[i];
+                        var unityPos = ggumtle.ToVector3();
+                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}");
+                    }
+                }
             }
         }
 

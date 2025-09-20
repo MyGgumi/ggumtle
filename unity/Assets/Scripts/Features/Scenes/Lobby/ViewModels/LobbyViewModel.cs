@@ -25,9 +25,14 @@ namespace Features.Scenes.Lobby.ViewModels
         public ReadOnlyReactiveProperty<bool> IsAuthenticated => _isAuthenticated;
         public ReadOnlyReactiveProperty<string> StatusMessage => _statusMessage;
 
+        // VContainer 의존성 주입
+        private readonly ISubscriber<LobbyUIStateMessage> _lobbyUIStateSubscriber;
+
         [Inject]
-        public LobbyViewModel()
+        public LobbyViewModel(ISubscriber<LobbyUIStateMessage> lobbyUIStateSubscriber)
         {
+            _lobbyUIStateSubscriber = lobbyUIStateSubscriber;
+
             // LobbyUIStateMessage 구독
             SubscribeToUIStateMessage();
 
@@ -43,8 +48,7 @@ namespace Features.Scenes.Lobby.ViewModels
         /// </summary>
         private void SubscribeToUIStateMessage()
         {
-            var subscriber = GlobalMessagePipe.GetSubscriber<LobbyUIStateMessage>();
-            var subscription = subscriber.Subscribe(message =>
+            var subscription = _lobbyUIStateSubscriber.Subscribe(message =>
             {
                 if (_enableDebugLogs)
                 {

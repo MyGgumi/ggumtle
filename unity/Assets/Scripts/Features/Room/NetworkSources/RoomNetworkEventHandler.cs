@@ -1,4 +1,5 @@
 using DotNetty.Transport.Channels;
+using Features.Map.Utils;
 using Networks;
 using Networks.Attributes;
 using Networks.Game;
@@ -27,11 +28,22 @@ namespace Features.Room.NetworkSources
         {
             try
             {
-                Debug.Log("[RoomNetworkEventHandler] 맵 초기화 수신");
-                Debug.Log($"  - 상자: {command.chests?.Count ?? 0}개");
-                Debug.Log($"  - 꿈틀이: {command.ggumtles?.Count ?? 0}개");
-                Debug.Log($"  - 힐팩: {command.healPacks?.Count ?? 0}개");
-                Debug.Log($"  - 스피드팩: {command.speedPacks?.Count ?? 0}개");
+                Debug.Log("[SERVER_ROOM_DATA] 맵 초기화 수신");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 상자: {command.chests?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 꿈틀이: {command.ggumtles?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 힐팩: {command.healPacks?.Count ?? 0}개");
+                Debug.Log($"[SERVER_ROOM_DATA]   - 스피드팩: {command.speedPacks?.Count ?? 0}개");
+
+                // 꿈틀이 상세 정보 로깅
+                if (command.ggumtles != null && command.ggumtles.Count > 0)
+                {
+                    Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 상세 정보:");
+                    for (int i = 0; i < command.ggumtles.Count; i++)
+                    {
+                        var ggumtle = command.ggumtles[i];
+                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: ({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z})");
+                    }
+                }
 
                 // RoomStorage 처리
                 var roomStorage = RoomStorage.Instance;
@@ -44,7 +56,19 @@ namespace Features.Room.NetworkSources
                     }
 
                     _staticRoom.InitMap(command);
-                    Debug.Log("[RoomNetworkEventHandler] Room에 맵 데이터 저장 완료");
+                    Debug.Log("[SERVER_ROOM_DATA] Room에 맵 데이터 저장 완료");
+
+                    // 변환된 Room 데이터 확인
+                    if (_staticRoom.ggumtles != null && _staticRoom.ggumtles.Count > 0)
+                    {
+                        Debug.Log($"[SERVER_ROOM_DATA] Room 저장 후 꿈틀이 데이터 확인:");
+                        for (int i = 0; i < _staticRoom.ggumtles.Count; i++)
+                        {
+                            var ggumtle = _staticRoom.ggumtles[i];
+                            var unityPos = ggumtle.ToVector3();
+                            Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}");
+                        }
+                    }
                 }
             }
             catch (Exception e)
@@ -80,8 +104,22 @@ namespace Features.Room.NetworkSources
                     // 맵과 플레이어 데이터가 모두 준비되면 RoomStorage에 업로드
                     if (_staticRoom.IsInitialized())
                     {
+                        Debug.Log("[SERVER_ROOM_DATA] Room 완전 초기화 완료 - RoomStorage에 업로드 시작");
+
+                        // 최종 꿈틀이 데이터 확인
+                        if (_staticRoom.ggumtles != null && _staticRoom.ggumtles.Count > 0)
+                        {
+                            Debug.Log($"[SERVER_ROOM_DATA] 최종 꿈틀이 데이터 (업로드 전):");
+                            for (int i = 0; i < _staticRoom.ggumtles.Count; i++)
+                            {
+                                var ggumtle = _staticRoom.ggumtles[i];
+                                var unityPos = ggumtle.ToVector3();
+                                Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}");
+                            }
+                        }
+
                         roomStorage.UploadRoom(_staticRoom);
-                        Debug.Log("[RoomNetworkEventHandler] RoomStorage에 Room 데이터 업로드 완료");
+                        Debug.Log("[SERVER_ROOM_DATA] RoomStorage에 Room 데이터 업로드 완료");
                     }
                 }
             }

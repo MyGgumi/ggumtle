@@ -29,12 +29,24 @@ namespace Features.Map.Utils
 
             var roomData = new RoomData(room);
 
-            Debug.Log($"[RoomDataConverter] Room -> RoomData 변환 완료: " +
+            Debug.Log($"[SERVER_ROOM_DATA] Room -> RoomData 변환 완료: " +
                      $"Chests={room.chests?.Count ?? 0}, " +
                      $"Ggumtles={room.ggumtles?.Count ?? 0}, " +
                      $"HealPacks={room.healPacks?.Count ?? 0}, " +
                      $"SpeedPacks={room.speedPacks?.Count ?? 0}, " +
                      $"Players={room.players?.Count ?? 0}");
+
+            // 꿈틀이 변환 상세 정보
+            if (room.ggumtles != null && room.ggumtles.Count > 0)
+            {
+                Debug.Log($"[SERVER_ROOM_DATA] RoomDataConverter 꿈틀이 변환 상세:");
+                for (int i = 0; i < room.ggumtles.Count; i++)
+                {
+                    var ggumtle = room.ggumtles[i];
+                    var unityPos = ggumtle.ToVector3();
+                    Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: ({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z}) -> Unity: {unityPos}");
+                }
+            }
 
             return roomData;
         }

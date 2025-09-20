@@ -1,4 +1,5 @@
 using Features.Ggumtle.Messages;
+using Features.Ggumtle.Services;
 using Features.Ggumtle.ViewModels;
 using UnityEngine;
 using VContainer;
@@ -20,6 +21,9 @@ namespace Features.Ggumtle.Testing
 
         [Inject]
         private GgumtleViewModel _viewModel;
+
+        [Inject]
+        private IGgumtleService _ggumtleService;
 
         private void OnGUI()
         {
@@ -101,6 +105,16 @@ namespace Features.Ggumtle.Testing
                 _viewModel.IsInRange.Value = false;
                 _viewModel.CurrentGgumtleId.Value = string.Empty;
             }
+
+            GUILayout.Space(5);
+
+            // 꿈틀이 관리
+            GUILayout.Label("🔧 Ggumtle Management", EditorGUIStyle());
+
+            if (GUILayout.Button("Print All Ggumtles"))
+            {
+                PrintAllGgumtles();
+            }
         }
 
         private GUIStyle EditorGUIStyle()
@@ -154,5 +168,27 @@ namespace Features.Ggumtle.Testing
                 await _viewModel.StartHold();
             }
         }
+
+        // 꿈틀이 관리 메서드들
+
+        [ContextMenu("현재 등록된 꿈틀이 목록 출력")]
+        public void PrintAllGgumtles()
+        {
+            if (_ggumtleService == null)
+            {
+                Debug.LogError("[GgumtleTestHelper] GgumtleService가 주입되지 않음");
+                return;
+            }
+
+            var allData = _ggumtleService.GetAllGgumtleData();
+            Debug.Log($"[GgumtleTestHelper] 등록된 꿈틀이 총 {allData.Count}개:");
+
+            foreach (var kvp in allData)
+            {
+                var data = kvp.Value;
+                Debug.Log($"  - ID: {kvp.Key}, Name: {data.ggumtleName}, Position: {data.position}, State: {data.currentState}");
+            }
+        }
+
     }
 }

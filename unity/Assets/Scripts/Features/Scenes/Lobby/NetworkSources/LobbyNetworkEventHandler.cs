@@ -37,21 +37,28 @@ namespace Features.Scenes.Lobby.NetworkSources
                 $"[LobbyNetworkEventHandler] SessionId: {command.SessionId}, Success: {command.Success}"
             );
 
-            // MessagePipe로 토큰 검증 완료 이벤트 발행 (LobbySceneManager용)
-            var publisher = GlobalMessagePipe.GetPublisher<TokenVerifiedMessage>();
-            if (command.Success)
+            // MessagePipeBridge를 통해 토큰 검증 완료 이벤트 발행 (LobbySceneManager용)
+            var bridge = Networks.MessagePipeBridge.Instance;
+            if (bridge != null)
             {
-                publisher.Publish(TokenVerifiedMessage.Success(command.SessionId));
-                Debug.Log(
-                    "[LobbyNetworkEventHandler] 토큰 검증 성공 메시지 발행 → LobbySceneManager"
-                );
+                if (command.Success)
+                {
+                    bridge.PublishMessage(TokenVerifiedMessage.Success(command.SessionId));
+                    Debug.Log(
+                        "[LobbyNetworkEventHandler] 토큰 검증 성공 메시지 발행 → LobbySceneManager"
+                    );
+                }
+                else
+                {
+                    bridge.PublishMessage(TokenVerifiedMessage.Failure("토큰 검증 실패"));
+                    Debug.Log(
+                        "[LobbyNetworkEventHandler] 토큰 검증 실패 메시지 발행 → LobbySceneManager"
+                    );
+                }
             }
             else
             {
-                publisher.Publish(TokenVerifiedMessage.Failure("토큰 검증 실패"));
-                Debug.Log(
-                    "[LobbyNetworkEventHandler] 토큰 검증 실패 메시지 발행 → LobbySceneManager"
-                );
+                Debug.LogError("[LobbyNetworkEventHandler] MessagePipeBridge를 찾을 수 없음!");
             }
         }
     }

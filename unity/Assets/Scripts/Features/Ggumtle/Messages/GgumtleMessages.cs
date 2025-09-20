@@ -142,4 +142,64 @@ namespace Features.Ggumtle.Messages
         Error,
         Success,
     }
+
+    // ===== 네트워크 이벤트 메시지들 =====
+
+    /// <summary>
+    /// 꿈틀이 파기 완료 네트워크 이벤트 메시지
+    /// </summary>
+    public readonly struct GgumtleDiggingDoneMessage
+    {
+        public readonly int GgumtleId;
+        public readonly bool IsRealGgumtle;
+
+        public GgumtleDiggingDoneMessage(int ggumtleId, bool isRealGgumtle)
+        {
+            GgumtleId = ggumtleId;
+            IsRealGgumtle = isRealGgumtle;
+        }
+    }
+
+    /// <summary>
+    /// 젤리 강제 종료 네트워크 이벤트 메시지
+    /// </summary>
+    public readonly struct GgumtleJellyForceQuitMessage
+    {
+        public readonly int GgumtleId;
+        public readonly int LeftJellyCount;
+
+        public GgumtleJellyForceQuitMessage(int ggumtleId, int leftJellyCount)
+        {
+            GgumtleId = ggumtleId;
+            LeftJellyCount = leftJellyCount;
+        }
+    }
+
+    /// <summary>
+    /// 꿈틀이 스폰 네트워크 이벤트 메시지
+    /// </summary>
+    public readonly struct GgumtleSpawnMessage
+    {
+        public readonly int GgumtleId;
+        public readonly Vector3 Position;
+
+        public GgumtleSpawnMessage(int ggumtleId, Vector3 position)
+        {
+            GgumtleId = ggumtleId;
+            Position = position;
+        }
+    }
+
+    /// <summary>
+    /// 꿈틀이 성불 네트워크 이벤트 메시지
+    /// </summary>
+    public readonly struct GgumtleNirvanaMessage
+    {
+        public readonly int GgumtleId;
+
+        public GgumtleNirvanaMessage(int ggumtleId)
+        {
+            GgumtleId = ggumtleId;
+        }
+    }
 }

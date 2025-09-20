@@ -221,9 +221,18 @@ public class UniversalHUDController : MonoBehaviour
                 gameObject.GetComponent<Views.ChestView>()
                 ?? gameObject.AddComponent<Views.ChestView>();
         if (ggumtleUIView == null)
-            ggumtleUIView =
-                gameObject.GetComponent<Features.Ggumtle.Views.GgumtleUIView>()
-                ?? gameObject.AddComponent<Features.Ggumtle.Views.GgumtleUIView>();
+        {
+            // 씬에서 GgumtleUIView 찾기 (별도 GameObject에 배치됨)
+            ggumtleUIView = FindFirstObjectByType<Features.Ggumtle.Views.GgumtleUIView>();
+            if (ggumtleUIView == null)
+            {
+                Debug.LogError("[UniversalHUDController] 씬에서 GgumtleUIView를 찾을 수 없습니다! GgumtleUIView GameObject가 씬에 배치되어 있는지 확인하세요.");
+            }
+            else
+            {
+                Debug.Log($"[UniversalHUDController] GgumtleUIView 찾기 완료: {ggumtleUIView.gameObject.name}");
+            }
+        }
         if (mobileControlsView == null)
         {
             // 씬에서 MobileControlsView 찾기 (별도 GameObject에 배치됨)
@@ -263,13 +272,13 @@ public class UniversalHUDController : MonoBehaviour
         // GgumtleUIView 초기화 (View가 직접 ViewModel을 해결)
         if (ggumtleUIView != null)
         {
-            Debug.Log("[UniversalHUDController] GgumtleUIView 초기화 시작");
+            Debug.Log($"[UniversalHUDController] GgumtleUIView 초기화 시작 - GameObject: {ggumtleUIView.gameObject.name}");
             ggumtleUIView.Initialize(_root);
             Debug.Log("[UniversalHUDController] GgumtleUIView 초기화 완료");
         }
         else
         {
-            Debug.LogWarning("[UniversalHUDController] GgumtleUIView가 null입니다");
+            Debug.LogError("[UniversalHUDController] GgumtleUIView가 null입니다! 씬에 GgumtleUIView GameObject가 있는지 확인하세요.");
         }
 
         // 체력바 강제 표시 (CSS 클래스 충돌 해결)

@@ -6,7 +6,6 @@ using Features.Room.Services;
 using Features.Scenes.Loading.ViewModels;
 using Networks;
 using R3;
-using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UIElements;
@@ -273,6 +272,19 @@ namespace Features.Scenes.Loading.Managers
                     await UniTask.Yield();
                 }
 
+                // ⭐ Main Scene을 Active Scene으로 설정
+                var mainScene = SceneManager.GetSceneByName("Main");
+                if (mainScene.IsValid())
+                {
+                    SceneManager.SetActiveScene(mainScene);
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] Main을 Active Scene으로 설정 완료");
+                }
+                else
+                {
+                    Debug.LogError("[LoadingSceneManager] Main Scene을 찾을 수 없음!");
+                }
+
                 await UpdateProgressSmoothly(0.75f, 0.8f, 300);
                 if (enableDetailedLogs)
                     Debug.Log("[LoadingSceneManager] Main 씬 Additive 로딩 완료");
@@ -502,8 +514,8 @@ namespace Features.Scenes.Loading.Managers
                 try
                 {
                     // Main 씬의 MainLifetimeScope를 직접 찾기
-                    var mainLifetimeScope = UnityEngine.Object.FindObjectsByType<DI.MainLifetimeScope>(UnityEngine.FindObjectsSortMode.None)
-                        .FirstOrDefault();
+                    var mainLifetimeScopes = UnityEngine.Object.FindObjectsByType<DI.MainLifetimeScope>(UnityEngine.FindObjectsSortMode.None);
+                    var mainLifetimeScope = mainLifetimeScopes.Length > 0 ? mainLifetimeScopes[0] : null;
 
                     if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
                     {
@@ -532,15 +544,12 @@ namespace Features.Scenes.Loading.Managers
 
                 if (mapSpawnService != null)
                 {
-                    // MapSpawnService를 통한 오브젝트 생성 (DontDestroyOnLoad 처리)
+                    // MapSpawnService를 통한 오브젝트 생성 (이제 Main Scene에 직접 스폰됨)
                     mapSpawnService.PrepareSpawnData(roomData);
                     await mapSpawnService.SpawnAllObjectsAsync();
 
-                    // 스폰된 오브젝트들을 DontDestroyOnLoad로 보호
-                    ProtectSpawnedObjects();
-
                     if (enableDetailedLogs)
-                        Debug.Log("[LoadingSceneManager] MapSpawnService를 통한 오브젝트 생성 완료 - DontDestroyOnLoad 적용됨");
+                        Debug.Log("[LoadingSceneManager] MapSpawnService를 통한 오브젝트 생성 완료 - Main Scene에 직접 스폰됨");
                 }
                 else
                 {
@@ -697,60 +706,8 @@ namespace Features.Scenes.Loading.Managers
             }
         }
 
-        /// <summary>
-        /// 스폰된 오브젝트들을 DontDestroyOnLoad로 보호
-        /// </summary>
-        private void ProtectSpawnedObjects()
-        {
-            try
-            {
-                // 꿈틀이들 보호
-                var ggumtles = GameObject.FindObjectsOfType<Features.Ggumtle.Views.GgumtleGameObject>();
-                foreach (var ggumtle in ggumtles)
-                {
-                    DontDestroyOnLoad(ggumtle.gameObject);
-                    if (enableDetailedLogs)
-                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {ggumtle.name}");
-                }
-
-                // 상자들 보호
-                var chests = GameObject.FindObjectsOfType<InteractableChest>();
-                foreach (var chest in chests)
-                {
-                    if (chest.name.Contains("Chest_")) // 스폰된 상자들만
-                    {
-                        DontDestroyOnLoad(chest.gameObject);
-                        if (enableDetailedLogs)
-                            Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {chest.name}");
-                    }
-                }
-
-                // 힐팩들 보호
-                var healPacks = GameObject.FindObjectsOfType<GameObject>().Where(obj => obj.name.Contains("HealPack_")).ToArray();
-                foreach (var healPack in healPacks)
-                {
-                    DontDestroyOnLoad(healPack);
-                    if (enableDetailedLogs)
-                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {healPack.name}");
-                }
-
-                // 스피드팩들 보호
-                var speedPacks = GameObject.FindObjectsOfType<GameObject>().Where(obj => obj.name.Contains("SpeedPack_")).ToArray();
-                foreach (var speedPack in speedPacks)
-                {
-                    DontDestroyOnLoad(speedPack);
-                    if (enableDetailedLogs)
-                        Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용: {speedPack.name}");
-                }
-
-                if (enableDetailedLogs)
-                    Debug.Log($"[LoadingSceneManager] DontDestroyOnLoad 적용 완료: 꿈틀이={ggumtles.Length}개, 상자={chests.Length}개, 힐팩={healPacks.Length}개, 스피드팩={speedPacks.Length}개");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogWarning($"[LoadingSceneManager] DontDestroyOnLoad 적용 중 오류: {e.Message}");
-            }
-        }
+        // ProtectSpawnedObjects 메서드 제거됨
+        // 이제 Active Scene이 Main으로 설정되어 있어 DontDestroyOnLoad가 불필요함
 
         #region Debug Methods
 

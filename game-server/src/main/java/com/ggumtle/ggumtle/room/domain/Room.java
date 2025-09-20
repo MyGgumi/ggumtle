@@ -5,7 +5,6 @@ import com.ggumtle.ggumtle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -13,14 +12,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class Room {
 
     public final long id;
-    private final Set<Long> playerIds;
+    private final ConcurrentHashMap<Long, MonggingStat> monggingStats;
     private final ConcurrentHashMap<Long, Session> playerSessions;
     private final CopyOnWriteArraySet<Long> sceneChanger;
 
-    public Room(long id, List<Long> playerIds) {
+    public Room(long id, List<MonggingStat> monggingStats) {
         this.id = id;
-        this.playerIds = Set.of(playerIds.toArray(new Long[0]));
-        this.playerSessions = new ConcurrentHashMap<>(playerIds.size());
+        this.monggingStats = new ConcurrentHashMap<>(monggingStats.size());
+        for (MonggingStat monggingStat : monggingStats) {
+            this.monggingStats.put(monggingStat.playerId, monggingStat);
+        }
+
+        this.playerSessions = new ConcurrentHashMap<>(monggingStats.size());
         this.sceneChanger = new CopyOnWriteArraySet<>();
     }
 
@@ -29,19 +32,24 @@ public class Room {
     }
 
     public List<Long> getPlayerIds() {
-        return List.copyOf(playerIds);
+        return monggingStats.keySet().stream().toList();
+    }
+
+    public MonggingStat getPlayerStat(long id) {
+        return monggingStats.getOrDefault(id, null);
+    }
+
+    public int getPlayerSize() {
+        return monggingStats.size();
     }
 
     public synchronized List<Session> getPlayerSessions() {
         return List.copyOf(playerSessions.values());
     }
 
-    public int getPlayerSize() {
-        return playerIds.size();
-    }
 
     public int addSession(Session session) {
-        if (!playerIds.contains(session.getMemberId())) {
+        if (!monggingStats.containsKey(session.getMemberId())) {
             log.error("[{}] {}번 사용자는 {}번 방에 들어올 수 없습니다", session.getChannel().id(), session.getMemberId(), this.id);
             return -1;
         }

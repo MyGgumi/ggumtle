@@ -1,7 +1,9 @@
 package com.ggumtle.ggumtle.room.application;
 
+import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
+import com.ggumtle.ggumtle.room.domain.MonggingStat;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.session.Session;
@@ -10,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,12 +51,24 @@ public class RoomManager {
         return Optional.of(room);
     }
 
-    public Room createRoom(List<Long> players) {
+    public Room createRoom(RequestRoomMessage request) {
         long roomId = roomIdGenerator.incrementAndGet();
 
-        log.debug("{}번 방 생성: {}", roomId, players);
+        log.debug("{}번 방 생성: {}", roomId, request);
 
-        Room room = new Room(roomId, players);
+        List<MonggingStat> monggingStats = new ArrayList<>();
+        for (RequestRoomMessage.Player player : request.players()) {
+            monggingStats.add(
+                    MonggingStat.builder()
+                            .playerId(player.id())
+                            .monggingClassId(player.monggingClassId())
+                            .additionalHp(player.additionalHp())
+                            .additionalHealSpeed(player.additionalHealSpeed())
+                            .additionalTaskSpeed(player.additionalTaskSpeed())
+                            .build()
+            );
+        }
+        Room room = new Room(roomId, monggingStats);
         idToRoom.put(roomId, room);
 
         return room;

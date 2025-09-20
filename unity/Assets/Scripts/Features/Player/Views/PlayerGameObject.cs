@@ -36,7 +36,7 @@ namespace Features.Player.Views
         public bool canMove = true;
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = true;
+        public bool enableDebugLogs = false;
 
         private float _speed;
         private float _animationBlend;

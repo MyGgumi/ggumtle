@@ -15,7 +15,7 @@ namespace Features.Scenes.Main.Initializers
     public class MainSceneInitializer : IStartable
     {
         private readonly IMapSpawnService _mapSpawnService;
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false; // 디버그 로그 비활성화
 
         [Inject]
         public MainSceneInitializer(IMapSpawnService mapSpawnService)

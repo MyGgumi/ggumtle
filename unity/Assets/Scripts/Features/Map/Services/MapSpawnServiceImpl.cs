@@ -19,7 +19,7 @@ namespace Features.Map.Services
     {
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IGgumtleService _ggumtleService;
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false; // 스폰 로그 비활성화
 
         // 스폰된 오브젝트들을 타입별로 관리
         private readonly Dictionary<string, List<GameObject>> _spawnedObjects = new();

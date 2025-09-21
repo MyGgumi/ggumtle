@@ -244,7 +244,7 @@ namespace Features.MobileControls.ViewModels
         /// </summary>
         public void OnCameraTouch(Vector2 deltaPosition, bool isActive)
         {
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 카메라 터치 메시지 발행: 델타={deltaPosition}, 활성={isActive}");
+            // UnityEngine.Debug.Log($"[MobileControlsViewModel] 카메라 터치 메시지 발행: 델타={deltaPosition}, 활성={isActive}");
             _cameraTouchPublisher.Publish(new CameraTouchMessage(deltaPosition, isActive));
         }
 

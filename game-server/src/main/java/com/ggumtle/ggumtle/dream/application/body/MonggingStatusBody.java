@@ -17,7 +17,8 @@ public record MonggingStatusBody(
         NORMAL(1),
         KNOCKOUT(50),
         DEAD(70),
-        ESCAPE(100)
+        ESCAPE(100),
+        STUNNED(120),
         ;
 
         private final int value;

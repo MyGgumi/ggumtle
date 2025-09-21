@@ -889,7 +889,15 @@ public class DreamManager {
             this.room.broadcast(packet);
 
             log.info("[{} - {}] 꿈틀이 파기 완료: {}번 꿈틀이 파기 완료", session.getChannel().id(), room.id, ggumtleId);
-            // TODO: 스턴 상태 브로드캐스팅
+
+            // 가짜 꿈틀이를 파면 스턴 상태 브로드캐스팅
+            if (digUpResult == -1) {
+                body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.STUNNED);
+                packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
+                log.info("[{} - {}] 꿈틀이 파기 스턴: {}번 몽깅이 스턴", session.getChannel().id(), room.id, session.getMemberId());
+            }
         }, 3, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.id));
 

@@ -10,8 +10,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Ggumtle {
 
     public static final int INIT_LEFT_FEED_COUNT = 30;
-    public static final double DIG_UP_RADIUS_SQ = 10000 * 10000;
-    public static final double FEED_RADIUS_SQ = 10000 * 10000;
+    public static final double DIG_UP_RADIUS_SQ = 10_000_000L * 10_000_000;
+    public static final double FEED_RADIUS_SQ = 10_000_000L * 10_000_000;
 
     public final int id;
 

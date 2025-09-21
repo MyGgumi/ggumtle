@@ -16,7 +16,7 @@ import java.util.Map;
 @Slf4j
 public class Box {
     public static final int BOX_SIZE = 9;
-    public static final int DETECT_RADIUS = 10;
+    public static final int DETECT_RADIUS = 1_000_000_000;
 
     public final int id;
 

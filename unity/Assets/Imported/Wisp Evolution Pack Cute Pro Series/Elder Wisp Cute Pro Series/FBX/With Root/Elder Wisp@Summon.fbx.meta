@@ -1,5 +1,13 @@
 fileFormatVersion: 2
 guid: a9c099012d414dd46b5655f9028e7ce5
+AssetOrigin:
+  serializedVersion: 1
+  productId: 327135
+  packageName: Wisp Evolution Pack Cute Pro Series
+  packageVersion: 1.0
+  assetPath: Assets/Wisp Evolution Pack Cute Pro Series/Elder Wisp Cute Pro Series/FBX/With
+    Root/Elder Wisp@Summon.fbx
+  uploadId: 774381
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -16,8 +24,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -44,7 +50,7 @@ ModelImporter:
       cycleOffset: 0
       loop: 0
       hasAdditiveReferencePose: 0
-      loopTime: 0
+      loopTime: 1
       loopBlend: 0
       loopBlendOrientation: 0
       loopBlendPositionY: 0
@@ -124,8 +130,7 @@ ModelImporter:
     hasTranslationDoF: 0
     hasExtraRoot: 0
     skeletonHasParents: 1
-  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 6e0913df6adc55c46b9575939388a0fc,
-    type: 3}
+  lastHumanDescriptionAvatarSource: {fileID: 9000000, guid: 6e0913df6adc55c46b9575939388a0fc, type: 3}
   autoGenerateAvatarMappingIfUnspecified: 1
   animationType: 2
   humanoidOversampling: 1
@@ -137,11 +142,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 327135
-  packageName: Wisp Evolution Pack Cute Pro Series
-  packageVersion: 1.0
-  assetPath: Assets/Wisp Evolution Pack Cute Pro Series/Elder Wisp Cute Pro Series/FBX/With
-    Root/Elder Wisp@Summon.fbx
-  uploadId: 774381

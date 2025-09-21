@@ -209,6 +209,9 @@ namespace Features.MobileControls.ViewModels
             // Debug.Log($"[MobileControlsViewModel] {buttonType} 버튼 해제");
         }
 
+        // 홀드 시간 측정용
+        private float _holdStartTime = 0f;
+
         /// <summary>
         /// 상호작용 홀드 시작
         /// </summary>
@@ -217,8 +220,9 @@ namespace Features.MobileControls.ViewModels
             if (!_data.interactButton.isVisible || !_data.interactButton.isEnabled)
                 return;
 
+            _holdStartTime = Time.time;
             _interactHoldStartPublisher.Publish(InteractHoldStartMessage.Instance);
-            // Debug.Log("[MobileControlsViewModel] 상호작용 홀드 시작");
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 홀드 시작 - 시간: {_holdStartTime:F2}");
         }
 
         /// <summary>
@@ -226,8 +230,9 @@ namespace Features.MobileControls.ViewModels
         /// </summary>
         public void EndInteractHold()
         {
+            float holdDuration = Time.time - _holdStartTime;
             _interactHoldEndPublisher.Publish(InteractHoldEndMessage.Instance);
-            // Debug.Log("[MobileControlsViewModel] 상호작용 홀드 종료");
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 홀드 종료 - 홀드 시간: {holdDuration:F2}초");
         }
 
         #endregion
@@ -239,6 +244,7 @@ namespace Features.MobileControls.ViewModels
         /// </summary>
         public void OnCameraTouch(Vector2 deltaPosition, bool isActive)
         {
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 카메라 터치 메시지 발행: 델타={deltaPosition}, 활성={isActive}");
             _cameraTouchPublisher.Publish(new CameraTouchMessage(deltaPosition, isActive));
         }
 

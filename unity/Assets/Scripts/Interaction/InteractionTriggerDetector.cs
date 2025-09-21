@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Config;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
@@ -32,17 +34,29 @@ namespace Interaction
         private bool showGizmosInEditor = true;
 
         // MessagePipe Publishers (VContainer로 주입)
-        [Inject]
         private IPublisher<Features.Ggumtle.Messages.GgumtleDetectedMessage> _ggumtleDetectedPublisher;
+        private IPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage> _ggumtleLeftPublisher;
 
         [Inject]
-        private IPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage> _ggumtleLeftPublisher;
+        public void Construct(
+            IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
+            IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher
+        )
+        {
+            _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
+            _ggumtleLeftPublisher = ggumtleLeftPublisher;
+            Debug.Log($"[InteractionTriggerDetector] VContainer 의존성 주입 완료 - {gameObject.name}");
+        }
 
         // 기존 C# Event도 호환성을 위해 유지 (다른 상호작용 객체용)
         public event Action<IInteractable> OnInteractableEntered;
         public event Action<IInteractable> OnInteractableExited;
 
         private Collider _triggerCollider; // SphereCollider 또는 CapsuleCollider 모두 지원
+
+        // 현재 감지된 꿈틀이들을 거리순으로 관리
+        private readonly List<(GgumtleGameObject ggumtle, Collider collider, float distance)> _detectedGgumtles = new();
+        private GgumtleGameObject _currentClosestGgumtle = null;
 
         void Awake()
         {
@@ -64,6 +78,9 @@ namespace Interaction
         {
             // 지연된 DI 확인 (VContainer 초기화가 완료될 때까지 대기)
             StartCoroutine(CheckDependenciesAfterFrame());
+
+            // 거리 업데이트를 위한 주기적 검사 시작
+            InvokeRepeating(nameof(UpdateDetectedGgumtleDistances), 0.1f, 0.1f);
         }
 
         private System.Collections.IEnumerator CheckDependenciesAfterFrame()
@@ -218,7 +235,7 @@ namespace Interaction
             {
                 if (enableDebugLogs)
                     Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지: {other.gameObject.name}");
-                HandleGgumtleDetection(ggumtleGameObject, other);
+                AddGgumtleToDetectionList(ggumtleGameObject, other);
                 return;
             }
 
@@ -238,31 +255,30 @@ namespace Interaction
             }
         }
 
-        private void HandleGgumtleDetection(GgumtleGameObject ggumtle, Collider other)
+        /// <summary>
+        /// 꿈틀이를 감지 리스트에 추가하고 가장 가까운 꿈틀이 업데이트
+        /// </summary>
+        private void AddGgumtleToDetectionList(GgumtleGameObject ggumtle, Collider other)
         {
-            if (_ggumtleDetectedPublisher == null)
+            var distance = Vector3.Distance(transform.position, other.transform.position);
+
+            // 이미 리스트에 있는지 확인
+            var existingIndex = _detectedGgumtles.FindIndex(g => g.ggumtle == ggumtle);
+            if (existingIndex >= 0)
             {
-                Debug.LogError(
-                    "[InteractionTriggerDetector] GgumtleDetectedPublisher가 주입되지 않아 메시지를 발행할 수 없습니다! VContainer 등록을 확인하세요."
-                );
-                return;
+                // 거리만 업데이트
+                _detectedGgumtles[existingIndex] = (ggumtle, other, distance);
+            }
+            else
+            {
+                // 새로 추가
+                _detectedGgumtles.Add((ggumtle, other, distance));
             }
 
-            // MessagePipe로 감지 이벤트 발행 (상태 정보는 ViewModel에서 관리)
-            var distance = Vector3.Distance(transform.position, other.transform.position);
-            var message = new GgumtleDetectedMessage(
-                ggumtle.GgumtleId.ToString(),
-                other.transform,
-                distance,
-                GgumtleState.Buried // ViewModel이 실제 상태를 관리하므로 기본값 전달
-            );
-
-            _ggumtleDetectedPublisher.Publish(message);
-
             if (enableDebugLogs)
-                Debug.Log(
-                    $"[InteractionTriggerDetector] 꿈틀이 감지 메시지 발행: {ggumtle.GgumtleId}"
-                );
+                Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지 리스트에 추가: {ggumtle.GgumtleId}, 거리: {distance:F2}");
+
+            UpdateClosestGgumtle();
         }
 
         void OnTriggerExit(Collider other)
@@ -279,7 +295,7 @@ namespace Interaction
                     Debug.Log(
                         $"[InteractionTriggerDetector] 꿈틀이 벗어남: {other.gameObject.name}"
                     );
-                HandleGgumtleLeft(ggumtleGameObject);
+                RemoveGgumtleFromDetectionList(ggumtleGameObject);
                 return;
             }
 
@@ -295,24 +311,139 @@ namespace Interaction
             }
         }
 
-        private void HandleGgumtleLeft(GgumtleGameObject ggumtle)
+        /// <summary>
+        /// 꿈틀이를 감지 리스트에서 제거하고 가장 가까운 꿈틀이 업데이트
+        /// </summary>
+        private void RemoveGgumtleFromDetectionList(GgumtleGameObject ggumtle)
         {
-            if (_ggumtleLeftPublisher == null)
+            var removed = _detectedGgumtles.RemoveAll(g => g.ggumtle == ggumtle);
+
+            if (removed > 0)
             {
-                Debug.LogError(
-                    "[InteractionTriggerDetector] GgumtleLeftPublisher가 주입되지 않아 메시지를 발행할 수 없습니다! VContainer 등록을 확인하세요."
-                );
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지 리스트에서 제거: {ggumtle.GgumtleId}");
+
+                UpdateClosestGgumtle();
+            }
+        }
+
+        /// <summary>
+        /// 가장 가까운 꿈틀이 업데이트 및 메시지 발행
+        /// </summary>
+        private void UpdateClosestGgumtle()
+        {
+            GgumtleGameObject newClosest = null;
+
+            if (_detectedGgumtles.Count > 0)
+            {
+                // 거리순으로 정렬하여 가장 가까운 꿈틀이 찾기
+                var closest = _detectedGgumtles.OrderBy(g => g.distance).First();
+                newClosest = closest.ggumtle;
+
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 꿈틀이: {newClosest.GgumtleId}, 거리: {closest.distance:F2}");
+            }
+
+            // 가장 가까운 꿈틀이가 변경되었는지 확인
+            if (_currentClosestGgumtle != newClosest)
+            {
+                // 이전 꿈틀이가 있었다면 Left 메시지 발행
+                if (_currentClosestGgumtle != null)
+                {
+                    PublishGgumtleLeftMessage(_currentClosestGgumtle);
+                }
+
+                // 새로운 꿈틀이가 있다면 Detected 메시지 발행
+                if (newClosest != null)
+                {
+                    var closestInfo = _detectedGgumtles.First(g => g.ggumtle == newClosest);
+                    PublishGgumtleDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
+                }
+
+                _currentClosestGgumtle = newClosest;
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 감지 메시지 발행
+        /// </summary>
+        private void PublishGgumtleDetectedMessage(GgumtleGameObject ggumtle, Collider collider, float distance)
+        {
+            if (_ggumtleDetectedPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] GgumtleDetectedPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
                 return;
             }
 
-            // MessagePipe로 벗어남 이벤트 발행
+            var message = new GgumtleDetectedMessage(
+                ggumtle.GgumtleId.ToString(),
+                collider.transform,
+                distance,
+                GgumtleState.Buried // ViewModel이 실제 상태를 관리하므로 기본값 전달
+            );
+
+            _ggumtleDetectedPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지 메시지 발행: {ggumtle.GgumtleId}");
+        }
+
+        /// <summary>
+        /// 꿈틀이 벗어남 메시지 발행
+        /// </summary>
+        private void PublishGgumtleLeftMessage(GgumtleGameObject ggumtle)
+        {
+            if (_ggumtleLeftPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] GgumtleLeftPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
             var message = new GgumtleLeftMessage(ggumtle.GgumtleId.ToString());
             _ggumtleLeftPublisher.Publish(message);
 
             if (enableDebugLogs)
-                Debug.Log(
-                    $"[InteractionTriggerDetector] 꿈틀이 벗어남 메시지 발행: {ggumtle.GgumtleId}"
-                );
+                Debug.Log($"[InteractionTriggerDetector] 꿈틀이 벗어남 메시지 발행: {ggumtle.GgumtleId}");
+        }
+
+        /// <summary>
+        /// 감지된 꿈틀이들의 거리를 주기적으로 업데이트
+        /// </summary>
+        private void UpdateDetectedGgumtleDistances()
+        {
+            if (_detectedGgumtles.Count == 0) return;
+
+            bool distanceChanged = false;
+
+            // 모든 감지된 꿈틀이의 거리를 재계산
+            for (int i = 0; i < _detectedGgumtles.Count; i++)
+            {
+                var (ggumtle, collider, oldDistance) = _detectedGgumtles[i];
+
+                if (ggumtle == null || collider == null)
+                {
+                    // 무효한 참조는 제거
+                    _detectedGgumtles.RemoveAt(i);
+                    i--;
+                    distanceChanged = true;
+                    continue;
+                }
+
+                var newDistance = Vector3.Distance(transform.position, collider.transform.position);
+
+                // 거리 변화가 0.1f 이상일 때만 업데이트 (노이즈 방지)
+                if (Mathf.Abs(newDistance - oldDistance) > 0.1f)
+                {
+                    _detectedGgumtles[i] = (ggumtle, collider, newDistance);
+                    distanceChanged = true;
+                }
+            }
+
+            // 거리가 변경되었다면 가장 가까운 꿈틀이 재평가
+            if (distanceChanged)
+            {
+                UpdateClosestGgumtle();
+            }
         }
 
         private bool IsInLayerMask(int layer, LayerMask layerMask)

@@ -17,8 +17,8 @@ namespace Features.MobileControls.Services
         #region Debug Settings
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = false; // 이동 관련 로그 비활성화
-        public bool enableInitLogs = false; // 초기화 로그
+        public bool enableDebugLogs = true; // 이동 관련 로그 활성화
+        public bool enableInitLogs = true; // 초기화 로그
 
         #endregion
 
@@ -100,6 +100,9 @@ namespace Features.MobileControls.Services
             _cameraTouchSubscriber
                 .Subscribe(msg =>
                 {
+                    if (enableDebugLogs)
+                        UnityEngine.Debug.Log($"[MobileInputService] ✅ CameraTouchMessage 수신: 델타={msg.DeltaPosition}, 활성={msg.IsActive}");
+
                     if (msg.IsActive)
                         PublishLookInput(msg.DeltaPosition);
                     else

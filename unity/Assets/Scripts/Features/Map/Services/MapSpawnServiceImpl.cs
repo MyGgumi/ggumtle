@@ -20,7 +20,7 @@ namespace Features.Map.Services
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IGgumtleService _ggumtleService;
         private readonly bool _enableDebugLogs = false; // 스폰 로그 비활성화
-        private readonly bool _useFixedGgumtlePositions = true; // 꿈틀이 고정 위치 사용 여부
+        private readonly bool _useFixedGgumtlePositions = false; // 꿈틀이 고정 위치 사용 안함 - 서버 위치 사용
 
         // 스폰된 오브젝트들을 타입별로 관리
         private readonly Dictionary<string, List<GameObject>> _spawnedObjects = new();

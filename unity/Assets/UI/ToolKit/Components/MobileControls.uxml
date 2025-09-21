@@ -19,7 +19,7 @@
         </ui:VisualElement>
         
         <!-- 카메라 터치존 (중앙 전체) -->
-        <ui:VisualElement name="cameraТouchZone" class="camera-touch-zone" />
+        <ui:VisualElement name="cameraTouchZone" class="camera-touch-zone" />
         
         <!-- 액션 버튼들 (오른쪽 하단) -->
         <ui:VisualElement name="actionButtons" class="action-buttons">

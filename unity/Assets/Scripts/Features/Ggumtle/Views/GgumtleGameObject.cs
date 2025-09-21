@@ -128,21 +128,15 @@ namespace Features.Ggumtle.Views
 
         private void InitializeBasicComponents()
         {
-            // ID 자동 생성 (0이면)
-            if (ggumtleId == 0)
-            {
-                // 랜덤한 양수 int 생성 (1~999999)
-                ggumtleId = UnityEngine.Random.Range(1, 1000000);
-                if (enableDebugLogs)
-                    Debug.Log($"[GgumtleGameObject] ID 자동 생성: {ggumtleId}");
-            }
+            // ID는 외부에서 설정되므로 자동 생성하지 않음
+            // MapSpawnServiceImpl에서 리플렉션으로 설정함
 
             // 컴포넌트 자동 찾기
             if (ggumtleAnimator == null)
                 ggumtleAnimator = GetComponent<Animator>();
 
             if (enableDebugLogs)
-                Debug.Log($"[GgumtleGameObject] 컴포넌트 초기화 완료: {gameObject.name}");
+                Debug.Log($"[GgumtleGameObject] 컴포넌트 초기화 완료: {gameObject.name}, ID: {ggumtleId}");
         }
 
         private void SetupInteractionLayer()

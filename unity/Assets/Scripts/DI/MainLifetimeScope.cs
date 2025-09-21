@@ -63,6 +63,8 @@ namespace DI
             builder.RegisterComponentInHierarchy<UniversalHUDController>();
             builder.RegisterComponentInHierarchy<Features.MobileControls.Views.MobileControlsView>();
             builder.RegisterComponentInHierarchy<Features.Ggumtle.Views.GgumtleUIView>();
+
+            // InteractionTriggerDetector는 별도로 주입 처리
             builder.RegisterComponentInHierarchy<Interaction.InteractionTriggerDetector>();
 
 

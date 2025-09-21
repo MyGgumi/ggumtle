@@ -54,7 +54,7 @@ public class MongdungAnimationEventHandler : MonoBehaviour
         InitializeEffects();
 
         // PlayerMovementService 연결
-        var lifetimeScope = FindObjectOfType<DI.GameLifetimeScope>();
+        var lifetimeScope = FindObjectOfType<DI.MainLifetimeScope>();
         if (lifetimeScope != null)
         {
             movementService = lifetimeScope.Container.Resolve<PlayerMovementService>();

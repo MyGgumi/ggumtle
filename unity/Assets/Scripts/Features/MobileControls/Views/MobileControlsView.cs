@@ -21,7 +21,7 @@ namespace Features.MobileControls.Views
 
         [Header("Settings")]
         [SerializeField]
-        private bool enableDebugLogs = false;
+        private bool enableDebugLogs = true;
 
         [Header("Joystick Settings")]
         [SerializeField]
@@ -61,6 +61,8 @@ namespace Features.MobileControls.Views
         // Pointer tracking for proper event isolation
         private int _joystickPointerId = -1;
         private int _cameraPointerId = -1;
+        private int _interactButtonPointerId = -1;
+        private bool _isInteractHolding = false;
 
         [Inject]
         public void Construct(MobileControlsViewModel mobileControlsViewModel)
@@ -114,7 +116,7 @@ namespace Features.MobileControls.Views
             _interactButton = _root.Q<VisualElement>("interactButton");
 
             // Camera touch zone
-            _cameraTouchZone = _root.Q<VisualElement>("cameraТouchZone");
+            _cameraTouchZone = _root.Q<VisualElement>("cameraTouchZone");
 
             if (enableDebugLogs)
             {
@@ -123,7 +125,8 @@ namespace Features.MobileControls.Views
                         + $"MobileControls: {_mobileControls != null}, "
                         + $"Joystick: {_joystickArea != null}, "
                         + $"JumpButton: {_jumpButton != null}, "
-                        + $"InteractButton: {_interactButton != null}"
+                        + $"InteractButton: {_interactButton != null}, "
+                        + $"CameraTouchZone: {_cameraTouchZone != null}"
                 );
             }
         }
@@ -391,31 +394,67 @@ namespace Features.MobileControls.Views
 
         private void OnInteractButtonDown(PointerDownEvent evt)
         {
+            // 이미 홀드 중이면 무시
+            if (_isInteractHolding) return;
+
+            _isInteractHolding = true;
+            _interactButtonPointerId = evt.pointerId;
+            _interactButton.CapturePointer(evt.pointerId);
+
             viewModel?.OnButtonPressed(MobileButtonType.Interact);
             viewModel?.StartInteractHold();
             evt.StopPropagation();
             evt.PreventDefault();
 
-            if (enableDebugLogs)
-                Debug.Log(
-                    $"[MobileControlsView] Interact button pressed, pointerId: {evt.pointerId}"
-                );
+            Debug.Log($"[MobileControlsView] ✅ Interact button DOWN - pointerId: {evt.pointerId}, 홀드 시작");
         }
 
         private void OnInteractButtonUp(PointerUpEvent evt)
         {
-            viewModel?.OnButtonReleased(MobileButtonType.Interact);
-            viewModel?.EndInteractHold();
+            // 홀드 중이고 같은 포인터일 때만 처리
+            if (!_isInteractHolding || evt.pointerId != _interactButtonPointerId) return;
+
+            EndInteractHold();
             evt.StopPropagation();
             evt.PreventDefault();
+
+            Debug.Log($"[MobileControlsView] ❌ Interact button UP - pointerId: {evt.pointerId}, 홀드 종료");
         }
 
         private void OnInteractButtonLeave(PointerLeaveEvent evt)
         {
+            // 홀드 중에는 LEAVE 이벤트 무시 (손가락이 버튼 영역을 벗어나도 홀드 유지)
+            if (_isInteractHolding)
+            {
+                Debug.Log($"[MobileControlsView] 🚫 Interact button LEAVE 무시됨 - pointerId: {evt.pointerId} (홀드 중이므로 무시)");
+                return;
+            }
+
             viewModel?.OnButtonReleased(MobileButtonType.Interact);
             viewModel?.EndInteractHold();
             evt.StopPropagation();
             evt.PreventDefault();
+
+            Debug.Log($"[MobileControlsView] ❌ Interact button LEAVE - pointerId: {evt.pointerId} (버튼 영역 벗어남!)");
+        }
+
+        /// <summary>
+        /// 상호작용 홀드 종료 처리
+        /// </summary>
+        private void EndInteractHold()
+        {
+            if (!_isInteractHolding) return;
+
+            _isInteractHolding = false;
+
+            if (_interactButtonPointerId >= 0)
+            {
+                _interactButton.ReleasePointer(_interactButtonPointerId);
+                _interactButtonPointerId = -1;
+            }
+
+            viewModel?.OnButtonReleased(MobileButtonType.Interact);
+            viewModel?.EndInteractHold();
         }
 
         #endregion
@@ -448,6 +487,8 @@ namespace Features.MobileControls.Views
             var deltaPosition = (Vector2)evt.position - _lastCameraTouchPosition;
             _lastCameraTouchPosition = evt.position;
 
+            if (enableDebugLogs)
+                Debug.Log($"[MobileControlsView] 카메라 터치 이동: {deltaPosition}, 포인터ID: {evt.pointerId}");
 
             viewModel.OnCameraTouch(deltaPosition, true);
             evt.StopPropagation();

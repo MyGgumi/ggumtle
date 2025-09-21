@@ -26,6 +26,10 @@ android {
             )
         }
     }
+
+    androidResources {
+        noCompress += listOf("filamat", "ktx")
+    }
 }
 
 dependencies {
@@ -47,6 +51,8 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation(files("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest2\\unityLibrary\\libs\\unity-classes.jar"))
 
+    // 필라멘트
+    implementation(libs.filament.utils.android)
 
     // ───── Android 기본 ─────
     implementation(libs.androidx.core.ktx)

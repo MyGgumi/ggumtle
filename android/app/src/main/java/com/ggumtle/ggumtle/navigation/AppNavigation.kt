@@ -10,6 +10,7 @@ import com.ggumtle.auth.LoginRoute
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.datastore.LogoutReason
 import com.example.domain.unity.UnitySendManager
+import com.ggumtle.ggumtle.MainActivity
 import com.ggumtle.startup.StartUpRoute
 import com.ggumtle.home.HomeRoute
 import com.ggumtle.social.SocialRoute
@@ -22,9 +23,9 @@ fun AppNavigation(
     isLoggedIn: Boolean = false,
     authManager: AuthManager,
     unitySendManager: UnitySendManager,
-    showUnity: () -> Unit,
-    hideUnity: () -> Unit
-) {
+    showUnity: (onComplete: () -> Unit) -> Unit,
+    hideUnity: (onComplete: () -> Unit) -> Unit,
+    ) {
     val navController = rememberNavController()
     val context = LocalContext.current
 
@@ -99,9 +100,10 @@ fun AppNavigation(
                     }
                 },
                 onNavigateToMission = {
-                    hideUnity()
-                    navController.navigate(MissionRoute){
-                        popUpTo(GrowthRoute) { inclusive = true }
+                    hideUnity{
+                        navController.navigate(MissionRoute){
+                            popUpTo(GrowthRoute) { inclusive = true }
+                        }
                     }
                 }
             )
@@ -110,9 +112,10 @@ fun AppNavigation(
         composable<MissionRoute>{
             MissionRoute(
                 onNavigateBack = {
-                    showUnity()
-                    navController.navigate(GrowthRoute){
-                        popUpTo(MissionRoute){inclusive = true}
+                    showUnity{
+                        navController.navigate(GrowthRoute){
+                            popUpTo(MissionRoute){inclusive = true}
+                        }
                     }
                 }
             )

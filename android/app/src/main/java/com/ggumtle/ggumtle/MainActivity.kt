@@ -33,15 +33,17 @@ import android.view.View
 
 @AndroidEntryPoint
 //class MainActivity : ComponentActivity()
-class MainActivity : UnityPlayerGameActivity()
-{
+class MainActivity : UnityPlayerGameActivity() {
 
     @Inject
     lateinit var authManager: AuthManager
+
     @Inject
     lateinit var unitySendManager: UnitySendManager
+
     @Inject
     lateinit var unityStartupObserveManager: UnityStartupObserveManager
+
     @Inject
     lateinit var globalInviteManager: GlobalInviteManager
 
@@ -62,7 +64,7 @@ class MainActivity : UnityPlayerGameActivity()
                 AppTheme {
                     // 전역 알림 상태
                     var notification by remember { mutableStateOf<InviteNotification?>(null) }
-                    
+
                     // 알림 관찰
                     LaunchedEffect(Unit) {
                         globalInviteManager.inviteNotifications.collect { inviteNotification ->
@@ -71,7 +73,7 @@ class MainActivity : UnityPlayerGameActivity()
                             notification = null
                         }
                     }
-                    
+
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -85,16 +87,16 @@ class MainActivity : UnityPlayerGameActivity()
                                     authManager = authManager,
                                     unitySendManager = unitySendManager,
                                     showUnity = ::showUnity,
-                                    hideUnity = ::hideUnity
+                                    hideUnity = ::hideUnity,
                                 )
                             }
                         )
-                        
+
                         // 전역 알림 오버레이
                         GlobalNotificationOverlay(
                             notification = notification,
                             onDismiss = { notification = null },
-                            onTap = { 
+                            onTap = {
                                 // 알림 클릭 시 초대목록 다이얼로그 열기 등 추가 가능
                                 notification = null
                             }
@@ -117,8 +119,15 @@ class MainActivity : UnityPlayerGameActivity()
     private fun observeUnityMessages() {
         lifecycleScope.launch {
             (unitySendManager as UnitySendManagerImpl).unityMessageFlow.collect { message ->
-                Log.d("MainActivity", "Unity로 메시지 전송: ${message.target}.${message.methodName}(${message.params.joinToString()})")
-                UnityPlayer.UnitySendMessage(message.target, message.methodName, message.params.joinToString())
+                Log.d(
+                    "MainActivity",
+                    "Unity로 메시지 전송: ${message.target}.${message.methodName}(${message.params.joinToString()})"
+                )
+                UnityPlayer.UnitySendMessage(
+                    message.target,
+                    message.methodName,
+                    message.params.joinToString()
+                )
             }
         }
     }
@@ -135,40 +144,91 @@ class MainActivity : UnityPlayerGameActivity()
         }
     }
 
-    fun onNameTagClicked(nickname: String, type: String){
+    fun onNameTagClicked(nickname: String, type: String) {
         lifecycleScope.launch {
             // TODO: 네임테그 클릭시 정보 다이얼로그 띄우기
         }
     }
 
-    fun onRefreshButtonClicked(type: String){
+    fun onRefreshButtonClicked(type: String) {
         lifecycleScope.launch {
             // TODO: 타입 변경 버튼 호출시 타입변경 로직
         }
     }
 
-    fun onInGameSceneLoadingProgress(progress: Float, message: String){
+    fun onInGameSceneLoadingProgress(progress: Float, message: String) {
         lifecycleScope.launch {
             // TODO: 인게임 로딩 정보 업데이트
         }
     }
 
-    fun onInGameSceneLoadingComplete(){
+    fun onInGameSceneLoadingComplete() {
         lifecycleScope.launch {
             // TODO: 인게임 로딩 완료 업데이트
         }
     }
 
+    // Unity SurfaceView 캐시
+    private var unitySurfaceViewCache: SurfaceView? = null
+
     // ARCore 시작할 때
-    fun hideUnity() {
-        mUnityPlayer?.onPause()
-        findViewById<SurfaceView>(UnityPlayerForGameActivity.getUnityViewIdentifier(this)).visibility = View.INVISIBLE
+    fun hideUnity(onComplete: () -> Unit) {
+        try {
+            val unitySurfaceView =
+                findViewById<SurfaceView>(UnityPlayerForGameActivity.getUnityViewIdentifier(this))
+            if (unitySurfaceView != null) {
+                unitySurfaceViewCache = unitySurfaceView
+
+                // Unity 완전 일시정지
+                mUnityPlayer?.onPause()
+                mUnityPlayer?.onStop()
+
+                // SurfaceView 완전히 숨기기
+                unitySurfaceView.visibility = View.GONE
+                unitySurfaceView.tag = "UNITY_HIDDEN" // 숨겨진 Unity 표시
+                unitySurfaceView.holder?.setFixedSize(0, 0)
+
+                // 다음 프레임에서 콜백 호출 (정리 완료 후)
+                unitySurfaceView.post {
+                    onComplete()
+                }
+            } else {
+                onComplete()
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "hideUnity 오류", e)
+            onComplete()
+        }
     }
 
     // ARCore 끝날 때
-    fun showUnity() {
-        findViewById<SurfaceView>(UnityPlayerForGameActivity.getUnityViewIdentifier(this)).visibility = View.VISIBLE
-        mUnityPlayer?.onResume()
+    fun showUnity(onComplete: () -> Unit) {
+        try {
+            val unitySurfaceView = unitySurfaceViewCache
+                ?: findViewById(UnityPlayerForGameActivity.getUnityViewIdentifier(this))
+
+            // SurfaceView가 제거되었다면 다시 추가
+            if (unitySurfaceView.parent == null) {
+                val frameLayout = findViewById<FrameLayout>(android.R.id.content)
+                frameLayout.addView(unitySurfaceView, 0) // 맨 아래층에 추가
+            }
+
+            // SurfaceView 다시 보이기
+            unitySurfaceView.visibility = View.VISIBLE
+            unitySurfaceView.holder?.setFixedSize(unitySurfaceView.width, unitySurfaceView.height)
+
+            // Unity 재시작
+            mUnityPlayer?.onStart()
+            mUnityPlayer?.onResume()
+
+            // Unity가 완전히 복원된 후 콜백 호출
+            unitySurfaceView.post {
+                onComplete()
+            }
+        } catch (e: Exception) {
+            Log.e("MainActivity", "showUnity 오류", e)
+            onComplete() // 오류 시에도 콜백 호출
+        }
     }
 
 }
@@ -184,9 +244,11 @@ private fun AutoLoginGate(
         is AutoLoginState.Loading -> {
             // TODO: SplashScreen()
         }
+
         is AutoLoginState.Success -> {
             onAutoLoginComplete(true)
         }
+
         is AutoLoginState.RequireLogin -> {
             onAutoLoginComplete(false)
         }

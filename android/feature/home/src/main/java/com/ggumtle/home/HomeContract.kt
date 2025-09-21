@@ -24,7 +24,7 @@ object HomeContract {
         // 준비 여부
         val isReady: Boolean = false,
         // 게임 찾는 중 여부
-        val isSearchingGame: Boolean = true,
+        val isSearchingGame: Boolean = false,
         // 매칭 경과 시간 (초)
         val matchmakingTimeSeconds: Int = 0,
 

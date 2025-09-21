@@ -1,3 +1,5 @@
-<resources>
-    <string name="app_name">mission</string>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name" tools:ignore="ResourceName">mission</string>
+    <string name="opengl_required_title" tools:ignore="ResourceName">OpenGL Error</string>
+    <string name="opengl_required_message" tools:ignore="ResourceName">OpenGL ES %1$s or later required</string>
 </resources>

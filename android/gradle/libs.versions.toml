@@ -2,7 +2,6 @@
 # ───── Android Gradle 플러그인 및 Kotlin 관련 버전 ─────
 androidGradlePlugin = "8.9.0"
 core = "1.50.0"
-coreVersion = "1.17.1"
 datastorePreferences = "1.1.7"
 kotlin = "2.1.10"
 jetbrainsKotlinJvm = "2.1.10"
@@ -59,6 +58,11 @@ googleIdentity = "1.1.1"
 
 # ───── Orbit MVI ─────
 orbit = "8.0.0"
+
+# ───── AR / Filament / 기타 ─────
+filamentAndroid = "1.49.3"
+slf4jSimple = "2.0.11"
+arrowFx = "0.12.1"
 
 [libraries]
 # ───── Android 기본 및 Jetpack ─────
@@ -150,6 +154,13 @@ google-identity-googleid = { group = "com.google.android.libraries.identity.goog
 orbit-viewmodel = { group = "org.orbit-mvi", name = "orbit-viewmodel", version.ref = "orbit" }
 orbit-compose = { group = "org.orbit-mvi", name = "orbit-compose", version.ref = "orbit" }
 
+# ───── AR / Filament / 기타 ─────
+filament-android = { module = "com.google.android.filament:filament-android", version.ref = "filamentAndroid" }
+filament-utils-android = { module = "com.google.android.filament:filament-utils-android", version.ref = "filamentAndroid" }
+gltfio-android = { module = "com.google.android.filament:gltfio-android", version.ref = "filamentAndroid" }
+slf4j-simple = { group = "org.slf4j", name = "slf4j-simple", version.ref = "slf4jSimple" }
+arrow-fx = { module = "io.arrow-kt:arrow-fx", version.ref = "arrowFx" }
+
 # ───── 빌드 도구 및 기타 ─────
 android-desugarJdkLibs = { group = "com.android.tools", name = "desugar_jdk_libs", version.ref = "androidDesugarJdkLibs" }
 google-oss-licenses-plugin = { group = "com.google.android.gms", name = "oss-licenses-plugin", version.ref = "googleOssPlugin" }
@@ -161,7 +172,6 @@ compose-gradlePlugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-
 kotlin-gradlePlugin = { group = "org.jetbrains.kotlin", name = "kotlin-gradle-plugin", version.ref = "kotlin" }
 ksp-gradlePlugin = { group = "com.google.devtools.ksp", name = "com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 room-gradlePlugin = { group = "androidx.room", name = "room-gradle-plugin", version.ref = "room" }
-sceneform-core = { module = "com.google.ar.sceneform:core", version.ref = "coreVersion" }
 
 [plugins]
 # ───── 공식 Gradle 플러그인 ─────

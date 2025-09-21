@@ -1,6 +1,8 @@
 using Features.Map.Services;
 using Features.Room.Services;
 using Features.Map.Utils;
+using Features.Ggumtle.Messages;
+using MessagePipe;
 using Networks;
 using UnityEngine;
 using VContainer;
@@ -15,12 +17,20 @@ namespace Features.Scenes.Main.Initializers
     public class MainSceneInitializer : IStartable
     {
         private readonly IMapSpawnService _mapSpawnService;
+        private readonly IPublisher<GgumtleDetectedMessage> _ggumtleDetectedPublisher;
+        private readonly IPublisher<GgumtleLeftMessage> _ggumtleLeftPublisher;
         private readonly bool _enableDebugLogs = false; // 디버그 로그 비활성화
 
         [Inject]
-        public MainSceneInitializer(IMapSpawnService mapSpawnService)
+        public MainSceneInitializer(
+            IMapSpawnService mapSpawnService,
+            IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
+            IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher
+        )
         {
             _mapSpawnService = mapSpawnService;
+            _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
+            _ggumtleLeftPublisher = ggumtleLeftPublisher;
 
             if (_enableDebugLogs)
                 Debug.Log("[MainSceneInitializer] 의존성 주입 완료");
@@ -123,6 +133,9 @@ namespace Features.Scenes.Main.Initializers
                 // 입력 시스템 확인 및 초기화
                 InitializeInputSystems();
 
+                // InteractionTriggerDetector 수동 주입
+                InitializeInteractionDetectors();
+
                 if (_enableDebugLogs)
                     Debug.Log("[MainSceneInitializer] Main 씬 시스템 초기화 완료");
             }
@@ -200,6 +213,31 @@ namespace Features.Scenes.Main.Initializers
                 }
                 if (_enableDebugLogs)
                     Debug.Log("[MainSceneInitializer] 모바일 입력 시스템 초기화 완료");
+            }
+        }
+
+        /// <summary>
+        /// InteractionTriggerDetector 수동 주입
+        /// </summary>
+        private void InitializeInteractionDetectors()
+        {
+            var detectors = GameObject.FindObjectsOfType<Interaction.InteractionTriggerDetector>();
+            foreach (var detector in detectors)
+            {
+                try
+                {
+                    // 리플렉션으로 Construct 메서드 호출
+                    var constructMethod = detector.GetType().GetMethod("Construct");
+                    if (constructMethod != null)
+                    {
+                        constructMethod.Invoke(detector, new object[] { _ggumtleDetectedPublisher, _ggumtleLeftPublisher });
+                        Debug.Log($"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 완료: {detector.gameObject.name}");
+                    }
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogError($"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 실패: {e.Message}");
+                }
             }
         }
 

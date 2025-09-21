@@ -9,7 +9,7 @@ namespace Features.Player.Views
     public class PlayerGameObject : MonoBehaviour
     {
         [Header("플레이어 이동")]
-        public float MoveSpeed = 2.0f;
+        public float MoveSpeed = 2.5f;
         public float SprintSpeed = 5.335f;
         public float RotationSmoothTime = 0.12f;
         public float SpeedChangeRate = 10.0f;
@@ -17,7 +17,7 @@ namespace Features.Player.Views
         [Header("점프")]
         public float JumpHeight = 1.2f;
         public float Gravity = -15.0f;
-        public float JumpTimeout = 0.50f;
+        public float JumpTimeout = 0.30f;
         public float FallTimeout = 0.15f;
 
         [Header("땅 체크")]
@@ -28,15 +28,15 @@ namespace Features.Player.Views
 
         [Header("모바일 카메라 설정")]
         public bool useFreeLookCamera = true;
-        public float CameraSensitivity = 0.5f;
+        public float CameraSensitivity = 0.05f;
         public float CameraInputSmoothing = 0.1f;
-        public bool InvertY = false;
+        public bool InvertY = true;
 
         [Header("상호작용 설정")]
         public bool canMove = true;
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = false;
+        public bool enableDebugLogs = true;
 
         private float _speed;
         private float _animationBlend;
@@ -57,7 +57,9 @@ namespace Features.Player.Views
         private Animator _animator;
         private CharacterController _controller;
         private PlayerMovementService _playerMovementService;
-        private GameObject _mainCamera;
+
+        [Header("카메라 설정")]
+        [SerializeField]
         private CinemachineFreeLook _freeLookCamera;
 
         // 카메라 회전 관련
@@ -67,42 +69,23 @@ namespace Features.Player.Views
 
         private void Awake()
         {
-            // 카메라 찾기 - 여러 방법 시도
-            if (_mainCamera == null)
-            {
-                _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-                if (_mainCamera == null)
-                {
-                    var camera = Camera.main;
-                    if (camera != null)
-                    {
-                        _mainCamera = camera.gameObject;
-                        Debug.Log($"[PlayerGameObject] Camera.main으로 카메라 찾음: {_mainCamera.name}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning("[PlayerGameObject] Awake()에서 MainCamera를 찾을 수 없음 - Start()에서 재시도");
-                    }
-                }
-            }
-
-            // CinemachineFreeLook 카메라 찾기
+            // FreeLook 카메라가 Inspector에서 설정되지 않은 경우에만 자동으로 찾기
             if (_freeLookCamera == null)
             {
                 _freeLookCamera = FindFirstObjectByType<CinemachineFreeLook>();
-                if (_freeLookCamera != null)
+                if (_freeLookCamera == null)
                 {
-                    if (enableDebugLogs)
-                        Debug.Log(
-                            $"[PlayerGameObject] CinemachineFreeLook 발견: {_freeLookCamera.name}"
-                        );
-                    SetupFreeLookCamera();
-                }
-                else
-                {
-                    Debug.LogWarning("[PlayerGameObject] CinemachineFreeLook을 찾을 수 없습니다!");
+                    Debug.LogError(
+                        "[PlayerGameObject] FreeLook 카메라가 설정되지 않았고 씬에서도 찾을 수 없습니다!"
+                    );
+                    return;
                 }
             }
+
+            if (enableDebugLogs)
+                Debug.Log($"[PlayerGameObject] FreeLook 카메라 연결됨: {_freeLookCamera.name}");
+
+            SetupFreeLookCamera();
         }
 
         [Inject]
@@ -126,48 +109,24 @@ namespace Features.Player.Views
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
-            // 카메라 재시도 (Awake에서 못 찾았을 경우)
-            if (_mainCamera == null)
-            {
-                _mainCamera = GameObject.FindGameObjectWithTag("MainCamera");
-                if (_mainCamera == null)
-                {
-                    var camera = Camera.main;
-                    if (camera != null)
-                    {
-                        _mainCamera = camera.gameObject;
-                        Debug.Log($"[PlayerGameObject] Start()에서 Camera.main으로 카메라 찾음: {_mainCamera.name}");
-                    }
-                    else
-                    {
-                        // 모든 카메라 검색
-                        var allCameras = FindObjectsOfType<Camera>();
-                        if (allCameras.Length > 0)
-                        {
-                            _mainCamera = allCameras[0].gameObject;
-                            Debug.LogWarning($"[PlayerGameObject] 첫 번째 Camera 컴포넌트 사용: {_mainCamera.name}");
-                        }
-                        else
-                        {
-                            Debug.LogError("[PlayerGameObject] 씬에 카메라가 없습니다!");
-                        }
-                    }
-                }
-            }
-
             // VContainer 의존성 주입 확인 및 대체 방법 시도
             if (_playerMovementService == null)
             {
-                Debug.LogWarning("[PlayerGameObject] PlayerMovementService가 주입되지 않음. MainLifetimeScope에서 직접 찾기 시도...");
+                Debug.LogWarning(
+                    "[PlayerGameObject] PlayerMovementService가 주입되지 않음. MainLifetimeScope에서 직접 찾기 시도..."
+                );
 
                 try
                 {
                     var mainLifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
                     if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
                     {
-                        var playerMovementService = mainLifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
+                        var playerMovementService =
+                            mainLifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
                         Initialize(playerMovementService);
-                        Debug.Log("[PlayerGameObject] MainLifetimeScope에서 PlayerMovementService 찾기 성공");
+                        Debug.Log(
+                            "[PlayerGameObject] MainLifetimeScope에서 PlayerMovementService 찾기 성공"
+                        );
                     }
                     else
                     {
@@ -177,7 +136,9 @@ namespace Features.Player.Views
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[PlayerGameObject] PlayerMovementService 수동 해결 실패: {e.Message}");
+                    Debug.LogError(
+                        $"[PlayerGameObject] PlayerMovementService 수동 해결 실패: {e.Message}"
+                    );
                     return;
                 }
             }
@@ -229,7 +190,9 @@ namespace Features.Player.Views
             // GroundLayers가 설정되지 않은 경우 기본 레이어로 체크
             if (GroundLayers.value == 0)
             {
-                Debug.LogWarning("[PlayerGameObject] GroundLayers가 설정되지 않음. 기본 레이어로 체크합니다.");
+                Debug.LogWarning(
+                    "[PlayerGameObject] GroundLayers가 설정되지 않음. 기본 레이어로 체크합니다."
+                );
                 Grounded = Physics.CheckSphere(
                     spherePosition,
                     GroundedRadius,
@@ -281,21 +244,12 @@ namespace Features.Player.Views
                 return;
             }
 
-            // 필수 컴포넌트들이 null인지 체크 - FreeLook 카메라 우선 사용
-            Transform cameraTransform = null;
-            if (_freeLookCamera != null)
-            {
-                cameraTransform = _freeLookCamera.transform;
-            }
-            else if (_mainCamera != null)
-            {
-                cameraTransform = _mainCamera.transform;
-            }
-
-            if (_controller == null || cameraTransform == null)
+            if (_controller == null || _freeLookCamera == null)
             {
                 if (enableDebugLogs)
-                    Debug.LogWarning($"[PlayerGameObject] 필수 컴포넌트가 null입니다 - Controller: {_controller != null}, Camera: {cameraTransform != null}");
+                    Debug.LogWarning(
+                        $"[PlayerGameObject] 필수 컴포넌트가 null입니다 - Controller: {_controller != null}, FreeLookCamera: {_freeLookCamera != null}"
+                    );
                 return;
             }
 
@@ -304,7 +258,9 @@ namespace Features.Player.Views
             if (_playerMovementService.MoveInput == Vector2.zero)
                 targetSpeed = 0.0f;
             else if (enableDebugLogs)
-                Debug.Log($"[PlayerGameObject] 이동 입력 감지: {_playerMovementService.MoveInput}, targetSpeed: {targetSpeed}");
+                Debug.Log(
+                    $"[PlayerGameObject] 이동 입력 감지: {_playerMovementService.MoveInput}, targetSpeed: {targetSpeed}"
+                );
 
             float currentHorizontalSpeed = new Vector3(
                 _controller.velocity.x,
@@ -345,26 +301,47 @@ namespace Features.Player.Views
                 _animationBlend = 0f;
 
             Vector2 moveInput = _playerMovementService.MoveInput;
-            Vector3 inputDirection = new Vector3(moveInput.x, 0.0f, moveInput.y).normalized;
+
+            Vector3 targetDirection = Vector3.zero;
 
             if (moveInput != Vector2.zero)
             {
-                _targetRotation =
-                    Mathf.Atan2(inputDirection.x, inputDirection.z) * Mathf.Rad2Deg
-                    + cameraTransform.eulerAngles.y;
+                // 카메라 기준 상대적 이동 방향 계산
+                // FreeLook 카메라의 현재 회전값을 기준으로 함
+                float cameraYRotation = _freeLookCamera.m_XAxis.Value;
 
-                float rotation = Mathf.SmoothDampAngle(
-                    transform.eulerAngles.y,
-                    _targetRotation,
-                    ref _rotationVelocity,
-                    RotationSmoothTime
-                );
+                // 카메라가 보고 있는 방향을 기준으로 forward와 right 벡터 계산
+                Vector3 cameraForward = Quaternion.Euler(0, cameraYRotation, 0) * Vector3.forward;
+                Vector3 cameraRight = Quaternion.Euler(0, cameraYRotation, 0) * Vector3.right;
 
-                transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                // 입력에 따른 이동 방향 계산 (카메라 기준 상대적)
+                targetDirection = (
+                    cameraForward * moveInput.y + cameraRight * moveInput.x
+                ).normalized;
+
+                // 캐릭터가 이동하는 방향으로 회전
+                if (targetDirection != Vector3.zero)
+                {
+                    _targetRotation =
+                        Mathf.Atan2(targetDirection.x, targetDirection.z) * Mathf.Rad2Deg;
+
+                    float rotation = Mathf.SmoothDampAngle(
+                        transform.eulerAngles.y,
+                        _targetRotation,
+                        ref _rotationVelocity,
+                        RotationSmoothTime
+                    );
+
+                    transform.rotation = Quaternion.Euler(0.0f, rotation, 0.0f);
+                }
+
+                if (enableDebugLogs && Time.frameCount % 60 == 0)
+                {
+                    Debug.Log(
+                        $"[PlayerGameObject] 카메라 Y회전: {cameraYRotation:F1}°, 이동방향: {targetDirection}, 입력: {moveInput}"
+                    );
+                }
             }
-
-            Vector3 targetDirection =
-                Quaternion.Euler(0.0f, _targetRotation, 0.0f) * Vector3.forward;
 
             _controller.Move(
                 targetDirection.normalized * (_speed * Time.deltaTime)
@@ -493,7 +470,12 @@ namespace Features.Player.Views
 
         private void SetupFreeLookCamera()
         {
-            if (_freeLookCamera == null) return;
+            if (_freeLookCamera == null)
+                return;
+
+            // **핵심 수정: Follow와 LookAt 타겟 설정**
+            _freeLookCamera.Follow = transform;
+            _freeLookCamera.LookAt = transform;
 
             // FreeLook 기본 입력 비활성화
             _freeLookCamera.m_XAxis.m_InputAxisName = "";
@@ -513,63 +495,42 @@ namespace Features.Player.Views
             _freeLookCamera.m_YAxis.m_AccelTime = 0.01f;
             _freeLookCamera.m_YAxis.m_DecelTime = 0.01f;
 
-            if (enableDebugLogs)
-                Debug.Log("[PlayerGameObject] FreeLook 카메라 설정 완료");
+            Debug.Log(
+                $"[PlayerGameObject] FreeLook 카메라 설정 완료 - Follow: {_freeLookCamera.Follow?.name}, LookAt: {_freeLookCamera.LookAt?.name}"
+            );
         }
 
         private void CameraLook()
         {
-            if (_playerMovementService == null)
-            {
-                if (enableDebugLogs && Time.frameCount % 60 == 0)
-                    Debug.LogWarning("[PlayerGameObject] _playerMovementService is null!");
+            if (_playerMovementService == null || _freeLookCamera == null)
                 return;
-            }
-
-            if (_freeLookCamera == null)
-            {
-                if (enableDebugLogs && Time.frameCount % 60 == 0)
-                    Debug.LogWarning("[PlayerGameObject] _freeLookCamera is null!");
-                return;
-            }
 
             Vector2 lookInput = _playerMovementService.LookInput; // 이미 델타값
 
             // 터치가 있을 때
             if (lookInput.magnitude > 0.01f)
             {
-                // 감도 적용 (모바일 FPS용으로 높인 값)
-                Vector2 cameraInput = lookInput * CameraSensitivity * 0.02f;
+                // 감도 적용
+                Vector2 cameraInput = lookInput * CameraSensitivity;
                 if (InvertY)
                     cameraInput.y = -cameraInput.y;
 
-                // 부드러운 입력을 위한 약간의 스무딩
-                _currentCameraInput = Vector2.Lerp(_currentCameraInput, cameraInput, 0.8f);
-
-                // Cinemachine Axis에 직접 값 설정
-                _freeLookCamera.m_XAxis.m_InputAxisValue = _currentCameraInput.x;
-                _freeLookCamera.m_YAxis.m_InputAxisValue = -_currentCameraInput.y; // Y축 반전
+                // Cinemachine Axis에 직접 값 설정 (보간 제거)
+                _freeLookCamera.m_XAxis.m_InputAxisValue = cameraInput.x;
+                _freeLookCamera.m_YAxis.m_InputAxisValue = -cameraInput.y;
 
                 if (enableDebugLogs && Time.frameCount % 20 == 0)
                 {
                     Debug.Log(
-                        $"[PlayerGameObject] 카메라 입력: {lookInput}, 적용값: X({_currentCameraInput.x}), Y({-_currentCameraInput.y})"
+                        $"[PlayerGameObject] 카메라 입력: {lookInput}, 적용값: X({cameraInput.x}), Y({-cameraInput.y}), 현재 X축값: {_freeLookCamera.m_XAxis.Value:F1}"
                     );
                 }
             }
             else
             {
-                // 터치가 끝났을 때
-                _currentCameraInput = Vector2.Lerp(_currentCameraInput, Vector2.zero, 0.2f);
-
-                // 매우 작은 값이면 완전히 0으로
-                if (_currentCameraInput.magnitude < 0.001f)
-                {
-                    _currentCameraInput = Vector2.zero;
-                }
-
-                _freeLookCamera.m_XAxis.m_InputAxisValue = _currentCameraInput.x;
-                _freeLookCamera.m_YAxis.m_InputAxisValue = -_currentCameraInput.y;
+                // 터치가 끝났을 때 즉시 0으로 (보간 제거)
+                _freeLookCamera.m_XAxis.m_InputAxisValue = 0f;
+                _freeLookCamera.m_YAxis.m_InputAxisValue = 0f;
             }
         }
 

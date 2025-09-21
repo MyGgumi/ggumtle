@@ -293,14 +293,14 @@ class HomeViewModel @Inject constructor(
 
     // 게임 시작
     fun onStartGame() = intent {
-        unitySendManager.goToInGame("-1","12")
-//        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
-//        try {
-//            readyGameUseCase.invoke()
-//            startGameUseCase.invoke()
-//        } catch (e: Exception) {
-//            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
-//        }
+//        unitySendManager.goToInGame("-1","12")
+        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
+        try {
+            readyGameUseCase.invoke()
+            startGameUseCase.invoke()
+        } catch (e: Exception) {
+            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
+        }
     }
 
     // TODO: 게임 시작 observe

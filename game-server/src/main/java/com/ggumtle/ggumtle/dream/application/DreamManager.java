@@ -1273,7 +1273,7 @@ public class DreamManager {
             boxSpawns = new ArrayList<>();
             for (int i = 0; i < 4; i++) {
                 for (int j = 0; j < 5; j++) {
-                    boxSpawns.add(new BoxSpawn(0, (18 + i * 3) * -100, 50, j * 2 * -100));
+                    boxSpawns.add(new BoxSpawn(0, (33 + i * 3) * 100, 550, j * 2 * -100));
                 }
             }
 
@@ -1343,6 +1343,8 @@ public class DreamManager {
                 speedPacks);
         Packet packet = Packet.of(SendPacketType.INITIALIZE_MAP, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
+
+        log.info("{}번 드림 맵 초기화 완료: 꿈틀이={}, 힐팩={}, 스피드팩={}, 출구={}, 상자={}", this.room.id, this.ggumtles, healPacks, speedPacks, this.exits, this.boxes);
     }
 
     // TODO: 클래스 별 체력, 속도 초기화

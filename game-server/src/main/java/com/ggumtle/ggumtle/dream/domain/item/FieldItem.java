@@ -4,9 +4,11 @@ import com.ggumtle.ggumtle.dream.vo.FieldItemSpawn;
 import com.ggumtle.ggumtle.dream.vo.Position;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+@ToString
 public final class FieldItem {
     public static final int FIELD_ITEM_SIZE = 10;
 

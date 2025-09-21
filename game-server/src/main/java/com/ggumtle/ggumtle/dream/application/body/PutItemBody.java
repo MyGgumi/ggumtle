@@ -41,7 +41,7 @@ public record PutItemBody(
         }
 
         buffer.putInt(-1);
-        for (int i = 0; i <= Box.BOX_SIZE; i++) {
+        for (int i = 0; i < Box.BOX_SIZE; i++) {
             buffer.putInt(-1);
         }
 

@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5243433978497904459}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tail4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4321567175338831555}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Balloon_Ghost
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -74,7 +74,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4568739574435778635}
   - component: {fileID: 4919722777739650925}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Loon_Ghost
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -168,7 +168,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1608148102150274343}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tail3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -200,7 +200,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2050723804479012474}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: GGUMTLEEE
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -233,7 +233,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7890210425960498457}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Upper2_end
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -264,7 +264,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6745809408521016848}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Upper1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -296,7 +296,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 5085885738636706301}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tail5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -330,7 +330,7 @@ GameObject:
   - component: {fileID: 2262164088179204086}
   - component: {fileID: 2140651874948990592}
   - component: {fileID: 2139448068855511296}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: DustCloud
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5162,7 +5162,7 @@ GameObject:
   - component: {fileID: 2140802936395739010}
   - component: {fileID: 2140311497920714636}
   - component: {fileID: 3335806372744329986}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Dig_dirt_effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10107,7 +10107,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8341800229650542343}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tail1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10139,7 +10139,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1641920488102266478}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Upper2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10171,7 +10171,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8813757158759151684}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tail5_end
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10203,7 +10203,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4411954337177787724}
   - component: {fileID: 4643572152277940196}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: After_pullup_effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -10335,7 +10335,7 @@ GameObject:
   - component: {fileID: 4410443220191127816}
   - component: {fileID: 4610313029091742656}
   - component: {fileID: 4611443720064484270}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Center
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -15135,7 +15135,7 @@ GameObject:
   - component: {fileID: 4410511850767275036}
   - component: {fileID: 4610003871752094446}
   - component: {fileID: 4609889508534048586}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: MagicDust
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19999,7 +19999,7 @@ GameObject:
   - component: {fileID: 4468789771692171073}
   - component: {fileID: 4585621684734483826}
   - component: {fileID: 5720997323755300283}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Baloon_Ghost_v2_1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -20162,7 +20162,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2190175264278587838}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tail2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -20196,7 +20196,7 @@ GameObject:
   - component: {fileID: 6416495234215530314}
   - component: {fileID: 6416495234230734794}
   - component: {fileID: 6416495234230798966}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: SparkleGlow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25064,7 +25064,7 @@ GameObject:
   - component: {fileID: 6416495234230708412}
   - component: {fileID: 6416495234230870690}
   - component: {fileID: 7944409670790748399}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Gumttle_feeding_effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -30056,7 +30056,7 @@ GameObject:
   - component: {fileID: 8897424823189206055}
   - component: {fileID: 8897424823169838081}
   - component: {fileID: 8897424823170993975}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Tinysparkles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -34996,7 +34996,7 @@ GameObject:
   - component: {fileID: 8897424823169841469}
   - component: {fileID: 8897424823170999417}
   - component: {fileID: 8568324860876584331}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: purified_effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -39910,7 +39910,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8356652182491075264}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Main
   m_TagString: Untagged
   m_Icon: {fileID: 0}

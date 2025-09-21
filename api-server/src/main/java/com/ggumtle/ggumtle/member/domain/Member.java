@@ -64,6 +64,10 @@ public class Member {
         this.coin -= coin;
     }
 
+    public void updateNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
     public void increaseCoinCappedToMax(int amount) {
         long result = (long) this.coin + amount;
 

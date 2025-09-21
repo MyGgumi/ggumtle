@@ -4,16 +4,21 @@ import com.ggumtle.ggumtle.common.LoginUser;
 import com.ggumtle.ggumtle.member.application.MemberService;
 import com.ggumtle.ggumtle.member.application.command.GetCoinCommand;
 import com.ggumtle.ggumtle.member.application.command.GetMyInfoCommand;
+import com.ggumtle.ggumtle.member.application.command.UpdateNicknameCommand;
 import com.ggumtle.ggumtle.member.application.result.GetCoinResult;
 import com.ggumtle.ggumtle.member.application.result.GetMyInfoResult;
-import com.ggumtle.ggumtle.member.persistence.MemberRepository;
+import com.ggumtle.ggumtle.member.presentation.request.UpdateNicknameRequest;
 import com.ggumtle.ggumtle.member.presentation.response.GetCoinResponse;
 import com.ggumtle.ggumtle.member.presentation.response.GetMyInfoResponse;
+import com.ggumtle.ggumtle.member.presentation.response.UpdateNicknameResponse;
+import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
@@ -40,5 +45,15 @@ public class MemberController {
         GetMyInfoResponse response = GetMyInfoResponse.from(result);
 
         return ResponseEntity.ok(response);
+    }
+
+    @PatchMapping("/info")
+    public ResponseEntity<UpdateNicknameResponse>  updateNickname(
+            @LoginUser Long memberId,
+            @Valid @RequestBody UpdateNicknameRequest request) {
+        UpdateNicknameCommand command = request.toCommand(memberId);
+        memberService.updateNickname(command);
+
+        return ResponseEntity.ok(new UpdateNicknameResponse(true));
     }
 }

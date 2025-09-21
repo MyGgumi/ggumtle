@@ -328,11 +328,15 @@ public class DreamManager {
 
         Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.REVIVE) {
+            targetThread.scheduledFuture.cancel(true);
             workingThreads.remove(session.getMemberId());
+
             body = new StopReviveBody(StopReviveBody.Result.SUCCESS);
+
             log.info("[{} - {}] 몽깅이 부활 종료 성공", session.getChannel().id(), room.id);
         } else {
             body = new StopReviveBody(StopReviveBody.Result.FAIL);
+
             log.warn("[{} - {}] 몽깅이 부활 종료 실패: {}번 사용자에게 진행 중인 부활 작업이 없음", session.getChannel().id(), room.id, session.getMemberId());
         }
         Packet packet = Packet.of(SendPacketType.STOP_REVIVE, System.currentTimeMillis(), body);
@@ -853,7 +857,7 @@ public class DreamManager {
         }
 
         Position playerPosition = mongging.getPositionAt(System.currentTimeMillis());
-        if (ggumtle.detectDigUp(playerPosition)) {
+        if (!ggumtle.detectDigUp(playerPosition)) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_AROUND);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
             session.sendPacket(packet);
@@ -901,8 +905,10 @@ public class DreamManager {
 
         Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.DIG_UP) {
-            body = new StopDiggingBody(StopDiggingBody.Result.STOP);
+            targetThread.scheduledFuture.cancel(true);
             workingThreads.remove(session.getMemberId());
+
+            body = new StopDiggingBody(StopDiggingBody.Result.STOP);
 
             log.info("[{} - {}] 꿈틀이 파기 중단 완료: {}번 사용자의 작업 중단", session.getChannel().id(), room.id, session.getMemberId());
         } else {
@@ -1024,8 +1030,10 @@ public class DreamManager {
 
         Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.FEED) {
-            body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
+            targetThread.scheduledFuture.cancel(true);
             workingThreads.remove(session.getMemberId());
+
+            body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
 
             log.info("[{} - {}] 꿈틀이 먹이기 종료 성공: {}번 사용자의 빛젤리 먹이기 작업 종료", session.getChannel().id(), room.id, session.getMemberId());
         } else {

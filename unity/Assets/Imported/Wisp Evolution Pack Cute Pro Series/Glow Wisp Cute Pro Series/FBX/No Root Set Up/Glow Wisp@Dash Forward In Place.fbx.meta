@@ -1,5 +1,13 @@
 fileFormatVersion: 2
 guid: e5e08aff12e51fc4281051c14e201530
+AssetOrigin:
+  serializedVersion: 1
+  productId: 327135
+  packageName: Wisp Evolution Pack Cute Pro Series
+  packageVersion: 1.0
+  assetPath: Assets/Wisp Evolution Pack Cute Pro Series/Glow Wisp Cute Pro Series/FBX/No
+    Root Set Up/Glow Wisp@Dash Forward In Place.fbx
+  uploadId: 774381
 ModelImporter:
   serializedVersion: 22200
   internalIDToNameTable: []
@@ -16,8 +24,6 @@ ModelImporter:
     optimizeGameObjects: 0
     removeConstantScaleCurves: 0
     motionNodeName: 
-    rigImportErrors: 
-    rigImportWarnings: 
     animationImportErrors: 
     animationImportWarnings: 
     animationRetargetingWarnings: 
@@ -45,7 +51,7 @@ ModelImporter:
       loop: 0
       hasAdditiveReferencePose: 0
       loopTime: 1
-      loopBlend: 0
+      loopBlend: 1
       loopBlendOrientation: 0
       loopBlendPositionY: 0
       loopBlendPositionXZ: 0
@@ -136,11 +142,3 @@ ModelImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 327135
-  packageName: Wisp Evolution Pack Cute Pro Series
-  packageVersion: 1.0
-  assetPath: Assets/Wisp Evolution Pack Cute Pro Series/Glow Wisp Cute Pro Series/FBX/No
-    Root Set Up/Glow Wisp@Dash Forward In Place.fbx
-  uploadId: 774381

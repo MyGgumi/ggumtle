@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 192fe886db9c4394f9a396d066820987
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 9100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 209499
+  packageName: Balloon Ghost(with Breakable parts)
+  packageVersion: 1.0
+  assetPath: Assets/Balloon_Ghost/Animations/Baloon_Ghost.controller
+  uploadId: 470502

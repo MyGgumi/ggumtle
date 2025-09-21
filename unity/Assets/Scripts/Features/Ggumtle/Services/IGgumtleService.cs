@@ -140,6 +140,11 @@ namespace Features.Ggumtle.Services
         #region Utility
 
         /// <summary>
+        /// 디버그용 - 등록된 꿈틀이 목록과 상태 출력
+        /// </summary>
+        void LogGgumtleStatus();
+
+        /// <summary>
         /// 서비스 상태 리셋
         /// </summary>
         void ResetService();

@@ -118,13 +118,9 @@ namespace Features.Ggumtle.Services
 
         public GgumtleData GetGgumtleData(int ggumtleId)
         {
-            DebugLog($"[GgumtleServiceImpl] GetGgumtleData 호출: {ggumtleId}");
-            DebugLog($"[GgumtleServiceImpl] 등록된 꿈틀이 목록: [{string.Join(", ", _ggumtleDataMap.Keys)}]");
-
-            var result = _ggumtleDataMap.TryGetValue(ggumtleId, out GgumtleData data) ? data : null;
-            DebugLog($"[GgumtleServiceImpl] GetGgumtleData 결과: {(result != null ? $"찾음 - {result.ggumtleName}" : "없음")}");
-
-            return result;
+            // 성능 최적화: 자주 호출되는 메서드에서 디버그 로그 제거
+            // 필요시 컨텍스트 메뉴나 특정 상황에서만 로그 출력
+            return _ggumtleDataMap.TryGetValue(ggumtleId, out GgumtleData data) ? data : null;
         }
 
         public Dictionary<int, GgumtleData> GetAllGgumtleData()
@@ -748,6 +744,19 @@ namespace Features.Ggumtle.Services
         #endregion
 
         #region Utility
+
+        /// <summary>
+        /// 디버그용 - 등록된 꿈틀이 목록과 상태 출력
+        /// </summary>
+        public void LogGgumtleStatus()
+        {
+            DebugLog($"[GgumtleServiceImpl] 등록된 꿈틀이 목록: [{string.Join(", ", _ggumtleDataMap.Keys)}]");
+            foreach (var kvp in _ggumtleDataMap)
+            {
+                var data = kvp.Value;
+                DebugLog($"[GgumtleServiceImpl] ID: {kvp.Key}, 이름: {data.ggumtleName}, 상태: {data.currentState}, 홀드중: {data.isHoldInProgress}");
+            }
+        }
 
         public void ResetService()
         {

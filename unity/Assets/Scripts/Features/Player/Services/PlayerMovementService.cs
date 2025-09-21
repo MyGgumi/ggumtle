@@ -12,8 +12,8 @@ namespace Features.Player.Services
         #region Debug Settings
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = false; // 입력 로그 비활성화
-        public bool enableInitLogs = false; // 초기화 로그
+        public bool enableDebugLogs = true; // 입력 로그 활성화
+        public bool enableInitLogs = true; // 초기화 로그
 
         #endregion
 
@@ -195,6 +195,8 @@ namespace Features.Player.Services
 
         public void SetLookInput(Vector2 input)
         {
+            if (enableDebugLogs && input.magnitude > 0.01f)
+                Debug.Log($"[PlayerMovementService] LookInput 설정: {input}");
             LookInput = input;
         }
 

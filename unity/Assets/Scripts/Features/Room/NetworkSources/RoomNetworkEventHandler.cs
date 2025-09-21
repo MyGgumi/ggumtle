@@ -34,6 +34,17 @@ namespace Features.Room.NetworkSources
                 Debug.Log($"[SERVER_ROOM_DATA]   - 힐팩: {command.healPacks?.Count ?? 0}개");
                 Debug.Log($"[SERVER_ROOM_DATA]   - 스피드팩: {command.speedPacks?.Count ?? 0}개");
 
+                // 상자 상세 정보 로깅
+                if (command.chests != null && command.chests.Count > 0)
+                {
+                    Debug.Log($"[SERVER_ROOM_DATA] 상자 상세 정보:");
+                    for (int i = 0; i < command.chests.Count; i++)
+                    {
+                        var chest = command.chests[i];
+                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Position: ({chest.X}, {chest.Y}, {chest.Z})");
+                    }
+                }
+
                 // 꿈틀이 상세 정보 로깅
                 if (command.ggumtles != null && command.ggumtles.Count > 0)
                 {
@@ -59,6 +70,17 @@ namespace Features.Room.NetworkSources
                     Debug.Log("[SERVER_ROOM_DATA] Room에 맵 데이터 저장 완료");
 
                     // 변환된 Room 데이터 확인
+                    if (_staticRoom.chests != null && _staticRoom.chests.Count > 0)
+                    {
+                        Debug.Log($"[SERVER_ROOM_DATA] Room 저장 후 상자 데이터 확인:");
+                        for (int i = 0; i < _staticRoom.chests.Count; i++)
+                        {
+                            var chest = _staticRoom.chests[i];
+                            var unityPos = chest.ToVector3();
+                            Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Unity Position: {unityPos}");
+                        }
+                    }
+
                     if (_staticRoom.ggumtles != null && _staticRoom.ggumtles.Count > 0)
                     {
                         Debug.Log($"[SERVER_ROOM_DATA] Room 저장 후 꿈틀이 데이터 확인:");

@@ -77,4 +77,8 @@ public class Member {
             this.coin = (int) result;
         }
     }
+
+    public void withdraw(){
+        this.isDeleted = true;
+    }
 }

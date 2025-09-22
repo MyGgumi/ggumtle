@@ -1,6 +1,8 @@
 package com.ggumtle.ggumtle.mongging.persistence;
 
+import com.ggumtle.ggumtle.mission.domain.MemberMission;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -43,4 +45,9 @@ public interface MonggingRepository extends JpaRepository<Mongging, Long> {
         where m.owner.id = :ownerId
         """)
     List<Mongging> findAllByOwnerIdFetchClassAndOwner(Long ownerId);
+
+    void deleteAllByOwnerId(Long ownerId);
+
+    @EntityGraph(attributePaths = {"owner", "monggingClass"})
+    List<Mongging> findByOwner_IdAndIsDeletedFalse(Long ownerId);
 }

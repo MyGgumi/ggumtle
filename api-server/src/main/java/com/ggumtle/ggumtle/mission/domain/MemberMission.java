@@ -38,11 +38,15 @@ public class MemberMission {
     @Column(nullable = false)
     private Integer doneCount;
 
+    @Column(nullable = false)
+    private Boolean isDeleted;
+
     public MemberMission(Member member, Mission mission) {
         this.member = member;
         this.mission = mission;
         this.state = MissionState.BEFORE_SUCCESS;
         this.doneCount = 0;
+        this.isDeleted = false;
     }
 
     public boolean doMission() {
@@ -60,5 +64,9 @@ public class MemberMission {
     public void getReward() {
         this.member.increaseCoinCappedToMax(this.mission.getRewardCoinAmount());
         this.state = MissionState.AFTER_REWARD;
+    }
+
+    public void deleteMemberMission(){
+        this.isDeleted = true;
     }
 }

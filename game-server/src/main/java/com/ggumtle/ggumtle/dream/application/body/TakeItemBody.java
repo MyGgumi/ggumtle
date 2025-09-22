@@ -11,7 +11,10 @@ import java.nio.charset.Charset;
 
 public record TakeItemBody(
     Result result,
-    Boxable[] items
+    long playerId,
+    int boxId,
+    Boxable[] itemsOfBox,
+    Boxable takenItem
 ) implements Body {
     private static final int bufferSize = 4 + 4 + 4 * Box.BOX_SIZE;
 
@@ -29,21 +32,28 @@ public record TakeItemBody(
     public byte[] toBytes(Charset charsets) {
         ByteBuffer buffer = ByteBuffer.allocate(bufferSize);
 
-        buffer.putInt(result.value);
+        // 요청 처리 결과
+        buffer.putInt(this.result.value);
 
+        // 요청한 플레이어 정보
+        buffer.putLong(this.playerId);
+
+        //.상자 정보
+        buffer.putInt(this.boxId);
+        buffer.putInt(Box.BOX_SIZE);
         if (result == Result.SUCCESS) {
-            buffer.putInt(Box.BOX_SIZE);
             for (int i = 0; i < Box.BOX_SIZE; i++) {
-                buffer.putInt(items[i] == null ? -1 : items[i].id);
+                buffer.putInt(itemsOfBox[i] == null ? -1 : itemsOfBox[i].id);
             }
+            buffer.putInt(this.takenItem.id);
 
             return buffer.array();
         }
 
-        buffer.putInt(-1);
         for (int i = 0; i < Box.BOX_SIZE; i++) {
             buffer.putInt(-1);
         }
+        buffer.putInt(-1);
 
         return buffer.array();
     }

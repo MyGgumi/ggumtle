@@ -603,7 +603,7 @@ public class DreamManager {
         // 상자 존재 확인
         Box box = boxes.getOrDefault(boxId, null);
         if (box == null) {
-            Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, null);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, session.getMemberId(), boxId, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -613,7 +613,7 @@ public class DreamManager {
 
         // 인덱스 범위 확인
         if (index < 0 || index >= Box.BOX_SIZE) {
-            Body body = new TakeItemBody(TakeItemBody.Result.INDEX_OUT_OF_RANGE, null);
+            Body body = new TakeItemBody(TakeItemBody.Result.INDEX_OUT_OF_RANGE, session.getMemberId(), boxId, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -624,7 +624,7 @@ public class DreamManager {
         // 플레이어 존재 확인
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (player == null) {
-            Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_PLAYER, null);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_PLAYER, session.getMemberId(), boxId, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -634,7 +634,7 @@ public class DreamManager {
 
         // 플레이어가 몽깅이가 아니면 실패
         if (!(player instanceof Mongging mongging)) {
-            Body body = new TakeItemBody(TakeItemBody.Result.NOT_MONGGING, null);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_MONGGING, session.getMemberId(), boxId, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -644,7 +644,7 @@ public class DreamManager {
 
         // 상자 근처에 없으면 실패
         if (!box.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
-            Body body = new TakeItemBody(TakeItemBody.Result.NOT_NEAR, null);
+            Body body = new TakeItemBody(TakeItemBody.Result.NOT_NEAR, session.getMemberId(), boxId, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -661,7 +661,7 @@ public class DreamManager {
                 // 상자에서 아이템 가져오기
                 Boxable targetItem = box.getItemAt(index);
                 if (targetItem == null) {
-                    Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, null);
+                    Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, session.getMemberId(), boxId, null, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
 
@@ -671,7 +671,7 @@ public class DreamManager {
 
                 // 몽깅이가 아이템을 가질 수 있는지 확인
                 if (!mongging.canAddItem(targetItem)) {
-                    Body body = new TakeItemBody(TakeItemBody.Result.FULL_ABOUT_ITEM, null);
+                    Body body = new TakeItemBody(TakeItemBody.Result.FULL_ABOUT_ITEM, session.getMemberId(), boxId, null, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
 
@@ -693,18 +693,18 @@ public class DreamManager {
                             popResult[Box.BOX_SIZE],
                             Arrays.deepToString(mongging.getItems()));
 
-                    Body body = new TakeItemBody(TakeItemBody.Result.FAIL, null);
+                    Body body = new TakeItemBody(TakeItemBody.Result.FAIL, session.getMemberId(), boxId, null, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                     session.sendPacket(packet);
                     return;
                 }
 
                 // 아이템 꺼내기 성공 시 성공 응답 전송
-                Body body = new TakeItemBody(TakeItemBody.Result.SUCCESS, popResult);
+                Body body = new TakeItemBody(TakeItemBody.Result.SUCCESS, session.getMemberId(), boxId, popResult, popResult[Box.BOX_SIZE]);
                 Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
-                log.info("[{} - {}] 상자에서 아이템 꺼내기 성공: {}번 몽깅이가 {} 아이템 획득", session.getChannel().id(), room.id, session.getMemberId(), targetItem);
+                log.info("[{} - {}] 상자에서 아이템 꺼내기 성공: {}번 몽깅이가 {} 아이템 획득", session.getChannel().id(), room.id, session.getMemberId(), popResult[Box.BOX_SIZE]);
             }
         }
     }

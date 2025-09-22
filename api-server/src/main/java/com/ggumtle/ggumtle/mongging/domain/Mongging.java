@@ -34,12 +34,14 @@ public class Mongging {
     @Column(name = "level", nullable = false)
     private Integer level;
 
-    public static Mongging createMongging(Member owner, MonggingClass monggingClass) {
-        Mongging mongging = new Mongging();
-        mongging.owner = owner;
-        mongging.monggingClass = monggingClass;
-        mongging.level = 1;
-        return mongging;
+    @Column(nullable = false)
+    private Boolean isDeleted;
+
+    public Mongging (Member owner, MonggingClass monggingClass) {
+        this.owner = owner;
+        this.monggingClass = monggingClass;
+        this.level = 1;
+        this.isDeleted = false;
     }
 
     public boolean enhance(EnhancePercentage enhancePercentage) {
@@ -55,5 +57,9 @@ public class Mongging {
         } else {
             return false;
         }
+    }
+
+    public void deleteMongging() {
+        this.isDeleted = true;
     }
 }

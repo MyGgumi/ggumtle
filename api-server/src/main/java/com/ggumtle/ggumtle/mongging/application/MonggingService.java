@@ -78,7 +78,7 @@ public class MonggingService {
 
         List<Mongging> monggings = new ArrayList<>();
         for(MonggingClass monggingClass : allClass){
-            monggings.add(Mongging.createMongging(newMember, monggingClass));
+            monggings.add(new Mongging (newMember, monggingClass));
         }
         monggingRepository.saveAll(monggings);
     }

@@ -1,16 +1,21 @@
 package com.ggumtle.ggumtle.member.presentation;
 
 import com.ggumtle.ggumtle.common.LoginUser;
+import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.AuthErrorCode;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.member.application.MemberService;
 import com.ggumtle.ggumtle.member.application.command.GetCoinCommand;
 import com.ggumtle.ggumtle.member.application.command.GetMyInfoCommand;
 import com.ggumtle.ggumtle.member.application.command.UpdateNicknameCommand;
+import com.ggumtle.ggumtle.member.application.command.WithdrawCommand;
 import com.ggumtle.ggumtle.member.application.result.GetCoinResult;
 import com.ggumtle.ggumtle.member.application.result.GetMyInfoResult;
 import com.ggumtle.ggumtle.member.presentation.request.UpdateNicknameRequest;
 import com.ggumtle.ggumtle.member.presentation.response.GetCoinResponse;
 import com.ggumtle.ggumtle.member.presentation.response.GetMyInfoResponse;
 import com.ggumtle.ggumtle.member.presentation.response.UpdateNicknameResponse;
+import com.ggumtle.ggumtle.member.presentation.response.WithdrawResponse;
 import jakarta.validation.Valid;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -55,5 +60,13 @@ public class MemberController {
         memberService.updateNickname(command);
 
         return ResponseEntity.ok(new UpdateNicknameResponse(true));
+    }
+
+    @PatchMapping
+    public ResponseEntity<WithdrawResponse> withdraw(@LoginUser Long memberId){
+        WithdrawCommand command =  new WithdrawCommand(memberId);
+        memberService.withdraw(command);
+
+        return ResponseEntity.ok(new WithdrawResponse(true));
     }
 }

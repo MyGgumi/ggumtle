@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.mission.persistence;
 
 import com.ggumtle.ggumtle.mission.domain.MemberMission;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -33,4 +34,9 @@ public interface MemberMissionRepository extends JpaRepository<MemberMission, Lo
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("UPDATE MemberMission mm SET mm.doneCount = 0, mm.state = 'BEFORE_SUCCESS'")
     int initializeMemberMission();
+
+    void deleteAllByMemberId(Long memberId);
+
+    @EntityGraph(attributePaths = {"member", "mission"})
+    List<MemberMission> findByMember_IdAndIsDeletedFalse(Long memberId);
 }

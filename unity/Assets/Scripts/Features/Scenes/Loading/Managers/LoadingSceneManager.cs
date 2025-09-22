@@ -139,7 +139,7 @@ namespace Features.Scenes.Loading.Managers
             _backgroundPanel.style.height = Length.Percent(100);
 
             // 배경색 설정 (어두운 색으로)
-            _backgroundPanel.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 1f); // 어두운 회색
+           // _backgroundPanel.style.backgroundColor = new Color(0.1f, 0.1f, 0.1f, 1f); // 어두운 회색
 
             // 루트의 첫 번째 자식으로 추가 (다른 UI들 뒤에)
             root.Insert(0, _backgroundPanel);

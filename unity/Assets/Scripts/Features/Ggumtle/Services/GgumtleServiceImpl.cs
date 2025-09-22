@@ -22,7 +22,7 @@ namespace Features.Ggumtle.Services
         private readonly IPublisher<GgumtleHoldProgressMessage> _holdProgressPublisher;
         private readonly IPublisher<GgumtleFoodAddedMessage> _foodAddedPublisher;
         private readonly IPublisher<GgumtlePurifiedMessage> _purifiedPublisher;
-        private readonly IPublisher<NotificationMessage> _notificationPublisher;
+        private readonly IPublisher<Features.Notification.Messages.NotificationMessage> _notificationPublisher;
         private readonly IGgumtleNetworkSource _networkSource;
 
         // 네트워크 이벤트 구독자들
@@ -49,7 +49,7 @@ namespace Features.Ggumtle.Services
             IPublisher<GgumtleHoldProgressMessage> holdProgressPublisher,
             IPublisher<GgumtleFoodAddedMessage> foodAddedPublisher,
             IPublisher<GgumtlePurifiedMessage> purifiedPublisher,
-            IPublisher<NotificationMessage> notificationPublisher,
+            IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher,
             IGgumtleNetworkSource networkSource,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
             ISubscriber<GgumtleJellyForceQuitMessage> jellyForceQuitSubscriber,
@@ -272,7 +272,7 @@ namespace Features.Ggumtle.Services
             {
                 // 빛젤리 부족 알림
                 _notificationPublisher.Publish(
-                    new NotificationMessage("빛젤리가 부족합니다!", 2f, NotificationType.Warning)
+                    new Features.Notification.Messages.NotificationMessage("빛젤리가 부족합니다!", 2f, Features.Notification.Models.NotificationType.Warning)
                 );
                 return false;
             }
@@ -569,7 +569,7 @@ namespace Features.Ggumtle.Services
             {
                 // 가짜 꿈틀이인 경우
                 _notificationPublisher.Publish(
-                    new NotificationMessage("가짜 꿈틀이였습니다!", 2f, NotificationType.Info)
+                    new Features.Notification.Messages.NotificationMessage("가짜 꿈틀이였습니다!", 2f, Features.Notification.Models.NotificationType.Info)
                 );
                 UnregisterGgumtle(ggumtleIdStr);
             }
@@ -587,10 +587,10 @@ namespace Features.Ggumtle.Services
 
             CancelHold(ggumtleIdStr);
             _notificationPublisher.Publish(
-                new NotificationMessage(
+                new Features.Notification.Messages.NotificationMessage(
                     $"먹이기가 중단되었습니다. 남은 젤리: {leftJellyCount}",
                     2f,
-                    NotificationType.Warning
+                    Features.Notification.Models.NotificationType.Warning
                 )
             );
         }
@@ -609,7 +609,7 @@ namespace Features.Ggumtle.Services
 
             // 스폰 알림 발행
             _notificationPublisher.Publish(
-                new NotificationMessage($"새로운 꿈틀이가 나타났습니다!", 2f, NotificationType.Info)
+                new Features.Notification.Messages.NotificationMessage($"새로운 꿈틀이가 나타났습니다!", 2f, Features.Notification.Models.NotificationType.Info)
             );
         }
 
@@ -626,10 +626,10 @@ namespace Features.Ggumtle.Services
             {
                 // 성불 알림 발행
                 _notificationPublisher.Publish(
-                    new NotificationMessage(
+                    new Features.Notification.Messages.NotificationMessage(
                         $"{data.ggumtleName}이(가) 성불했습니다!",
                         3f,
-                        NotificationType.Success
+                        Features.Notification.Models.NotificationType.Success
                     )
                 );
 
@@ -655,7 +655,7 @@ namespace Features.Ggumtle.Services
             };
 
             _notificationPublisher.Publish(
-                new NotificationMessage(message, 2f, NotificationType.Warning)
+                new Features.Notification.Messages.NotificationMessage(message, 2f, Features.Notification.Models.NotificationType.Warning)
             );
         }
 
@@ -675,7 +675,7 @@ namespace Features.Ggumtle.Services
             };
 
             _notificationPublisher.Publish(
-                new NotificationMessage(message, 2f, NotificationType.Warning)
+                new Features.Notification.Messages.NotificationMessage(message, 2f, Features.Notification.Models.NotificationType.Warning)
             );
         }
 

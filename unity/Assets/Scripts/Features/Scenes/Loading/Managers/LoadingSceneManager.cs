@@ -159,17 +159,17 @@ namespace Features.Scenes.Loading.Managers
                 var rootObjects = mainScene.GetRootGameObjects();
                 foreach (var rootObj in rootObjects)
                 {
-                    // UniversalHUDController가 있는 GameObject 찾기
-                    var hudController = rootObj.GetComponentInChildren<UniversalHUDController>();
-                    if (hudController != null)
+                    // Features.UI.Views.HUDInitializer가 있는 GameObject 찾기
+                    var hudInitializer = rootObj.GetComponentInChildren<Features.UI.Views.HUDInitializer>();
+                    if (hudInitializer != null)
                     {
-                        var uiDocument = hudController.GetComponent<UIDocument>();
+                        var uiDocument = hudInitializer.GetComponent<UIDocument>();
                         if (uiDocument != null)
                         {
                             // UI는 작동하되 화면에만 안 보이게 함
                             uiDocument.rootVisualElement.style.display = DisplayStyle.None;
                             if (enableDetailedLogs)
-                                Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에서 숨김: {hudController.name}");
+                                Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에서 숨김: {hudInitializer.name}");
                         }
                     }
                 }
@@ -187,17 +187,17 @@ namespace Features.Scenes.Loading.Managers
                 var rootObjects = mainScene.GetRootGameObjects();
                 foreach (var rootObj in rootObjects)
                 {
-                    // UniversalHUDController가 있는 GameObject 찾기
-                    var hudController = rootObj.GetComponentInChildren<UniversalHUDController>();
-                    if (hudController != null)
+                    // Features.UI.Views.HUDInitializer가 있는 GameObject 찾기
+                    var hudInitializer = rootObj.GetComponentInChildren<Features.UI.Views.HUDInitializer>();
+                    if (hudInitializer != null)
                     {
-                        var uiDocument = hudController.GetComponent<UIDocument>();
+                        var uiDocument = hudInitializer.GetComponent<UIDocument>();
                         if (uiDocument != null)
                         {
                             // UI를 화면에 다시 표시
                             uiDocument.rootVisualElement.style.display = DisplayStyle.Flex;
                             if (enableDetailedLogs)
-                                Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에 표시: {hudController.name}");
+                                Debug.Log($"[LoadingSceneManager] Main 씬 UI 화면에 표시: {hudInitializer.name}");
                         }
                     }
                 }

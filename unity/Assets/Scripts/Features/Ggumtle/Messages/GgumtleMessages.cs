@@ -114,34 +114,7 @@ namespace Features.Ggumtle.Messages
         }
     }
 
-    /// <summary>
-    /// 범용 알림 메시지
-    /// </summary>
-    public readonly struct NotificationMessage
-    {
-        public readonly string Text;
-        public readonly float Duration;
-        public readonly NotificationType Type;
-
-        public NotificationMessage(
-            string text,
-            float duration = 2f,
-            NotificationType type = NotificationType.Info
-        )
-        {
-            Text = text;
-            Duration = duration;
-            Type = type;
-        }
-    }
-
-    public enum NotificationType
-    {
-        Info,
-        Warning,
-        Error,
-        Success,
-    }
+    // NotificationMessage와 NotificationType은 Features.Notification.Messages/Models에서 통합 관리
 
     // ===== 네트워크 이벤트 메시지들 =====
 

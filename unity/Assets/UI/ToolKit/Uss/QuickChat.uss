@@ -3,7 +3,7 @@
 .chat-icon-container {
     width: 80px;
     height: 80px;
-    background-image: url("project://database/Assets/UI/ToolKit/Sprites/icon_quick-chat.png?fileID=2800000&guid=&type=3#icon_quick-chat");
+    background-image: url("project://database/Assets/Resources/Sprites/icon_quick-chat.png?fileID=2800000&guid=&type=3#icon_quick-chat");
     background-size: contain;
     margin-right: 20px;
 }

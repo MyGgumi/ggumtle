@@ -44,14 +44,14 @@ public class Mongging {
         this.isDeleted = false;
     }
 
-    public boolean enhance(EnhancePercentage enhancePercentage) {
+    public boolean enhance(EnhanceConfig enhanceConfig) {
         if (level >= 5) {
             throw new GgumtleException(MonggingErrorCode.ALREADY_MAX_LEVEL);
         }
 
-        owner.spend(enhancePercentage.getRequiredCoin());
+        owner.spend(enhanceConfig.getRequiredCoin());
 
-        if (Math.random() < enhancePercentage.getSuccessPercentage()) {
+        if (Math.random() < enhanceConfig.getSuccessPercentage()) {
             level++;
             return true;
         } else {

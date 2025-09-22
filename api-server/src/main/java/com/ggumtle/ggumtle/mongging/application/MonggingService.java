@@ -8,7 +8,8 @@ import com.ggumtle.ggumtle.mongging.application.result.MonggingDetailResult;
 import com.ggumtle.ggumtle.mongging.application.result.MonggingListResult;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
 import com.ggumtle.ggumtle.mongging.domain.MonggingClass;
-import com.ggumtle.ggumtle.mongging.persistence.EnhancePercentageRepository;
+import com.ggumtle.ggumtle.mongging.persistence.EnhanceConfigRepository;
+import com.ggumtle.ggumtle.mongging.persistence.EnhanceStatRepository;
 import com.ggumtle.ggumtle.mongging.persistence.MonggingClassRepository;
 import com.ggumtle.ggumtle.mongging.persistence.MonggingRepository;
 import lombok.AccessLevel;
@@ -26,7 +27,8 @@ import java.util.List;
 public class MonggingService {
     private final MonggingRepository monggingRepository;
     private final MonggingClassRepository monggingClassRepository;
-    private final EnhancePercentageRepository enhancePercentageRepository;
+    private final EnhanceStatRepository enhanceStatRepository;
+    private final EnhanceConfigRepository enhanceConfigRepository;
 
     /**
      * 몽깅이 상세 조회
@@ -45,19 +47,24 @@ public class MonggingService {
             throw new GgumtleException(MonggingErrorCode.NOT_OWNER);
         }
 
-        // 현재 레벨에 따른 강화 수치를 가져옴
-        var currentEnhancePercentage = enhancePercentageRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel())
-                .orElseThrow(() -> new GgumtleException(MonggingErrorCode.ENHANCE_PERCENTAGE_NOT_FOUND));
-
-        // 다음 레벨에 따른 강화 수치를 가져옴 (최대 레벨인 경우 없을 수 있음)
-        var nextEnhancePercentageOpt = enhancePercentageRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel() + 1);
-
-        // 최대 레벨인지 확인
-        if (nextEnhancePercentageOpt.isEmpty()) {
-            return MonggingDetailResult.ofMaxLevel(mongging, currentEnhancePercentage);
+        // 현재 레벨과 다음 레벨 강화 수치를 한 번에 가져옴 (Top-2 쿼리)
+        var enhanceStats = enhanceStatRepository.findTop2ByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel());
+        
+        // 1개 이상의 결과가 없다면 비정상적인 상황
+        if (enhanceStats.isEmpty()) {
+            throw new GgumtleException(MonggingErrorCode.ENHANCE_STATS_NOT_FOUND);
         }
 
-        return MonggingDetailResult.of(mongging, currentEnhancePercentage, nextEnhancePercentageOpt.get());
+        // 1개 결과는 최대 레벨
+        if (enhanceStats.size() == 1) {
+            return MonggingDetailResult.ofMaxLevel(mongging, enhanceStats);
+        }
+
+        // 2개 결과는 다음 레벨이 존재하므로 강화 확률을 가져옴
+        var nextConfig = enhanceConfigRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel() + 1)
+                .orElseThrow(() -> new GgumtleException(MonggingErrorCode.ENHANCE_CONFIG_NOT_FOUND));
+
+        return MonggingDetailResult.of(mongging, enhanceStats, nextConfig);
     }
 
     /**
@@ -93,18 +100,26 @@ public class MonggingService {
             throw new GgumtleException(MonggingErrorCode.NOT_OWNER);
         }
 
-        // 강화 확률 체크
-        var enhancePercentage = enhancePercentageRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel())
-            .orElseThrow(() -> new GgumtleException(MonggingErrorCode.ENHANCE_PERCENTAGE_NOT_FOUND));
+        // 강화 설정 정보 가져옴
+        var enhanceConfig = enhanceConfigRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel() + 1)
+            .orElseThrow(() -> new GgumtleException(MonggingErrorCode.ENHANCE_CONFIG_NOT_FOUND));
+
+        // 현재 레벨 강화 수치 정보 가져옴
+        var enhanceStats = enhanceStatRepository.findTop2ByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel());
+
+        // 1개 이상의 결과가 없다면 비정상적인 상황
+        if (enhanceStats.isEmpty()) {
+            throw new GgumtleException(MonggingErrorCode.ENHANCE_STATS_NOT_FOUND);
+        }
 
         // 강화 확률대로 몽깅이 강화
-        boolean isSuccess = mongging.enhance(enhancePercentage);
+        boolean isSuccess = mongging.enhance(enhanceConfig);
 
         // 성공 및 실패
         if (isSuccess) {
-            return EnhanceMonggingResult.ofSuccess(mongging, enhancePercentage);
+            return EnhanceMonggingResult.ofSuccess(mongging, enhanceStats);
         } else {
-            return EnhanceMonggingResult.ofFail(mongging, enhancePercentage);
+            return EnhanceMonggingResult.ofFail(mongging, enhanceStats);
         }
     }
 }

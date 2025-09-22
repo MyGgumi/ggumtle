@@ -1232,7 +1232,7 @@ public class DreamManager {
         log.info("{}번 드림 종료: 몽깅이 우승 = {}", room.id, isMonggingWin);
 
         // 드림 종료 이벤트 발행
-        applicationEventPublisher.publishEvent(new DreamEndEvent(this.room.id, isMonggingWin));
+        applicationEventPublisher.publishEvent(DreamEndEvent.of(this.room.id, players.values(), isMonggingWin));
     }
 
     private void shutdownThread() {

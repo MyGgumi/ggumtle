@@ -18,10 +18,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Table(
-        name = "enhance_percentage",
-        uniqueConstraints = @UniqueConstraint(name = "uk_enhance_percentage", columnNames = {"level", "mongging_class_id"})
+        name = "enhance_stat",
+        uniqueConstraints = @UniqueConstraint(name = "uk_enhance_stats", columnNames = {"level", "mongging_class_id"})
 )
-public class EnhancePercentage {
+public class EnhanceStat {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,15 +34,6 @@ public class EnhancePercentage {
     @JoinColumn(name = "mongging_class_id", nullable = false)
     private MonggingClass monggingClass;
 
-    @Column(name = "current_percentage", nullable = false)
-    private Double currentPercentage;
-
-    @Column(name = "next_percentage", nullable = false)
-    private Double nextPercentage;
-
-    @Column(name = "required_coin", nullable = false)
-    private Integer requiredCoin;
-
-    @Column(name = "success_percentage", nullable = false)
-    private Double successPercentage;
+    @Column(name = "enhance_percentage", nullable = false)
+    private Double enhancePercentage;
 }

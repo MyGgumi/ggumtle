@@ -13,7 +13,8 @@ public enum MonggingErrorCode implements ErrorCode{
     ALREADY_MAX_LEVEL(HttpStatus.BAD_REQUEST, "MG40002", "이미 최대 레벨입니다."),
 
     MONGGING_NOT_FOUND(HttpStatus.NOT_FOUND, "MG40401", "몽깅이를 찾을 수 없습니다."),
-    ENHANCE_PERCENTAGE_NOT_FOUND(HttpStatus.NOT_FOUND, "MG40402", "강화 확률을 찾을 수 없습니다."),
+    ENHANCE_CONFIG_NOT_FOUND(HttpStatus.NOT_FOUND, "MG40402", "강화 확률을 찾을 수 없습니다."),
+    ENHANCE_STATS_NOT_FOUND(HttpStatus.NOT_FOUND, "MG40403", "강화 스탯을 찾을 수 없습니다.")
     ;
 
     private final HttpStatus httpStatus;

@@ -25,7 +25,7 @@ public record InitializePlayerBody(
             buffer.putLong(player.getId());
 
             buffer.put((byte) (player.getId() == receiverId ? 1 : 0));
-            buffer.put((byte) 1);
+            buffer.put(player instanceof Mongging ? (byte) 1 : (byte) 0);
 
             buffer.putInt(player.getPositions()[player.getCurr()].x);
             buffer.putInt(player.getPositions()[player.getCurr()].y);

@@ -15,17 +15,21 @@ namespace Networks.Factories
 
             var result = buffer.ReadByte();
             var playerSize = buffer.ReadInt();
+            var escapedMonggingCount = buffer.ReadInt();
+
             var playerResults = new List<PlayerResult>();
             
-            // playerSize 개수만큼 (long id, int status) 쌍을 읽어서 List에 추가
+            // playerSize 개수만큼 (long id, int status, int coin) 쌍을 읽어서 List에 추가
             for (int i = 0; i < playerSize; i++)
             {
                 var id = buffer.ReadLong();
                 var status = buffer.ReadInt();
-                playerResults.Add(new PlayerResult(id, status));
+                var coin = buffer.ReadInt();
+
+                playerResults.Add(new PlayerResult(id, status, coin));
             }
 
-            return new GameEndCommand(result, playerSize, playerResults);
+            return new GameEndCommand(result, playerSize, escapedMonggingCount, playerResults);
         }
     }
 }

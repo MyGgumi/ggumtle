@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.init;
 
 import com.ggumtle.ggumtle.room.application.RoomManager;
-import com.ggumtle.ggumtle.room.domain.MonggingStat;
+import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 import com.ggumtle.ggumtle.room.domain.Room;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,11 +20,12 @@ public class RoomCreator {
 
     @EventListener(ApplicationReadyEvent.class)
     public void createTestRoom() {
-        List<MonggingStat> monggingStats = new ArrayList<>();
+        List<PlayerInfo> playerInfos = new ArrayList<>();
         for (int i = 1; i <= 5; i++) {
-            monggingStats.add(
-                    MonggingStat.builder()
+            playerInfos.add(
+                    PlayerInfo.builder()
                             .playerId(i)
+                            .nickname("플레이어" + i)
                             .monggingClassId(0)
                             .additionalHp(0)
                             .additionalTaskSpeed(0)
@@ -33,11 +34,11 @@ public class RoomCreator {
             );
         }
 
-        Room room3 = new Room(-1L, monggingStats.subList(0, 3));
-        Room room4 = new Room(-2L, monggingStats.subList(0, 4));
-        Room room5 = new Room(-3L, monggingStats.subList(0, 5));
-        Room monggingRoom = new Room(-4L, monggingStats.subList(0, 1));
-        Room mongdungRoom = new Room(-5L, monggingStats.subList(0, 1));
+        Room room3 = new Room(-1L, playerInfos.subList(0, 3));
+        Room room4 = new Room(-2L, playerInfos.subList(0, 4));
+        Room room5 = new Room(-3L, playerInfos.subList(0, 5));
+        Room monggingRoom = new Room(-4L, playerInfos.subList(0, 1));
+        Room mongdungRoom = new Room(-5L, playerInfos.subList(0, 1));
 
         roomManager.insertRoom(room3);
         roomManager.insertRoom(room4);

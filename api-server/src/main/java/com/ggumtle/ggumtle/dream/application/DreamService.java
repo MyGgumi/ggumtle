@@ -17,6 +17,9 @@ import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
 import com.ggumtle.ggumtle.messaging.event.EndDreamEvent;
+import com.ggumtle.ggumtle.messaging.payload.RequestRoomPayload;
+import com.ggumtle.ggumtle.mongging.persistence.EnhanceStatRepository;
+import com.ggumtle.ggumtle.mongging.persistence.po.MonggingStatPo;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +34,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -46,6 +48,7 @@ public class DreamService {
     private final RedisTemplate<String, WaitingParty> waitingPartyRedisTemplate;
     private final DreamRepository dreamRepository;
     private final RoomMessageManager roomMessageManager;
+    private final EnhanceStatRepository enhanceStatRepository;
 
     /**
      * 드림을 시작한다
@@ -231,7 +234,9 @@ public class DreamService {
         Dream dream = new Dream(roomRequestId, participants.stream().map(PartyParticipant::getMemberId).toList());
         dreamRepository.save(dream);
 
-        roomMessageManager.sendMessage(dreamServer, roomRequestId, participants);
+        List<MonggingStatPo> pos = enhanceStatRepository.findAllByMonggingIds(participants.stream().map(PartyParticipant::getMonggingId).toList());
+        RequestRoomPayload payload = RequestRoomPayload.of(roomRequestId, pos);
+        roomMessageManager.sendMessage(dreamServer, payload);
     }
 
     private void publishEvent(SocketType socketType, List<Long> memberIds, Object data) {

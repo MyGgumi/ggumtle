@@ -7,7 +7,7 @@ import lombok.Getter;
 public class Player {
     private static final int POSITION_BUFFER_SIZE = 500;
 
-    protected long id;
+    protected final long id;
 
     public final int moveSpeed;
 

@@ -8,6 +8,7 @@ public record RequestRoomMessage(
 ) {
     public record Player(
             Long id,
+            String nickname,
             Long monggingClassId,
             Integer additionalHp,
             Integer additionalTaskSpeed,

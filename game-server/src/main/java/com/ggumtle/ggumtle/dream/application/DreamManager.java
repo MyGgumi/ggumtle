@@ -1353,7 +1353,7 @@ public class DreamManager {
         List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
 
         if (this.room.id == -4) {
-            Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()), this.room.getPlayerStat(playerIds.getFirst()));
+            Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()), this.room.getPlayerInfo(playerIds.getFirst()));
             this.players.put(mongging.getId(), mongging);
         }
         else if (this.room.id == -5) {
@@ -1370,7 +1370,7 @@ public class DreamManager {
                     this.players.put(mongdung.getId(), mongdung);
                     continue;
                 }
-                Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)), this.room.getPlayerStat(playerIds.get(i)));
+                Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)), this.room.getPlayerInfo(playerIds.get(i)));
                 this.players.put(mongging.getId(), mongging);
             }
         }
@@ -1379,7 +1379,7 @@ public class DreamManager {
 
         List<Player> players = this.players.values().stream().toList();
         for (long playerId : playerIds) {
-            Body body = new InitializePlayerBody(players, playerId);
+            Body body = new InitializePlayerBody(playerId, players, this.room.getPlayerInfos());
             Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), body);
             boolean success = room.sendPacket(playerId, packet);
             if (!success) {

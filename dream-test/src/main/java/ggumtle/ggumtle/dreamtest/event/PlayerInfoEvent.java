@@ -14,8 +14,10 @@ public record PlayerInfoEvent(
         int count = buffer.getInt();
         for (int i = 0; i < count; i++) {
             long id = buffer.getLong();
+
             boolean isMine = buffer.get() == 1;
             boolean isMongging = buffer.get() == 1;
+            long classId = buffer.getLong();
 
             int x = buffer.getInt();
             int y = buffer.getInt();
@@ -26,7 +28,14 @@ public record PlayerInfoEvent(
             int healSpeed = buffer.getInt();
             int workSpeed = buffer.getInt();
 
-            Player player = new Player(id, isMongging, x, y, z);
+            int nicknameSize = buffer.getInt();
+            byte[] nicknameBuffer = new byte[nicknameSize];
+            for (int j = 0; j < nicknameSize; j++) {
+                nicknameBuffer[j] = buffer.get();
+            }
+            String nickname = new String(nicknameBuffer);
+
+            Player player = new Player(id, nickname, classId, isMongging, x, y, z);
             players.add(player);
         }
 
@@ -35,6 +44,8 @@ public record PlayerInfoEvent(
 
     public record Player(
             long id,
+            String nickname,
+            long classId,
             boolean isMongging,
             int x,
             int y,

@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.mongging.persistence;
 
 import com.ggumtle.ggumtle.mongging.domain.EnhanceStat;
 import com.ggumtle.ggumtle.mongging.domain.MonggingClass;
+import com.ggumtle.ggumtle.mongging.persistence.po.MonggingStatPo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
@@ -19,4 +20,28 @@ public interface EnhanceStatRepository extends JpaRepository<EnhanceStat, Long> 
         LIMIT 2
     """)
     List<EnhanceStat> findTop2ByMonggingClassAndLevel(MonggingClass monggingClass, Integer level);
+
+    @Query(value = """
+        SELECT new com.ggumtle.ggumtle.mongging.persistence.po.MonggingStatPo(
+                mongging.owner.id,
+                mongging.owner.nickname,
+                mongging.id,
+                mongging.level,
+                es.monggingClass.id,
+                CASE
+                    WHEN es.monggingClass.id = 1 THEN es.monggingClass.baseHeal * es.enhancePercentage
+                    WHEN es.monggingClass.id = 2 THEN es.monggingClass.baseHealth * es.enhancePercentage
+                    WHEN es.monggingClass.id = 3LTHEN es.monggingClass.baseWork * es.enhancePercentage
+                    ELSE 0
+                END
+        )
+        FROM EnhanceStat es
+        JOIN Mongging mongging
+        JOIN FETCH es.monggingClass
+        JOIN FETCH mongging.owner
+        WHERE mongging.id IN :monggingIds
+        AND es.monggingClass.id = mongging.monggingClass.id
+        AND es.level = mongging.level
+    """)
+    List<MonggingStatPo> findAllByMonggingIds(List<Long> monggingIds);
 }

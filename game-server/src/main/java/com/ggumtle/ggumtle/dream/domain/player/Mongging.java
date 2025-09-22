@@ -2,7 +2,7 @@ package com.ggumtle.ggumtle.dream.domain.player;
 
 import com.ggumtle.ggumtle.dream.domain.item.Boxable;
 import com.ggumtle.ggumtle.dream.vo.Position;
-import com.ggumtle.ggumtle.room.domain.MonggingStat;
+import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -36,13 +36,13 @@ public class Mongging extends Player {
 
     public enum Status { ALIVE, KNOCKOUT, DEAD, ESCAPED }
 
-    public Mongging(long id, Position position, MonggingStat monggingStat) {
+    public Mongging(long id, Position position, PlayerInfo playerInfo) {
         super(id, position, BASE_MOVE_SPEED);
 
-        this.classId = monggingStat.monggingClassId;
-        this.maxHp = BASE_HP + monggingStat.additionalHp;
-        this.healSpeed = BASE_HEAL_SPEED + monggingStat.additionalHealSpeed;
-        this.workSpeed = BASE_WORK_SPEED + monggingStat.additionalTaskSpeed;
+        this.classId = playerInfo.monggingClassId;
+        this.maxHp = BASE_HP + playerInfo.additionalHp;
+        this.healSpeed = BASE_HEAL_SPEED + playerInfo.additionalHealSpeed;
+        this.workSpeed = BASE_WORK_SPEED + playerInfo.additionalTaskSpeed;
 
         this.hp = maxHp;
         this.knockOutCount = 0;

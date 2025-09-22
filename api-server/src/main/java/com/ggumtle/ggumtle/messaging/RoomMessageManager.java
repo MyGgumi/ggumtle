@@ -2,10 +2,10 @@ package com.ggumtle.ggumtle.messaging;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ggumtle.ggumtle.dream.domain.DreamServer;
-import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
 import com.ggumtle.ggumtle.messaging.message.CreatedDreamMessage;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
+import com.ggumtle.ggumtle.messaging.payload.RequestRoomPayload;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,8 +13,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.redis.connection.Message;
 import org.springframework.data.redis.connection.MessageListener;
 import org.springframework.stereotype.Component;
-
-import java.util.List;
 
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
@@ -27,9 +25,9 @@ public class RoomMessageManager implements MessageListener {
     private final MessageSender messageSender;
     private final ObjectMapper objectMapper;
 
-    public void sendMessage(DreamServer dreamServer, String requestId, List<PartyParticipant> participants) {
+    public void sendMessage(DreamServer dreamServer, RequestRoomPayload payload) {
         String channel = DREAM_REQUEST_PREFIX + dreamServer.getId();
-        RequestRoomMessage message = RequestRoomMessage.of(requestId, participants);
+        RequestRoomMessage message = RequestRoomMessage.of(payload);
 
         log.info("레디스에 메시지 발행: {} - {}", channel, message);
         messageSender.sendMessage(channel, message);

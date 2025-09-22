@@ -3,7 +3,7 @@ package com.ggumtle.ggumtle.room.application;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
-import com.ggumtle.ggumtle.room.domain.MonggingStat;
+import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.session.Session;
@@ -56,11 +56,12 @@ public class RoomManager {
 
         log.debug("{}번 방 생성: {}", roomId, request);
 
-        List<MonggingStat> monggingStats = new ArrayList<>();
+        List<PlayerInfo> playerInfos = new ArrayList<>();
         for (RequestRoomMessage.Player player : request.players()) {
-            monggingStats.add(
-                    MonggingStat.builder()
+            playerInfos.add(
+                    PlayerInfo.builder()
                             .playerId(player.id())
+                            .nickname(player.nickname())
                             .monggingClassId(player.monggingClassId())
                             .additionalHp(player.additionalHp())
                             .additionalHealSpeed(player.additionalHealSpeed())
@@ -68,7 +69,7 @@ public class RoomManager {
                             .build()
             );
         }
-        Room room = new Room(roomId, monggingStats);
+        Room room = new Room(roomId, playerInfos);
         idToRoom.put(roomId, room);
 
         return room;

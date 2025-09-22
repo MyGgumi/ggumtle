@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.session.Session;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -12,18 +13,18 @@ import java.util.concurrent.CopyOnWriteArraySet;
 public class Room {
 
     public final long id;
-    private final ConcurrentHashMap<Long, MonggingStat> monggingStats;
+    private final ConcurrentHashMap<Long, PlayerInfo> playerInfos;
     private final ConcurrentHashMap<Long, Session> playerSessions;
     private final CopyOnWriteArraySet<Long> sceneChanger;
 
-    public Room(long id, List<MonggingStat> monggingStats) {
+    public Room(long id, List<PlayerInfo> playerInfos) {
         this.id = id;
-        this.monggingStats = new ConcurrentHashMap<>(monggingStats.size());
-        for (MonggingStat monggingStat : monggingStats) {
-            this.monggingStats.put(monggingStat.playerId, monggingStat);
+        this.playerInfos = new ConcurrentHashMap<>(playerInfos.size());
+        for (PlayerInfo playerInfo : playerInfos) {
+            this.playerInfos.put(playerInfo.playerId, playerInfo);
         }
 
-        this.playerSessions = new ConcurrentHashMap<>(monggingStats.size());
+        this.playerSessions = new ConcurrentHashMap<>(playerInfos.size());
         this.sceneChanger = new CopyOnWriteArraySet<>();
     }
 
@@ -32,15 +33,19 @@ public class Room {
     }
 
     public List<Long> getPlayerIds() {
-        return monggingStats.keySet().stream().toList();
+        return playerInfos.keySet().stream().toList();
     }
 
-    public MonggingStat getPlayerStat(long id) {
-        return monggingStats.getOrDefault(id, null);
+    public PlayerInfo getPlayerInfo(long id) {
+        return playerInfos.getOrDefault(id, null);
+    }
+
+    public Map<Long, PlayerInfo> getPlayerInfos() {
+        return Map.copyOf(this.playerInfos);
     }
 
     public int getPlayerSize() {
-        return monggingStats.size();
+        return playerInfos.size();
     }
 
     public synchronized List<Session> getPlayerSessions() {
@@ -49,7 +54,7 @@ public class Room {
 
 
     public int addSession(Session session) {
-        if (!monggingStats.containsKey(session.getMemberId())) {
+        if (!playerInfos.containsKey(session.getMemberId())) {
             log.error("[{}] {}번 사용자는 {}번 방에 들어올 수 없습니다", session.getChannel().id(), session.getMemberId(), this.id);
             return -1;
         }

@@ -1375,8 +1375,7 @@ public class DreamManager {
             }
         }
 
-        log.info("{}번 드림의 플레이어 초기화 종료", room.id);
-        log.debug("{}번 드림의 플레이어: {}", room.id, this.players.values());
+        log.info("{}번 드림의 플레이어 초기화 종료: {}", room.id, this.players.values());
 
         List<Player> players = this.players.values().stream().toList();
         for (long playerId : playerIds) {

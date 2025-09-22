@@ -8,11 +8,13 @@ namespace Networks.Game
     {
         public long id;
         public int status;
+        public int coin;
 
-        public PlayerResult(long id, int status)
+        public PlayerResult(long id, int status, int coin)
         {
             this.id = id;
             this.status = status;
+            this.coin = coin;
         }
     }
 
@@ -22,12 +24,14 @@ namespace Networks.Game
 
         public byte result;
         public int playerSize;
+        public int escapedMonggingCount;
         public List<PlayerResult> playerResults;
 
-        public GameEndCommand(byte result, int playerSize, List<PlayerResult> playerResults)
+        public GameEndCommand(byte result, int playerSize, int escapedMonggingCount, List<PlayerResult> playerResults)
         {
             this.result = result;
             this.playerSize = playerSize;
+            this.escapedMonggingCount = escapedMonggingCount;
             this.playerResults = playerResults;
         }
     }

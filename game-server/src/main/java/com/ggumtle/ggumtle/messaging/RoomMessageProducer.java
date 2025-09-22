@@ -20,7 +20,7 @@ public class RoomMessageProducer {
     @EventListener
     public void produceEndDream(DreamEndEvent event) {
         try {
-            EndDreamMessage message = new EndDreamMessage(event.roomId(), event.isMonggingWin());
+            EndDreamMessage message = EndDreamMessage.from(event);
 
             String json =  objectMapper.writeValueAsString(message);
 

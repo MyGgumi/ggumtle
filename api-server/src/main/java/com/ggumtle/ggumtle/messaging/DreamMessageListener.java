@@ -24,7 +24,7 @@ public class DreamMessageListener implements MessageListener {
             EndDreamMessage endDreamMessage = objectMapper.readValue(message.getBody(), EndDreamMessage.class);
             log.info("게임 종료: {}", endDreamMessage);
 
-            EndDreamEvent event = new EndDreamEvent(endDreamMessage.roomId(), endDreamMessage.isMonggingWin());
+            EndDreamEvent event = EndDreamEvent.from(endDreamMessage);
 
             applicationEventPublisher.publishEvent(event);
         } catch (Exception e) {

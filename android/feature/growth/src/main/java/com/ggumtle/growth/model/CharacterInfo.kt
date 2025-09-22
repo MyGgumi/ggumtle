@@ -1,12 +1,30 @@
 package com.ggumtle.growth.model
 
+import com.ggumtle.domain.model.MonggingClass
+import com.ggumtle.domain.rest.model.growth.response.MonggingDetailResponse
+
 data class CharacterInfo(
-    val name: String,
-    val level: Int,
-    val currentStat: Float,
-    val nextLevelStat: Float,
-    val enhancementCost: Int,
-    val successRate: Int,
-    val progressRatio: Float,
-    val statisticName: String = "치료속도" // 스탯 이름 (치료속도, 공격속도 등)
+    val id: Long,
+    val monggingClass: MonggingClass,
+    val nowLevel: Int,
+    val nowPercentage: Double,
+    val isMaxLevel: Boolean,
+    val afterLevel: Int? = null,
+    val afterPercentage: Double? = null,
+    val needCoin: Int? = null,
+    val successPercentage: Int? = null
 )
+
+fun MonggingDetailResponse.toCharacterInfo(): CharacterInfo {
+    return CharacterInfo(
+        id = this.id,
+        monggingClass = MonggingClass.fromType(this.monggingClass),
+        nowLevel = this.nowLevel,
+        nowPercentage = this.nowPercentage,
+        isMaxLevel = this.isMaxLevel,
+        afterLevel = this.afterLevel,
+        afterPercentage = this.afterPercentage,
+        needCoin = this.needCoin,
+        successPercentage = this.successPercentage
+    )
+}

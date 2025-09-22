@@ -16,6 +16,9 @@ class FrameCallback(
     private val arCore: ArCore,
     private val doFrame: (frame: Frame) -> Unit,
 ) : Choreographer.FrameCallback {
+
+    @Volatile
+    private var isActive = false
     companion object {
         private const val MAX_FRAMES_PER_SECOND: Long = 60
     }
@@ -32,6 +35,10 @@ class FrameCallback(
     private var frameRate: FrameRate = FrameRate.Full
 
     override fun doFrame(frameTimeNanos: Long) {
+        if (!isActive) {
+            return
+        }
+
         choreographer.postFrameCallback(this)
 
         // 최대 FPS로 제한
@@ -44,36 +51,61 @@ class FrameCallback(
 
         lastTick = tick
 
-        // 지터 가능성을 줄이기 위해 지난 틱의 프레임 사용 (레이턴시 증가)
-        if (// AR 프레임이 있을 때만 렌더링
-            arCore.timestamp != 0L &&
-            arCore.filament.uiHelper.isReadyToRender &&
-            // 너무 빠르게 GPU에 프레임을 전송하고 있음을 의미
-            arCore.filament.renderer.beginFrame(arCore.filament.swapChain!!, frameTimeNanos)
-        ) {
-            arCore.filament.timestamp = arCore.timestamp
-            arCore.filament.renderer.render(arCore.filament.view)
-            arCore.filament.renderer.endFrame()
-        }
+        try {
+            // 지터 가능성을 줄이기 위해 지난 틱의 프레임 사용 (레이턴시 증가)
+            if (// AR 프레임이 있을 때만 렌더링
+                arCore.timestamp != 0L &&
+                arCore.filament.uiHelper.isReadyToRender &&
+                // 너무 빠르게 GPU에 프레임을 전송하고 있음을 의미
+                arCore.filament.renderer.beginFrame(arCore.filament.swapChain!!, frameTimeNanos)
+            ) {
+                arCore.filament.timestamp = arCore.timestamp
+                arCore.filament.renderer.render(arCore.filament.view)
+                arCore.filament.renderer.endFrame()
+            }
 
-        val frame = arCore.session.update()
+            // AR 세션이 유효한지 확인
+            val session = arCore.session
+            if (session == null) {
+                android.util.Log.w("FrameCallback", "AR session is null, stopping frame callback")
+                stop()
+                return
+            }
 
-        // 시작 시 카메라 시스템이 즉시 실제 이미지를 생성하지 않을 수 있음
-        // 이러한 일반적인 경우 timestamp = 0인 프레임이 반환됨
-        if (frame.timestamp != 0L &&
-            frame.timestamp != arCore.timestamp
-        ) {
-            arCore.timestamp = frame.timestamp
-            arCore.update(frame, arCore.filament)
-            doFrame(frame)
+            val frame = session.update()
+
+            // 시작 시 카메라 시스템이 즉시 실제 이미지를 생성하지 않을 수 있음
+            // 이러한 일반적인 경우 timestamp = 0인 프레임이 반환됨
+            if (frame.timestamp != 0L &&
+                frame.timestamp != arCore.timestamp
+            ) {
+                arCore.timestamp = frame.timestamp
+                arCore.update(frame, arCore.filament)
+                doFrame(frame)
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("FrameCallback", "Error in frame processing: ${e.message}", e)
+            // 심각한 오류 시 프레임 콜백 중지
+            if (e is IllegalArgumentException || e is IllegalStateException) {
+                android.util.Log.e("FrameCallback", "Critical error detected, stopping frame callback")
+                stop()
+            }
         }
     }
 
     fun start() {
-        choreographer.postFrameCallback(this)
+        if (!isActive) {
+            isActive = true
+            choreographer.postFrameCallback(this)
+            android.util.Log.d("FrameCallback", "Frame callback started")
+        }
     }
 
     fun stop() {
-        choreographer.removeFrameCallback(this)
+        if (isActive) {
+            isActive = false
+            choreographer.removeFrameCallback(this)
+            android.util.Log.d("FrameCallback", "Frame callback stopped")
+        }
     }
 }

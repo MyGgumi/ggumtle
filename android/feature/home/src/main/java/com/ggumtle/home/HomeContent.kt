@@ -11,7 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.ggumtle.home.component.*
 import com.ggumtle.home.model.UserProfile
-import com.example.domain.websocket.model.PartyMember
+import com.ggumtle.domain.websocket.model.PartyMember
 import com.ggumtle.core.designsystem.R
 
 @Composable
@@ -151,65 +151,4 @@ fun HomeContent(
             )
         }
     }
-}
-
-@Preview(showBackground = true, backgroundColor = 0xFF000000)
-@Composable
-fun HomeContentPreview() {
-    val sampleState = HomeContract.State(
-        userProfile = UserProfile(
-            id = 1L,
-            nickname = "플레이어1",
-            profileImageUrl = null
-        ),
-        partyMembers = listOf(
-            PartyMember(
-                id = 1L,
-                nickname = "플레이어1",
-                profileImageUrl = null,
-                isReady = false,
-                isLeader = true
-            ),
-            PartyMember(
-                id = 2L,
-                nickname = "플레이어2",
-                profileImageUrl = null,
-                isReady = true,
-                isLeader = false
-            )
-        ),
-        isPartyLeader = true,
-        canStartGame = true,
-        isReady = false,
-        coin = 9999,
-        isMenuExpanded = false
-    )
-
-    HomeContent(
-        state = sampleState,
-        onProfileClick = {},
-        onDismissProfileDialog = {},
-        onEditNicknameClick = {},
-        onNicknameTextChange = {},
-        onSaveNickname = {},
-        onCancelNicknameEdit = {},
-        onSettingsClick = {},
-        onDismissSettingsDialog = {},
-        onLogout = {},
-        onDeleteAccount = {},
-        onInviteFriendsClick = {},
-        onDismissInviteFriendsDialog = {},
-        onInviteFriend = {},
-        onToggleReady = {},
-        onStartGame = {},
-        onCancelGameSearch = {},
-        onMenuTabClick = {},
-        onInviteListClick = {},
-        onLeaveParty = {},
-        onDismissInviteRequestsDialog = {},
-        onAcceptInvite = {},
-        onDeclineInvite = {},
-        onSocialClick = {},
-        onGrowthClick = {}
-    )
 }

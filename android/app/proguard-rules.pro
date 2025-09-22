@@ -20,7 +20,7 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keep class com.example.app.** { *; }
+-keep class com.ggumtle.app.** { *; }
 
 # Filament
 -keep class com.google.android.filament.** { *; }

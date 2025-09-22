@@ -1,6 +1,9 @@
 package com.ggumtle.ggumtle.navigation
 
+import android.Manifest
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.compose.NavHost
@@ -9,8 +12,7 @@ import androidx.navigation.compose.rememberNavController
 import com.ggumtle.auth.LoginRoute
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.datastore.LogoutReason
-import com.example.domain.unity.UnitySendManager
-import com.ggumtle.ggumtle.MainActivity
+import com.ggumtle.domain.unity.UnitySendManager
 import com.ggumtle.startup.StartUpRoute
 import com.ggumtle.home.HomeRoute
 import com.ggumtle.social.SocialRoute
@@ -93,6 +95,20 @@ fun AppNavigation(
         }
 
         composable<GrowthRoute>{
+            val cameraPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                if (isGranted) {
+                    hideUnity {
+                        navController.navigate(MissionRoute) {
+                            popUpTo(GrowthRoute) { inclusive = true }
+                        }
+                    }
+                } else {
+                    Toast.makeText(context, "카메라 권한이 필요합니다", Toast.LENGTH_SHORT).show()
+                }
+            }
+
             GrowthRoute(
                 onNavigateToHome = {
                     navController.navigate(HomeRoute) {
@@ -100,11 +116,7 @@ fun AppNavigation(
                     }
                 },
                 onNavigateToMission = {
-                    hideUnity{
-                        navController.navigate(MissionRoute){
-                            popUpTo(GrowthRoute) { inclusive = true }
-                        }
-                    }
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             )
         }

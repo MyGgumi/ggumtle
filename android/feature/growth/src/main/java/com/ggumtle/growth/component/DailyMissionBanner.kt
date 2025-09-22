@@ -11,7 +11,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,7 +61,7 @@ fun DailyMissionBanner(
                 )
                 Text(
                     text = dailyMission?.let {
-                        "완료까지 ${it.remainingMissions}개 남음 (${it.completedMissions}/${it.totalMissions})"
+                        "완료까지 ${it.remainingMissionsCount}개 남음 (${it.completedMissionsCount}/${it.totalMissionsCount})"
                     } ?: "미션 정보 없음",
                     color = BrandColors.PurpleLight,
                     style = MaterialTheme.typography.bodyMedium
@@ -76,8 +75,8 @@ fun DailyMissionBanner(
                     .height(16.dp),
                 contentAlignment = Alignment.Center
             ) {
-                val totalMissions = dailyMission?.totalMissions ?: 5
-                val completedMissions = dailyMission?.completedMissions ?: 0
+                val totalMissions = dailyMission?.totalMissionsCount ?: 5
+                val completedMissions = dailyMission?.completedMissionsCount ?: 0
 
                 // 배경 선
                 Canvas(
@@ -153,8 +152,10 @@ fun DailyMissionBanner(
 fun DailyMissionBannerPreview() {
     DailyMissionBanner(
         dailyMission = DailyMission(
-            totalMissions = 5,
-            completedMissions = 3
+            totalMissionsCount = 5,
+            completedMissionsCount = 3,
+            remainingMissionsCount = 2,
+            afterRewordMissionsCount = 0
         ),
         onClick = {}
     )

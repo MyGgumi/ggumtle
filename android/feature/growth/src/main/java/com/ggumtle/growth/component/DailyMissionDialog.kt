@@ -16,19 +16,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
-import androidx.compose.ui.unit.offset
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.zIndex
 import android.graphics.BlurMaskFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -39,16 +34,19 @@ import androidx.compose.ui.unit.sp
 import com.ggumtle.core.designsystem.R
 import com.ggumtle.designsystem.theme.AppGradients
 import com.ggumtle.designsystem.theme.BrandColors
-import com.ggumtle.growth.model.Mission
+import com.ggumtle.domain.rest.model.mission.response.Mission
+import com.ggumtle.growth.model.MissionState
 
 @Composable
 fun DailyMissionDialog(
     isVisible: Boolean,
     missions: List<Mission>,
-    completedCount: Int,
     totalCount: Int,
-    onDismiss: () -> Unit,
+    completedCount: Int,
+    remainingCount: Int,
+    afterRewardCount: Int,
     onClaimReward: (Mission) -> Unit,
+    onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     AnimatedVisibility(
@@ -108,7 +106,7 @@ fun DailyMissionDialog(
 
                     // 완료 현황
                     Text(
-                        text = "완료까지 ${totalCount - completedCount}개 남음 ($completedCount/$totalCount)",
+                        text = "완료까지 ${remainingCount}개 남음 ($completedCount/$totalCount)",
                         color = BrandColors.PurpleLight,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -221,13 +219,16 @@ fun DailyMissionDialog(
 
                     // 미션 목록 (정렬: 보상받기 -> 미완료 -> 완료됨)
                     val sortedMissions = missions.sortedWith { mission1, mission2 ->
+                        val state1 = MissionState.fromString(mission1.state)
+                        val state2 = MissionState.fromString(mission2.state)
+
                         when {
-                            // 보상받기 가능한 미션이 최상단
-                            mission1.isCompleted && !mission1.isRewarded && !(mission2.isCompleted && !mission2.isRewarded) -> -1
-                            mission2.isCompleted && !mission2.isRewarded && !(mission1.isCompleted && !mission1.isRewarded) -> 1
-                            // 미완료 미션이 중간
-                            !mission1.isCompleted && mission2.isCompleted && mission2.isRewarded -> -1
-                            !mission2.isCompleted && mission1.isCompleted && mission1.isRewarded -> 1
+                            // 보상받기 가능한 미션이 최상단 (SUCCESS)
+                            state1 == MissionState.SUCCESS && state2 != MissionState.SUCCESS -> -1
+                            state2 == MissionState.SUCCESS && state1 != MissionState.SUCCESS -> 1
+                            // 미완료 미션이 중간 (BEFORE_SUCCESS)
+                            state1 == MissionState.BEFORE_SUCCESS && state2 == MissionState.AFTER_REWARD -> -1
+                            state2 == MissionState.BEFORE_SUCCESS && state1 == MissionState.AFTER_REWARD -> 1
                             else -> 0
                         }
                     }
@@ -314,7 +315,7 @@ private fun MissionItem(
                 )
                 .border(
                     width = 1.dp,
-                    color = if (mission.isCompleted && mission.isRewarded) Color.Transparent else BrandColors.PurpleLight.copy(alpha = 0.5f),
+                    color = if (MissionState.fromString(mission.state) == MissionState.AFTER_REWARD) Color.Transparent else BrandColors.PurpleLight.copy(alpha = 0.5f),
                     shape = RoundedCornerShape(12.dp)
                 )
                 .padding(16.dp)
@@ -328,110 +329,108 @@ private fun MissionItem(
                 modifier = Modifier.weight(1f)
             ) {
                 Text(
-                    text = mission.title,
-                    color = if (mission.isCompleted && mission.isRewarded) Color.White.copy(alpha = 0.3f) else Color.White,
+                    text = mission.name,
+                    color = if (MissionState.fromString(mission.state) == MissionState.AFTER_REWARD) Color.White.copy(alpha = 0.3f) else Color.White,
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Medium,
-                    textDecoration = if (mission.isCompleted && mission.isRewarded) TextDecoration.LineThrough else TextDecoration.None
+                    textDecoration = if (MissionState.fromString(mission.state) == MissionState.AFTER_REWARD) TextDecoration.LineThrough else TextDecoration.None
                 )
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                if (mission.isCompleted && mission.isRewarded) {
-                    // 보상받기 완료 - PurpleLight
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .background(
-                                BrandColors.PurpleLight.copy(alpha = 0.3f),
-                                RoundedCornerShape(2.dp)
-                            )
-                    )
-                } else if (mission.isCompleted) {
-                    // 완료했지만 보상 안받음 - 그라데이션
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .background(
-                                brush = AppGradients.Primary,
-                                shape = RoundedCornerShape(2.dp)
-                            )
-                    )
-                } else {
-                    // 미완료 - PurpleDark
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(4.dp)
-                            .background(
-                                BrandColors.PurpleDark,
-                                RoundedCornerShape(2.dp)
-                            )
-                    )
+                val missionState = MissionState.fromString(mission.state)
+                when (missionState) {
+                    MissionState.AFTER_REWARD -> {
+                        // 보상받기 완료 - PurpleLight
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .background(
+                                    BrandColors.PurpleLight.copy(alpha = 0.3f),
+                                    RoundedCornerShape(2.dp)
+                                )
+                        )
+                    }
+                    MissionState.SUCCESS -> {
+                        // 완료했지만 보상 안받음 - 그라데이션
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .background(
+                                    brush = AppGradients.Primary,
+                                    shape = RoundedCornerShape(2.dp)
+                                )
+                        )
+                    }
+                    MissionState.BEFORE_SUCCESS -> {
+                        // 미완료 - PurpleDark
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(4.dp)
+                                .background(
+                                    BrandColors.PurpleDark,
+                                    RoundedCornerShape(2.dp)
+                                )
+                        )
+                    }
                 }
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             // 보상/상태
-            if (mission.isCompleted && !mission.isRewarded) {
-                var isClicked by remember { mutableStateOf(false) }
+            val missionState = MissionState.fromString(mission.state)
+            when (missionState) {
+                MissionState.SUCCESS -> {
+                    var isClicked by remember { mutableStateOf(false) }
 
-                // 받기 버튼
-                Box(
-                    modifier = Modifier
-                        .background(
-                            AppGradients.Primary,
-                            RoundedCornerShape(8.dp)
+                    // 받기 버튼
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                AppGradients.Primary,
+                                RoundedCornerShape(8.dp)
+                            )
+                            .clickable {
+                                isClicked = true
+                                onClaimReward()
+                            }
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "받기",
+                            color = Color.White,
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.Bold
                         )
-                        .clickable {
-                            isClicked = true
-                            onClaimReward()
-                        }
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "받기",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = FontWeight.Bold
-                    )
+                    }
                 }
-
-            } else if (mission.isCompleted && mission.isRewarded) {
-                // 완료 체크
-                Box(
-                    modifier = Modifier
-                        .background(
-                            BrandColors.PurpleDark.copy(alpha = 0.3f),
-                            RoundedCornerShape(8.dp)
+                MissionState.AFTER_REWARD -> {
+                    // 완료 체크
+                    Box(
+                        modifier = Modifier
+                            .background(
+                                BrandColors.PurpleDark.copy(alpha = 0.3f),
+                                RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Text(
+                            text = "✓ 완료",
+                            color = BrandColors.PurpleLight.copy(alpha = 0.3f),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold
                         )
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Text(
-                        text = "✓ 완료",
-                        color = BrandColors.PurpleLight.copy(alpha = 0.3f),
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
+                    }
                 }
-            } else {
-                // 보상 표시
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_dream_coin),
-                        contentDescription = "Dream Coin",
-                        modifier = Modifier.size(24.dp)
-                    )
+                MissionState.BEFORE_SUCCESS -> {
+                    // 진행도 표시 (현재진행/목표)
                     Text(
-                        text = "+${mission.reward}",
-                        color = BrandColors.Mint,
+                        text = "${mission.doneCount}/${mission.requiredCount}",
+                        color = BrandColors.PurpleLight,
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -440,8 +439,8 @@ private fun MissionItem(
         }
     }
 
-        // 말풍선을 박스 밖에 별도로 배치
-        if (mission.isCompleted && !mission.isRewarded) {
+        // 말풍선을 박스 밖에 별도로 배치 (SUCCESS 상태일 때만)
+        if (MissionState.fromString(mission.state) == MissionState.SUCCESS) {
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterEnd)
@@ -468,7 +467,7 @@ private fun MissionItem(
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "+${mission.reward}",
+                            text = "보상받기!",
                             color = BrandColors.Mint,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold
@@ -506,47 +505,54 @@ private fun MissionItem(
 fun DailyMissionDialogPreview() {
     val sampleMissions = listOf(
         Mission(
-            id = "1",
-            title = "몽깅이와 사진찍기",
-            reward = 100,
-            isCompleted = true,
-            isRewarded = false
+            memberMissionId = 1L,
+            name = "몽깅이와 사진찍기",
+            description = "AR에서 몽깅이와 사진을 찍어보세요",
+            requiredCount = 1,
+            doneCount = 1,
+            state = "SUCCESS"
         ),
         Mission(
-            id = "2",
-            title = "악몽 1회 탈출",
-            reward = 100,
-            isCompleted = true,
-            isRewarded = true
+            memberMissionId = 2L,
+            name = "악몽 1회 탈출",
+            description = "악몽에서 성공적으로 탈출하세요",
+            requiredCount = 1,
+            doneCount = 1,
+            state = "AFTER_REWARD"
         ),
         Mission(
-            id = "3",
-            title = "친구에게 '좋은 꿈' 보내기",
-            reward = 50,
-            isCompleted = false,
-            isRewarded = false
+            memberMissionId = 3L,
+            name = "친구에게 '좋은 꿈' 보내기",
+            description = "친구에게 좋은 꿈을 선물하세요",
+            requiredCount = 1,
+            doneCount = 0,
+            state = "BEFORE_SUCCESS"
         ),
         Mission(
-            id = "4",
-            title = "몽깅이 쓰다듬기",
-            reward = 50,
-            isCompleted = true,
-            isRewarded = true
+            memberMissionId = 4L,
+            name = "몽깅이 쓰다듬기",
+            description = "몽깅이를 3번 쓰다듬어 주세요",
+            requiredCount = 3,
+            doneCount = 1,
+            state = "BEFORE_SUCCESS"
         ),
         Mission(
-            id = "5",
-            title = "몽깅이 밥주기",
-            reward = 75,
-            isCompleted = false,
-            isRewarded = false
+            memberMissionId = 5L,
+            name = "몽깅이 밥주기",
+            description = "몽깅이에게 맛있는 밥을 주세요",
+            requiredCount = 1,
+            doneCount = 1,
+            state = "SUCCESS"
         )
     )
 
     DailyMissionDialog(
         isVisible = true,
         missions = sampleMissions,
-        completedCount = 3,
         totalCount = 5,
+        completedCount = 3,
+        remainingCount = 2,
+        afterRewardCount = 1,
         onDismiss = {},
         onClaimReward = {}
     )

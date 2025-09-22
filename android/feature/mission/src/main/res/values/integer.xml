@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <integer name="tap_event_milliseconds" tools:ignore="ResourceName">200</integer>
+    <integer name="show_hand_motion_timeout_seconds" tools:ignore="ResourceName">2</integer>
+</resources>

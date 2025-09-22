@@ -18,8 +18,8 @@ import com.ggumtle.designsystem.component.GlobalNotificationOverlay
 import com.ggumtle.designsystem.theme.AppTheme
 import com.ggumtle.domain.manager.GlobalInviteManager
 import com.ggumtle.domain.model.InviteNotification
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.unity.UnityStartupObserveManager
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.UnityStartupObserveManager
 import com.ggumtle.ggumtle.navigation.AppNavigation
 import com.ggumtle.ggumtle.unity.UnitySendManagerImpl
 import com.unity3d.player.UnityPlayer
@@ -37,19 +37,19 @@ class MainActivity : UnityPlayerGameActivity() {
 
     @Inject
     lateinit var authManager: AuthManager
-
     @Inject
     lateinit var unitySendManager: UnitySendManager
-
     @Inject
     lateinit var unityStartupObserveManager: UnityStartupObserveManager
-
     @Inject
     lateinit var globalInviteManager: GlobalInviteManager
 
     //todo 유니티 스크립트 수정 후 삭제 필요
     @JvmField
     val isFinishing = false
+
+    // Unity SurfaceView 캐시
+    private var unitySurfaceViewCache: SurfaceView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +87,7 @@ class MainActivity : UnityPlayerGameActivity() {
                                     authManager = authManager,
                                     unitySendManager = unitySendManager,
                                     showUnity = ::showUnity,
-                                    hideUnity = ::hideUnity,
+                                    hideUnity = ::hideUnity
                                 )
                             }
                         )
@@ -167,9 +167,6 @@ class MainActivity : UnityPlayerGameActivity() {
             // TODO: 인게임 로딩 완료 업데이트
         }
     }
-
-    // Unity SurfaceView 캐시
-    private var unitySurfaceViewCache: SurfaceView? = null
 
     // ARCore 시작할 때
     fun hideUnity(onComplete: () -> Unit) {

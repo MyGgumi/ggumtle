@@ -35,7 +35,7 @@ import androidx.compose.foundation.border
 @Composable
 fun EnhanceSuccessDialog(
     isVisible: Boolean,
-    nextSuccessRate: Int,
+    nextSuccessRate: Int = 1,
     currentLevel: Int = 4,
     nextLevel: Int = 5,
     currentStat: Float = 1.2f,

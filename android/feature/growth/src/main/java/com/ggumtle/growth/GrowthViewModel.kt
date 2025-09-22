@@ -1,14 +1,18 @@
 package com.ggumtle.growth
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.example.domain.unity.UnitySendManager
+import com.ggumtle.domain.unity.UnitySendManager
 import com.ggumtle.designsystem.dialog.DialogState
-import com.ggumtle.domain.unity.model.UnityMethod
-import com.ggumtle.domain.unity.model.UnityTarget
+import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.rest.usecase.growth.EnhanceMonggingUseCase
+import com.ggumtle.domain.rest.usecase.growth.GetMonggingDetailUseCase
+import com.ggumtle.domain.rest.usecase.growth.GetMonggingListUseCase
+import com.ggumtle.domain.rest.usecase.member.GetMemberCoinUseCase
+import com.ggumtle.domain.rest.usecase.mission.GetMissionListUseCase
+import com.ggumtle.growth.model.toCharacterInfo
+import com.ggumtle.growth.model.toDailyMission
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
 import org.orbitmvi.orbit.syntax.simple.intent
@@ -16,16 +20,81 @@ import org.orbitmvi.orbit.syntax.simple.postSideEffect
 import org.orbitmvi.orbit.syntax.simple.reduce
 import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
-import kotlin.random.Random
+import kotlin.let
 
 @HiltViewModel
 class GrowthViewModel @Inject constructor(
-    private val unitySendManager: UnitySendManager
+    private val unitySendManager: UnitySendManager,
+    private val getMemberCoinUseCase: GetMemberCoinUseCase,
+    private val getMonggingListUseCase: GetMonggingListUseCase,
+    private val getMonggingDetailUseCase: GetMonggingDetailUseCase,
+    private val enhanceMonggingUseCase: EnhanceMonggingUseCase,
+    private val getMissionListUseCase: GetMissionListUseCase
 ) : ViewModel(), ContainerHost<GrowthContract.State, GrowthContract.SideEffect> {
 
     override val container: Container<GrowthContract.State, GrowthContract.SideEffect> =
         container(GrowthContract.State())
 
+    init {
+        loadCoin()
+        loadMyMonggingData()
+        loadMission()
+    }
+
+    private fun loadMission() = intent {
+        getMissionListUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    reduce {
+                        state.copy(
+                            dailyMission = resource.data.toDailyMission()
+                        )
+                    }
+                }
+                is Resource.Failure -> reduce { state.copy(isLoading = false) }
+            }
+        }
+    }
+
+    // 내 몽깅이 정보 조회
+    fun loadMyMonggingData() = intent {
+        getMonggingListUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    resource.data.monggings.forEach {
+                        getMonggingDetailUseCase.invoke(it.id).collect { resource ->
+                            when (resource) {
+                                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                                is Resource.Success -> {
+                                    val monggingDetail = resource.data.toCharacterInfo()
+                                    reduce { state.copy(myCharacters = state.myCharacters + monggingDetail) }
+                                }
+
+                                is Resource.Failure -> reduce { state.copy(isLoading = false) }
+                            }
+                        }
+                    }
+                }
+
+                is Resource.Failure -> reduce { state.copy(isLoading = false) }
+            }
+        }
+    }
+
+    // 코인 정보 조회
+    fun loadCoin() = intent {
+        getMemberCoinUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> reduce { state.copy(dreamCoin = resource.data.coin) }
+                is Resource.Failure -> reduce { state.copy(isLoading = false) }
+            }
+        }
+    }
+
+    // 대기방으로 돌아가기
     fun onBackClick() = intent {
         reduce { state.copy(isNavigating = true) }
         unitySendManager.goToHomeFromGrowth()
@@ -33,88 +102,46 @@ class GrowthViewModel @Inject constructor(
         postSideEffect(GrowthContract.SideEffect.NavigateToHome)
     }
 
-    fun onARClick() = intent {
-        postSideEffect(GrowthContract.SideEffect.NavigateToAR)
-    }
+    // AR 화면으로 이동
+    fun onARClick() = intent { postSideEffect(GrowthContract.SideEffect.NavigateToAR) }
 
 
-    fun onCharacterSwipe(index: Int) = intent {
-        //캐릭터 선택
+    // 육성 캐릭터 변경
+    fun onCharacterSwipe(index: Int, isNext: Boolean) = intent {
+        if (isNext) unitySendManager.changeGrowthCharacterTypeNext()
+        else unitySendManager.changeGrowthCharacterTypePrevious()
         reduce { state.copy(selectedCharacterIndex = index) }
     }
 
+    // 강화
     fun onEnhanceClick() = intent {
-        val currentCharacter = state.characters.getOrNull(state.selectedCharacterIndex)
+        val currentCharacter = state.myCharacters.getOrNull(state.selectedCharacterIndex)
+
         currentCharacter?.let {
-            if (state.dreamCoin >= it.enhancementCost) {
-                // 코인 차감
-                reduce {
-                    state.copy(
-                        dreamCoin = state.dreamCoin - it.enhancementCost,
-                        isEnhanceButtonEnabled = false
-                    )
-                }
+            enhanceMonggingUseCase.invoke(it.id).collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                    is Resource.Success -> {
+                        when (resource.data.isSuccess) {
+                            true -> {
+                                unitySendManager.playEnhanceSuccessEffect()
+                                delay(6600)
+                            }
 
-                // TODO: 서버에서 강화 결과를 받아올 때 이 로직을 서버 응답으로 대체
-                // 현재는 로컬에서 랜덤으로 성공/실패 결정
-                performEnhancement(it.successRate)
-            } else {
-                postSideEffect(GrowthContract.SideEffect.ShowToast("꿈코인이 부족합니다"))
-            }
-        }
-    }
+                            false -> {
+                                unitySendManager.playEnhanceFailEffect()
+                                delay(3600)
+                                reduce { state.copy(isShowingEnhanceFailure = true) }
+                                delay(2000)
+                                reduce { state.copy(isShowingEnhanceFailure = false) }
+                            }
+                        }
+                    }
 
-    private fun performEnhancement(successRate: Int) = intent {
-
-        // TODO: 서버 API 호출하여 강화 결과 받기
-        // val result = enhancementRepository.enhance(characterId, ...)
-
-        // 현재는 로컬 랜덤으로 처리
-        val isSuccess = Random.nextInt(100) < successRate
-
-        if (isSuccess) {
-            unitySendManager.playEnhanceSuccessEffect()
-            delay(6600)
-            // 캐릭터 정보 업데이트 (레벨업, 스탯 증가, 성공확률 감소)
-            val currentCharacter = state.characters.getOrNull(state.selectedCharacterIndex)
-            currentCharacter?.let { character ->
-                // 강화 전 정보 저장
-                // TODO: 서버에서 받을 업데이트된 캐릭터 정보
-                // val updatedCharacter = enhancementRepository.getUpdatedCharacter(characterId)
-
-                // 현재는 로컬에서 계산
-                val updatedCharacter = character.copy(
-                    level = character.level + 1,
-                    currentStat = character.nextLevelStat,
-                    nextLevelStat = character.nextLevelStat + 0.05f, // 다음 레벨 스탯
-                    successRate = maxOf(10, character.successRate - 5), // 성공확률 5% 감소 (최소 10%)
-                    enhancementCost = (character.enhancementCost * 1.5).toInt() // 강화비용 1.5배 증가
-                )
-
-                val updatedCharacters = state.characters.toMutableList()
-                updatedCharacters[state.selectedCharacterIndex] = updatedCharacter
-
-                //강화 성공
-                reduce {
-                    state.copy(
-                        characters = updatedCharacters,
-                        isShowingEnhanceSuccess = true,
-                        previousCharacterInfo = character // 강화 전 정보 저장
-                    )
+                    is Resource.Failure -> reduce { state.copy(isLoading = false) }
                 }
             }
-        } else {
-            unitySendManager.playEnhanceFailEffect()
-            delay(3600)
-            // 강화 실패 오버레이 표시
-            reduce { state.copy(isShowingEnhanceFailure = true) }
-
-            // 강화 실패 오버레이 자동 사라짐
-            delay(2000)
-            reduce { state.copy(isShowingEnhanceFailure = false) }
-
         }
-
     }
 
     //다이얼로그 숨기기
@@ -138,32 +165,7 @@ class GrowthViewModel @Inject constructor(
     }
 
     //미션 보상 받기
-    fun claimMissionReward(missionId: String) = intent {
-        val updatedMissions = state.dailyMission.missions.map { mission ->
-            if (mission.id == missionId && mission.isCompleted && !mission.isRewarded) {
-                mission.copy(isRewarded = true)
-            } else {
-                mission
-            }
-        }
+    fun claimMissionReward(missionId: Long) = intent {
 
-        val rewardedMission = state.dailyMission.missions.find { it.id == missionId }
-        rewardedMission?.let {
-            // 완료된 미션 수 계산 (보상까지 받은 미션)
-            val newCompletedCount =
-                updatedMissions.count { mission -> mission.isCompleted && mission.isRewarded }
-
-            // 보상 지급
-            reduce {
-                state.copy(
-                    dreamCoin = state.dreamCoin + it.reward,
-                    dailyMission = state.dailyMission.copy(
-                        missions = updatedMissions,
-                        completedMissions = newCompletedCount
-                    )
-                )
-            }
-            postSideEffect(GrowthContract.SideEffect.ShowToast("${it.reward} 꿈코인을 받았습니다!"))
-        }
     }
 }

@@ -1,0 +1,14 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/ToolKit/LoadingBackGround.uss?fileID=7433441132597879392&amp;guid=681c4ce88c318c847939761e6122eb4e&amp;type=3#LoadingBackGround" />
+    <ui:VisualElement name="Root" class="root-container" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;);">
+        <ui:VisualElement name="BackgroundContainer" class="background-container">
+            <ui:VisualElement name="SkyBackground" class="sky-background" />
+            <ui:VisualElement name="Sun" class="sun-image" />
+            <ui:VisualElement name="Cloud" class="cloud-image" />
+        </ui:VisualElement>
+        <ui:VisualElement name="TextContainer" class="text-container">
+            <ui:Label text="꿈속으로" name="TitleText" class="title-text" />
+            <ui:Label text="낮이 저물고 밤이 찾아왔어요..." name="BodyText" class="body-text" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

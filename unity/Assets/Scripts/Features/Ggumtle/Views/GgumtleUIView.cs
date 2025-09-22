@@ -26,6 +26,10 @@ namespace Features.Ggumtle.Views
         private VisualElement _progressBar;
         private VisualElement _progressFill;
 
+        [Header("Sprites")]
+        [SerializeField]
+        private Sprite ggumtleSprite;
+
         [Header("Settings")]
         [SerializeField]
         private bool enableDebugLogs = true;
@@ -52,6 +56,7 @@ namespace Features.Ggumtle.Views
             CacheUIElements();
             SubscribeToViewModel();
             InitializeUI();
+            InitializeSprites();
 
             if (enableDebugLogs)
                 Debug.Log("[GgumtleUIView] 초기화 완료");
@@ -97,7 +102,7 @@ namespace Features.Ggumtle.Views
                 Debug.Log("[GgumtleUIView] UI 초기화 완료");
         }
 
-        private R3DisposableBag _disposables = new();
+        private CompositeDisposable _disposables = new();
 
         private void SubscribeToViewModel()
         {
@@ -113,19 +118,19 @@ namespace Features.Ggumtle.Views
                     Debug.Log($"[GgumtleUIView] IsInRange 변경됨: {inRange}");
                     ShowInteractionUI(inRange);
                 })
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
             viewModel
                 .InteractionText.Subscribe(text => {
                     Debug.Log($"[GgumtleUIView] InteractionText 변경됨: '{text}'");
                     UpdateInteractionText(text);
                 })
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
             viewModel
                 .HoldProgress.Subscribe(progress => {
                     Debug.Log($"[GgumtleUIView] HoldProgress 변경됨: {progress:F2}");
                     UpdateProgressBar(progress);
                 })
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             // 새로운 상태들 구독
             viewModel
@@ -134,7 +139,7 @@ namespace Features.Ggumtle.Views
                         Debug.Log($"[GgumtleUIView] IsDiggingInProgress 변경됨: {isDigging}");
                     // 파기 진행 중일 때 UI 스타일 변경 등 가능
                 })
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             viewModel
                 .IsCancelRequested.Subscribe(isCancelRequested => {
@@ -142,7 +147,7 @@ namespace Features.Ggumtle.Views
                         Debug.Log($"[GgumtleUIView] IsCancelRequested 변경됨: {isCancelRequested}");
                     // 취소 요청 시 UI 피드백 가능
                 })
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             Debug.Log($"[GgumtleUIView] ViewModel R3 구독 완료 - 현재 상태: IsInRange={viewModel.IsInRange.Value}, InteractionText='{viewModel.InteractionText.Value}'");
         }
@@ -231,6 +236,32 @@ namespace Features.Ggumtle.Views
             {
                 viewModel.CancelHold();
             }
+        }
+
+        #endregion
+
+        #region Sprite Initialization
+
+        private void InitializeSprites()
+        {
+            if (ggumtleSprite != null)
+            {
+                var ggumtleElement = _root?.Q<VisualElement>("ggumtle");
+                if (ggumtleElement != null)
+                {
+                    ggumtleElement.style.backgroundImage = new StyleBackground(ggumtleSprite);
+                    ggumtleElement.style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
+
+                    if (enableDebugLogs)
+                        Debug.Log("[GgumtleUIView] 꿈틀이 스프라이트 설정 완료");
+                }
+            }
+        }
+
+        public void SetGgumtleSprite(Sprite sprite)
+        {
+            ggumtleSprite = sprite;
+            InitializeSprites();
         }
 
         #endregion

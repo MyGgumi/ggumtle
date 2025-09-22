@@ -171,7 +171,7 @@ namespace Features.MobileControls.Views
                 Debug.Log("[MobileControlsView] UI events setup completed");
         }
 
-        private R3DisposableBag _disposables = new();
+        private CompositeDisposable _disposables = new();
 
         private void SubscribeToViewModel()
         {
@@ -184,7 +184,7 @@ namespace Features.MobileControls.Views
             // Subscribe to control visibility
             viewModel
                 .ShouldShowControls.Subscribe(show => UpdateControlsVisibility(show))
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             // Joystick knob position is now handled directly in OnJoystickPointerMove
 
@@ -193,26 +193,26 @@ namespace Features.MobileControls.Views
                 .JumpButtonVisible.Subscribe(visible =>
                     UpdateButtonVisibility(_jumpButton, visible)
                 )
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             viewModel
                 .JumpButtonScale.Subscribe(scale => UpdateButtonScale(_jumpButton, scale))
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             viewModel
                 .InteractButtonVisible.Subscribe(visible =>
                     UpdateButtonVisibility(_interactButton, visible)
                 )
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             viewModel
                 .InteractButtonScale.Subscribe(scale => UpdateButtonScale(_interactButton, scale))
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             // Subscribe to opacity
             viewModel
                 .GlobalOpacity.Subscribe(opacity => UpdateGlobalOpacity(opacity))
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             if (enableDebugLogs)
                 Debug.Log("[MobileControlsView] ViewModel subscriptions completed");

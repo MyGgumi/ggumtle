@@ -2,6 +2,7 @@ using Features.Map.Services;
 using Features.Room.Services;
 using Features.Map.Utils;
 using Features.Ggumtle.Messages;
+using Features.Chest.Messages;
 using MessagePipe;
 using Networks;
 using UnityEngine;
@@ -19,18 +20,24 @@ namespace Features.Scenes.Main.Initializers
         private readonly IMapSpawnService _mapSpawnService;
         private readonly IPublisher<GgumtleDetectedMessage> _ggumtleDetectedPublisher;
         private readonly IPublisher<GgumtleLeftMessage> _ggumtleLeftPublisher;
+        private readonly IPublisher<ChestDetectedMessage> _chestDetectedPublisher;
+        private readonly IPublisher<ChestLeftMessage> _chestLeftPublisher;
         private readonly bool _enableDebugLogs = false; // 디버그 로그 비활성화
 
         [Inject]
         public MainSceneInitializer(
             IMapSpawnService mapSpawnService,
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
-            IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher
+            IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
+            IPublisher<ChestDetectedMessage> chestDetectedPublisher,
+            IPublisher<ChestLeftMessage> chestLeftPublisher
         )
         {
             _mapSpawnService = mapSpawnService;
             _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
+            _chestDetectedPublisher = chestDetectedPublisher;
+            _chestLeftPublisher = chestLeftPublisher;
 
             if (_enableDebugLogs)
                 Debug.Log("[MainSceneInitializer] 의존성 주입 완료");
@@ -55,19 +62,9 @@ namespace Features.Scenes.Main.Initializers
                 return;
             }
 
-            // Loading 씬에서 온 경우 오브젝트 스폰은 건너뛰고 시스템만 초기화
-            if (WasLoadedFromLoadingScene())
-            {
-                if (_enableDebugLogs)
-                    Debug.Log("[MainSceneInitializer] Loading 씬에서 전환됨 - 오브젝트는 이미 스폰됨, 시스템만 초기화");
-
-                InitializeMainSceneSystems();
-                return;
-            }
-
-            // 직접 Main 씬 시작인 경우 - 오브젝트 스폰까지 모두 수행
+            // VContainer EntryPoint에서 호출되므로 항상 MapSpawn 실행
             if (_enableDebugLogs)
-                Debug.Log("[MainSceneInitializer] 직접 Main 씬 시작 - 전체 초기화 진행");
+                Debug.Log("[MainSceneInitializer] VContainer EntryPoint에서 호출 - 전체 초기화 진행");
 
             // RoomData로 변환
             var roomData = RoomDataConverter.ConvertToRoomData(room);
@@ -102,7 +99,7 @@ namespace Features.Scenes.Main.Initializers
             // Loading 씬에서 스폰된 오브젝트들이 있는지 확인
             // DontDestroyOnLoad 오브젝트들이 있으면 Loading 씬에서 온 것으로 판단
             var spawnedGgumtles = GameObject.FindObjectsOfType<Features.Ggumtle.Views.GgumtleGameObject>();
-            var spawnedChests = GameObject.FindObjectsOfType<InteractableChest>();
+            var spawnedChests = GameObject.FindObjectsOfType<Features.Chest.Views.ChestGameObject>();
 
             bool hasSpawnedObjects = spawnedGgumtles.Length > 0 || spawnedChests.Length > 0;
 
@@ -169,13 +166,13 @@ namespace Features.Scenes.Main.Initializers
         /// </summary>
         private void InitializeUISystems()
         {
-            var hudController = GameObject.FindFirstObjectByType<UniversalHUDController>();
-            if (hudController != null)
+            var hudInitializer = GameObject.FindFirstObjectByType<Features.UI.Views.HUDInitializer>();
+            if (hudInitializer != null)
             {
                 // UI 시스템이 활성화되어 있는지 확인
-                if (!hudController.gameObject.activeInHierarchy)
+                if (!hudInitializer.gameObject.activeInHierarchy)
                 {
-                    hudController.gameObject.SetActive(true);
+                    hudInitializer.gameObject.SetActive(true);
                 }
                 if (_enableDebugLogs)
                     Debug.Log("[MainSceneInitializer] UI 시스템 초기화 완료");
@@ -230,7 +227,10 @@ namespace Features.Scenes.Main.Initializers
                     var constructMethod = detector.GetType().GetMethod("Construct");
                     if (constructMethod != null)
                     {
-                        constructMethod.Invoke(detector, new object[] { _ggumtleDetectedPublisher, _ggumtleLeftPublisher });
+                        constructMethod.Invoke(detector, new object[] {
+                            _ggumtleDetectedPublisher,
+                            _ggumtleLeftPublisher
+                        });
                         Debug.Log($"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 완료: {detector.gameObject.name}");
                     }
                 }
@@ -245,21 +245,33 @@ namespace Features.Scenes.Main.Initializers
         {
             try
             {
-                if (_enableDebugLogs)
-                    Debug.Log("[MainSceneInitializer] 맵 오브젝트 초기화 시작");
+                Debug.Log("[MainSceneInitializer] ===== InitializeMapObjects 시작 =====");
+                Debug.Log($"[MainSceneInitializer] roomData: {roomData != null}");
+                Debug.Log($"[MainSceneInitializer] _mapSpawnService: {_mapSpawnService != null}");
+
+                if (roomData != null)
+                {
+                    Debug.Log($"[MainSceneInitializer] RoomData 내용:");
+                    Debug.Log($"  - 상자: {roomData.Chests?.Count ?? 0}개");
+                    Debug.Log($"  - 꿈틀이: {roomData.Ggumtles?.Count ?? 0}개");
+                    Debug.Log($"  - 힐팩: {roomData.HealPacks?.Count ?? 0}개");
+                    Debug.Log($"  - 스피드팩: {roomData.SpeedPacks?.Count ?? 0}개");
+                }
 
                 // 스폰 데이터 준비
+                Debug.Log("[MainSceneInitializer] PrepareSpawnData 호출");
                 _mapSpawnService.PrepareSpawnData(roomData);
 
                 // 모든 오브젝트 스폰
+                Debug.Log("[MainSceneInitializer] SpawnAllObjectsAsync 호출");
                 await _mapSpawnService.SpawnAllObjectsAsync();
 
-                if (_enableDebugLogs)
-                    Debug.Log("[MainSceneInitializer] 맵 오브젝트 초기화 완료");
+                Debug.Log("[MainSceneInitializer] 맵 오브젝트 초기화 완료");
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"[MainSceneInitializer] 맵 오브젝트 초기화 실패: {e.Message}");
+                Debug.LogError($"[MainSceneInitializer] 스택트레이스: {e.StackTrace}");
             }
         }
 

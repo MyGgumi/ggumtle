@@ -2,9 +2,13 @@ using Cysharp.Threading.Tasks;
 using Features.Room.Models;
 using Features.Map.Utils;
 using Features.Ggumtle.Services;
+using Features.Chest.Views;
+using Features.FieldItem.Views;
+using Features.FieldItem.Models;
 using Networks.Rooms.Domains;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
@@ -19,21 +23,11 @@ namespace Features.Map.Services
     {
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IGgumtleService _ggumtleService;
-        private readonly bool _enableDebugLogs = false; // 스폰 로그 비활성화
-        private readonly bool _useFixedGgumtlePositions = false; // 꿈틀이 고정 위치 사용 안함 - 서버 위치 사용
+        private readonly bool _enableDebugLogs = true; // 스폰 로그 활성화 - 디버깅용
+        // preplaced 방식으로 변경됨 - 더이상 스폰 방식 사용하지 않음
 
-        // 스폰된 오브젝트들을 타입별로 관리
-        private readonly Dictionary<string, List<GameObject>> _spawnedObjects = new();
-        private readonly Dictionary<int, GameObject> _spawnedGgumtles = new(); // ID로 꿈틀이 관리
-
-        // 스폰할 데이터
+        // 설정할 데이터
         private RoomData _roomData;
-
-        // Addressable 키 상수 (실제 프리팹 이름과 맞춤)
-        private const string GGUMTLE_PREFAB_KEY = "Ggumtle";
-        private const string CHEST_PREFAB_KEY = "InteractableChest";
-        private const string HEALPACK_PREFAB_KEY = "HealPack";
-        private const string SPEEDPACK_PREFAB_KEY = "SpeedPack";
 
         public event Action<string, GameObject> OnObjectSpawned;
         public event Action<string, GameObject> OnObjectRemoved;
@@ -45,34 +39,30 @@ namespace Features.Map.Services
             _addressableLoadService = addressableLoadService ?? throw new ArgumentNullException(nameof(addressableLoadService));
             _ggumtleService = ggumtleService ?? throw new ArgumentNullException(nameof(ggumtleService));
 
-            InitializeObjectContainers();
-
             if (_enableDebugLogs)
                 Debug.Log("[MapSpawnService] 초기화 완료");
         }
 
-        /// <summary>
-        /// 오브젝트 컨테이너 초기화
-        /// </summary>
-        private void InitializeObjectContainers()
-        {
-            _spawnedObjects["Ggumtle"] = new List<GameObject>();
-            _spawnedObjects["Chest"] = new List<GameObject>();
-            _spawnedObjects["HealPack"] = new List<GameObject>();
-            _spawnedObjects["SpeedPack"] = new List<GameObject>();
-        }
-
         public void PrepareSpawnData(RoomData roomData)
         {
+            Debug.Log($"[MapSpawnService] ===== PrepareSpawnData 메서드 시작 =====");
+            Debug.Log($"[MapSpawnService] roomData 매개변수: {roomData != null}");
+
             _roomData = roomData ?? throw new ArgumentNullException(nameof(roomData));
 
-            if (_enableDebugLogs)
+            Debug.Log("[MapSpawnService] 스폰 데이터 준비 완료:");
+            Debug.Log($"  - 상자: {_roomData.Chests?.Count ?? 0}개");
+            Debug.Log($"  - 꿈틀이: {_roomData.Ggumtles?.Count ?? 0}개");
+            Debug.Log($"  - 힐팩: {_roomData.HealPacks?.Count ?? 0}개");
+            Debug.Log($"  - 스피드팩: {_roomData.SpeedPacks?.Count ?? 0}개");
+
+            if (_roomData.Chests != null && _roomData.Chests.Count > 0)
             {
-                Debug.Log("[MapSpawnService] 스폰 데이터 준비 완료:");
-                Debug.Log($"  - 상자: {_roomData.Chests?.Count ?? 0}개");
-                Debug.Log($"  - 꿈틀이: {_roomData.Ggumtles?.Count ?? 0}개");
-                Debug.Log($"  - 힐팩: {_roomData.HealPacks?.Count ?? 0}개");
-                Debug.Log($"  - 스피드팩: {_roomData.SpeedPacks?.Count ?? 0}개");
+                Debug.Log($"[MapSpawnService] 상자 상세 정보:");
+                foreach (var chest in _roomData.Chests)
+                {
+                    Debug.Log($"  - 상자 ID: {chest.Id}, 위치: ({chest.X}, {chest.Y}, {chest.Z})");
+                }
             }
         }
 
@@ -87,22 +77,20 @@ namespace Features.Map.Services
             try
             {
                 if (_enableDebugLogs)
-                    Debug.Log("[MapSpawnService] 모든 오브젝트 스폰 시작");
+                    Debug.Log("[MapSpawnService] 모든 오브젝트 스폰 시작 (EntryPoint에서 호출)");
 
-                // 모든 오브젝트를 병렬로 스폰
-                var tasks = new List<UniTask>();
-
+                // 미리 배치된 오브젝트들 설정
                 if (_roomData.Chests != null && _roomData.Chests.Count > 0)
-                    tasks.Add(SpawnChestsAsync(_roomData.Chests));
+                    SetupPreplacedChests(_roomData.Chests);
 
                 if (_roomData.Ggumtles != null && _roomData.Ggumtles.Count > 0)
-                    tasks.Add(SpawnGgumtlesAsync(_roomData.Ggumtles));
+                    SetupPreplacedGgumtles(_roomData.Ggumtles);
 
-                if ((_roomData.HealPacks != null && _roomData.HealPacks.Count > 0) ||
-                    (_roomData.SpeedPacks != null && _roomData.SpeedPacks.Count > 0))
-                    tasks.Add(SpawnItemsAsync(_roomData.HealPacks, _roomData.SpeedPacks));
+                if (_roomData.HealPacks != null && _roomData.HealPacks.Count > 0)
+                    SetupPreplacedHealPacks(_roomData.HealPacks);
 
-                await UniTask.WhenAll(tasks);
+                if (_roomData.SpeedPacks != null && _roomData.SpeedPacks.Count > 0)
+                    SetupPreplacedSpeedPacks(_roomData.SpeedPacks);
 
                 if (_enableDebugLogs)
                     Debug.Log("[MapSpawnService] 모든 오브젝트 스폰 완료");
@@ -111,157 +99,229 @@ namespace Features.Map.Services
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[MapSpawnService] 오브젝트 스폰 중 오류: {e.Message} - 가능한 오브젝트만 스폰하고 계속 진행");
-                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
+                Debug.LogWarning($"[MapSpawnService] 오브젝트 스폰 중 오류: {e.Message}");
             }
         }
 
-        public async UniTask SpawnChestsAsync(List<ChestPacket> chests)
+        public void SetupPreplacedChests(List<ChestPacket> chests)
         {
             if (chests == null || chests.Count == 0)
                 return;
 
             try
             {
-                if (_enableDebugLogs)
-                    Debug.Log($"[MapSpawnService] 상자 스폰 시작: {chests.Count}개");
+                Debug.Log($"[MapSpawnService] 미리 배치된 상자 설정 시작: {chests.Count}개");
 
-                var chestPrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(CHEST_PREFAB_KEY);
-                if (chestPrefab == null)
+                // Chests 부모 오브젝트 찾기
+                var chestsParent = GameObject.Find("Chests");
+                if (chestsParent == null)
                 {
-                    Debug.LogWarning($"[MapSpawnService] 상자 프리팹을 찾을 수 없음: {CHEST_PREFAB_KEY} - 상자 스폰을 건너뜀");
+                    Debug.LogWarning("[MapSpawnService] 'Chests' 부모 오브젝트를 찾을 수 없음");
                     return;
                 }
 
-                foreach (var chest in chests)
+                // Chests 하위의 ChestGameObject들만 찾기
+                var preplacedChests = chestsParent.GetComponentsInChildren<ChestGameObject>(true)
+                    .OrderBy(c => ExtractIndexFromUnityName(c.name))
+                    .ToList();
+
+                if (preplacedChests.Count == 0)
                 {
-                    var position = chest.ToVector3();
-                    var chestObject = await _addressableLoadService.InstantiateAsync(
-                        CHEST_PREFAB_KEY, position, Quaternion.identity);
-
-                    if (chestObject != null)
-                    {
-                        chestObject.name = $"Chest_{chest.Id}";
-                        _spawnedObjects["Chest"].Add(chestObject);
-                        OnObjectSpawned?.Invoke("Chest", chestObject);
-
-                        if (_enableDebugLogs)
-                            Debug.Log($"[MapSpawnService] 상자 스폰 완료: ID={chest.Id}, Position={position}");
-                    }
-
-                    // 한 프레임 대기 (성능 최적화)
-                    await UniTask.Yield();
+                    Debug.LogWarning("[MapSpawnService] Chests 하위에 ChestGameObject를 찾을 수 없음");
+                    return;
                 }
+
+                // 필요한 수만큼 상자 활성화 및 설정
+                for (int i = 0; i < chests.Count && i < preplacedChests.Count; i++)
+                {
+                    var chestData = chests[i];
+                    var chestObject = preplacedChests[i];
+
+                    // 위치 설정
+                    var position = chestData.ToVector3();
+                    chestObject.transform.position = position;
+
+                    // ID 설정 (리플렉션 사용)
+                    SetChestId(chestObject, chestData.Id.ToString());
+
+                    // 활성화 (VContainer가 자동으로 의존성 주입)
+                    chestObject.gameObject.SetActive(true);
+
+                    Debug.Log($"[MapSpawnService] 상자 설정 완료: ID={chestData.Id}, Position={position}");
+                }
+
+                // 사용하지 않는 상자들은 비활성화 유지
+                for (int i = chests.Count; i < preplacedChests.Count; i++)
+                {
+                    preplacedChests[i].gameObject.SetActive(false);
+                }
+
+                Debug.Log($"[MapSpawnService] 미리 배치된 상자 설정 완료: {Math.Min(chests.Count, preplacedChests.Count)}개 활성화");
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[MapSpawnService] 상자 스폰 실패: {e.Message} - 다른 오브젝트 스폰은 계속 진행");
-                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
+                Debug.LogError($"[MapSpawnService] 미리 배치된 상자 설정 실패: {e.Message}");
             }
         }
 
-        public async UniTask SpawnGgumtlesAsync(List<GgumtlePacket> ggumtles)
+        public void SetupPreplacedGgumtles(List<GgumtlePacket> ggumtles)
         {
             if (ggumtles == null || ggumtles.Count == 0)
                 return;
 
             try
             {
-                if (_enableDebugLogs)
-                    Debug.Log($"[MapSpawnService] 꿈틀이 스폰 시작: {ggumtles.Count}개");
+                Debug.Log($"[MapSpawnService] 미리 배치된 꿈틀이 설정 시작: {ggumtles.Count}개");
 
-                var ggumtlePrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(GGUMTLE_PREFAB_KEY);
-                if (ggumtlePrefab == null)
+                // Ggumtles 부모 오브젝트 찾기
+                var ggumtlesParent = GameObject.Find("Ggumtles");
+                if (ggumtlesParent == null)
                 {
-                    Debug.LogWarning($"[MapSpawnService] 꿈틀이 프리팹을 찾을 수 없음: {GGUMTLE_PREFAB_KEY} - 꿈틀이 스폰을 건너뜀");
+                    Debug.LogWarning("[MapSpawnService] 'Ggumtles' 부모 오브젝트를 찾을 수 없음");
                     return;
                 }
 
-                // 고정 위치 사용 여부에 따라 분기
-                if (_useFixedGgumtlePositions)
+                // Ggumtles 하위의 GgumtleGameObject들만 찾기
+                var preplacedGgumtles = ggumtlesParent.GetComponentsInChildren<Features.Ggumtle.Views.GgumtleGameObject>(true)
+                    .OrderBy(g => ExtractIndexFromUnityName(g.name))
+                    .ToList();
+
+                if (preplacedGgumtles.Count == 0)
                 {
-                    await SpawnGgumtlesWithFixedPositions(ggumtles);
+                    Debug.LogWarning("[MapSpawnService] Ggumtles 하위에 GgumtleGameObject를 찾을 수 없음");
+                    return;
                 }
-                else
+
+                // 필요한 수만큼 꿈틀이 활성화 및 설정
+                for (int i = 0; i < ggumtles.Count && i < preplacedGgumtles.Count; i++)
                 {
-                    await SpawnGgumtlesWithServerPositions(ggumtles);
+                    var ggumtleData = ggumtles[i];
+                    var ggumtleObject = preplacedGgumtles[i];
+
+                    // 위치 설정
+                    var position = ggumtleData.ToVector3();
+                    ggumtleObject.transform.position = position;
+
+                    // ID 설정 (리플렉션 사용)
+                    SetGgumtleId(ggumtleObject, ggumtleData.Id);
+
+                    // 활성화 (VContainer가 자동으로 의존성 주입)
+                    ggumtleObject.gameObject.SetActive(true);
+
+                    Debug.Log($"[MapSpawnService] 꿈틀이 설정 완료: ID={ggumtleData.Id}, Position={position}");
                 }
+
+                // 사용하지 않는 꿈틀이들은 비활성화 유지
+                for (int i = ggumtles.Count; i < preplacedGgumtles.Count; i++)
+                {
+                    preplacedGgumtles[i].gameObject.SetActive(false);
+                }
+
+                Debug.Log($"[MapSpawnService] 미리 배치된 꿈틀이 설정 완료: {Math.Min(ggumtles.Count, preplacedGgumtles.Count)}개 활성화");
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[MapSpawnService] 꿈틀이 스폰 실패: {e.Message} - 다른 오브젝트 스폰은 계속 진행");
-                // throw를 제거하여 전체 프로세스가 중단되지 않도록 함
+                Debug.LogError($"[MapSpawnService] 미리 배치된 꿈틀이 설정 실패: {e.Message}");
             }
         }
 
-        /// <summary>
-        /// 서버에서 받은 위치 그대로 꿈틀이 스폰
-        /// </summary>
-        private async UniTask SpawnGgumtlesWithServerPositions(List<GgumtlePacket> ggumtles)
+        public void SetupPreplacedHealPacks(List<HealPackPacket> healPacks)
         {
-            Debug.Log($"[SERVER_ROOM_DATA] 서버 위치 그대로 꿈틀이 스폰 시작: {ggumtles.Count}개");
+            SetupPreplacedFieldItems(healPacks?.ConvertAll(h => new { Id = h.Id, Position = h.ToVector3() }),
+                                    FieldItemType.HealPack, "HealPack");
+        }
 
-            foreach (var ggumtle in ggumtles)
+        public void SetupPreplacedSpeedPacks(List<SpeedPackPacket> speedPacks)
+        {
+            SetupPreplacedFieldItems(speedPacks?.ConvertAll(s => new { Id = s.Id, Position = s.ToVector3() }),
+                                    FieldItemType.SpeedPack, "SpeedPack");
+        }
+
+        private void SetupPreplacedFieldItems<T>(List<T> items, FieldItemType itemType, string itemTypeName) where T : class
+        {
+            if (items == null || items.Count == 0)
+                return;
+
+            try
             {
-                var serverPosition = ggumtle.ToVector3();
-                Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 스폰: ID={ggumtle.Id}, 서버 원본 좌표=({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z}), Unity 변환 좌표={serverPosition}");
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 미리 배치된 {itemTypeName} 설정 시작: {items.Count}개");
 
-                var ggumtleObject = await SpawnGgumtleAsync(ggumtle.Id, serverPosition);
-
-                if (ggumtleObject != null)
+                // FieldItems 부모 오브젝트 찾기
+                var fieldItemsParent = GameObject.Find("FieldItems");
+                if (fieldItemsParent == null)
                 {
-                    Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 스폰 완료: ID={ggumtle.Id}, 최종 GameObject 위치={ggumtleObject.transform.position}");
+                    Debug.LogWarning("[MapSpawnService] 'FieldItems' 부모 오브젝트를 찾을 수 없음");
+                    return;
                 }
 
-                // 한 프레임 대기 (성능 최적화)
-                await UniTask.Yield();
+                // FieldItems 하위의 FieldItemGameObject들만 찾기
+                var preplacedItems = fieldItemsParent.GetComponentsInChildren<FieldItemGameObject>(true)
+                    .OrderBy(f => ExtractIndexFromUnityName(f.name))
+                    .ToList();
+
+                if (preplacedItems.Count == 0)
+                {
+                    Debug.LogWarning($"[MapSpawnService] FieldItems 하위에 FieldItemGameObject를 찾을 수 없음");
+                    return;
+                }
+
+                // 필요한 수만큼 아이템 활성화 및 설정
+                for (int i = 0; i < items.Count && i < preplacedItems.Count; i++)
+                {
+                    var itemData = items[i];
+                    var fieldItemObject = preplacedItems[i];
+
+                    // 리플렉션을 사용해서 Id와 Position 가져오기
+                    var idProperty = itemData.GetType().GetProperty("Id");
+                    var positionProperty = itemData.GetType().GetProperty("Position");
+
+                    if (idProperty != null && positionProperty != null)
+                    {
+                        var id = (int)idProperty.GetValue(itemData);
+                        var position = (Vector3)positionProperty.GetValue(itemData);
+
+                        // 위치 설정
+                        fieldItemObject.transform.position = position;
+
+                        // ID 및 타입 설정
+                        fieldItemObject.SetId(id);
+                        fieldItemObject.SetType(itemType);
+
+                        // 활성화
+                        fieldItemObject.gameObject.SetActive(true);
+
+                        if (_enableDebugLogs)
+                            Debug.Log($"[MapSpawnService] {itemTypeName} 설정 완료: ID={id}, Position={position}");
+                    }
+                }
+
+                // 사용하지 않는 아이템들은 비활성화 유지
+                for (int i = items.Count; i < preplacedItems.Count; i++)
+                {
+                    preplacedItems[i].gameObject.SetActive(false);
+                }
+
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 미리 배치된 {itemTypeName} 설정 완료: {Math.Min(items.Count, preplacedItems.Count)}개 활성화");
             }
-
-            Debug.Log("[SERVER_ROOM_DATA] 꿈틀이 서버 위치로 스폰 완료");
-        }
-
-        /// <summary>
-        /// 고정된 위치에 꿈틀이 스폰 (서버 위치 무시)
-        /// </summary>
-        private async UniTask SpawnGgumtlesWithFixedPositions(List<GgumtlePacket> ggumtles)
-        {
-            // 고정 위치 배열
-            Vector3[] fixedPositions = {
-                new Vector3(52.7443886f, 5.37099981f, 11.4316998f),
-                new Vector3(53.8800011f, 5.37099981f, 15.6700001f),
-                new Vector3(48.75f, 5.37099981f, 12.5f)
-            };
-
-            for (int i = 0; i < ggumtles.Count && i < fixedPositions.Length; i++)
+            catch (Exception e)
             {
-                var ggumtle = ggumtles[i];
-                var fixedPosition = fixedPositions[i];
-
-                Debug.Log($"[SERVER_ROOM_DATA] 꿈틀이 고정 위치 스폰: ID={ggumtle.Id}, 서버 원본 좌표=({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z}), 서버 Unity 변환={ggumtle.ToVector3()}, 고정 위치={fixedPosition}");
-
-                var ggumtleObject = await SpawnGgumtleAsync(ggumtle.Id, fixedPosition);
-
-                // 한 프레임 대기 (성능 최적화)
-                await UniTask.Yield();
+                Debug.LogError($"[MapSpawnService] 미리 배치된 {itemTypeName} 설정 실패: {e.Message}");
             }
-
-            if (_enableDebugLogs)
-                Debug.Log($"[MapSpawnService] 꿈틀이 고정 위치 스폰 완료: {Math.Min(ggumtles.Count, fixedPositions.Length)}개");
         }
 
-        public async UniTask SpawnItemsAsync(List<HealPackPacket> healPacks, List<SpeedPackPacket> speedPacks)
+        // SpawnGgumtlesAsync 메서드는 preplaced 방식으로 대체됨 - SetupPreplacedGgumtles 사용
+
+        public void SpawnItems(List<HealPackPacket> healPacks, List<SpeedPackPacket> speedPacks)
         {
             try
             {
-                var tasks = new List<UniTask>();
-
                 if (healPacks != null && healPacks.Count > 0)
-                    tasks.Add(SpawnHealPacksAsync(healPacks));
+                    SetupPreplacedHealPacks(healPacks);
 
                 if (speedPacks != null && speedPacks.Count > 0)
-                    tasks.Add(SpawnSpeedPacksAsync(speedPacks));
-
-                await UniTask.WhenAll(tasks);
+                    SetupPreplacedSpeedPacks(speedPacks);
             }
             catch (Exception e)
             {
@@ -270,156 +330,38 @@ namespace Features.Map.Services
             }
         }
 
-        private async UniTask SpawnHealPacksAsync(List<HealPackPacket> healPacks)
-        {
-            if (_enableDebugLogs)
-                Debug.Log($"[MapSpawnService] 힐팩 스폰 시작: {healPacks.Count}개");
-
-            var healPackPrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(HEALPACK_PREFAB_KEY);
-            if (healPackPrefab == null)
-            {
-                Debug.LogWarning($"[MapSpawnService] 힐팩 프리팹을 찾을 수 없음: {HEALPACK_PREFAB_KEY} - 힐팩 스폰을 건너뜀");
-                return;
-            }
-
-            foreach (var healPack in healPacks)
-            {
-                var position = healPack.ToVector3();
-                var healPackObject = await _addressableLoadService.InstantiateAsync(
-                    HEALPACK_PREFAB_KEY, position, Quaternion.identity);
-
-                if (healPackObject != null)
-                {
-                    healPackObject.name = $"HealPack_{healPack.Id}";
-                    _spawnedObjects["HealPack"].Add(healPackObject);
-                    OnObjectSpawned?.Invoke("HealPack", healPackObject);
-
-                    if (_enableDebugLogs)
-                        Debug.Log($"[MapSpawnService] 힐팩 스폰 완료: ID={healPack.Id}, Position={position}");
-                }
-
-                await UniTask.Yield();
-            }
-        }
-
-        private async UniTask SpawnSpeedPacksAsync(List<SpeedPackPacket> speedPacks)
-        {
-            if (_enableDebugLogs)
-                Debug.Log($"[MapSpawnService] 스피드팩 스폰 시작: {speedPacks.Count}개");
-
-            var speedPackPrefab = await _addressableLoadService.LoadAssetAsync<GameObject>(SPEEDPACK_PREFAB_KEY);
-            if (speedPackPrefab == null)
-            {
-                Debug.LogWarning($"[MapSpawnService] 스피드팩 프리팹을 찾을 수 없음: {SPEEDPACK_PREFAB_KEY} - 스피드팩 스폰을 건너뜀");
-                return;
-            }
-
-            foreach (var speedPack in speedPacks)
-            {
-                var position = speedPack.ToVector3();
-                var speedPackObject = await _addressableLoadService.InstantiateAsync(
-                    SPEEDPACK_PREFAB_KEY, position, Quaternion.identity);
-
-                if (speedPackObject != null)
-                {
-                    speedPackObject.name = $"SpeedPack_{speedPack.Id}";
-                    _spawnedObjects["SpeedPack"].Add(speedPackObject);
-                    OnObjectSpawned?.Invoke("SpeedPack", speedPackObject);
-
-                    if (_enableDebugLogs)
-                        Debug.Log($"[MapSpawnService] 스피드팩 스폰 완료: ID={speedPack.Id}, Position={position}");
-                }
-
-                await UniTask.Yield();
-            }
-        }
-
-        public async UniTask<GameObject> SpawnGgumtleAsync(int id, Vector3 position)
-        {
-            try
-            {
-                // 이미 스폰된 꿈틀이인지 확인
-                if (_spawnedGgumtles.ContainsKey(id))
-                {
-                    Debug.LogWarning($"[MapSpawnService] 이미 스폰된 꿈틀이: ID={id}");
-                    return _spawnedGgumtles[id];
-                }
-
-                var ggumtleObject = await _addressableLoadService.InstantiateAsync(
-                    GGUMTLE_PREFAB_KEY, position, Quaternion.identity);
-
-                if (ggumtleObject != null)
-                {
-                    ggumtleObject.name = $"Ggumtle_{id}";
-
-                    // VContainer 의존성 주입 (프리팹 인스턴스에 주입)
-                    var mainLifetimeScope = GameObject.FindFirstObjectByType<DI.MainLifetimeScope>();
-                    if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
-                    {
-                        mainLifetimeScope.Container.InjectGameObject(ggumtleObject);
-                        if (_enableDebugLogs)
-                            Debug.Log($"[MapSpawnService] GgumtleGameObject VContainer 의존성 주입 완료: ID={id}");
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[MapSpawnService] MainLifetimeScope를 찾을 수 없어 의존성 주입 실패: ID={id}");
-                    }
-
-                    // 꿈틀이 ID 설정
-                    var ggumtleComponent = ggumtleObject.GetComponent<Features.Ggumtle.Views.GgumtleGameObject>();
-                    if (ggumtleComponent != null)
-                    {
-                        // GgumtleGameObject의 ID 설정 (리플렉션 사용)
-                        var idField = typeof(Features.Ggumtle.Views.GgumtleGameObject)
-                            .GetField("ggumtleId", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        idField?.SetValue(ggumtleComponent, id);
-                    }
-
-                    // GgumtleService에 등록은 GgumtleGameObject에서 자동으로 처리됨
-
-                    _spawnedObjects["Ggumtle"].Add(ggumtleObject);
-                    _spawnedGgumtles[id] = ggumtleObject;
-                    OnObjectSpawned?.Invoke("Ggumtle", ggumtleObject);
-
-                    if (_enableDebugLogs)
-                        Debug.Log($"[MapSpawnService] 꿈틀이 스폰 완료: ID={id}, Position={position}");
-                }
-
-                return ggumtleObject;
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[MapSpawnService] 꿈틀이 스폰 실패: ID={id}, {e.Message}");
-                throw;
-            }
-        }
+        // SpawnGgumtleAsync 메서드는 preplaced 방식으로 대체됨 - SetupPreplacedGgumtles에서 처리
 
         public bool RemoveGgumtle(int id)
         {
             try
             {
-                if (!_spawnedGgumtles.TryGetValue(id, out var ggumtleObject))
+                // Preplaced 방식에서는 비활성화만 함
+                var ggumtlesParent = GameObject.Find("Ggumtles");
+                if (ggumtlesParent != null)
                 {
-                    Debug.LogWarning($"[MapSpawnService] 제거할 꿈틀이를 찾을 수 없음: ID={id}");
-                    return false;
+                    var ggumtleObject = ggumtlesParent.GetComponentsInChildren<Features.Ggumtle.Views.GgumtleGameObject>(true)
+                        .FirstOrDefault(g => GetGgumtleId(g) == id);
+
+                    if (ggumtleObject != null)
+                    {
+                        // GgumtleService에서 해제
+                        _ggumtleService.UnregisterGgumtle(id);
+
+                        // 오브젝트 비활성화
+                        ggumtleObject.gameObject.SetActive(false);
+
+                        OnObjectRemoved?.Invoke("Ggumtle", ggumtleObject.gameObject);
+
+                        if (_enableDebugLogs)
+                            Debug.Log($"[MapSpawnService] 꿈틀이 제거 완료: ID={id}");
+
+                        return true;
+                    }
                 }
 
-                // GgumtleService에서 해제
-                _ggumtleService.UnregisterGgumtle(id);
-
-                // 스폰된 오브젝트 리스트에서 제거
-                _spawnedObjects["Ggumtle"].Remove(ggumtleObject);
-                _spawnedGgumtles.Remove(id);
-
-                // Addressable 인스턴스 해제
-                _addressableLoadService.ReleaseInstance(ggumtleObject);
-
-                OnObjectRemoved?.Invoke("Ggumtle", ggumtleObject);
-
-                if (_enableDebugLogs)
-                    Debug.Log($"[MapSpawnService] 꿈틀이 제거 완료: ID={id}");
-
-                return true;
+                Debug.LogWarning($"[MapSpawnService] 제거할 꿈틀이를 찾을 수 없음: ID={id}");
+                return false;
             }
             catch (Exception e)
             {
@@ -433,30 +375,46 @@ namespace Features.Map.Services
             try
             {
                 if (_enableDebugLogs)
-                    Debug.Log("[MapSpawnService] 모든 오브젝트 정리 시작");
+                    Debug.Log("[MapSpawnService] 모든 오브젝트 정리 시작 (preplaced 방식)");
 
-                int totalRemoved = 0;
+                int totalDeactivated = 0;
 
-                foreach (var objectType in _spawnedObjects.Keys)
+                // Preplaced 방식에서는 모든 오브젝트를 비활성화
+                var chestsParent = GameObject.Find("Chests");
+                if (chestsParent != null)
                 {
-                    var objects = _spawnedObjects[objectType];
-                    totalRemoved += objects.Count;
-
-                    foreach (var obj in objects)
+                    var chests = chestsParent.GetComponentsInChildren<ChestGameObject>(true);
+                    foreach (var chest in chests)
                     {
-                        if (obj != null)
-                        {
-                            _addressableLoadService.ReleaseInstance(obj);
-                        }
+                        chest.gameObject.SetActive(false);
+                        totalDeactivated++;
                     }
-
-                    objects.Clear();
                 }
 
-                _spawnedGgumtles.Clear();
+                var ggumtlesParent = GameObject.Find("Ggumtles");
+                if (ggumtlesParent != null)
+                {
+                    var ggumtles = ggumtlesParent.GetComponentsInChildren<Features.Ggumtle.Views.GgumtleGameObject>(true);
+                    foreach (var ggumtle in ggumtles)
+                    {
+                        ggumtle.gameObject.SetActive(false);
+                        totalDeactivated++;
+                    }
+                }
+
+                var fieldItemsParent = GameObject.Find("FieldItems");
+                if (fieldItemsParent != null)
+                {
+                    var fieldItems = fieldItemsParent.GetComponentsInChildren<FieldItemGameObject>(true);
+                    foreach (var fieldItem in fieldItems)
+                    {
+                        fieldItem.gameObject.SetActive(false);
+                        totalDeactivated++;
+                    }
+                }
 
                 if (_enableDebugLogs)
-                    Debug.Log($"[MapSpawnService] 모든 오브젝트 정리 완료: {totalRemoved}개 제거");
+                    Debug.Log($"[MapSpawnService] 모든 오브젝트 정리 완료: {totalDeactivated}개 비활성화");
             }
             catch (Exception e)
             {
@@ -466,9 +424,111 @@ namespace Features.Map.Services
 
         public int GetSpawnedObjectCount(string objectType)
         {
-            if (_spawnedObjects.TryGetValue(objectType, out var objects))
+            // Preplaced 방식에서는 활성화된 오브젝트 개수 반환
+            switch (objectType)
             {
-                return objects.Count;
+                case "Ggumtle":
+                    var ggumtlesParent = GameObject.Find("Ggumtles");
+                    if (ggumtlesParent != null)
+                    {
+                        return ggumtlesParent.GetComponentsInChildren<Features.Ggumtle.Views.GgumtleGameObject>(false).Length;
+                    }
+                    break;
+                case "Chest":
+                    var chestsParent = GameObject.Find("Chests");
+                    if (chestsParent != null)
+                    {
+                        return chestsParent.GetComponentsInChildren<ChestGameObject>(false).Length;
+                    }
+                    break;
+                case "HealPack":
+                case "SpeedPack":
+                    var fieldItemsParent = GameObject.Find("FieldItems");
+                    if (fieldItemsParent != null)
+                    {
+                        return fieldItemsParent.GetComponentsInChildren<FieldItemGameObject>(false).Length;
+                    }
+                    break;
+            }
+
+            return 0;
+        }
+
+        private void SetChestId(ChestGameObject chestObject, string id)
+        {
+            try
+            {
+                var chestIdField = typeof(ChestGameObject).GetField("chestId",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (chestIdField != null)
+                {
+                    chestIdField.SetValue(chestObject, id);
+                    Debug.Log($"[MapSpawnService] ChestId 설정 완료: {id}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[MapSpawnService] chestId 필드를 찾을 수 없음: {id}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MapSpawnService] ChestId 설정 실패: {id}, Error: {e.Message}");
+            }
+        }
+
+        private void SetGgumtleId(Features.Ggumtle.Views.GgumtleGameObject ggumtleObject, int id)
+        {
+            try
+            {
+                var ggumtleIdField = typeof(Features.Ggumtle.Views.GgumtleGameObject).GetField("ggumtleId",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (ggumtleIdField != null)
+                {
+                    ggumtleIdField.SetValue(ggumtleObject, id);
+                    Debug.Log($"[MapSpawnService] GgumtleId 설정 완료: {id}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[MapSpawnService] ggumtleId 필드를 찾을 수 없음: {id}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MapSpawnService] GgumtleId 설정 실패: {id}, Error: {e.Message}");
+            }
+        }
+
+        private int GetGgumtleId(Features.Ggumtle.Views.GgumtleGameObject ggumtleObject)
+        {
+            try
+            {
+                var ggumtleIdField = typeof(Features.Ggumtle.Views.GgumtleGameObject).GetField("ggumtleId",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                if (ggumtleIdField != null)
+                {
+                    return (int)ggumtleIdField.GetValue(ggumtleObject);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MapSpawnService] GgumtleId 가져오기 실패: {e.Message}");
+            }
+            return -1;
+        }
+
+        private int ExtractIndexFromUnityName(string name)
+        {
+            // "ChestGameObject" -> 0 (첫 번째)
+            // "ChestGameObject(1)" -> 1 (두 번째)
+            // "FieldItemGameObject" -> 0 (첫 번째)
+            // "FieldItemGameObject(1)" -> 1 (두 번째)
+            if (name == "ChestGameObject" || name == "GgumtleGameObject" || name == "FieldItemGameObject")
+                return 0;
+
+            var match = System.Text.RegularExpressions.Regex.Match(name, @"\((\d+)\)");
+            if (match.Success && int.TryParse(match.Groups[1].Value, out int index))
+            {
+                return index;
             }
 
             return 0;

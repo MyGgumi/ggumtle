@@ -64,7 +64,7 @@ namespace Features.Ggumtle.Views
 
         private GgumtleViewModel _viewModel;
         private Features.Ggumtle.Services.IGgumtleService _ggumtleService;
-        private R3DisposableBag _disposables = new();
+        private CompositeDisposable _disposables = new();
 
         /// <summary>
         /// VContainer 의존성 주입
@@ -259,22 +259,22 @@ namespace Features.Ggumtle.Views
             }
 
             // 상태 변경에 따른 비주얼 처리
-            _viewModel.State.Subscribe(OnViewModelStateChanged).AddTo(ref _disposables);
+            _viewModel.State.Subscribe(OnViewModelStateChanged).AddTo(_disposables);
 
             // 홀드 진행률에 따른 이펙트 처리
             _viewModel
                 .HoldProgress.Where(_ => _viewModel.State.Value == GgumtleState.Digging)
                 .Subscribe(OnDiggingProgress)
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             // 먹이 진행률에 따른 이펙트 처리
             _viewModel
                 .FoodProgress.Where(_ => _viewModel.State.Value == GgumtleState.Feeding)
                 .Subscribe(OnFeedingProgress)
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
 
             // 범위 감지에 따른 처리
-            _viewModel.IsInRange.Subscribe(OnRangeChanged).AddTo(ref _disposables);
+            _viewModel.IsInRange.Subscribe(OnRangeChanged).AddTo(_disposables);
 
             if (enableDebugLogs)
                 Debug.Log("[GgumtleGameObject] ViewModel R3 구독 완료");
@@ -425,7 +425,7 @@ namespace Features.Ggumtle.Views
             Observable
                 .Timer(System.TimeSpan.FromSeconds(3f))
                 .Subscribe(_ => DestroyGameObject())
-                .AddTo(ref _disposables);
+                .AddTo(_disposables);
         }
 
         private void StopAllEffects()

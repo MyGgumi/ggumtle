@@ -10,7 +10,6 @@ namespace Features.MobileControls.Models
         Jump,
         Interact,
         Menu,
-        Inventory,
     }
 
     /// <summary>

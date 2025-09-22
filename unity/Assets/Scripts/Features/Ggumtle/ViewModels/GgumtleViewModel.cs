@@ -5,6 +5,8 @@ using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
 using Features.Ggumtle.Services;
 using Features.MobileControls.Messages;
+using Features.Notification.Messages;
+using Features.Notification.Models;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -50,7 +52,7 @@ namespace Features.Ggumtle.ViewModels
         #region Dependencies
 
         private readonly IGgumtleService _ggumtleService;
-        private readonly IPublisher<NotificationMessage> _notificationPublisher;
+        private readonly IPublisher<Features.Notification.Messages.NotificationMessage> _notificationPublisher;
         private readonly IPublisher<InteractButtonVisibilityMessage> _interactButtonVisibilityPublisher;
 
         #endregion
@@ -74,7 +76,7 @@ namespace Features.Ggumtle.ViewModels
             ISubscriber<GgumtleHoldProgressMessage> holdProgressSubscriber,
             ISubscriber<GgumtleFoodAddedMessage> foodAddedSubscriber,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
-            IPublisher<NotificationMessage> notificationPublisher,
+            IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher,
             IPublisher<InteractButtonVisibilityMessage> interactButtonVisibilityPublisher,
             ISubscriber<InteractHoldStartMessage> interactHoldStartSubscriber,
             ISubscriber<InteractHoldEndMessage> interactHoldEndSubscriber
@@ -543,7 +545,7 @@ namespace Features.Ggumtle.ViewModels
             }
 
             _notificationPublisher.Publish(
-                new NotificationMessage("진짜 꿈틀이를 발견했습니다!", 3f, NotificationType.Success)
+                new Features.Notification.Messages.NotificationMessage("진짜 꿈틀이를 발견했습니다!", 3f, Features.Notification.Models.NotificationType.Success)
             );
         }
 
@@ -552,10 +554,10 @@ namespace Features.Ggumtle.ViewModels
             Debug.Log("[GgumtleViewModel] 가짜 꿈틀이 처리");
 
             _notificationPublisher.Publish(
-                new NotificationMessage(
+                new Features.Notification.Messages.NotificationMessage(
                     "가짜 꿈틀이였습니다... 2초 후 사라집니다.",
                     3f,
-                    NotificationType.Warning
+                    Features.Notification.Models.NotificationType.Warning
                 )
             );
 

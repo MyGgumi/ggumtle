@@ -35,6 +35,7 @@ import com.ggumtle.growth.model.CharacterInfo
 import java.text.DecimalFormat
 import android.graphics.BlurMaskFilter
 import androidx.compose.foundation.border
+import com.ggumtle.domain.model.MonggingClass
 
 @Composable
 fun EnhancementSection(
@@ -44,7 +45,7 @@ fun EnhancementSection(
     onEnhanceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val maxCost = characterInfo?.enhancementCost ?: 4000
+    val maxCost = characterInfo?.needCoin ?: 4000
     val targetProgressRatio = if (currentCoin >= maxCost) 1f else currentCoin.toFloat() / maxCost
     val progressRatio by animateFloatAsState(
         targetValue = targetProgressRatio,
@@ -91,12 +92,12 @@ fun EnhancementSection(
                     ) {
                         Column {
                             Text(
-                                text = "Lv ${info.level}",
+                                text = "Lv ${info.nowLevel}",
                                 color = Color.White,
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Text(
-                                text = "${info.statisticName} ${info.currentStat}x",
+                                text = "경험치 ${String.format("%.1f", info.nowPercentage)}%",
                                 color = BrandColors.PurpleLight,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -112,12 +113,12 @@ fun EnhancementSection(
                             horizontalAlignment = Alignment.End
                         ) {
                             Text(
-                                text = "Lv ${info.level + 1}",
+                                text = "Lv ${info.afterLevel ?: (info.nowLevel + 1)}",
                                 color = BrandColors.Mint,
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Text(
-                                text = "${info.statisticName} ${info.nextLevelStat}x",
+                                text = "경험치 ${String.format("%.1f", info.afterPercentage ?: 0.0)}%",
                                 color = BrandColors.Mint,
                                 style = MaterialTheme.typography.bodyMedium
                             )
@@ -252,7 +253,7 @@ fun EnhancementSection(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "- ${formatter.format(maxCost)}    |    성공 확률 ${characterInfo?.successRate ?: 35}%",
+                                text = "- ${formatter.format(maxCost)}    |    성공 확률 ${characterInfo?.successPercentage ?: 35}%",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Color.White.copy(alpha = 0.8f)
                             )
@@ -272,14 +273,15 @@ fun EnhancementSection(
 fun EnhancementSectionPreview() {
     EnhancementSection(
         characterInfo = CharacterInfo(
-            name = "힐러 몽깅이",
-            level = 4,
-            currentStat = 1.2f,
-            nextLevelStat = 1.25f,
-            enhancementCost = 4000,
-            successRate = 35,
-            progressRatio = 0.3f,
-            statisticName = "치료속도"
+            id = 1L,
+            monggingClass = MonggingClass.HEAL,
+            nowLevel = 4,
+            nowPercentage = 30.0,
+            isMaxLevel = false,
+            afterLevel = 5,
+            afterPercentage = 0.0,
+            needCoin = 4000,
+            successPercentage = 35
         ),
         currentCoin = 3000,
         isEnhanceEnabled = false,

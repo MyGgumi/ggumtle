@@ -1,7 +1,7 @@
 package com.ggumtle.home
 
 import com.ggumtle.domain.websocket.model.Friend
-import com.example.domain.websocket.model.PartyMember
+import com.ggumtle.domain.websocket.model.PartyMember
 import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.home.model.InviteRequest
@@ -44,7 +44,7 @@ object HomeContract {
         val inviteRequests: List<InviteRequest> = emptyList(),
 
         val isNavigating: Boolean = false,
-        val coin: Int = 9999,
+        val coin: Int = 0,
 
         val isLoading: Boolean = false,
         val errorMessage: String? = null

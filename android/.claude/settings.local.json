@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(for dir in \"core/data\" \"core/database\" \"core/datastore\" \"core/designsystem\" \"core/domain\" \"core/model\" \"core/network\" \"core/ui\" \"feature/auth\")",
+      "Bash(do cd \"C:\\Users\\SSAFY\\Documents\\GitHub\\S13P21D103\\android\\$dir\\src\\test\\java\\com\")",
+      "Bash(done)",
+      "Bash(./gradlew build:*)",
+      "Bash(gradle build:*)",
+      "Bash(where gradle)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

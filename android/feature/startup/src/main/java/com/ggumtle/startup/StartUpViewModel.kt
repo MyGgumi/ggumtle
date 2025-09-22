@@ -3,7 +3,7 @@ package com.ggumtle.startup
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ggumtle.designsystem.dialog.DialogState
-import com.example.domain.unity.UnityStartupObserveManager
+import com.ggumtle.domain.unity.UnityStartupObserveManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine

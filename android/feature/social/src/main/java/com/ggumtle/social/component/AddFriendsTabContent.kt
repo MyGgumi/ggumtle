@@ -16,7 +16,7 @@ import com.ggumtle.designsystem.component.GameSearchBar
 import com.ggumtle.designsystem.component.GameSearchBarClickable
 import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.domain.websocket.model.FriendRequest
-import com.example.domain.websocket.model.SentRequest
+import com.ggumtle.domain.websocket.model.SentRequest
 
 @Composable
 fun AddFriendsTabContent(

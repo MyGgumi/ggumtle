@@ -1,7 +1,7 @@
 package com.ggumtle.home
 
 import androidx.lifecycle.ViewModel
-import com.example.domain.rest.usecase.user.GetUserInfoUseCase
+import com.ggumtle.domain.rest.usecase.user.GetMemberInfoUseCase
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.domain.model.MemberConnectionState
 import com.ggumtle.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
@@ -15,12 +15,12 @@ import com.ggumtle.domain.websocket.usecase.home.ObserveLeavePartyUseCase
 import com.ggumtle.domain.websocket.usecase.social.GetFriendsUseCase
 import com.ggumtle.domain.websocket.usecase.social.ObserveGetFriendsUseCase
 import com.ggumtle.home.model.PartyInfo
-import com.example.domain.websocket.model.PartyMember
+import com.ggumtle.domain.websocket.model.PartyMember
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.designsystem.dialog.DialogState
-import com.example.domain.unity.UnitySendManager
-import com.example.domain.websocket.usecase.home.GetPartyParticipantsUseCase
-import com.example.domain.websocket.usecase.home.ObserveGetPartyParticipantsUseCase
+import com.ggumtle.domain.unity.UnitySendManager
+import com.ggumtle.domain.websocket.usecase.home.GetPartyParticipantsUseCase
+import com.ggumtle.domain.websocket.usecase.home.ObserveGetPartyParticipantsUseCase
 import com.ggumtle.domain.websocket.usecase.home.ObserveReadyGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.ReadyGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.UnReadyGameUseCase
@@ -69,7 +69,7 @@ class HomeViewModel @Inject constructor(
     private val observeMatchingCancelledUseCase: ObserveMatchingCancelledUseCase,
     private val getPartyParticipantsUseCase: GetPartyParticipantsUseCase,
     private val observeGetPartyParticipantsUseCase: ObserveGetPartyParticipantsUseCase,
-    private val getUserInfoUseCase: GetUserInfoUseCase
+    private val getMemberInfoUseCase: GetMemberInfoUseCase
 ) : ViewModel(), ContainerHost<HomeContract.State, HomeContract.SideEffect> {
 
     override val container: Container<HomeContract.State, HomeContract.SideEffect> =
@@ -107,7 +107,9 @@ class HomeViewModel @Inject constructor(
                 } else {
                     val newPartyMember = PartyMember(
                         id = result.joinedMemberId,
-                        nickname = result.joinedMemberNickname
+                        nickname = result.joinedMemberNickname,
+                        monggingLevel = result.monggingLevel,
+                        monggingClassId = result.monggingClassId
                     )
                     // TODO: 실제 상대방 레벨 가져오기
                     enterOtherCharacter(result.joinedMemberNickname, 1)
@@ -151,7 +153,9 @@ class HomeViewModel @Inject constructor(
             val newPartyMember = PartyMember(
                 id = state.userProfile.id,
                 nickname = state.userProfile.nickname,
-                isLeader = true
+                isLeader = true,
+                monggingClassId = 1,
+                monggingLevel = 1
             )
             enterMyCharacter(newPartyMember.nickname, 1)
             reduce {
@@ -356,28 +360,27 @@ class HomeViewModel @Inject constructor(
 
     // 프로필 조회
     private fun loadProfile() = intent {
-//        getUserInfoUseCase.invoke().collect { resource ->
-//            when (resource) {
-//                is Resource.Loading -> reduce { state.copy(isLoading = true) }
-//                is Resource.Success -> {
-//                    val myId = authManager.getMemberId()
-//                    if (myId != null) {
-//                        val userProfile = UserProfile(myId, resource.data.nickname)
-//                        reduce {
-//                            state.copy(
-//                                userProfile = userProfile,
-//                                isLoading = false
-//                            )
-//                        }
-//                        //TODO: 실제 레발 값 가져오기
-//                        enterMyCharacter(userProfile.nickname, 1)
-//                    }
-//                }
-//                is Resource.Failure -> reduce { state.copy(isLoading = false) }
-//            }
-//        }
-        val userProfile = UserProfile(1, "몽깅이")
-        reduce { state.copy(userProfile = userProfile) }
+        getMemberInfoUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    val myId = authManager.getMemberId()
+                    if (myId != null) {
+                        val userProfile = UserProfile(myId, resource.data.nickname)
+                        reduce {
+                            state.copy(
+                                userProfile = userProfile,
+                                isLoading = false,
+                                coin = resource.data.coin
+                            )
+                        }
+                        //TODO: 실제 레발 값 가져오기
+                        enterMyCharacter(userProfile.nickname, 1)
+                    }
+                }
+                is Resource.Failure -> reduce { state.copy(isLoading = false) }
+            }
+        }
     }
 
     // 프로필 열기

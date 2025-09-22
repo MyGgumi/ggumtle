@@ -1,0 +1,27 @@
+package com.ggumtle.domain.websocket.repository
+
+interface WebSocketRepository {
+    suspend fun connect()
+    suspend fun disconnect()
+    suspend fun searchMembers(keyword: String, page: Int, size: Int)
+    suspend fun requestFriend(targetMemberId: Long)
+    suspend fun getFriendRequests()
+    suspend fun getFriends()
+    suspend fun acceptFriend(friendId: Long)
+    suspend fun rejectFriend(friendId: Long)
+    suspend fun createParty()
+    suspend fun inviteParty(inviteeId: Long)
+    suspend fun getInvitations()
+    suspend fun acceptPartyInvitation(invitationId: String)
+    suspend fun leaveParty()
+    suspend fun startGame()
+    suspend fun readyGame()
+    suspend fun unReadyGame()
+    suspend fun matchingCancelled()
+    suspend fun getSentFriendRequests()
+    suspend fun cancelFriendRequest(friendId: Long)
+    suspend fun deleteFriend(friendId: Long)
+    suspend fun getProfileFriend(friendId: Long)
+    suspend fun getPartyParticipants()
+    suspend fun changeMonggingType(monggingId: Long)
+}

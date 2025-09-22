@@ -18,7 +18,7 @@ import androidx.compose.ui.unit.sp
 import com.ggumtle.designsystem.component.GameCard
 import com.ggumtle.designsystem.component.button.GameIconButton
 import com.ggumtle.designsystem.theme.GameColors
-import com.example.domain.websocket.model.SentRequest
+import com.ggumtle.domain.websocket.model.SentRequest
 
 @Composable
 fun GameSentRequestItem(

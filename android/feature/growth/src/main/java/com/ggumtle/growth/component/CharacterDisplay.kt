@@ -23,7 +23,7 @@ fun CharacterDisplay(
     characterName: String,
     selectedIndex: Int,
     totalCharacters: Int,
-    onSwipe: (Int) -> Unit,
+    onSwipe: (Int, Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -47,7 +47,7 @@ fun CharacterDisplay(
             IconButton(
                 onClick = {
                     val newIndex = if (selectedIndex > 0) selectedIndex - 1 else totalCharacters - 1
-                    onSwipe(newIndex)
+                    onSwipe(newIndex, false)
                 },
                 modifier = Modifier.size(80.dp)
             ) {
@@ -73,7 +73,7 @@ fun CharacterDisplay(
             IconButton(
                 onClick = {
                     val newIndex = if (selectedIndex < totalCharacters - 1) selectedIndex + 1 else 0
-                    onSwipe(newIndex)
+                    onSwipe(newIndex, true)
                 },
                 modifier = Modifier.size(80.dp)
             ) {
@@ -95,6 +95,6 @@ fun CharacterDisplayPreview() {
         characterName = "힐러 몽깅이",
         selectedIndex = 0,
         totalCharacters = 3,
-        onSwipe = {}
+        onSwipe = { index, isNext -> }
     )
 }

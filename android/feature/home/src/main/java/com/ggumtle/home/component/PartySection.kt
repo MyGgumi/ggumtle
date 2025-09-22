@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ggumtle.designsystem.component.button.GameIconButton
 import com.ggumtle.designsystem.theme.GameColors
-import com.example.domain.websocket.model.PartyMember
+import com.ggumtle.domain.websocket.model.PartyMember
 import kotlin.invoke
 
 @Composable

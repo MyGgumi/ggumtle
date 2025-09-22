@@ -2,7 +2,6 @@ package com.ggumtle.growth
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -17,11 +16,11 @@ fun GrowthContent(
     onBackClick: () -> Unit = {},
     onARClick: () -> Unit = {},
     onDailyMissionClick: () -> Unit = {},
-    onCharacterSwipe: (Int) -> Unit = {},
+    onCharacterSwipe: (Int, Boolean) -> Unit = { index, isNext -> },
     onEnhanceClick: () -> Unit = {},
     onHideEnhanceSuccessDialog: () -> Unit = {},
     onHideDailyMissionDialog: () -> Unit = {},
-    onClaimMissionReward: (String) -> Unit = {},
+    onClaimMissionReward: (Long) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -41,37 +40,38 @@ fun GrowthContent(
                 onARClick = onARClick,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(24.dp))
-            
+
             CharacterDisplay(
-                characterName = state.characters.getOrNull(state.selectedCharacterIndex)?.name ?: "힐러 몽깅이",
+                characterName = state.myCharacters.getOrNull(state.selectedCharacterIndex)?.monggingClass?.displayName
+                    ?: "힐러 몽깅이",
                 selectedIndex = state.selectedCharacterIndex,
-                totalCharacters = state.characters.size,
+                totalCharacters = state.myCharacters.size,
                 onSwipe = onCharacterSwipe,
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(0.4f)
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             DailyMissionBanner(
                 dailyMission = state.dailyMission,
                 onClick = onDailyMissionClick,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             EnhancementSection(
-                characterInfo = state.characters.getOrNull(state.selectedCharacterIndex),
+                characterInfo = state.myCharacters.getOrNull(state.selectedCharacterIndex),
                 currentCoin = state.dreamCoin,
                 isEnhanceEnabled = state.isEnhanceButtonEnabled,
                 onEnhanceClick = onEnhanceClick,
                 modifier = Modifier.fillMaxWidth()
             )
-            
+
             Spacer(modifier = Modifier.height(16.dp))
         }
 
@@ -84,17 +84,11 @@ fun GrowthContent(
         // 강화 성공 다이얼로그
         if (state.isShowingEnhanceSuccess && state.previousCharacterInfo != null) {
             val previousChar = state.previousCharacterInfo
-            val currentChar = state.characters.getOrNull(state.selectedCharacterIndex)
+            val currentChar = state.myCharacters.getOrNull(state.selectedCharacterIndex)
 
             if (currentChar != null) {
                 EnhanceSuccessDialog(
                     isVisible = state.isShowingEnhanceSuccess,
-                    nextSuccessRate = currentChar.successRate,
-                    currentLevel = previousChar.level,
-                    nextLevel = currentChar.level,
-                    currentStat = previousChar.currentStat,
-                    nextStat = currentChar.currentStat,
-                    statisticName = currentChar.statisticName,
                     onDismiss = onHideEnhanceSuccessDialog,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -105,10 +99,12 @@ fun GrowthContent(
         DailyMissionDialog(
             isVisible = state.isShowingDailyMission,
             missions = state.dailyMission.missions,
-            completedCount = state.dailyMission.completedMissions,
-            totalCount = state.dailyMission.totalMissions,
+            totalCount = state.dailyMission.totalMissionsCount,
+            completedCount = state.dailyMission.completedMissionsCount,
+            remainingCount = state.dailyMission.remainingMissionsCount,
+            afterRewardCount = state.dailyMission.afterRewordMissionsCount,
+            onClaimReward = { mission -> onClaimMissionReward(mission.memberMissionId) },
             onDismiss = onHideDailyMissionDialog,
-            onClaimReward = { mission -> onClaimMissionReward(mission.id) }
         )
     }
 }

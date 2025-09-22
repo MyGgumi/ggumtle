@@ -37,11 +37,17 @@ namespace Networks.Chests
         public override PacketType Type => PacketType.GetItemResponse;
 
         public int Result { get; set; }
+        public long PlayerId { get; set; }
+        public int ChestId { get; set; }
+        public int ItemId { get; set; }
         public List<int> Items { get; set; }
 
-        public GetItemCommand(int result, List<int> items)
+        public GetItemCommand(int result, long playerId, int chestId, int itemId, List<int> items)
         {
             Result = result;
+            PlayerId = playerId;
+            ChestId = chestId;
+            ItemId = itemId;
             Items = items;
         }
     }

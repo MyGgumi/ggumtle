@@ -14,6 +14,8 @@ namespace Networks.Factories
             var buffer = Unpooled.WrappedBuffer(bytes);
 
             var result = buffer.ReadInt();
+            var playerId = buffer.ReadLong();
+            var chestId = buffer.ReadInt();
             var itemSize = buffer.ReadInt();
 
             var items = new List<int>();
@@ -21,8 +23,9 @@ namespace Networks.Factories
             {
                 items.Add(buffer.ReadInt());
             }
+            var itemId = buffer.ReadInt();
 
-            return new GetItemCommand(result, items);
+            return new GetItemCommand(result, playerId, chestId, itemId, items);
         }
     }
 

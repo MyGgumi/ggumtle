@@ -38,7 +38,7 @@ namespace Features.GameInfo.Services
         private readonly CompositeDisposable _disposables = new();
 
         private bool _isTimerRunning = false;
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false;
 
         #endregion
 
@@ -48,6 +48,7 @@ namespace Features.GameInfo.Services
         private readonly IPublisher<GameStatusChangedMessage> _statusChangedPublisher;
         private readonly IPublisher<GgumtleProgressChangedMessage> _progressChangedPublisher;
         private readonly IPublisher<TimeWarningMessage> _timeWarningPublisher;
+        private readonly IPublisher<GameTimeExpiredMessage> _timeExpiredPublisher;
 
         #endregion
 
@@ -58,13 +59,15 @@ namespace Features.GameInfo.Services
             IPublisher<GameInfoChangedMessage> timeChangedPublisher,
             IPublisher<GameStatusChangedMessage> statusChangedPublisher,
             IPublisher<GgumtleProgressChangedMessage> progressChangedPublisher,
-            IPublisher<TimeWarningMessage> timeWarningPublisher
+            IPublisher<TimeWarningMessage> timeWarningPublisher,
+            IPublisher<GameTimeExpiredMessage> timeExpiredPublisher
         )
         {
             _timeChangedPublisher = timeChangedPublisher;
             _statusChangedPublisher = statusChangedPublisher;
             _progressChangedPublisher = progressChangedPublisher;
             _timeWarningPublisher = timeWarningPublisher;
+            _timeExpiredPublisher = timeExpiredPublisher;
 
             Initialize();
         }
@@ -112,7 +115,7 @@ namespace Features.GameInfo.Services
                 _timeWarningPublisher.Publish(new TimeWarningMessage(minutesRemaining, isUrgent));
             }
 
-            DebugLog($"시간 설정: {_gameInfoData.TimeString}, 경고: {_gameInfoData.isTimeWarning}");
+            DebugLog($"시간 설정: {_gameInfoData.TimeString}, 경고: {_gameInfoData.isTimeWarning}, ReactiveProperty 값: {_currentTime.Value}, 총 초: {_gameInfoData.currentTime.TotalSeconds}");
         }
 
         public void SetStatusMessage(string message)
@@ -168,8 +171,8 @@ namespace Features.GameInfo.Services
             if (!_isTimerRunning)
             {
                 _isTimerRunning = true;
+                DebugLog($"타이머 시작 - 현재 시간: {_gameInfoData.TimeString} ({_gameInfoData.currentTime.TotalSeconds}초)");
                 StartTimerAsync().Forget();
-                DebugLog("타이머 시작");
             }
         }
 
@@ -227,6 +230,12 @@ namespace Features.GameInfo.Services
                     {
                         _isTimerRunning = false;
                         DebugLog("타이머 종료 - 시간 만료");
+
+                        // 시간 만료 메시지 발송
+                        _timeExpiredPublisher.Publish(new GameTimeExpiredMessage(
+                            _gameInfoData.currentTime,
+                            "게임 제한 시간 만료"
+                        ));
                     }
                 }
             }

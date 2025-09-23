@@ -32,7 +32,7 @@ namespace Features.GameInfo.Views
 
         [Header("Settings")]
         [SerializeField]
-        private bool enableDebugLogs = true;
+        private bool enableDebugLogs = false;
 
         [SerializeField]
         private float progressAnimationDuration = 0.3f;
@@ -119,8 +119,9 @@ namespace Features.GameInfo.Views
 
         private void InitializeUI()
         {
-            // 초기 UI 상태 설정
-            UpdateTimeDisplay(TimeSpan.Zero);
+            // 초기 UI 상태 설정 - 기본 게임 시간으로 시작
+            if (_timeLabel != null)
+                _timeLabel.text = "15:00";
             UpdateStatusDisplay("");
             UpdateTimeWarningStyle(false);
             UpdateGgumtleProgress(1, 0f);
@@ -163,6 +164,13 @@ namespace Features.GameInfo.Views
             if (_timeLabel != null)
             {
                 _timeLabel.text = timeString;
+                if (enableDebugLogs)
+                    Debug.Log($"[GameInfoUIView] 시간 표시 업데이트: {timeString}");
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.LogError("[GameInfoUIView] _timeLabel이 null입니다!");
             }
         }
 

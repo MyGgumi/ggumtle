@@ -1,12 +1,25 @@
 services:
-  spring:
-    container_name: ggumtle-spring
+  spring-1:
+    container_name: ggumtle-spring-1
     build:
       context: ./
       dockerfile: Dockerfile
     ports:
       - ${GAME_SERVER_PORT}:${GAME_SERVER_PORT}
       - ${METRIC_SERVER_PORT}:${METRIC_SERVER_PORT}
+    env_file:
+      - .env
+    environment:
+      - TZ=${TIMEZONE}
+
+  spring-2:
+    container_name: ggumtle-spring-2
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - ${GAME_SERVER_PORT_2}:${GAME_SERVER_PORT}
+      - ${METRIC_SERVER_PORT_2}:${METRIC_SERVER_PORT}
     env_file:
       - .env
     environment:

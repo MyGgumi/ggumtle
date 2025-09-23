@@ -45,8 +45,9 @@ fun EnhancementSection(
     onEnhanceClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val maxCost = characterInfo?.needCoin ?: 4000
-    val targetProgressRatio = if (currentCoin >= maxCost) 1f else currentCoin.toFloat() / maxCost
+    val maxCost = characterInfo?.needCoin
+    val isMaxLevel = characterInfo?.nowLevel == 5
+    val targetProgressRatio = if (isMaxLevel) 1f else if (maxCost != null && currentCoin >= maxCost) 1f else maxCost?.let { currentCoin.toFloat() / it } ?: 0f
     val progressRatio by animateFloatAsState(
         targetValue = targetProgressRatio,
         animationSpec = tween(
@@ -85,43 +86,71 @@ fun EnhancementSection(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 characterInfo?.let { info ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
+                    // 스탯 이름 매핑
+                    val statName = when(info.monggingClass.type) {
+                        "physical" -> "체력 증가"
+                        "heal" -> "치료 속도"
+                        "work" -> "작업 속도"
+                        else -> "스탯"
+                    }
+
+                    if (isMaxLevel) {
+                        // 최고 레벨일 때는 현재 레벨만 중앙에 표시
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
                                 text = "Lv ${info.nowLevel}",
                                 color = Color.White,
                                 style = MaterialTheme.typography.titleLarge
                             )
                             Text(
-                                text = "경험치 ${String.format("%.1f", info.nowPercentage)}%",
+                                text = "$statName ${String.format("%.1f", info.nowPercentage)}%",
                                 color = BrandColors.PurpleLight,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
-
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_right_arrows),
-                            contentDescription = "Arrow",
-                            modifier = Modifier.size(32.dp)
-                        )
-
-                        Column(
-                            horizontalAlignment = Alignment.End
+                    } else {
+                        // 최고 레벨이 아닐 때는 기존 UI
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(
-                                text = "Lv ${info.afterLevel ?: (info.nowLevel + 1)}",
-                                color = BrandColors.Mint,
-                                style = MaterialTheme.typography.titleLarge
+                            Column {
+                                Text(
+                                    text = "Lv ${info.nowLevel}",
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Text(
+                                    text = "$statName ${String.format("%.1f", info.nowPercentage)}%",
+                                    color = BrandColors.PurpleLight,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_right_arrows),
+                                contentDescription = "Arrow",
+                                modifier = Modifier.size(32.dp)
                             )
-                            Text(
-                                text = "경험치 ${String.format("%.1f", info.afterPercentage ?: 0.0)}%",
-                                color = BrandColors.Mint,
-                                style = MaterialTheme.typography.bodyMedium
-                            )
+
+                            Column(
+                                horizontalAlignment = Alignment.End
+                            ) {
+                                Text(
+                                    text = "Lv ${info.afterLevel ?: (info.nowLevel + 1)}",
+                                    color = BrandColors.Mint,
+                                    style = MaterialTheme.typography.titleLarge
+                                )
+                                Text(
+                                    text = "$statName ${String.format("%.1f", info.afterPercentage ?: 0.0)}%",
+                                    color = BrandColors.Mint,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
                         }
                     }
 
@@ -161,7 +190,10 @@ fun EnhancementSection(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "${formatter.format(currentCoin)} / ${formatter.format(maxCost)}",
+                        text = if (maxCost != null)
+                            "${formatter.format(currentCoin)} / ${formatter.format(maxCost)}"
+                        else
+                            "${formatter.format(currentCoin)} / -",
                         color = BrandColors.PurpleLight,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.align(Alignment.CenterEnd)
@@ -208,7 +240,7 @@ fun EnhancementSection(
                             ),
                             shape = RoundedCornerShape(16.dp)
                         )
-                        .clickable(enabled = isEnhanceEnabled || progressRatio >= 1f) {
+                        .clickable(enabled = !isMaxLevel && (isEnhanceEnabled || progressRatio >= 1f)) {
                             onEnhanceClick()
                         },
                     contentAlignment = Alignment.Center
@@ -239,24 +271,29 @@ fun EnhancementSection(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "강화하기",
+                            text = if (isMaxLevel) "최고레벨" else "강화하기",
                             style = MaterialTheme.typography.titleLarge,
                             color = Color.White
                         )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.ic_moon),
-                                contentDescription = "Dream Coin",
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Text(
-                                text = "- ${formatter.format(maxCost)}    |    성공 확률 ${characterInfo?.successPercentage ?: 35}%",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.White.copy(alpha = 0.8f)
-                            )
+                        if (!isMaxLevel) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.ic_moon),
+                                    contentDescription = "Dream Coin",
+                                    modifier = Modifier.size(24.dp)
+                                )
+                                Text(
+                                    text = if (characterInfo != null && maxCost != null)
+                                        "- ${formatter.format(maxCost)}    |    성공 확률 ${characterInfo.successPercentage}%"
+                                    else
+                                        " -    |    성공 확률 -%",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = Color.White.copy(alpha = 0.8f)
+                                )
+                            }
                         }
                     }
                 }

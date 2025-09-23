@@ -21,6 +21,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.tooling.preview.Preview
 import com.ggumtle.core.designsystem.R
 
 @Composable
@@ -34,15 +35,17 @@ fun MenuTab(
     onSocialClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier.padding(8.dp),
-        verticalAlignment = Alignment.Top
+    Box(
+        modifier = modifier.padding(8.dp).fillMaxWidth()
     ) {
-        // 파티 나가기 버튼 (파티에 소속된 경우만 표시) TODO: isInParty로 최종적으로 수정 필요
+        // 파티 나가기 버튼 (오프셋으로 고정 위치)
         AnimatedVisibility(
             visible = true,
             enter = fadeIn() + slideInVertically(),
-            exit = fadeOut() + slideOutVertically()
+            exit = fadeOut() + slideOutVertically(),
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .offset(x = (-56).dp) // 메뉴 버튼 크기만큼 왼쪽으로 오프셋
         ) {
             MenuButton(
                 icon = ImageVector.vectorResource(id = R.drawable.btn_exit_party),
@@ -52,52 +55,57 @@ fun MenuTab(
             )
         }
 
-        if (!isExpanded) {
-            MenuButton(
-                icon = Icons.Default.Menu,
-                contentDescription = "메뉴 열기",
-                onClick = onTabClick,
-                backgroundColor = Color.Transparent,
-            )
-        }else{
-            Column(
-                horizontalAlignment = Alignment.End
-            ) {
-                // 드롭다운 메뉴
-                AnimatedVisibility(
-                    visible = isExpanded,
-                    enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
-                    exit = fadeOut() + slideOutVertically(targetOffsetY = { -it })
+        // 메뉴 또는 드롭다운 (우측 끝에 고정)
+        Box(
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            if (!isExpanded) {
+                MenuButton(
+                    icon = Icons.Default.Menu,
+                    contentDescription = "메뉴 열기",
+                    onClick = onTabClick,
+                    backgroundColor = Color.Transparent,
+                )
+            } else {
+                Column(
+                    horizontalAlignment = Alignment.End
                 ) {
-                    Card(
-                        modifier = Modifier.padding(bottom = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = Color(0xFF1A1D2E).copy(alpha = 0.5f)
-                        ),
-                        shape = RoundedCornerShape(12.dp)
+                    // 드롭다운 메뉴
+                    AnimatedVisibility(
+                        visible = isExpanded,
+                        enter = fadeIn() + slideInVertically(initialOffsetY = { -it }),
+                        exit = fadeOut() + slideOutVertically(targetOffsetY = { -it })
                     ) {
-                        Column(
-                            modifier = Modifier.padding(8.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        Card(
+                            modifier = Modifier.padding(bottom = 8.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color(0xFF1A1D2E).copy(alpha = 0.5f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
                         ) {
-                            // 닫기 버튼 (맨 위)
-                            MenuButton(
-                                icon = Icons.Default.Close,
-                                contentDescription = "메뉴 닫기",
-                                onClick = onTabClick
-                            )
+                            Column(
+                                modifier = Modifier.padding(8.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                // 닫기 버튼 (맨 위)
+                                MenuButton(
+                                    icon = Icons.Default.Close,
+                                    contentDescription = "메뉴 닫기",
+                                    onClick = onTabClick
+                                )
 
-                            MenuButton(
-                                icon = Icons.Default.Settings,
-                                contentDescription = "설정",
-                                onClick = onSettingsClick
-                            )
+                                MenuButton(
+                                    icon = Icons.Default.Settings,
+                                    contentDescription = "설정",
+                                    onClick = onSettingsClick
+                                )
 
-                            MenuButton(
-                                icon = Icons.Default.Mail,
-                                contentDescription = "초대 목록 확인",
-                                onClick = onInviteListClick
-                            )
+                                MenuButton(
+                                    icon = Icons.Default.Mail,
+                                    contentDescription = "초대 목록 확인",
+                                    onClick = onInviteListClick
+                                )
+                            }
                         }
                     }
                 }
@@ -126,7 +134,35 @@ private fun MenuButton(
             imageVector = icon,
             contentDescription = contentDescription,
             tint = Color.White,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(28.dp)
         )
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A2E)
+@Composable
+fun MenuTabCollapsedPreview() {
+    MenuTab(
+        isExpanded = false,
+        isInParty = true,
+        onTabClick = {},
+        onSettingsClick = {},
+        onInviteListClick = {},
+        onLeavePartyClick = {},
+        onSocialClick = {}
+    )
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A2E)
+@Composable
+fun MenuTabExpandedPreview() {
+    MenuTab(
+        isExpanded = true,
+        isInParty = true,
+        onTabClick = {},
+        onSettingsClick = {},
+        onInviteListClick = {},
+        onLeavePartyClick = {},
+        onSocialClick = {}
+    )
 }

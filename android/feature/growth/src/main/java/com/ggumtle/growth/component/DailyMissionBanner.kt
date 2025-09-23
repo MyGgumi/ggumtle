@@ -61,7 +61,7 @@ fun DailyMissionBanner(
                 )
                 Text(
                     text = dailyMission?.let {
-                        "완료까지 ${it.remainingMissionsCount}개 남음 (${it.completedMissionsCount}/${it.totalMissionsCount})"
+                        "완료까지 ${it.remainingMissionsCount}개"
                     } ?: "미션 정보 없음",
                     color = BrandColors.PurpleLight,
                     style = MaterialTheme.typography.bodyMedium

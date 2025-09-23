@@ -58,7 +58,6 @@ fun DailyMissionDialog(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.Black.copy(alpha = 0.8f))
                 .clickable { onDismiss() },
             contentAlignment = Alignment.Center
         ) {
@@ -106,7 +105,7 @@ fun DailyMissionDialog(
 
                     // 완료 현황
                     Text(
-                        text = "완료까지 ${remainingCount}개 남음 ($completedCount/$totalCount)",
+                        text = "완료까지 ${remainingCount}개",
                         color = BrandColors.PurpleLight,
                         style = MaterialTheme.typography.bodyMedium
                     )

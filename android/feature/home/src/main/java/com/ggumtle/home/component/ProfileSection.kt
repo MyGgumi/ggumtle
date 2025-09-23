@@ -20,9 +20,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.core.designsystem.R
 import com.ggumtle.home.model.UserProfile
+import java.text.DecimalFormat
 
 @Composable
 fun ProfileSection(
@@ -63,7 +65,7 @@ fun ProfileSection(
                     Icons.Default.Person,
                     contentDescription = "프로필",
                     tint = Color.White,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
@@ -71,31 +73,46 @@ fun ProfileSection(
                 Text(
                     text = userProfile.nickname,
                     color = Color.White,
-                    fontSize = 14.sp,
+                    fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
                 )
+
+                Spacer(modifier = Modifier.height(4.dp))
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Icon(
-                        painter = painterResource(id = R.drawable.ic_coin),
+                        painter = painterResource(id = R.drawable.ic_dream_coin),
                         contentDescription = "포인트",
                         tint = Color.Unspecified,
                         modifier = Modifier
-                            .size(32.dp)
-                            .offset(x = (-8).dp)
+                            .size(20.dp)
                     )
 
                     Text(
-                        text = coin.toString(),
+                        text = DecimalFormat("#,###").format(coin),
                         color = Color.White,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Normal,
-                        modifier = Modifier.offset(x = (-8).dp)
+                        modifier = Modifier.offset(x = (6).dp)
                     )
                 }
             }
         }
     }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A2E)
+@Composable
+fun ProfileSectionPreview() {
+    ProfileSection(
+        userProfile = UserProfile(
+            id = 1L,
+            nickname = "꿈틀이",
+            profileImageUrl = null
+        ),
+        coin = 15420,
+        onClick = {}
+    )
 }

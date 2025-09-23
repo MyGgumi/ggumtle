@@ -117,9 +117,11 @@ public class MonggingService {
 
         // 성공 및 실패
         if (isSuccess) {
-            return EnhanceMonggingResult.ofSuccess(mongging, enhanceStats);
+            var afterEnhanceConfig = enhanceConfigRepository.findByMonggingClassAndLevel(mongging.getMonggingClass(), mongging.getLevel() + 1)
+                    .orElseThrow(() -> new GgumtleException(MonggingErrorCode.ENHANCE_CONFIG_NOT_FOUND));
+            return EnhanceMonggingResult.ofSuccess(mongging, enhanceStats, afterEnhanceConfig);
         } else {
-            return EnhanceMonggingResult.ofFail(mongging, enhanceStats);
+            return EnhanceMonggingResult.ofFail(mongging, enhanceStats, enhanceConfig);
         }
     }
 }

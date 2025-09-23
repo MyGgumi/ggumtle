@@ -17,6 +17,7 @@ public record EnhanceMonggingResponse(
             .afterPercentage(result.afterPercentage())
             .beforeLevel(result.beforeLevel())
             .afterLevel(result.afterLevel())
+            .nextSuccessRate(result.nextSuccessRate())
             .build();
 
         return EnhanceMonggingResponse.builder()
@@ -32,7 +33,8 @@ public record EnhanceMonggingResponse(
         double beforePercentage,
         double afterPercentage,
         int beforeLevel,
-        int afterLevel
+        int afterLevel,
+        int nextSuccessRate
     ) {
     }
 }

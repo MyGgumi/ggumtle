@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.mongging.application.result;
 
+import com.ggumtle.ggumtle.mongging.domain.EnhanceConfig;
 import com.ggumtle.ggumtle.mongging.domain.EnhanceStat;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
 import lombok.AccessLevel;
@@ -15,12 +16,15 @@ public record EnhanceMonggingResult(
     double beforePercentage,
     double afterPercentage,
     int beforeLevel,
-    int afterLevel
+    int afterLevel,
+    int nextSuccessRate
 ) {
 
-    public static EnhanceMonggingResult ofSuccess(Mongging mongging, List<EnhanceStat> enhanceStats) {
+    public static EnhanceMonggingResult ofSuccess(Mongging mongging, List<EnhanceStat> enhanceStats, EnhanceConfig nextConfig) {
         var beforeStat = enhanceStats.get(0);
         var afterStat = enhanceStats.get(1);
+
+        int nextSuccessPercentage = (int) (nextConfig.getSuccessPercentage() * 100);
 
         return EnhanceMonggingResult.of(
                 true,
@@ -31,11 +35,14 @@ public record EnhanceMonggingResult(
                 afterStat.getEnhancePercentage(),
                 // 강화에 성공하면, 강화 전 level에서 현재 몽깅이 level이 됨
                 beforeStat.getLevel(),
-                mongging.getLevel());
+                mongging.getLevel(),
+                nextSuccessPercentage);
     }
 
-    public static EnhanceMonggingResult ofFail(Mongging mongging, List<EnhanceStat> enhanceStats) {
+    public static EnhanceMonggingResult ofFail(Mongging mongging, List<EnhanceStat> enhanceStats, EnhanceConfig nextConfig) {
         var beforeStat = enhanceStats.get(0);
+
+        int nextSuccessPercentage = (int) (nextConfig.getSuccessPercentage() * 100);
 
         return EnhanceMonggingResult.of(
                 false,
@@ -44,7 +51,8 @@ public record EnhanceMonggingResult(
                 beforeStat.getEnhancePercentage(),
                 beforeStat.getEnhancePercentage(),
                 beforeStat.getLevel(),
-                beforeStat.getLevel());
+                beforeStat.getLevel(),
+                nextSuccessPercentage);
     }
 
     public static EnhanceMonggingResult of(
@@ -54,7 +62,8 @@ public record EnhanceMonggingResult(
             double beforePercentage,
             double afterPercentage,
             int beforeLevel,
-            int afterLevel) {
+            int afterLevel,
+            int nextSuccessRate) {
         return EnhanceMonggingResult.builder()
             .isSuccess(isSuccess)
             .monggingId(monggingId)
@@ -63,17 +72,7 @@ public record EnhanceMonggingResult(
             .afterPercentage(afterPercentage)
             .beforeLevel(beforeLevel)
             .afterLevel(afterLevel)
+            .nextSuccessRate(nextSuccessRate)
             .build();
-    }
-
-    @Builder(access = AccessLevel.PRIVATE)
-    record Experience(
-        long monggingId,
-        String statisticName,
-        double beforePercentage,
-        double afterPercentage,
-        int beforeLevel,
-        int afterLevel
-    ) {
     }
 }

@@ -34,7 +34,7 @@ class AuthInterceptor @Inject constructor(
     }
 
     private fun shouldSkipAuth(path: String): Boolean {
-        val skip = path.startsWith("/auth/")
+        val skip = path.startsWith("/auth/login") || path.startsWith("/auth/register")
         Log.d("AuthInterceptor", "Path: $path, skipAuth: $skip")
         return skip
     }

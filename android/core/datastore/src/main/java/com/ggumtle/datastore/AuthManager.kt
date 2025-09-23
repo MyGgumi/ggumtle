@@ -70,11 +70,9 @@ class AuthManager @Inject constructor(
 
     suspend fun signOutWithGoogle() {
         try {
-            val googleLogoutSuccess = googleAuthManager.googleLogout()
-            logout(LogoutReason.UserLogout)
-
+            googleAuthManager.googleLogout()
         } catch (e: Exception) {
-            logout(LogoutReason.UserLogout)
+            Log.e("AuthManager", "Google 로그아웃 실패", e)
         }
     }
 
@@ -125,6 +123,7 @@ class AuthManager @Inject constructor(
     fun checkAutoLogin() {
         try {
             val accessToken = getAccessToken()
+
             val memberId = getMemberId()
 //            val refreshToken = getRefreshToken()
 

@@ -4,6 +4,7 @@ import com.ggumtle.data.rest.model.member.request.EditNicknameRequestDto
 import com.ggumtle.data.rest.model.member.response.EditNicknameResponseDto
 import com.ggumtle.data.rest.model.member.response.MemberCoinResponseDto
 import com.ggumtle.data.rest.model.member.response.MemberInfoResponseDto
+import com.ggumtle.data.rest.model.member.response.DeleteAccountResponseDto
 import com.ggumtle.data.rest.remote.service.MemberService
 import com.ggumtle.network.rest.model.NetworkResult
 import javax.inject.Inject
@@ -21,4 +22,7 @@ class MemberRemoteDataSource @Inject constructor(
 
     suspend fun getMemberCoin(): NetworkResult<MemberCoinResponseDto> =
         memberService.getMemberCoin()
+
+    suspend fun deleteAccount(): NetworkResult<DeleteAccountResponseDto> =
+        memberService.deleteAccount()
 }

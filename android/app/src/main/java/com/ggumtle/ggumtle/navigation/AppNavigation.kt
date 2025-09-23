@@ -38,8 +38,9 @@ fun AppNavigation(
                 LogoutReason.TokenExpired -> "세션이 만료되어 다시 로그인해 주세요"
                 LogoutReason.NetworkError -> "네트워크 오류로 인해 로그아웃되었습니다"
                 is LogoutReason.SessionExpired -> "세션이 만료되었습니다. 다시 로그인해 주세요"
+                LogoutReason.AccountDeleted -> "회원탈퇴가 완료되었습니다"
             }
-            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
             unitySendManager.goToLoginFromHome()
             delay(2000)
             navController.navigate(LoginRoute) {

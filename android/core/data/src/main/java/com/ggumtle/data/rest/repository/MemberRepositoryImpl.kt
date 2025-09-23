@@ -10,6 +10,7 @@ import com.ggumtle.domain.rest.model.member.response.MemberCoinResponse
 import com.ggumtle.domain.rest.model.member.response.MemberInfoResponse
 import com.ggumtle.domain.rest.repository.MemberRepository
 import com.ggumtle.domain.rest.model.Resource
+import com.ggumtle.domain.rest.model.member.response.DeleteAccountResponse
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 
@@ -36,5 +37,12 @@ class MemberRepositoryImpl @Inject constructor(
             apiCall = { remoteDataSource.getMemberCoin() },
             mapper = { it.toDomain() },
             defaultErrorMessage = "코인 조회에 실패했습니다"
+        )
+
+    override fun deleteAccount(): Flow<Resource<DeleteAccountResponse>> =
+        executeApiCall(
+            apiCall = { remoteDataSource.deleteAccount() },
+            mapper = { it.toDomain() },
+            defaultErrorMessage = "회원탈퇴에 실패했습니다"
         )
 }

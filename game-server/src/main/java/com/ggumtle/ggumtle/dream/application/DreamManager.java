@@ -1198,34 +1198,11 @@ public class DreamManager {
     }
 
     private void endDream(boolean isMonggingWin) {
-        // 플레이어별 상태 기록
-        Map<Long, DreamEndBody.PlayerStatus> playerStatuses = new HashMap<>();
-        for (Player player : players.values()) {
-            if (player instanceof Mongdung) {
-                playerStatuses.put(player.getId(), DreamEndBody.PlayerStatus.ALIVE);
-            }
-
-            if (player instanceof Mongging mongging) {
-                // 자원 정리
-                shutdownThread();
-
-                DreamEndBody.PlayerStatus status;
-                if (mongging.isDead()) {
-                    status = DreamEndBody.PlayerStatus.DEAD;
-                } else if (mongging.isEscaped()) {
-                    status = DreamEndBody.PlayerStatus.ESCAPED;
-                } else {
-                    status = DreamEndBody.PlayerStatus.ALIVE;
-                }
-
-                playerStatuses.put(mongging.getId(), status);
-            }
-        }
+        // 자원 정리
+        shutdownThread();
 
         // 드림 종료 브로드캐스팅
-        Body body = new DreamEndBody(
-                isMonggingWin ? DreamEndBody.Result.MONGGING_WIN : DreamEndBody.Result.MONGDUNG_WIN,
-                playerStatuses);
+        Body body = new DreamEndBody(isMonggingWin, this.players.values());
         Packet packet = Packet.of(SendPacketType.END, System.currentTimeMillis(), body);
         room.broadcast(packet);
 

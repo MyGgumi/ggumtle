@@ -1,41 +1,46 @@
 package com.ggumtle.ggumtle.dream.application.body;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import com.ggumtle.ggumtle.dream.domain.player.Mongdung;
+import com.ggumtle.ggumtle.dream.domain.player.Mongging;
+import com.ggumtle.ggumtle.dream.domain.player.Player;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.Map;
+import java.util.Collection;
 
 public record DreamEndBody(
-        Result result,
-        Map<Long, PlayerStatus> playerStatuses
+        boolean isMonggingWin,
+        Collection<Player> players
 ) implements Body {
-
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum Result {
-        MONGGING_WIN((byte) 1), MONGDUNG_WIN((byte) 2);
-
-        private final byte value;
-    }
-
-    @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    public enum PlayerStatus {
-        ALIVE(1),  DEAD(2), ESCAPED(3);
-
-        private final int value;
-    }
 
     @Override
     public byte[] toBytes(Charset charsets) {
-        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + 12 * playerStatuses.size());
+        ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + 4 + 16 * players.size());
 
-        buffer.put(result.value);
-        buffer.putInt(playerStatuses.size() - 1);
-        for (Map.Entry<Long, PlayerStatus> player : playerStatuses.entrySet()) {
-            buffer.putLong(player.getKey());
-            buffer.putInt(player.getValue().value);
+        // 게임 결과
+        buffer.put(isMonggingWin ? (byte) 1 : (byte) 0);
+
+        // 탈출한 몽깅이 수
+        long escapedMonggingCount = this.players.stream()
+                .filter(player -> player instanceof Mongging mongging && mongging.isEscaped())
+                .count();
+        buffer.putInt((int) escapedMonggingCount);
+
+        // 플레이어들 상태
+        buffer.putInt(this.players.size());
+        for (Player player : this.players) {
+            buffer.putLong(player.getId());
+
+            if (player instanceof Mongging mongging) {
+                buffer.putInt(mongging.isEscaped() ? 1 : 2);
+                buffer.putInt(isMonggingWin ? 100 : 0);
+            }
+
+            else if (player instanceof Mongdung) {
+                buffer.putInt(1);
+                buffer.putInt(isMonggingWin ? 0 : 150);
+            }
         }
 
         return buffer.array();

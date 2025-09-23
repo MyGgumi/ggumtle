@@ -1,13 +1,13 @@
 using System;
-using Features.GameTime.Models;
+using Features.GameInfo.Models;
 using R3;
 
-namespace Features.GameTime.Services
+namespace Features.GameInfo.Services
 {
     /// <summary>
-    /// 게임 시간 및 꿈틀 진행도 관리 서비스 인터페이스
+    /// 게임 정보 및 꿈틀 진행도 관리 서비스 인터페이스
     /// </summary>
-    public interface IGameTimeService
+    public interface IGameInfoService
     {
         /// <summary>
         /// 현재 게임 시간 (Observable)
@@ -87,6 +87,6 @@ namespace Features.GameTime.Services
         /// <summary>
         /// 현재 게임 데이터 가져오기
         /// </summary>
-        GameTimeData GetCurrentData();
+        GameInfoData GetCurrentData();
     }
 }

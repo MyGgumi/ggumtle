@@ -1,18 +1,18 @@
 using System;
 using Cysharp.Threading.Tasks;
-using Features.GameTime.Messages;
-using Features.GameTime.Models;
+using Features.GameInfo.Messages;
+using Features.GameInfo.Models;
 using MessagePipe;
 using R3;
 using UnityEngine;
 using VContainer;
 
-namespace Features.GameTime.Services
+namespace Features.GameInfo.Services
 {
     /// <summary>
-    /// 게임 시간 및 꿈틀 진행도 관리 서비스 구현체
+    /// 게임 정보 및 꿈틀 진행도 관리 서비스 구현체
     /// </summary>
-    public class GameTimeServiceImpl : IGameTimeService, IDisposable
+    public class GameInfoServiceImpl : IGameInfoService, IDisposable
     {
         #region Observable Properties
 
@@ -34,7 +34,7 @@ namespace Features.GameTime.Services
         private readonly ReactiveProperty<float> _ggumtleProgress = new(0f);
         private readonly ReactiveProperty<bool> _isGgumtleComplete = new(false);
 
-        private readonly GameTimeData _gameTimeData = new();
+        private readonly GameInfoData _gameInfoData = new();
         private readonly CompositeDisposable _disposables = new();
 
         private bool _isTimerRunning = false;
@@ -44,7 +44,7 @@ namespace Features.GameTime.Services
 
         #region Dependencies
 
-        private readonly IPublisher<GameTimeChangedMessage> _timeChangedPublisher;
+        private readonly IPublisher<GameInfoChangedMessage> _timeChangedPublisher;
         private readonly IPublisher<GameStatusChangedMessage> _statusChangedPublisher;
         private readonly IPublisher<GgumtleProgressChangedMessage> _progressChangedPublisher;
         private readonly IPublisher<TimeWarningMessage> _timeWarningPublisher;
@@ -54,8 +54,8 @@ namespace Features.GameTime.Services
         #region Constructor
 
         [Inject]
-        public GameTimeServiceImpl(
-            IPublisher<GameTimeChangedMessage> timeChangedPublisher,
+        public GameInfoServiceImpl(
+            IPublisher<GameInfoChangedMessage> timeChangedPublisher,
             IPublisher<GameStatusChangedMessage> statusChangedPublisher,
             IPublisher<GgumtleProgressChangedMessage> progressChangedPublisher,
             IPublisher<TimeWarningMessage> timeWarningPublisher
@@ -79,14 +79,14 @@ namespace Features.GameTime.Services
             _ggumtleLevel
                 .CombineLatest(
                     _ggumtleProgress,
-                    (level, progress) => level >= _gameTimeData.maxGgumtleLevel && progress >= 1.0f
+                    (level, progress) => level >= _gameInfoData.maxGgumtleLevel && progress >= 1.0f
                 )
                 .Subscribe(isComplete => _isGgumtleComplete.Value = isComplete)
                 .AddTo(_disposables);
 
             if (_enableDebugLogs)
             {
-                Debug.Log("[GameTimeServiceImpl] 초기화 완료");
+                Debug.Log("[GameInfoServiceImpl] 초기화 완료");
             }
         }
 
@@ -96,28 +96,28 @@ namespace Features.GameTime.Services
 
         public void SetCurrentTime(TimeSpan time)
         {
-            _gameTimeData.UpdateTime(time);
-            _currentTime.Value = _gameTimeData.currentTime;
-            _isTimeWarning.Value = _gameTimeData.isTimeWarning;
+            _gameInfoData.UpdateTime(time);
+            _currentTime.Value = _gameInfoData.currentTime;
+            _isTimeWarning.Value = _gameInfoData.isTimeWarning;
 
             _timeChangedPublisher.Publish(
-                new GameTimeChangedMessage(time, _gameTimeData.isTimeWarning)
+                new GameInfoChangedMessage(time, _gameInfoData.isTimeWarning)
             );
 
             // 시간 경고 메시지 발송
-            if (_gameTimeData.isTimeWarning)
+            if (_gameInfoData.isTimeWarning)
             {
-                int minutesRemaining = (int)Math.Ceiling(_gameTimeData.currentTime.TotalMinutes);
+                int minutesRemaining = (int)Math.Ceiling(_gameInfoData.currentTime.TotalMinutes);
                 bool isUrgent = minutesRemaining <= 1;
                 _timeWarningPublisher.Publish(new TimeWarningMessage(minutesRemaining, isUrgent));
             }
 
-            DebugLog($"시간 설정: {_gameTimeData.TimeString}, 경고: {_gameTimeData.isTimeWarning}");
+            DebugLog($"시간 설정: {_gameInfoData.TimeString}, 경고: {_gameInfoData.isTimeWarning}");
         }
 
         public void SetStatusMessage(string message)
         {
-            _gameTimeData.statusMessage = message;
+            _gameInfoData.statusMessage = message;
             _statusMessage.Value = message;
 
             _statusChangedPublisher.Publish(new GameStatusChangedMessage(message));
@@ -127,15 +127,15 @@ namespace Features.GameTime.Services
 
         public void SetGgumtleProgress(int level, float progress)
         {
-            _gameTimeData.SetGgumtleProgress(level, progress);
-            _ggumtleLevel.Value = _gameTimeData.ggumtleLevel;
-            _ggumtleProgress.Value = _gameTimeData.ggumtleProgress;
+            _gameInfoData.SetGgumtleProgress(level, progress);
+            _ggumtleLevel.Value = _gameInfoData.ggumtleLevel;
+            _ggumtleProgress.Value = _gameInfoData.ggumtleProgress;
 
             _progressChangedPublisher.Publish(
                 new GgumtleProgressChangedMessage(
-                    _gameTimeData.ggumtleLevel,
-                    _gameTimeData.ggumtleProgress,
-                    _gameTimeData.IsGgumtleComplete
+                    _gameInfoData.ggumtleLevel,
+                    _gameInfoData.ggumtleProgress,
+                    _gameInfoData.IsGgumtleComplete
                 )
             );
 
@@ -144,20 +144,20 @@ namespace Features.GameTime.Services
 
         public bool IncrementGgumtleLevel()
         {
-            if (_gameTimeData.IncrementGgumtleLevel())
+            if (_gameInfoData.IncrementGgumtleLevel())
             {
-                _ggumtleLevel.Value = _gameTimeData.ggumtleLevel;
-                _ggumtleProgress.Value = _gameTimeData.ggumtleProgress;
+                _ggumtleLevel.Value = _gameInfoData.ggumtleLevel;
+                _ggumtleProgress.Value = _gameInfoData.ggumtleProgress;
 
                 _progressChangedPublisher.Publish(
                     new GgumtleProgressChangedMessage(
-                        _gameTimeData.ggumtleLevel,
-                        _gameTimeData.ggumtleProgress,
-                        _gameTimeData.IsGgumtleComplete
+                        _gameInfoData.ggumtleLevel,
+                        _gameInfoData.ggumtleProgress,
+                        _gameInfoData.IsGgumtleComplete
                     )
                 );
 
-                DebugLog($"꿈틀 레벨 증가: {_gameTimeData.ggumtleLevel}단계");
+                DebugLog($"꿈틀 레벨 증가: {_gameInfoData.ggumtleLevel}단계");
                 return true;
             }
             return false;
@@ -192,20 +192,20 @@ namespace Features.GameTime.Services
         public void Reset()
         {
             StopTimer();
-            _gameTimeData.Reset();
+            _gameInfoData.Reset();
 
-            _currentTime.Value = _gameTimeData.currentTime;
-            _statusMessage.Value = _gameTimeData.statusMessage;
-            _isTimeWarning.Value = _gameTimeData.isTimeWarning;
-            _ggumtleLevel.Value = _gameTimeData.ggumtleLevel;
-            _ggumtleProgress.Value = _gameTimeData.ggumtleProgress;
+            _currentTime.Value = _gameInfoData.currentTime;
+            _statusMessage.Value = _gameInfoData.statusMessage;
+            _isTimeWarning.Value = _gameInfoData.isTimeWarning;
+            _ggumtleLevel.Value = _gameInfoData.ggumtleLevel;
+            _ggumtleProgress.Value = _gameInfoData.ggumtleProgress;
 
-            DebugLog("게임 시간 데이터 초기화");
+            DebugLog("게임 정보 데이터 초기화");
         }
 
-        public GameTimeData GetCurrentData()
+        public GameInfoData GetCurrentData()
         {
-            return _gameTimeData;
+            return _gameInfoData;
         }
 
         #endregion
@@ -214,16 +214,16 @@ namespace Features.GameTime.Services
 
         private async UniTaskVoid StartTimerAsync()
         {
-            while (_isTimerRunning && _gameTimeData.currentTime.TotalSeconds > 0)
+            while (_isTimerRunning && _gameInfoData.currentTime.TotalSeconds > 0)
             {
                 await UniTask.Delay(1000);
 
                 if (_isTimerRunning)
                 {
-                    var newTime = _gameTimeData.currentTime.Subtract(TimeSpan.FromSeconds(1));
+                    var newTime = _gameInfoData.currentTime.Subtract(TimeSpan.FromSeconds(1));
                     SetCurrentTime(newTime);
 
-                    if (_gameTimeData.currentTime.TotalSeconds <= 0)
+                    if (_gameInfoData.currentTime.TotalSeconds <= 0)
                     {
                         _isTimerRunning = false;
                         DebugLog("타이머 종료 - 시간 만료");
@@ -235,7 +235,7 @@ namespace Features.GameTime.Services
         private void DebugLog(string message)
         {
             if (_enableDebugLogs)
-                Debug.Log($"[GameTimeServiceImpl] {message}");
+                Debug.Log($"[GameInfoServiceImpl] {message}");
         }
 
         #endregion

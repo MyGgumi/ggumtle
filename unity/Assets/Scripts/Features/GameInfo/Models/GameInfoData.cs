@@ -1,13 +1,13 @@
 using System;
 using UnityEngine;
 
-namespace Features.GameTime.Models
+namespace Features.GameInfo.Models
 {
     /// <summary>
-    /// 게임 시간 및 꿈틀 진행도 데이터 모델
+    /// 게임 정보 및 꿈틀 진행도 데이터 모델
     /// </summary>
     [Serializable]
-    public class GameTimeData
+    public class GameInfoData
     {
         [Header("Time Settings")]
         public TimeSpan currentTime = TimeSpan.Zero;

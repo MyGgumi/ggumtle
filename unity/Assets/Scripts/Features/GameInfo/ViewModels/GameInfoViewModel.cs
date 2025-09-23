@@ -1,18 +1,18 @@
 using System;
-using Features.GameTime.Messages;
-using Features.GameTime.Services;
+using Features.GameInfo.Messages;
+using Features.GameInfo.Services;
 using MessagePipe;
 using R3;
 using UnityEngine;
 using VContainer;
 
-namespace Features.GameTime.ViewModels
+namespace Features.GameInfo.ViewModels
 {
     /// <summary>
     /// 게임 시간 및 꿈틀 진행도 ViewModel
     /// R3 + MessagePipe 기반의 반응형 ViewModel
     /// </summary>
-    public class GameTimeViewModel : IDisposable
+    public class GameInfoViewModel : IDisposable
     {
         #region Observable Properties
 
@@ -35,7 +35,7 @@ namespace Features.GameTime.ViewModels
 
         #region Dependencies
 
-        private readonly IGameTimeService _gameTimeService;
+        private readonly IGameInfoService _gameInfoService;
 
         #endregion
 
@@ -49,23 +49,23 @@ namespace Features.GameTime.ViewModels
         #region Constructor
 
         [Inject]
-        public GameTimeViewModel(
-            IGameTimeService gameTimeService,
-            ISubscriber<GameTimeChangedMessage> timeChangedSubscriber,
+        public GameInfoViewModel(
+            IGameInfoService gameInfoService,
+            ISubscriber<GameInfoChangedMessage> timeChangedSubscriber,
             ISubscriber<GameStatusChangedMessage> statusChangedSubscriber,
             ISubscriber<GgumtleProgressChangedMessage> progressChangedSubscriber,
             ISubscriber<TimeWarningMessage> timeWarningSubscriber
         )
         {
-            _gameTimeService = gameTimeService;
+            _gameInfoService = gameInfoService;
 
             // Service의 Observable 속성들을 직접 연결
-            CurrentTime = _gameTimeService.CurrentTime;
-            StatusMessage = _gameTimeService.StatusMessage;
-            IsTimeWarning = _gameTimeService.IsTimeWarning;
-            GgumtleLevel = _gameTimeService.GgumtleLevel;
-            GgumtleProgress = _gameTimeService.GgumtleProgress;
-            IsGgumtleComplete = _gameTimeService.IsGgumtleComplete;
+            CurrentTime = _gameInfoService.CurrentTime;
+            StatusMessage = _gameInfoService.StatusMessage;
+            IsTimeWarning = _gameInfoService.IsTimeWarning;
+            GgumtleLevel = _gameInfoService.GgumtleLevel;
+            GgumtleProgress = _gameInfoService.GgumtleProgress;
+            IsGgumtleComplete = _gameInfoService.IsGgumtleComplete;
 
             // 계산된 속성들
             TimeString = CurrentTime
@@ -79,7 +79,7 @@ namespace Features.GameTime.ViewModels
                 .AddTo(_disposables);
 
             IsTimerRunning = Observable.Interval(TimeSpan.FromSeconds(0.5))
-                .Select(_ => _gameTimeService.IsTimerRunning)
+                .Select(_ => _gameInfoService.IsTimerRunning)
                 .ToReadOnlyReactiveProperty()
                 .AddTo(_disposables);
 
@@ -101,7 +101,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void SetCurrentTime(TimeSpan time)
         {
-            _gameTimeService.SetCurrentTime(time);
+            _gameInfoService.SetCurrentTime(time);
         }
 
         /// <summary>
@@ -109,7 +109,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void SetStatusMessage(string message)
         {
-            _gameTimeService.SetStatusMessage(message);
+            _gameInfoService.SetStatusMessage(message);
         }
 
         /// <summary>
@@ -117,7 +117,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void SetGgumtleProgress(int level, float progress)
         {
-            _gameTimeService.SetGgumtleProgress(level, progress);
+            _gameInfoService.SetGgumtleProgress(level, progress);
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public bool IncrementGgumtleLevel()
         {
-            return _gameTimeService.IncrementGgumtleLevel();
+            return _gameInfoService.IncrementGgumtleLevel();
         }
 
         /// <summary>
@@ -133,7 +133,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void StartTimer()
         {
-            _gameTimeService.StartTimer();
+            _gameInfoService.StartTimer();
         }
 
         /// <summary>
@@ -141,7 +141,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void StopTimer()
         {
-            _gameTimeService.StopTimer();
+            _gameInfoService.StopTimer();
         }
 
         /// <summary>
@@ -149,7 +149,7 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void ToggleTimer()
         {
-            _gameTimeService.ToggleTimer();
+            _gameInfoService.ToggleTimer();
         }
 
         /// <summary>
@@ -157,14 +157,14 @@ namespace Features.GameTime.ViewModels
         /// </summary>
         public void Reset()
         {
-            _gameTimeService.Reset();
+            _gameInfoService.Reset();
         }
 
         #endregion
 
         #region Message Handlers
 
-        private void OnTimeChanged(GameTimeChangedMessage message)
+        private void OnTimeChanged(GameInfoChangedMessage message)
         {
             DebugLog($"시간 변경: {message.currentTime.Minutes:D2}:{message.currentTime.Seconds:D2}, 경고: {message.isTimeWarning}");
         }
@@ -191,7 +191,7 @@ namespace Features.GameTime.ViewModels
         private void DebugLog(string message)
         {
             if (_enableDebugLogs)
-                Debug.Log($"[GameTimeViewModel] {message}");
+                Debug.Log($"[GameInfoViewModel] {message}");
         }
 
         #endregion

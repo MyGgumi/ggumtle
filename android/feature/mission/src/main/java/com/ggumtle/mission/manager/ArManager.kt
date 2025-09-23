@@ -1,4 +1,4 @@
-package com.ggumtle.mission.ar
+package com.ggumtle.mission.manager
 
 import android.app.Activity
 import android.content.Context
@@ -33,8 +33,6 @@ import com.ggumtle.mission.ar.util.toViewRect
 import com.ggumtle.mission.ar.util.x
 import com.ggumtle.mission.ar.util.y
 import com.google.ar.core.ArCoreApk
-import com.google.ar.core.Plane
-import com.google.ar.core.TrackingState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -42,8 +40,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.dropWhile
@@ -51,13 +47,9 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.resume
-import kotlin.div
-import kotlin.unaryMinus
 
 @Singleton
 class ArManager @Inject constructor() {
@@ -97,6 +89,9 @@ class ArManager @Inject constructor() {
 
     // Filament 렌더링을 위한 Surface View
     private lateinit var surfaceView: SurfaceView
+
+    // 현재 생성된 ModelRenderer 참조
+    private var modelRenderer: ModelRenderer? = null
 
     fun initialize(context: Context) {
         createScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
@@ -243,6 +238,7 @@ class ArManager @Inject constructor() {
                 val lightRenderer = LightRenderer(context, arCore.filament)
                 val planeRenderer = PlaneRenderer(context, arCore.filament)
                 val modelRenderer = ModelRenderer(context, arCore, arCore.filament)
+                this@ArManager.modelRenderer = modelRenderer
                 try {
                     val frameCallback =
                         FrameCallback(
@@ -291,6 +287,7 @@ class ArManager @Inject constructor() {
                                 .collect { modelRenderer.modelEvents.tryEmit(it) }
                         }
                     }
+                    Log.d("qwer", "createUx: ready2")
                     awaitCancellation()
                 } finally {
                     modelRenderer.destroy()
@@ -311,6 +308,7 @@ class ArManager @Inject constructor() {
                 try {
                     arCore.session.resume()
                     frameCallback.start()
+                    Log.d("qwer", "startUx: ready1")
                     awaitCancellation()
                 } finally {
                     frameCallback.stop()
@@ -381,6 +379,51 @@ class ArManager @Inject constructor() {
         configurationChangedEvents.resetReplayCache()
 
         Log.d("ArManager", "clearManager: 매니저 완전 초기화 완료")
+    }
+
+    fun hasActiveModels(): Boolean {
+        return try {
+            modelRenderer?.hasRenderables() == true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+    fun playAnimation(index: Int): Boolean {
+        return try {
+            Log.d("qwer", "playFeedingAnimation: play animation")
+            modelRenderer?.playSpecificAnimation(animationIndex = index, playOnce = true) == true
+        } catch (e: Exception) {
+            Log.e("ArManager", "Failed to play feeding animation: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * 모델의 실제 화면 좌표를 가져오기
+     * @return 모델의 화면 좌표 (x, y) 또는 null
+     */
+    fun getModelScreenPosition(): Pair<Float, Float>? {
+        return try {
+            modelRenderer?.getModelScreenPosition()
+        } catch (e: Exception) {
+            Log.e("ArManager", "Failed to get model screen position: ${e.message}")
+            null
+        }
+    }
+
+    /**
+     * AR 평면이 감지되어 모델 배치가 가능한 상태인지 확인
+     * @return 평면이 감지되어 배치 가능하면 true
+     */
+    fun hasDetectedPlanes(): Boolean {
+        return try {
+            arCoreBehavior.value?.first?.session?.getAllTrackables(com.google.ar.core.Plane::class.java)
+                ?.any { it.trackingState == com.google.ar.core.TrackingState.TRACKING } == true
+        } catch (e: Exception) {
+            Log.e("ArManager", "Failed to check detected planes: ${e.message}")
+            false
+        }
     }
 
 }

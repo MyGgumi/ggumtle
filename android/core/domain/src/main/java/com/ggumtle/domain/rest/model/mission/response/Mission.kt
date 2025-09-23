@@ -2,6 +2,7 @@ package com.ggumtle.domain.rest.model.mission.response
 
 data class Mission(
     val memberMissionId: Long,
+    val missionId: Long,
     val name: String,
     val description: String,
     val requiredCount: Int,

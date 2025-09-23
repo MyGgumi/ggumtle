@@ -6,6 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class MissionDto(
     val memberMissionId: Long,
+    val missionId: Long,
     val name: String,
     val description: String,
     val requiredCount: Int,
@@ -15,6 +16,7 @@ data class MissionDto(
 
 fun MissionDto.toDomain() = Mission(
     memberMissionId = this.memberMissionId,
+    missionId = this.missionId,
     name = this.name,
     description = this.description,
     requiredCount = this.requiredCount,

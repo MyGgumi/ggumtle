@@ -25,4 +25,6 @@ dependencies {
     implementation(libs.gltfio.android)
     implementation(libs.slf4j.simple)
     implementation(libs.arrow.fx)
+    implementation(libs.coil.kt)
+    implementation(libs.coil.kt.compose)
 }

@@ -14,9 +14,9 @@ namespace Networks.Factories
             var buffer = Unpooled.WrappedBuffer(bytes);
 
             var result = buffer.ReadByte();
-            var playerSize = buffer.ReadInt();
             var escapedMonggingCount = buffer.ReadInt();
 
+            var playerSize = buffer.ReadInt();
             var playerResults = new List<PlayerResult>();
             
             // playerSize 개수만큼 (long id, int status, int coin) 쌍을 읽어서 List에 추가
@@ -29,7 +29,7 @@ namespace Networks.Factories
                 playerResults.Add(new PlayerResult(id, status, coin));
             }
 
-            return new GameEndCommand(result, playerSize, escapedMonggingCount, playerResults);
+            return new GameEndCommand(result, escapedMonggingCount, playerResults);
         }
     }
 }

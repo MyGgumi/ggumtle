@@ -23,14 +23,12 @@ namespace Networks.Game
         public override PacketType Type => PacketType.GameEnd;
 
         public byte result;
-        public int playerSize;
         public int escapedMonggingCount;
         public List<PlayerResult> playerResults;
 
-        public GameEndCommand(byte result, int playerSize, int escapedMonggingCount, List<PlayerResult> playerResults)
+        public GameEndCommand(byte result, int escapedMonggingCount, List<PlayerResult> playerResults)
         {
             this.result = result;
-            this.playerSize = playerSize;
             this.escapedMonggingCount = escapedMonggingCount;
             this.playerResults = playerResults;
         }

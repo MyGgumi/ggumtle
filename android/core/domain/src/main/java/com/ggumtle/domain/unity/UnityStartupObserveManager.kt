@@ -8,7 +8,9 @@ interface UnityStartupObserveManager {
     val messageFlow: StateFlow<String>
 
     val completionFlow: SharedFlow<Unit>
+    val characterTypeChangeFlow: SharedFlow<String>
 
     fun updateProgress(progress: Int, message: String)
     fun completeLoading()
+    fun onCharacterTypeChanged(characterType: String)
 }

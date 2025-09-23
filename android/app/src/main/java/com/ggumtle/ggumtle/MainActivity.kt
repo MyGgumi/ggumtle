@@ -150,9 +150,11 @@ class MainActivity : UnityPlayerGameActivity() {
         }
     }
 
-    fun onRefreshButtonClicked(type: String) {
+    fun onRefreshButtonClicked(parameters: Array<String>) {
+        Log.d("MainActivity", "onRefreshButtonClicked 호출됨, 파라미터: ${parameters.contentToString()}")
+        val characterType = parameters.getOrNull(0) ?: ""
         lifecycleScope.launch {
-            // TODO: 타입 변경 버튼 호출시 타입변경 로직
+            unityStartupObserveManager.onCharacterTypeChanged(characterType)
         }
     }
 

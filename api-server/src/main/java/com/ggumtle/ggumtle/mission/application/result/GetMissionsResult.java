@@ -14,10 +14,12 @@ public record GetMissionsResult(
                         missions.stream()
                         .map(memberMission -> new Mission(
                                 memberMission.getId(),
+                                memberMission.getMission().getId(),
                                 memberMission.getMission().getName(),
                                 memberMission.getMission().getDescription(),
                                 memberMission.getMission().getRequiredCount(),
                                 memberMission.getDoneCount(),
+                                memberMission.getMission().getRewardCoinAmount(),
                                 memberMission.getState()))
                         .toList()
         );
@@ -25,10 +27,12 @@ public record GetMissionsResult(
 
     public record Mission(
             Long memberMissionId,
+            Integer missionId,
             String name,
             String description,
             Integer requiredCount,
             Integer doneCount,
+            Integer reward,
             MissionState state
     ){}
 }

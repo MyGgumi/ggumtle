@@ -17,19 +17,23 @@ public record GetMissionsResponse(
 
     public record Mission(
             Long memberMissionId,
+            Integer missionId,
             String name,
             String description,
             Integer requiredCount,
             Integer doneCount,
+            Integer reward,
             String state
     ) {
         public static Mission from(GetMissionsResult.Mission result) {
             return new Mission(
                     result.memberMissionId(),
+                    result.missionId(),
                     result.name(),
                     result.description(),
                     result.requiredCount(),
                     result.doneCount(),
+                    result.reward(),
                     result.state().name()
             );
         }

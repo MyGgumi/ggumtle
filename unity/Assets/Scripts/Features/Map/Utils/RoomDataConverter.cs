@@ -44,7 +44,7 @@ namespace Features.Map.Utils
                 {
                     var ggumtle = room.ggumtles[i];
                     var unityPos = ggumtle.ToVector3();
-                    Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: ({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z}) -> Unity: {unityPos}");
+                    Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: {ggumtle.Position} -> Unity: {unityPos}");
                 }
             }
 

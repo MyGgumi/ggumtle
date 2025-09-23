@@ -73,7 +73,7 @@ namespace Features.Map.Services
                 Debug.Log($"[MapSpawnService] 상자 상세 정보:");
                 foreach (var chest in _roomData.Chests)
                 {
-                    Debug.Log($"  - 상자 ID: {chest.Id}, 위치: ({chest.X}, {chest.Y}, {chest.Z})");
+                    Debug.Log($"  - 상자 ID: {chest.Id}, 위치: {chest.Position}");
                 }
             }
         }

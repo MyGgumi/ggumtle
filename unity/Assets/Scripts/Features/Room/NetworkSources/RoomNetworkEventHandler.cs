@@ -41,7 +41,7 @@ namespace Features.Room.NetworkSources
                     for (int i = 0; i < command.chests.Count; i++)
                     {
                         var chest = command.chests[i];
-                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Position: ({chest.X}, {chest.Y}, {chest.Z})");
+                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Position: {chest.Position}");
                     }
                 }
 
@@ -52,7 +52,7 @@ namespace Features.Room.NetworkSources
                     for (int i = 0; i < command.ggumtles.Count; i++)
                     {
                         var ggumtle = command.ggumtles[i];
-                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: ({ggumtle.X}, {ggumtle.Y}, {ggumtle.Z})");
+                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: {ggumtle.Position}");
                     }
                 }
 
@@ -178,7 +178,7 @@ namespace Features.Room.NetworkSources
         {
             try
             {
-                Debug.Log($"[RoomNetworkEventHandler] 게임 종료 수신: Result={command.result}, PlayerSize={command.playerSize}");
+                Debug.Log($"[RoomNetworkEventHandler] 게임 종료 수신: Result={command.result}, PlayerCount={command.playerResults?.Count ?? 0}, EscapedCount={command.escapedMonggingCount}");
 
                 // 플레이어 결과 출력
                 if (command.playerResults != null)

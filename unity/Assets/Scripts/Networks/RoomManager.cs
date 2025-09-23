@@ -201,7 +201,7 @@ namespace Networks
         [CommandHandler(PacketType.GameEnd)]
         public async void GameEnd(GameEndCommand command, IChannelHandlerContext ctx)
         {
-            Debug.Log($"[RoomManager] 게임 종료: Result={command.result}, PlayerSize={command.playerSize}");
+            Debug.Log($"[RoomManager] 게임 종료: Result={command.result}, PlayerCount={command.playerResults?.Count ?? 0}, EscapedCount={command.escapedMonggingCount}");
             
             // 플레이어 결과 출력
             foreach (var playerResult in command.playerResults)

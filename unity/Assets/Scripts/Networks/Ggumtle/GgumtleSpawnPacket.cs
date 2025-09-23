@@ -6,6 +6,7 @@ namespace Networks.Ggumtle
 {
     public class GgumtleSpawnCommand : Command
     {
+        public const int Unit = 100;
         public override PacketType Type => PacketType.GgumtleSpawn;
 
         public int id;
@@ -15,10 +16,10 @@ namespace Networks.Ggumtle
         {
             this.id = id;
             
-            // 1000으로 나눠서 Vector3로 변환
-            var xFloat = (float) x / 1000;
-            var yFloat = (float) y / 1000;
-            var zFloat = (float) z / 1000;
+            // 100으로 나눠서 Vector3로 변환
+            var xFloat = (float) x / Unit;
+            var yFloat = (float) y / Unit;
+            var zFloat = (float) z / Unit;
             
             position = new Vector3(xFloat, yFloat, zFloat);
         }

@@ -28,6 +28,7 @@ namespace Networks.Players
 
     public class MonggingItemUseSend : Sendable
     {
+        public const int Unit = 100;
         public override PacketType Type => PacketType.MonggingItemUse;
 
         public int vx;
@@ -37,9 +38,9 @@ namespace Networks.Players
 
         public MonggingItemUseSend(Vector3 direction, int itemId)
         {
-            this.vx = (int)(direction.x * 1000);
-            this.vy = (int)(direction.y * 1000);
-            this.vz = (int)(direction.z * 1000);
+            this.vx = (int)(direction.x * Unit);
+            this.vy = (int)(direction.y * Unit);
+            this.vz = (int)(direction.z * Unit);
             this.itemId = itemId;
         }
 

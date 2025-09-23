@@ -25,6 +25,7 @@ namespace Networks.Players
 
     public class MongdungAttackSend : Sendable
     {
+        public const int Unit = 100;
         public override PacketType Type => PacketType.MongdungAttack;
 
         public int vx;
@@ -34,9 +35,9 @@ namespace Networks.Players
 
         public MongdungAttackSend(Vector3 direction, long targetId)
         {
-            this.vx = (int)(direction.x * 1000);
-            this.vy = (int)(direction.y * 1000);
-            this.vz = (int)(direction.z * 1000);
+            this.vx = (int)(direction.x * Unit);
+            this.vy = (int)(direction.y * Unit);
+            this.vz = (int)(direction.z * Unit);
             this.targetId = targetId;
         }
 

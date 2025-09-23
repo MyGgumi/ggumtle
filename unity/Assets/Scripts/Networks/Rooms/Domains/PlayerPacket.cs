@@ -4,7 +4,7 @@ namespace Networks.Rooms.Domains
 {
     public class PlayerPacket
     {
-        public const int Unit = 1000;
+        public const int Unit = 100;
         public long Id;
         public bool IsMine;
         public bool IsMongging;

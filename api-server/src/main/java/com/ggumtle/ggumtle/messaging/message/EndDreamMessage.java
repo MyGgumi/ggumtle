@@ -8,7 +8,7 @@ public record EndDreamMessage(
 ) {
     public record PlayerState(
             long id,
-            boolean isWinning
+            int coin
     ) {
     }
 }

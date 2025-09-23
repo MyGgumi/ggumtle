@@ -19,12 +19,13 @@ public record DreamEndEvent(
 
     public record PlayerState(
             long id,
-            boolean isWinning
+            int coin
     ) {
         public static PlayerState of(Player player, boolean isMonggingWin) {
-            return new PlayerState(
-                    player.getId(),
-                    isMonggingWin == (player instanceof Mongging));
+            if (isMonggingWin) {
+                return new PlayerState(player.getId(), player instanceof Mongging ? 100 : 0);
+            }
+            return new PlayerState(player.getId(), player instanceof Mongging ? 0 : 150);
         }
     }
 }

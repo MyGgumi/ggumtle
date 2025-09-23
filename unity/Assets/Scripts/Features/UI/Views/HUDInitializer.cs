@@ -32,7 +32,7 @@ namespace Features.UI.Views
         private IUIAssetService _uiAssetService;
 
         // Feature UI Views
-        private Features.GameTime.Views.GameTimeUIView _gameTimeUIView;
+        private Features.GameInfo.Views.GameInfoUIView _gameInfoUIView;
         private Features.PlayerHealth.Views.PlayerHealthUIView _playerHealthUIView;
         private Features.Chat.Views.ChatUIView _chatUIView;
         private Features.PlayerList.Views.PlayerListUIView _playerListUIView;
@@ -88,7 +88,7 @@ namespace Features.UI.Views
         private void FindAllViews()
         {
             // 씬에서 Feature UI Views 찾기
-            _gameTimeUIView = FindFirstObjectByType<Features.GameTime.Views.GameTimeUIView>();
+            _gameInfoUIView = FindFirstObjectByType<Features.GameInfo.Views.GameInfoUIView>();
             _playerHealthUIView =
                 FindFirstObjectByType<Features.PlayerHealth.Views.PlayerHealthUIView>();
             _chatUIView = FindFirstObjectByType<Features.Chat.Views.ChatUIView>();
@@ -108,7 +108,7 @@ namespace Features.UI.Views
         private void InitializeAllViews()
         {
             // 각 View에 root를 전달하여 초기화
-            _gameTimeUIView?.Initialize(_root);
+            _gameInfoUIView?.Initialize(_root);
             _playerHealthUIView?.Initialize(_root);
             _chatUIView?.Initialize(_root);
             _playerListUIView?.Initialize(_root);

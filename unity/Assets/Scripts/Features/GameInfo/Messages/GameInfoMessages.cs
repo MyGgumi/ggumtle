@@ -1,16 +1,16 @@
 using System;
 
-namespace Features.GameTime.Messages
+namespace Features.GameInfo.Messages
 {
     /// <summary>
     /// 게임 시간 변경 메시지
     /// </summary>
-    public readonly struct GameTimeChangedMessage
+    public readonly struct GameInfoChangedMessage
     {
         public readonly TimeSpan currentTime;
         public readonly bool isTimeWarning;
 
-        public GameTimeChangedMessage(TimeSpan currentTime, bool isTimeWarning)
+        public GameInfoChangedMessage(TimeSpan currentTime, bool isTimeWarning)
         {
             this.currentTime = currentTime;
             this.isTimeWarning = isTimeWarning;

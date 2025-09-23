@@ -23,9 +23,9 @@ using Features.Player.Services;
 using Features.Player.Views;
 using Features.UI.Services;
 using Features.Scenes.Main.Initializers;
-using Features.GameTime.Messages;
-using Features.GameTime.Services;
-using Features.GameTime.ViewModels;
+using Features.GameInfo.Messages;
+using Features.GameInfo.Services;
+using Features.GameInfo.ViewModels;
 using Features.PlayerList.Messages;
 using Features.PlayerList.Services;
 using Features.PlayerList.ViewModels;
@@ -102,8 +102,8 @@ namespace DI
             builder.RegisterMessageBroker<MobileButtonStateMessage>(options);
             builder.RegisterMessageBroker<MobileInputMessage>(options);
 
-            // GameTime Messages
-            builder.RegisterMessageBroker<GameTimeChangedMessage>(options);
+            // GameInfo Messages
+            builder.RegisterMessageBroker<GameInfoChangedMessage>(options);
             builder.RegisterMessageBroker<GameTimeStartedMessage>(options);
             builder.RegisterMessageBroker<GameTimeStoppedMessage>(options);
             builder.RegisterMessageBroker<GameTimeResetMessage>(options);
@@ -166,7 +166,7 @@ namespace DI
             builder.RegisterComponentInHierarchy<Features.UI.Views.HUDInitializer>();
 
             // Feature UI Views 등록
-            builder.RegisterComponentInHierarchy<Features.GameTime.Views.GameTimeUIView>();
+            builder.RegisterComponentInHierarchy<Features.GameInfo.Views.GameInfoUIView>();
             builder.RegisterComponentInHierarchy<Features.PlayerHealth.Views.PlayerHealthUIView>();
             builder.RegisterComponentInHierarchy<Features.Chat.Views.ChatUIView>();
             builder.RegisterComponentInHierarchy<Features.PlayerList.Views.PlayerListUIView>();
@@ -217,7 +217,7 @@ namespace DI
             builder.Register<IMapSpawnService, MapSpawnServiceImpl>(Lifetime.Scoped);
             builder.Register<IInventoryService, InventoryServiceImpl>(Lifetime.Scoped);
             builder.Register<Features.Feeding.Services.IFeedingService, Features.Feeding.Services.FeedingServiceImpl>(Lifetime.Scoped);
-            builder.Register<IGameTimeService, GameTimeServiceImpl>(Lifetime.Scoped);
+            builder.Register<IGameInfoService, GameInfoServiceImpl>(Lifetime.Scoped);
             builder.Register<IPlayerListService, PlayerListServiceImpl>(Lifetime.Scoped);
             builder.Register<INotificationService, NotificationServiceImpl>(Lifetime.Scoped);
             builder.Register<IChatService, ChatServiceImpl>(Lifetime.Scoped);
@@ -232,7 +232,7 @@ namespace DI
             builder.Register<Features.Inventory.ViewModels.InventoryViewModel>(Lifetime.Scoped);
             builder.Register<Features.Feeding.ViewModels.FeedingViewModel>(Lifetime.Scoped);
             builder.Register<MobileControlsViewModel>(Lifetime.Scoped);
-            builder.Register<GameTimeViewModel>(Lifetime.Scoped);
+            builder.Register<GameInfoViewModel>(Lifetime.Scoped);
             builder.Register<PlayerListViewModel>(Lifetime.Scoped);
             builder.Register<NotificationViewModel>(Lifetime.Scoped);
             builder.Register<ChatViewModel>(Lifetime.Scoped);

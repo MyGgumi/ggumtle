@@ -1,23 +1,23 @@
 using System;
 using System.Collections.Generic;
-using Features.GameTime.ViewModels;
+using Features.GameInfo.ViewModels;
 using R3;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
 using R3DisposableBag = R3.CompositeDisposable;
 
-namespace Features.GameTime.Views
+namespace Features.GameInfo.Views
 {
     /// <summary>
     /// 게임 시간 및 꿈틀 진행도 UI를 담당하는 View (UI Toolkit 기반)
     /// GgumtleUIView 패턴을 따라 VisualElement + R3로 구현
     /// </summary>
-    public class GameTimeUIView : MonoBehaviour
+    public class GameInfoUIView : MonoBehaviour
     {
         [Header("ViewModel Reference")]
         [SerializeField]
-        private GameTimeViewModel viewModel;
+        private GameInfoViewModel viewModel;
 
         [Header("UI References")]
         private VisualElement _root;
@@ -43,11 +43,11 @@ namespace Features.GameTime.Views
         private CompositeDisposable _disposables = new();
 
         [Inject]
-        public void Construct(GameTimeViewModel gameTimeViewModel)
+        public void Construct(GameInfoViewModel gameTimeViewModel)
         {
             viewModel = gameTimeViewModel;
             if (enableDebugLogs)
-                Debug.Log($"[GameTimeUIView] VContainer 의존성 주입 완료: {viewModel != null}");
+                Debug.Log($"[GameInfoUIView] VContainer 의존성 주입 완료: {viewModel != null}");
         }
 
         public void Initialize(VisualElement root)
@@ -57,7 +57,7 @@ namespace Features.GameTime.Views
             // VContainer 의존성 주입 확인
             if (viewModel == null)
             {
-                Debug.LogError("[GameTimeUIView] ViewModel이 주입되지 않았습니다! VContainer 설정을 확인하세요.");
+                Debug.LogError("[GameInfoUIView] ViewModel이 주입되지 않았습니다! VContainer 설정을 확인하세요.");
                 return;
             }
 
@@ -66,18 +66,18 @@ namespace Features.GameTime.Views
             InitializeUI();
 
             if (enableDebugLogs)
-                Debug.Log("[GameTimeUIView] 초기화 완료");
+                Debug.Log("[GameInfoUIView] 초기화 완료");
         }
 
         private void CacheUIElements()
         {
             if (_root == null)
             {
-                Debug.LogError("[GameTimeUIView] Root VisualElement가 null입니다.");
+                Debug.LogError("[GameInfoUIView] Root VisualElement가 null입니다.");
                 return;
             }
 
-            // 시간 및 상태 UI 요소들 캐싱
+            // 시간 및 상태 UI 요소들 캐싱 (GameInfo.uxml 구조에 맞춤)
             _timeLabel = _root.Q<Label>("timeLabel");
             _statusLabel = _root.Q<Label>("statusText");
             _ggumtleArea = _root.Q<VisualElement>("ggumtleArea");
@@ -109,7 +109,7 @@ namespace Features.GameTime.Views
             if (enableDebugLogs)
             {
                 Debug.Log(
-                    $"[GameTimeUIView] UI 요소 캐싱 완료: "
+                    $"[GameInfoUIView] UI 요소 캐싱 완료: "
                         + $"시간라벨={(_timeLabel != null ? "OK" : "NULL")}, "
                         + $"상태라벨={(_statusLabel != null ? "OK" : "NULL")}, "
                         + $"꿈틀영역={(_ggumtleArea != null ? "OK" : "NULL")}"
@@ -126,7 +126,7 @@ namespace Features.GameTime.Views
             UpdateGgumtleProgress(1, 0f);
 
             if (enableDebugLogs)
-                Debug.Log("[GameTimeUIView] UI 초기화 완료");
+                Debug.Log("[GameInfoUIView] UI 초기화 완료");
         }
 
         private void SubscribeToViewModel()
@@ -153,7 +153,7 @@ namespace Features.GameTime.Views
                 .AddTo(_disposables);
 
             if (enableDebugLogs)
-                Debug.Log("[GameTimeUIView] ViewModel 구독 완료");
+                Debug.Log("[GameInfoUIView] ViewModel 구독 완료");
         }
 
         #region UI Update Methods
@@ -233,7 +233,7 @@ namespace Features.GameTime.Views
 
             if (enableDebugLogs)
             {
-                Debug.Log($"[GameTimeUIView] 꿈틀 진행도 UI 업데이트: {level}단계, {progress:P0}");
+                Debug.Log($"[GameInfoUIView] 꿈틀 진행도 UI 업데이트: {level}단계, {progress:P0}");
             }
         }
 
@@ -323,7 +323,7 @@ namespace Features.GameTime.Views
         {
             _disposables?.Dispose();
             if (enableDebugLogs)
-                Debug.Log("[GameTimeUIView] OnDestroy - Dispose 완료");
+                Debug.Log("[GameInfoUIView] OnDestroy - Dispose 완료");
         }
 
         #endregion

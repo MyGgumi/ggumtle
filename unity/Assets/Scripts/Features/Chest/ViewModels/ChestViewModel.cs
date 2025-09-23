@@ -5,6 +5,7 @@ using Features.Chest.Models;
 using Features.Chest.Services;
 using Features.Ggumtle.Messages;
 using Features.Inventory.Services;
+using Features.MobileControls.Messages;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -21,7 +22,7 @@ namespace Features.Chest.ViewModels
         #region Observable Properties
 
         // 현재 범위 내 상자 정보
-        public readonly ReactiveProperty<string> CurrentChestId = new(string.Empty);
+        public readonly ReactiveProperty<int> CurrentChestId = new(0);
         public readonly ReactiveProperty<string> CurrentChestName = new(string.Empty);
         public readonly ReactiveProperty<bool> IsInRange = new(false);
         public readonly ReactiveProperty<float> Distance = new(float.MaxValue);
@@ -63,6 +64,7 @@ namespace Features.Chest.ViewModels
             ISubscriber<ChestLeftMessage> leftSubscriber,
             ISubscriber<ChestOpenedMessage> openedSubscriber,
             ISubscriber<ChestClosedMessage> closedSubscriber,
+            ISubscriber<MobileButtonPressedMessage> buttonPressedSubscriber,
             IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher
         )
         {
@@ -70,14 +72,15 @@ namespace Features.Chest.ViewModels
             _inventoryService = inventoryService;
             _notificationPublisher = notificationPublisher;
 
-            Initialize(detectedSubscriber, leftSubscriber, openedSubscriber, closedSubscriber);
+            Initialize(detectedSubscriber, leftSubscriber, openedSubscriber, closedSubscriber, buttonPressedSubscriber);
         }
 
         private void Initialize(
             ISubscriber<ChestDetectedMessage> detectedSubscriber,
             ISubscriber<ChestLeftMessage> leftSubscriber,
             ISubscriber<ChestOpenedMessage> openedSubscriber,
-            ISubscriber<ChestClosedMessage> closedSubscriber
+            ISubscriber<ChestClosedMessage> closedSubscriber,
+            ISubscriber<MobileButtonPressedMessage> buttonPressedSubscriber
         )
         {
             if (_isInitialized)
@@ -91,6 +94,7 @@ namespace Features.Chest.ViewModels
             leftSubscriber.Subscribe(OnChestLeft).AddTo(_disposables);
             openedSubscriber.Subscribe(OnChestOpened).AddTo(_disposables);
             closedSubscriber.Subscribe(OnChestClosed).AddTo(_disposables);
+            buttonPressedSubscriber.Subscribe(OnMobileButtonPressed).AddTo(_disposables);
 
             // 서비스 상태 구독
             _chestService
@@ -126,7 +130,7 @@ namespace Features.Chest.ViewModels
         /// <summary>
         /// 상자 열기
         /// </summary>
-        public bool OpenChest(string chestId)
+        public bool OpenChest(int chestId)
         {
             if (!IsInRange.Value || !CanInteract.Value)
             {
@@ -213,7 +217,7 @@ namespace Features.Chest.ViewModels
         /// 상자 등록
         /// </summary>
         public void RegisterChest(
-            string chestId,
+            int chestId,
             string chestName,
             Vector3 position,
             GameObject chestObject = null
@@ -225,7 +229,7 @@ namespace Features.Chest.ViewModels
         /// <summary>
         /// 상자 해제
         /// </summary>
-        public void UnregisterChest(string chestId)
+        public void UnregisterChest(int chestId)
         {
             _chestService.UnregisterChest(chestId);
         }
@@ -288,11 +292,30 @@ namespace Features.Chest.ViewModels
             }
         }
 
+        private void OnMobileButtonPressed(MobileButtonPressedMessage msg)
+        {
+            // 상호작용 버튼이 눌렸고, 상자가 범위 내에 있다면 열기/닫기 토글
+            if (msg.ButtonType == Features.MobileControls.Models.MobileButtonType.Interact &&
+                IsInRange.Value && CanInteract.Value && CurrentChestId.Value != 0)
+            {
+                if (IsChestOpen.Value)
+                {
+                    DebugLog($"상호작용 버튼으로 상자 닫기: {CurrentChestId.Value}");
+                    CloseChest();
+                }
+                else
+                {
+                    DebugLog($"상호작용 버튼으로 상자 열기: {CurrentChestId.Value}");
+                    OpenChest(CurrentChestId.Value);
+                }
+            }
+        }
+
         #endregion
 
         #region Private Methods
 
-        private void SetCurrentChest(string chestId)
+        private void SetCurrentChest(int chestId)
         {
             var chestData = _chestService.GetChest(chestId);
             if (chestData != null)
@@ -306,7 +329,7 @@ namespace Features.Chest.ViewModels
 
         private void ClearCurrentChest()
         {
-            CurrentChestId.Value = string.Empty;
+            CurrentChestId.Value = 0;
             CurrentChestName.Value = string.Empty;
             IsInRange.Value = false;
             Distance.Value = float.MaxValue;

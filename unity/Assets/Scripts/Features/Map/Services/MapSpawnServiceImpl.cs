@@ -141,7 +141,7 @@ namespace Features.Map.Services
                     var chestObject = spawnedChests[i];
 
                     // ID 설정
-                    SetChestId(chestObject, chestData.Id.ToString());
+                    SetChestId(chestObject, chestData.Id);
 
                     // 관리 리스트에 추가
                     _spawnedChests.Add(chestObject);
@@ -469,7 +469,7 @@ namespace Features.Map.Services
         }
 
         // 유틸리티 메서드들 (리플렉션 사용)
-        private void SetChestId(Features.Chest.Views.ChestGameObject chestObject, string id)
+        private void SetChestId(Features.Chest.Views.ChestGameObject chestObject, int id)
         {
             try
             {

@@ -5,6 +5,9 @@ using Config;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
 using Features.Ggumtle.Views;
+using Features.Chest.Messages;
+using Features.Chest.Models;
+using Features.Chest.Views;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -36,15 +39,21 @@ namespace Interaction
         // MessagePipe Publishers (VContainer로 주입)
         private IPublisher<Features.Ggumtle.Messages.GgumtleDetectedMessage> _ggumtleDetectedPublisher;
         private IPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage> _ggumtleLeftPublisher;
+        private IPublisher<Features.Chest.Messages.ChestDetectedMessage> _chestDetectedPublisher;
+        private IPublisher<Features.Chest.Messages.ChestLeftMessage> _chestLeftPublisher;
 
         [Inject]
         public void Construct(
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
-            IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher
+            IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
+            IPublisher<ChestDetectedMessage> chestDetectedPublisher,
+            IPublisher<ChestLeftMessage> chestLeftPublisher
         )
         {
             _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
+            _chestDetectedPublisher = chestDetectedPublisher;
+            _chestLeftPublisher = chestLeftPublisher;
             Debug.Log($"[InteractionTriggerDetector] VContainer 의존성 주입 완료 - {gameObject.name}");
         }
 
@@ -57,6 +66,10 @@ namespace Interaction
         // 현재 감지된 꿈틀이들을 거리순으로 관리
         private readonly List<(GgumtleGameObject ggumtle, Collider collider, float distance)> _detectedGgumtles = new();
         private GgumtleGameObject _currentClosestGgumtle = null;
+
+        // 현재 감지된 상자들을 거리순으로 관리
+        private readonly List<(ChestGameObject chest, Collider collider, float distance)> _detectedChests = new();
+        private ChestGameObject _currentClosestChest = null;
 
         void Awake()
         {
@@ -88,7 +101,10 @@ namespace Interaction
             yield return null; // 한 프레임 대기
 
             // VContainer 주입 확인
-            if (_ggumtleDetectedPublisher != null && _ggumtleLeftPublisher != null)
+            bool ggumtlePublishersOK = _ggumtleDetectedPublisher != null && _ggumtleLeftPublisher != null;
+            bool chestPublishersOK = _chestDetectedPublisher != null && _chestLeftPublisher != null;
+
+            if (ggumtlePublishersOK && chestPublishersOK)
             {
                 Debug.Log(
                     $"[InteractionTriggerDetector] VContainer MessagePipe 주입 성공 - {gameObject.name}"
@@ -97,9 +113,10 @@ namespace Interaction
             else
             {
                 Debug.LogError(
-                    $"[InteractionTriggerDetector] VContainer MessagePipe 주입 실패! GgumtleDetectedPublisher: {_ggumtleDetectedPublisher != null}, GgumtleLeftPublisher: {_ggumtleLeftPublisher != null} - {gameObject.name}"
+                    $"[InteractionTriggerDetector] VContainer MessagePipe 주입 실패! " +
+                    $"GgumtleDetected: {_ggumtleDetectedPublisher != null}, GgumtleLeft: {_ggumtleLeftPublisher != null}, " +
+                    $"ChestDetected: {_chestDetectedPublisher != null}, ChestLeft: {_chestLeftPublisher != null} - {gameObject.name}"
                 );
-
             }
 
             // 최종 확인
@@ -215,28 +232,34 @@ namespace Interaction
 
             // 꿈틀이인지 확인하고 MessagePipe로 처리
             var ggumtleGameObject = other.GetComponent<GgumtleGameObject>();
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[InteractionTriggerDetector] GgumtleGameObject 컴포넌트 찾기: {other.gameObject.name}, 결과: {ggumtleGameObject != null}");
-                if (ggumtleGameObject == null)
-                {
-                    // 어떤 컴포넌트들이 있는지 확인
-                    var components = other.GetComponents<Component>();
-                    var componentNames = new string[components.Length];
-                    for (int i = 0; i < components.Length; i++)
-                    {
-                        componentNames[i] = components[i] != null ? components[i].GetType().Name : "NULL";
-                    }
-                    Debug.Log($"[InteractionTriggerDetector] {other.gameObject.name}의 컴포넌트들: {string.Join(", ", componentNames)}");
-                }
-            }
-
             if (ggumtleGameObject != null)
             {
                 if (enableDebugLogs)
                     Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지: {other.gameObject.name}");
                 AddGgumtleToDetectionList(ggumtleGameObject, other);
                 return;
+            }
+
+            // 상자인지 확인하고 MessagePipe로 처리
+            var chestGameObject = other.GetComponent<ChestGameObject>();
+            if (chestGameObject != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 상자 감지: {other.gameObject.name}");
+                AddChestToDetectionList(chestGameObject, other);
+                return;
+            }
+
+            if (enableDebugLogs)
+            {
+                // 어떤 컴포넌트들이 있는지 확인
+                var components = other.GetComponents<Component>();
+                var componentNames = new string[components.Length];
+                for (int i = 0; i < components.Length; i++)
+                {
+                    componentNames[i] = components[i] != null ? components[i].GetType().Name : "NULL";
+                }
+                Debug.Log($"[InteractionTriggerDetector] {other.gameObject.name}의 컴포넌트들: {string.Join(", ", componentNames)}");
             }
 
             // 다른 상호작용 객체는 기존 방식 유지
@@ -296,6 +319,18 @@ namespace Interaction
                         $"[InteractionTriggerDetector] 꿈틀이 벗어남: {other.gameObject.name}"
                     );
                 RemoveGgumtleFromDetectionList(ggumtleGameObject);
+                return;
+            }
+
+            // 상자인지 확인하고 MessagePipe로 처리
+            var chestGameObject = other.GetComponent<ChestGameObject>();
+            if (chestGameObject != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log(
+                        $"[InteractionTriggerDetector] 상자 벗어남: {other.gameObject.name}"
+                    );
+                RemoveChestFromDetectionList(chestGameObject);
                 return;
             }
 
@@ -407,42 +442,198 @@ namespace Interaction
         }
 
         /// <summary>
-        /// 감지된 꿈틀이들의 거리를 주기적으로 업데이트
+        /// 상자를 감지 리스트에 추가하고 가장 가까운 상자 업데이트
+        /// </summary>
+        private void AddChestToDetectionList(ChestGameObject chest, Collider other)
+        {
+            var distance = Vector3.Distance(transform.position, other.transform.position);
+
+            // 이미 리스트에 있는지 확인
+            var existingIndex = _detectedChests.FindIndex(c => c.chest == chest);
+            if (existingIndex >= 0)
+            {
+                // 거리만 업데이트
+                _detectedChests[existingIndex] = (chest, other, distance);
+            }
+            else
+            {
+                // 새로 추가
+                _detectedChests.Add((chest, other, distance));
+            }
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 상자 감지 리스트에 추가: {chest.ChestId}, 거리: {distance:F2}");
+
+            UpdateClosestChest();
+        }
+
+        /// <summary>
+        /// 상자를 감지 리스트에서 제거하고 가장 가까운 상자 업데이트
+        /// </summary>
+        private void RemoveChestFromDetectionList(ChestGameObject chest)
+        {
+            var removed = _detectedChests.RemoveAll(c => c.chest == chest);
+
+            if (removed > 0)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 상자 감지 리스트에서 제거: {chest.ChestId}");
+
+                UpdateClosestChest();
+            }
+        }
+
+        /// <summary>
+        /// 가장 가까운 상자 업데이트 및 메시지 발행
+        /// </summary>
+        private void UpdateClosestChest()
+        {
+            ChestGameObject newClosest = null;
+
+            if (_detectedChests.Count > 0)
+            {
+                // 거리순으로 정렬하여 가장 가까운 상자 찾기
+                var closest = _detectedChests.OrderBy(c => c.distance).First();
+                newClosest = closest.chest;
+
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 상자: {newClosest.ChestId}, 거리: {closest.distance:F2}");
+            }
+
+            // 가장 가까운 상자가 변경되었는지 확인
+            if (_currentClosestChest != newClosest)
+            {
+                // 이전 상자가 있었다면 Left 메시지 발행
+                if (_currentClosestChest != null)
+                {
+                    PublishChestLeftMessage(_currentClosestChest);
+                }
+
+                // 새로운 상자가 있다면 Detected 메시지 발행
+                if (newClosest != null)
+                {
+                    var closestInfo = _detectedChests.First(c => c.chest == newClosest);
+                    PublishChestDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
+                }
+
+                _currentClosestChest = newClosest;
+            }
+        }
+
+        /// <summary>
+        /// 상자 감지 메시지 발행
+        /// </summary>
+        private void PublishChestDetectedMessage(ChestGameObject chest, Collider collider, float distance)
+        {
+            if (_chestDetectedPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] ChestDetectedPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
+            var message = new ChestDetectedMessage(
+                chest.ChestId,
+                collider.transform,
+                distance,
+                ChestState.Closed // ViewModel이 실제 상태를 관리하므로 기본값 전달
+            );
+
+            _chestDetectedPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 상자 감지 메시지 발행: {chest.ChestId}");
+        }
+
+        /// <summary>
+        /// 상자 벗어남 메시지 발행
+        /// </summary>
+        private void PublishChestLeftMessage(ChestGameObject chest)
+        {
+            if (_chestLeftPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] ChestLeftPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
+            var message = new ChestLeftMessage(chest.ChestId);
+            _chestLeftPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 상자 벗어남 메시지 발행: {chest.ChestId}");
+        }
+
+        /// <summary>
+        /// 감지된 꿈틀이들과 상자들의 거리를 주기적으로 업데이트
         /// </summary>
         private void UpdateDetectedGgumtleDistances()
         {
-            if (_detectedGgumtles.Count == 0) return;
-
             bool distanceChanged = false;
 
-            // 모든 감지된 꿈틀이의 거리를 재계산
-            for (int i = 0; i < _detectedGgumtles.Count; i++)
+            // 꿈틀이들의 거리 업데이트
+            if (_detectedGgumtles.Count > 0)
             {
-                var (ggumtle, collider, oldDistance) = _detectedGgumtles[i];
-
-                if (ggumtle == null || collider == null)
+                for (int i = 0; i < _detectedGgumtles.Count; i++)
                 {
-                    // 무효한 참조는 제거
-                    _detectedGgumtles.RemoveAt(i);
-                    i--;
-                    distanceChanged = true;
-                    continue;
+                    var (ggumtle, collider, oldDistance) = _detectedGgumtles[i];
+
+                    if (ggumtle == null || collider == null)
+                    {
+                        // 무효한 참조는 제거
+                        _detectedGgumtles.RemoveAt(i);
+                        i--;
+                        distanceChanged = true;
+                        continue;
+                    }
+
+                    var newDistance = Vector3.Distance(transform.position, collider.transform.position);
+
+                    // 거리 변화가 0.1f 이상일 때만 업데이트 (노이즈 방지)
+                    if (Mathf.Abs(newDistance - oldDistance) > 0.1f)
+                    {
+                        _detectedGgumtles[i] = (ggumtle, collider, newDistance);
+                        distanceChanged = true;
+                    }
                 }
 
-                var newDistance = Vector3.Distance(transform.position, collider.transform.position);
-
-                // 거리 변화가 0.1f 이상일 때만 업데이트 (노이즈 방지)
-                if (Mathf.Abs(newDistance - oldDistance) > 0.1f)
+                // 거리가 변경되었다면 가장 가까운 꿈틀이 재평가
+                if (distanceChanged)
                 {
-                    _detectedGgumtles[i] = (ggumtle, collider, newDistance);
-                    distanceChanged = true;
+                    UpdateClosestGgumtle();
                 }
             }
 
-            // 거리가 변경되었다면 가장 가까운 꿈틀이 재평가
-            if (distanceChanged)
+            // 상자들의 거리 업데이트
+            distanceChanged = false;
+            if (_detectedChests.Count > 0)
             {
-                UpdateClosestGgumtle();
+                for (int i = 0; i < _detectedChests.Count; i++)
+                {
+                    var (chest, collider, oldDistance) = _detectedChests[i];
+
+                    if (chest == null || collider == null)
+                    {
+                        // 무효한 참조는 제거
+                        _detectedChests.RemoveAt(i);
+                        i--;
+                        distanceChanged = true;
+                        continue;
+                    }
+
+                    var newDistance = Vector3.Distance(transform.position, collider.transform.position);
+
+                    // 거리 변화가 0.1f 이상일 때만 업데이트 (노이즈 방지)
+                    if (Mathf.Abs(newDistance - oldDistance) > 0.1f)
+                    {
+                        _detectedChests[i] = (chest, collider, newDistance);
+                        distanceChanged = true;
+                    }
+                }
+
+                // 거리가 변경되었다면 가장 가까운 상자 재평가
+                if (distanceChanged)
+                {
+                    UpdateClosestChest();
+                }
             }
         }
 

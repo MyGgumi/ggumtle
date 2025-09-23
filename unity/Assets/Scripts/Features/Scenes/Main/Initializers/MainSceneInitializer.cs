@@ -246,7 +246,12 @@ namespace Features.Scenes.Main.Initializers
                     {
                         constructMethod.Invoke(
                             detector,
-                            new object[] { _ggumtleDetectedPublisher, _ggumtleLeftPublisher }
+                            new object[] {
+                                _ggumtleDetectedPublisher,
+                                _ggumtleLeftPublisher,
+                                _chestDetectedPublisher,
+                                _chestLeftPublisher
+                            }
                         );
                         Debug.Log(
                             $"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 완료: {detector.gameObject.name}"

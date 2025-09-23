@@ -1,6 +1,8 @@
 using System;
 using Features.MobileControls.Messages;
 using Features.MobileControls.Models;
+using Features.Ggumtle.Messages;
+using Features.Chest.Messages;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -58,6 +60,10 @@ namespace Features.MobileControls.ViewModels
 
         // MessagePipe Subscribers
         private readonly ISubscriber<InteractButtonVisibilityMessage> _interactVisibilitySubscriber;
+        private readonly ISubscriber<GgumtleDetectedMessage> _ggumtleDetectedSubscriber;
+        private readonly ISubscriber<GgumtleLeftMessage> _ggumtleLeftSubscriber;
+        private readonly ISubscriber<ChestDetectedMessage> _chestDetectedSubscriber;
+        private readonly ISubscriber<ChestLeftMessage> _chestLeftSubscriber;
 
         #endregion
 
@@ -65,6 +71,12 @@ namespace Features.MobileControls.ViewModels
 
         private readonly CompositeDisposable _disposables = new();
         private bool _isInitialized = false;
+
+        // 상호작용 상태 추적
+        private bool _isGgumtleNearby = false;
+        private bool _isChestNearby = false;
+        private string _currentGgumtleId = null;
+        private int _currentChestId = 0;
 
         #endregion
 
@@ -79,7 +91,11 @@ namespace Features.MobileControls.ViewModels
             IPublisher<InteractHoldStartMessage> interactHoldStartPublisher,
             IPublisher<InteractHoldEndMessage> interactHoldEndPublisher,
             IPublisher<CameraTouchMessage> cameraTouchPublisher,
-            ISubscriber<InteractButtonVisibilityMessage> interactVisibilitySubscriber
+            ISubscriber<InteractButtonVisibilityMessage> interactVisibilitySubscriber,
+            ISubscriber<GgumtleDetectedMessage> ggumtleDetectedSubscriber,
+            ISubscriber<GgumtleLeftMessage> ggumtleLeftSubscriber,
+            ISubscriber<ChestDetectedMessage> chestDetectedSubscriber,
+            ISubscriber<ChestLeftMessage> chestLeftSubscriber
         )
         {
             _data = new MobileControlsData();
@@ -92,6 +108,10 @@ namespace Features.MobileControls.ViewModels
             _interactHoldEndPublisher = interactHoldEndPublisher;
             _cameraTouchPublisher = cameraTouchPublisher;
             _interactVisibilitySubscriber = interactVisibilitySubscriber;
+            _ggumtleDetectedSubscriber = ggumtleDetectedSubscriber;
+            _ggumtleLeftSubscriber = ggumtleLeftSubscriber;
+            _chestDetectedSubscriber = chestDetectedSubscriber;
+            _chestLeftSubscriber = chestLeftSubscriber;
 
             UnityEngine.Debug.Log($"[MobileControlsViewModel] VContainer 의존성 주입 완료 - JoystickPublisher: {joystickInputPublisher != null}");
 
@@ -106,6 +126,24 @@ namespace Features.MobileControls.ViewModels
             // 외부 메시지 구독
             _interactVisibilitySubscriber
                 .Subscribe(OnInteractVisibilityRequested)
+                .AddTo(_disposables);
+
+            // 꿈틀이 관련 메시지 구독
+            _ggumtleDetectedSubscriber
+                .Subscribe(OnGgumtleDetected)
+                .AddTo(_disposables);
+
+            _ggumtleLeftSubscriber
+                .Subscribe(OnGgumtleLeft)
+                .AddTo(_disposables);
+
+            // 상자 관련 메시지 구독
+            _chestDetectedSubscriber
+                .Subscribe(OnChestDetected)
+                .AddTo(_disposables);
+
+            _chestLeftSubscriber
+                .Subscribe(OnChestLeft)
                 .AddTo(_disposables);
 
             // 데이터 상태를 ReactiveProperty와 동기화
@@ -345,6 +383,85 @@ namespace Features.MobileControls.ViewModels
             ShouldShowControls.Value = shouldShow;
 
             // Debug.Log($"[MobileControlsViewModel] 컨트롤 표시 여부: {shouldShow} (isEnabled: {_data.isEnabled})");
+        }
+
+        #endregion
+
+        #region Message Handlers
+
+        /// <summary>
+        /// 꿈틀이 감지 메시지 처리
+        /// </summary>
+        private void OnGgumtleDetected(GgumtleDetectedMessage message)
+        {
+            _isGgumtleNearby = true;
+            _currentGgumtleId = message.GgumtleId;
+
+            UpdateInteractButtonVisibility();
+
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 꿈틀이 감지: {message.GgumtleId}, 상호작용 버튼 표시");
+        }
+
+        /// <summary>
+        /// 꿈틀이 벗어남 메시지 처리
+        /// </summary>
+        private void OnGgumtleLeft(GgumtleLeftMessage message)
+        {
+            if (_currentGgumtleId == message.GgumtleId)
+            {
+                _isGgumtleNearby = false;
+                _currentGgumtleId = null;
+
+                UpdateInteractButtonVisibility();
+
+                UnityEngine.Debug.Log($"[MobileControlsViewModel] 꿈틀이 벗어남: {message.GgumtleId}");
+            }
+        }
+
+        /// <summary>
+        /// 상자 감지 메시지 처리
+        /// </summary>
+        private void OnChestDetected(ChestDetectedMessage message)
+        {
+            _isChestNearby = true;
+            _currentChestId = message.ChestId;
+
+            UpdateInteractButtonVisibility();
+
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상자 감지: {message.ChestId}, 상호작용 버튼 표시");
+        }
+
+        /// <summary>
+        /// 상자 벗어남 메시지 처리
+        /// </summary>
+        private void OnChestLeft(ChestLeftMessage message)
+        {
+            if (_currentChestId == message.ChestId)
+            {
+                _isChestNearby = false;
+                _currentChestId = 0;
+
+                UpdateInteractButtonVisibility();
+
+                UnityEngine.Debug.Log($"[MobileControlsViewModel] 상자 벗어남: {message.ChestId}");
+            }
+        }
+
+        /// <summary>
+        /// 상호작용 버튼 가시성 업데이트
+        /// </summary>
+        private void UpdateInteractButtonVisibility()
+        {
+            bool shouldShow = _isGgumtleNearby || _isChestNearby;
+
+            var interactData = _data.GetButtonData(MobileButtonType.Interact);
+            if (interactData != null)
+            {
+                interactData.SetVisibility(shouldShow);
+                UpdateButtonProperties(MobileButtonType.Interact, interactData);
+            }
+
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby})");
         }
 
         #endregion

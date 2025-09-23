@@ -21,10 +21,10 @@ namespace Features.Chest.Views
         private string chestName = "상자";
 
         [SerializeField]
-        private string chestId; // 고유 ID (Inspector에서 설정 또는 자동 생성)
+        private int chestId; // 고유 ID (Inspector에서 설정 또는 자동 생성)
 
         // InteractionTriggerDetector에서 접근하기 위한 public property
-        public string ChestId => chestId;
+        public int ChestId => chestId;
         public string ChestName => chestName;
 
         [Header("비주얼 컴포넌트")]
@@ -165,22 +165,35 @@ namespace Features.Chest.Views
 
         private void InitializeBasicComponents()
         {
-            // ID 자동 생성 (Inspector에서 설정하지 않은 경우)
-            if (string.IsNullOrEmpty(chestId))
+            // ID 자동 생성 (Inspector에서 설정하지 않고, MapSpawnService에서도 설정하지 않은 경우만)
+            if (chestId == 0)
             {
-                // GameObject 이름에서 ID 추출 (예: "Chest_123" -> "123")
+                // GameObject 이름에서 ID 추출 (예: "Chest_123" -> 123)
                 if (gameObject.name.StartsWith("Chest_"))
                 {
-                    chestId = gameObject.name.Substring(6); // "Chest_" 다음 부분
-                    Debug.Log($"[ChestGameObject] GameObject 이름에서 추출된 chestId: {chestId}");
+                    string idString = gameObject.name.Substring(6); // "Chest_" 다음 부분
+                    if (int.TryParse(idString, out int parsedId) && parsedId > 0)
+                    {
+                        chestId = parsedId;
+                        Debug.Log($"[ChestGameObject] GameObject 이름에서 추출된 chestId: {chestId}");
+                    }
+                    else
+                    {
+                        // 파싱 실패 시 양수 ID 생성 (InstanceID의 절댓값 사용)
+                        chestId = Mathf.Abs(GetInstanceID());
+                        Debug.Log($"[ChestGameObject] 이름 파싱 실패, 절댓값 InstanceID 사용: {chestId}");
+                    }
                 }
                 else
                 {
-                    // 백업: 위치 기반 ID 생성
-                    chestId =
-                        $"Chest_{transform.position.x}_{transform.position.z}_{GetInstanceID()}";
-                    Debug.Log($"[ChestGameObject] 자동 생성된 chestId: {chestId}");
+                    // 백업: InstanceID의 절댓값 사용 (양수 보장)
+                    chestId = Mathf.Abs(GetInstanceID());
+                    Debug.Log($"[ChestGameObject] 자동 생성된 chestId (절댓값): {chestId}");
                 }
+            }
+            else
+            {
+                Debug.Log($"[ChestGameObject] 기존 chestId 사용: {chestId}");
             }
 
             // 컴포넌트 자동 찾기
@@ -354,7 +367,7 @@ namespace Features.Chest.Views
             }
         }
 
-        private void OnCurrentChestChanged(string newChestId)
+        private void OnCurrentChestChanged(int newChestId)
         {
             bool isCurrentChest = newChestId == chestId;
 

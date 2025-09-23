@@ -16,22 +16,22 @@ namespace Features.Chest.Services
         /// <summary>
         /// 상자를 서비스에 등록
         /// </summary>
-        void RegisterChest(string chestId, string chestName, Vector3 position, GameObject chestObject = null);
+        void RegisterChest(int chestId, string chestName, Vector3 position, GameObject chestObject = null);
 
         /// <summary>
         /// 상자를 서비스에서 해제
         /// </summary>
-        void UnregisterChest(string chestId);
+        void UnregisterChest(int chestId);
 
         /// <summary>
         /// 특정 상자 데이터 조회
         /// </summary>
-        ChestData GetChest(string chestId);
+        ChestData GetChest(int chestId);
 
         /// <summary>
         /// 상자 존재 여부 확인
         /// </summary>
-        bool HasChest(string chestId);
+        bool HasChest(int chestId);
 
         /// <summary>
         /// 모든 상자 목록 조회
@@ -45,7 +45,7 @@ namespace Features.Chest.Services
         /// <summary>
         /// 상자 열기
         /// </summary>
-        bool OpenChest(string chestId);
+        bool OpenChest(int chestId);
 
         /// <summary>
         /// 현재 열린 상자 닫기
@@ -69,12 +69,12 @@ namespace Features.Chest.Services
         /// <summary>
         /// 서버로부터 상자 데이터 동기화
         /// </summary>
-        void SyncChestData(string chestId, ChestSlot[] serverSlots);
+        void SyncChestData(int chestId, ChestSlot[] serverSlots);
 
         /// <summary>
         /// 서버로부터 특정 슬롯 동기화
         /// </summary>
-        void SyncChestSlot(string chestId, int slotIndex, string itemId, int count);
+        void SyncChestSlot(int chestId, int slotIndex, string itemId, int count);
 
         #endregion
 
@@ -98,7 +98,7 @@ namespace Features.Chest.Services
         /// <summary>
         /// 현재 상자 ID
         /// </summary>
-        string CurrentChestId { get; }
+        int CurrentChestId { get; }
 
         /// <summary>
         /// 현재 상자 상태 Observable

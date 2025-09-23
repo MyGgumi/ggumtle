@@ -1,5 +1,6 @@
 using Cysharp.Threading.Tasks;
 using Features.Game.Managers;
+using Features.Game.Services;
 using Features.Map.Services;
 using Features.Map.Utils;
 using Features.Room.Services;
@@ -49,6 +50,10 @@ namespace Features.Scenes.Loading.Managers
         private IAddressableLoadService _addressableLoadService;
         private IRoomService _roomService;
         private readonly CompositeDisposable _disposables = new();
+
+        // 진행률 이벤트
+        public static event System.Action<float> OnProgressUpdated;
+        public static event System.Action OnMainSceneLoadCompleted;
 
         [Inject]
         public void Construct(
@@ -289,6 +294,9 @@ namespace Features.Scenes.Loading.Managers
                 if (enableDetailedLogs)
                     Debug.Log("[LoadingSceneManager] Main 씬 Additive 로딩 완료");
 
+                // 메인 씬 로딩 완료 이벤트 발행
+                OnMainSceneLoadCompleted?.Invoke();
+
                 // Main 씬 UI가 이미 숨겨져 있음
 
                 // 5단계: 오브젝트 스폰 (80% → 90%)
@@ -305,6 +313,9 @@ namespace Features.Scenes.Loading.Managers
 
                 // Main 씬 UI 다시 표시
                 EnableMainSceneUI();
+
+                // 카메라를 플레이어 모드로 전환 (스카이박스는 메인 씬 기본값 유지)
+                TransitionToPlayerModeOnly();
 
                 // Loading 씬 언로드
                 SceneManager.UnloadSceneAsync("Loading");
@@ -463,6 +474,9 @@ namespace Features.Scenes.Loading.Managers
             {
                 _interactionLabel.text = $"{percentage:F0}%";
             }
+
+            // 진행률 이벤트 발행
+            OnProgressUpdated?.Invoke(progress);
 
             if (enableProgressLogs)
                 Debug.Log($"[LoadingSceneManager] 진행률: {percentage:F0}%");
@@ -708,6 +722,63 @@ namespace Features.Scenes.Loading.Managers
 
         // ProtectSpawnedObjects 메서드 제거됨
         // 이제 Active Scene이 Main으로 설정되어 있어 DontDestroyOnLoad가 불필요함
+
+        /// <summary>
+        /// 플레이어 모드로 카메라 전환 (스카이박스 변경 포함)
+        /// </summary>
+        private void TransitionToPlayerMode()
+        {
+            try
+            {
+                var skyboxManager = SkyboxTransitionManager.Instance;
+                if (skyboxManager != null)
+                {
+                    // 플레이어 뷰 모드로 전환
+                    skyboxManager.SetPlayerViewMode();
+
+                    // 게임 스카이박스로 전환 (페이드 효과 포함)
+                    skyboxManager.TransitionToGameSkybox();
+
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] 플레이어 모드로 카메라 전환 완료");
+                }
+                else
+                {
+                    Debug.LogWarning("[LoadingSceneManager] SkyboxTransitionManager.Instance가 null입니다");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[LoadingSceneManager] 카메라 전환 중 오류: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 플레이어 모드로 카메라만 전환 (스카이박스는 메인 씬 기본값 유지)
+        /// </summary>
+        private void TransitionToPlayerModeOnly()
+        {
+            try
+            {
+                var skyboxManager = SkyboxTransitionManager.Instance;
+                if (skyboxManager != null)
+                {
+                    // 플레이어 뷰 모드로 전환 (스카이박스 변경 없음)
+                    skyboxManager.SetPlayerViewMode();
+
+                    if (enableDetailedLogs)
+                        Debug.Log("[LoadingSceneManager] 플레이어 모드로 카메라만 전환 완료 (메인 씬 스카이박스 유지)");
+                }
+                else
+                {
+                    Debug.LogWarning("[LoadingSceneManager] SkyboxTransitionManager.Instance가 null입니다");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[LoadingSceneManager] 카메라 전환 중 오류: {e.Message}");
+            }
+        }
 
         #region Debug Methods
 

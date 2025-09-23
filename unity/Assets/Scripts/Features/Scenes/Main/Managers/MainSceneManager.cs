@@ -1,5 +1,6 @@
 using Features.Map.Services;
 using Features.Room.Services;
+using Features.Game.Services;
 using UnityEngine;
 using VContainer;
 
@@ -19,22 +20,41 @@ namespace Features.Scenes.Main.Managers
         private IRoomService _roomService;
         private IMapSpawnService _mapSpawnService;
         private IAddressableLoadService _addressableLoadService;
+        private SkyboxTransitionManager _skyboxManager;
 
         [Inject]
         public void Construct(
             IRoomService roomService,
             IMapSpawnService mapSpawnService,
-            IAddressableLoadService addressableLoadService)
+            IAddressableLoadService addressableLoadService,
+            SkyboxTransitionManager skyboxManager)
         {
             _roomService = roomService;
             _mapSpawnService = mapSpawnService;
             _addressableLoadService = addressableLoadService;
+            _skyboxManager = skyboxManager;
         }
 
         async void Start()
         {
             if (enableDebugLogs)
                 Debug.Log("[MainSceneManager] 메인 씬 시작");
+
+            Debug.Log("[MainSceneManager] SkyboxTransitionManager 직접 접근 시도");
+            var skyboxManager = SkyboxTransitionManager.Instance;
+            if (skyboxManager != null)
+            {
+                Debug.Log("[MainSceneManager] SkyboxTransitionManager 카메라 설정만 초기화");
+                skyboxManager.SetupCameras();
+                // 카메라 모드는 LoadingBackgroundController에서 결정하도록 함
+                Debug.Log("[MainSceneManager] 카메라 모드는 로딩 상태에 따라 결정됨");
+            }
+            else
+            {
+                Debug.LogError("[MainSceneManager] SkyboxTransitionManager.Instance가 null입니다!");
+            }
+
+            // 메인 씬의 기본 스카이박스를 그대로 사용 (별도 설정 불필요)
 
             // 방 상태 확인
             CheckRoomStatus();
@@ -221,6 +241,27 @@ namespace Features.Scenes.Main.Managers
 
             // 플레이어 활성화, UI 표시, 게임 타이머 시작 등
             // 필요한 게임 시작 로직들을 여기에 추가
+        }
+
+        #endregion
+
+        #region Skybox Setup
+
+        /// <summary>
+        /// 게임용 스카이박스 설정 (메인 씬의 기본 스카이박스 사용)
+        /// </summary>
+        private void SetupGameSkybox()
+        {
+            if (_skyboxManager != null)
+            {
+                // 메인 씬의 기본 스카이박스를 게임 스카이박스로 사용
+                Material mainSceneSkybox = RenderSettings.skybox;
+
+                _skyboxManager.SetGameSkybox(mainSceneSkybox);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[MainSceneManager] 메인 씬 기본 스카이박스를 게임 스카이박스로 설정: {mainSceneSkybox?.name ?? "NULL"}");
+            }
         }
 
         #endregion

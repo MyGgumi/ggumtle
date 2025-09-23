@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import com.ggumtle.domain.rest.usecase.user.GetMemberInfoUseCase
 import com.ggumtle.domain.rest.usecase.member.DeleteAccountUseCase
 import com.ggumtle.domain.rest.usecase.auth.LogoutUseCase
+import com.ggumtle.domain.rest.usecase.growth.GetMonggingListUseCase
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.domain.model.MemberConnectionState
 import com.ggumtle.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
@@ -36,6 +37,7 @@ import com.ggumtle.domain.websocket.usecase.home.MatchingCancelledUseCase
 import com.ggumtle.domain.websocket.usecase.home.ObserveMatchingCancelledUseCase
 import com.ggumtle.domain.websocket.usecase.home.ObserveStartGameUseCase
 import com.ggumtle.domain.websocket.usecase.home.StartGameUseCase
+import com.ggumtle.domain.unity.UnityStartupObserveManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
@@ -73,7 +75,9 @@ class HomeViewModel @Inject constructor(
     private val observeGetPartyParticipantsUseCase: ObserveGetPartyParticipantsUseCase,
     private val getMemberInfoUseCase: GetMemberInfoUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
-    private val logoutUseCase: LogoutUseCase
+    private val logoutUseCase: LogoutUseCase,
+    private val getMonggingListUseCase: GetMonggingListUseCase,
+    private val unityStartupObserveManager: UnityStartupObserveManager
 ) : ViewModel(), ContainerHost<HomeContract.State, HomeContract.SideEffect> {
 
     override val container: Container<HomeContract.State, HomeContract.SideEffect> =
@@ -86,6 +90,7 @@ class HomeViewModel @Inject constructor(
         loadProfile()
         createParty()
         observeHomeEvent()
+        observeCharacterTypeChange()
     }
 
     private fun observeHomeEvent() {
@@ -378,11 +383,64 @@ class HomeViewModel @Inject constructor(
                                 coin = resource.data.coin
                             )
                         }
-                        //TODO: 실제 레발 값 가져오기
-                        enterMyCharacter(userProfile.nickname, 1)
+                        loadMonggingList(userProfile.nickname)
                     }
                 }
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
+            }
+        }
+    }
+
+    // 몽깅이 목록 조회
+    private fun loadMonggingList(nickname: String) = intent {
+        getMonggingListUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> {}
+                is Resource.Success -> {
+                    reduce { state.copy(monggings = resource.data.monggings) }
+                    val currentLevel = getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex)
+                    enterMyCharacter(nickname, currentLevel)
+                }
+                is Resource.Failure -> {
+                    enterMyCharacter(nickname, 1)
+                }
+            }
+        }
+    }
+
+    // 현재 선택된 캐릭터의 레벨 가져오기
+    private fun getCurrentCharacterLevel(monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>, selectedIndex: Int): Int {
+        return if (monggings.isNotEmpty() && selectedIndex < monggings.size) {
+            monggings[selectedIndex].level
+        } else {
+            1
+        }
+    }
+
+    // 캐릭터 타입 변경 관찰
+    private fun observeCharacterTypeChange() = intent {
+        unityStartupObserveManager.characterTypeChangeFlow.collect { characterType ->
+            if (state.monggings.isNotEmpty()) {
+                val monggingIndex = findMonggingIndexByType(characterType, state.monggings)
+                if (monggingIndex != -1) {
+                    // TODO: 몽깅이 클래스 변경 웹소켓 API 호출 추가
+
+                    reduce { state.copy(selectedCharacterIndex = monggingIndex) }
+                    val newLevel = getCurrentCharacterLevel(state.monggings, monggingIndex)
+                    enterMyCharacter(state.userProfile.nickname, newLevel)
+                }
+            }
+        }
+    }
+
+    // 몽깅이 타입으로 인덱스 찾기
+    private fun findMonggingIndexByType(characterType: String, monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>): Int {
+        return monggings.indexOfFirst { mongging ->
+            when (characterType.lowercase()) {
+                "healmongging", "heal" -> mongging.monggingClass.lowercase() == "heal"
+                "hpmongging", "physical" -> mongging.monggingClass.lowercase() == "physical"
+                "workmongging", "work" -> mongging.monggingClass.lowercase() == "work"
+                else -> false
             }
         }
     }
@@ -548,7 +606,8 @@ class HomeViewModel @Inject constructor(
 
     private fun enterMyCharacter(nickname: String, level: Int) =
         unitySendManager.addMyCharacter(nickname, level)
-
+    //첫캐릭터만 불러옴
+    //TODO: 유니티 단에서 내 캐릭 레벨 업데이트 하는 메소드추가
 
     private fun enterOtherCharacter(nickname: String, level: Int) =
         unitySendManager.addOthersCharacter(nickname, level)

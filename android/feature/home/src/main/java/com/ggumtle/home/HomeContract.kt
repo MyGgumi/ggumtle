@@ -6,6 +6,7 @@ import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.home.model.InviteRequest
 import com.ggumtle.designsystem.dialog.DialogState
+import com.ggumtle.domain.rest.model.growth.response.Mongging
 
 object HomeContract {
 
@@ -45,6 +46,10 @@ object HomeContract {
 
         val isNavigating: Boolean = false,
         val coin: Int = 0,
+
+        // 몽깅이 관련
+        val monggings: List<Mongging> = emptyList(),
+        val selectedCharacterIndex: Int = 0,
 
         val isLoading: Boolean = false,
         val errorMessage: String? = null

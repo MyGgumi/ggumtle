@@ -1,45 +1,45 @@
-using Features.Ggumtle.Messages;
-using Features.Ggumtle.NetworkSources;
-using Features.Ggumtle.Services;
-using Features.Ggumtle.ViewModels;
-using Features.Ggumtle.Views;
+using Features.Chat.Messages;
+using Features.Chat.Services;
+using Features.Chat.ViewModels;
 using Features.Chest.Messages;
 using Features.Chest.Services;
 using Features.Chest.ViewModels;
 using Features.Chest.Views;
 using Features.FieldItem.Views;
+using Features.GameInfo.Messages;
+using Features.GameInfo.Services;
+using Features.GameInfo.ViewModels;
+using Features.Ggumtle.Messages;
+using Features.Ggumtle.NetworkSources;
+using Features.Ggumtle.Services;
+using Features.Ggumtle.ViewModels;
+using Features.Ggumtle.Views;
 using Features.Inventory.Messages;
 using Features.Inventory.NetworkSources;
 using Features.Inventory.Services;
 using Features.Inventory.ViewModels;
 using Features.Inventory.Views;
-using Features.MobileControls.Messages;
+using Features.MainGame.Messages;
+using Features.MainGame.Services;
 using Features.Map.Services;
+using Features.MobileControls.Messages;
 using Features.MobileControls.Services;
 using Features.MobileControls.Testing;
 using Features.MobileControls.ViewModels;
-using Features.Player.Messages;
-using Features.Player.Services;
-using Features.Player.Views;
-using Features.UI.Services;
-using Features.Scenes.Main.Initializers;
-using Features.GameInfo.Messages;
-using Features.GameInfo.Services;
-using Features.GameInfo.ViewModels;
-using Features.MainGame.Messages;
-using Features.MainGame.Services;
-using Features.PlayerList.Messages;
-using Features.PlayerList.Services;
-using Features.PlayerList.ViewModels;
 using Features.Notification.Messages;
 using Features.Notification.Services;
 using Features.Notification.ViewModels;
-using Features.Chat.Messages;
-using Features.Chat.Services;
-using Features.Chat.ViewModels;
+using Features.Player.Messages;
+using Features.Player.Services;
+using Features.Player.Views;
 using Features.PlayerHealth.Messages;
 using Features.PlayerHealth.Services;
 using Features.PlayerHealth.ViewModels;
+using Features.PlayerList.Messages;
+using Features.PlayerList.Services;
+using Features.PlayerList.ViewModels;
+using Features.Scenes.Main.Initializers;
+using Features.UI.Services;
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -73,7 +73,9 @@ namespace DI
             builder.RegisterMessageBroker<ChestLeftMessage>(options);
             builder.RegisterMessageBroker<ChestOpenedMessage>(options);
             builder.RegisterMessageBroker<ChestClosedMessage>(options);
-            builder.RegisterMessageBroker<Features.Notification.Messages.NotificationMessage>(options);
+            builder.RegisterMessageBroker<Features.Notification.Messages.NotificationMessage>(
+                options
+            );
 
             // Inventory Messages
             builder.RegisterMessageBroker<ItemAddedMessage>(options);
@@ -189,35 +191,39 @@ namespace DI
             builder.RegisterComponentInHierarchy<Features.Chest.Views.ChestUIView>();
             builder.RegisterComponentInHierarchy<Features.Feeding.Views.FeedingUIView>();
 
-            // 미리 배치된 ChestGameObject들과 GgumtleGameObject들, FieldItemGameObject들 등록
-            builder.RegisterComponentInHierarchy<ChestGameObject>();
-            builder.RegisterComponentInHierarchy<Features.Ggumtle.Views.GgumtleGameObject>();
-            builder.RegisterComponentInHierarchy<FieldItemGameObject>();
+            // 모든 컴포넌트들은 Addressable 동적 생성 방식으로 처리
 
             // InteractionTriggerDetector는 별도로 주입 처리
             builder.RegisterComponentInHierarchy<Interaction.InteractionTriggerDetector>();
 
             // NetworkApi 등록 (팩토리 방식으로 싱글톤 인스턴스 사용)
-            builder.Register<Networks.NetworkApi>(_ =>
-            {
-                var instance = Networks.NetworkApi.Instance;
-                if (instance == null)
+            builder.Register<Networks.NetworkApi>(
+                _ =>
                 {
-                    var go = new UnityEngine.GameObject("NetworkApi");
-                    instance = go.AddComponent<Networks.NetworkApi>();
-                }
-                return instance;
-            }, Lifetime.Singleton);
-
+                    var instance = Networks.NetworkApi.Instance;
+                    if (instance == null)
+                    {
+                        var go = new UnityEngine.GameObject("NetworkApi");
+                        instance = go.AddComponent<Networks.NetworkApi>();
+                    }
+                    return instance;
+                },
+                Lifetime.Singleton
+            );
 
             // Main 씬 전용 NetworkSources 등록
             builder.Register<IGgumtleNetworkSource, GgumtleNetworkSource>(Lifetime.Scoped);
             builder.Register<IInventoryNetworkSource, InventoryNetworkSource>(Lifetime.Scoped);
-            builder.Register<Features.Chest.NetworkSources.IChestNetworkSource, Features.Chest.NetworkSources.ChestNetworkSource>(Lifetime.Scoped);
+            builder.Register<
+                Features.Chest.NetworkSources.IChestNetworkSource,
+                Features.Chest.NetworkSources.ChestNetworkSource
+            >(Lifetime.Scoped);
 
             // Main 씬 전용 NetworkEventHandlers 등록
             builder.Register<GgumtleNetworkEventHandler>(Lifetime.Scoped);
-            builder.Register<Features.Chest.NetworkSources.ChestNetworkEventHandler>(Lifetime.Scoped);
+            builder.Register<Features.Chest.NetworkSources.ChestNetworkEventHandler>(
+                Lifetime.Scoped
+            );
 
             // Main 씬 전용 Services 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<PlayerMovementService>(Lifetime.Scoped);
@@ -227,8 +233,12 @@ namespace DI
             builder.Register<IGgumtleService, GgumtleServiceImpl>(Lifetime.Scoped);
             builder.Register<IChestService, ChestServiceImpl>(Lifetime.Scoped);
             builder.Register<IMapSpawnService, MapSpawnServiceImpl>(Lifetime.Scoped);
+            builder.Register<IAddressableLoadService, AddressableLoadServiceImpl>(Lifetime.Scoped);
             builder.Register<IInventoryService, InventoryServiceImpl>(Lifetime.Scoped);
-            builder.Register<Features.Feeding.Services.IFeedingService, Features.Feeding.Services.FeedingServiceImpl>(Lifetime.Scoped);
+            builder.Register<
+                Features.Feeding.Services.IFeedingService,
+                Features.Feeding.Services.FeedingServiceImpl
+            >(Lifetime.Scoped);
             builder.Register<IGameInfoService, GameInfoServiceImpl>(Lifetime.Scoped);
             builder.Register<IMainGameService, MainGameServiceImpl>(Lifetime.Scoped);
             builder.Register<IPlayerListService, PlayerListServiceImpl>(Lifetime.Scoped);
@@ -259,7 +269,7 @@ namespace DI
             builder.RegisterEntryPoint<MainGameServiceImpl>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MainGameService EntryPoint 등록 완료");
 
-            UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료");
+            UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료 - Addressable 동적 생성 방식 사용");
         }
     }
 }

@@ -104,5 +104,20 @@ namespace Features.Map.Services
         /// </summary>
         /// <returns>메모리 사용량 (바이트)</returns>
         long GetMemoryUsage();
+
+        /// <summary>
+        /// VContainer 의존성 주입을 포함한 Addressable 인스턴스 생성
+        /// </summary>
+        UniTask<T> SpawnWithInjectionAsync<T>(string key, Vector3 position, Quaternion rotation, Transform parent = null) where T : MonoBehaviour;
+
+        /// <summary>
+        /// 여러 인스턴스를 한번에 생성하고 VContainer 의존성 주입
+        /// </summary>
+        UniTask<List<T>> SpawnMultipleAsync<T>(string key, List<Vector3> positions, Transform parent = null) where T : MonoBehaviour;
+
+        /// <summary>
+        /// AssetReference를 사용한 VContainer 의존성 주입 생성
+        /// </summary>
+        UniTask<T> SpawnWithInjectionAsync<T>(AssetReference assetReference, Vector3 position, Quaternion rotation, Transform parent = null) where T : MonoBehaviour;
     }
 }

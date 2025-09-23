@@ -4,6 +4,8 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.ResourceManagement.AsyncOperations;
+using VContainer;
+using VContainer.Unity;
 
 namespace Features.Map.Services
 {
@@ -12,18 +14,22 @@ namespace Features.Map.Services
     /// </summary>
     public class AddressableLoadServiceImpl : IAddressableLoadService
     {
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false;
         private readonly List<AsyncOperationHandle> _loadedOperations = new();
         private readonly Dictionary<string, List<UnityEngine.Object>> _loadedAssetsByTag = new();
+        private readonly IObjectResolver _resolver;
 
         public event Action<float> OnLoadProgress;
         public event Action<string, UnityEngine.Object> OnAssetLoaded;
         public event Action OnAllAssetsLoaded;
 
-        public AddressableLoadServiceImpl()
+        [Inject]
+        public AddressableLoadServiceImpl(IObjectResolver resolver)
         {
+            _resolver = resolver ?? throw new ArgumentNullException(nameof(resolver));
+
             if (_enableDebugLogs)
-                Debug.Log("[AddressableLoadService] 초기화 완료");
+                Debug.Log("[AddressableLoadService] VContainer 연동 초기화 완료");
         }
 
         public async UniTask LoadAssetsWithTagAsync(string tag, Action<float> onProgress = null)
@@ -274,6 +280,149 @@ namespace Features.Map.Services
             // Addressables의 메모리 사용량을 정확히 계산하기는 어려우므로
             // 근사치 또는 Unity Profiler API 사용
             return GC.GetTotalMemory(false);
+        }
+
+        /// <summary>
+        /// VContainer 의존성 주입을 포함한 Addressable 인스턴스 생성
+        /// </summary>
+        public async UniTask<T> SpawnWithInjectionAsync<T>(
+            string key,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null
+        ) where T : MonoBehaviour
+        {
+            try
+            {
+                var instance = await InstantiateAsync(key, position, rotation, parent);
+
+                // VContainer 의존성 주입
+                try
+                {
+                    _resolver.InjectGameObject(instance);
+                    if (_enableDebugLogs)
+                        Debug.Log($"[AddressableLoadService] VContainer 의존성 주입 성공: {key}");
+                }
+                catch (System.Exception injectionEx)
+                {
+                    Debug.LogWarning($"[AddressableLoadService] VContainer 의존성 주입 실패 (계속 진행): {key}, 오류: {injectionEx.Message}");
+                }
+
+                var component = instance.GetComponent<T>();
+                if (component == null)
+                {
+                    Debug.LogError($"[AddressableLoadService] 컴포넌트 {typeof(T).Name}를 찾을 수 없음: {key}");
+                    ReleaseInstance(instance);
+                    return null;
+                }
+
+                if (_enableDebugLogs)
+                    Debug.Log($"[AddressableLoadService] VContainer 주입 완료: {key} -> {typeof(T).Name}");
+
+                return component;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[AddressableLoadService] VContainer 주입 실패: {key}, {e.Message}");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// 여러 인스턴스를 한번에 생성하고 VContainer 의존성 주입
+        /// </summary>
+        public async UniTask<List<T>> SpawnMultipleAsync<T>(
+            string key,
+            List<Vector3> positions,
+            Transform parent = null
+        ) where T : MonoBehaviour
+        {
+            var results = new List<T>();
+
+            try
+            {
+                if (_enableDebugLogs)
+                    Debug.Log($"[AddressableLoadService] 대량 생성 시작: {key}, 수량: {positions.Count}");
+
+                for (int i = 0; i < positions.Count; i++)
+                {
+                    var component = await SpawnWithInjectionAsync<T>(key, positions[i], Quaternion.identity, parent);
+                    if (component != null)
+                    {
+                        results.Add(component);
+                    }
+
+                    // 한 프레임 대기 (성능 분산)
+                    if (i % 5 == 4) // 5개마다 대기
+                    {
+                        await UniTask.Yield();
+                    }
+                }
+
+                if (_enableDebugLogs)
+                    Debug.Log($"[AddressableLoadService] 대량 생성 완료: {key}, 성공: {results.Count}/{positions.Count}");
+
+                return results;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[AddressableLoadService] 대량 생성 실패: {key}, {e.Message}");
+
+                // 실패시 생성된 인스턴스들 정리
+                foreach (var result in results)
+                {
+                    if (result != null)
+                        ReleaseInstance(result.gameObject);
+                }
+
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// AssetReference를 사용한 VContainer 의존성 주입 생성
+        /// </summary>
+        public async UniTask<T> SpawnWithInjectionAsync<T>(
+            AssetReference assetReference,
+            Vector3 position,
+            Quaternion rotation,
+            Transform parent = null
+        ) where T : MonoBehaviour
+        {
+            try
+            {
+                var instance = await InstantiateAsync(assetReference, position, rotation, parent);
+
+                // VContainer 의존성 주입
+                try
+                {
+                    _resolver.InjectGameObject(instance);
+                    if (_enableDebugLogs)
+                        Debug.Log($"[AddressableLoadService] VContainer 의존성 주입 성공: {assetReference.RuntimeKey}");
+                }
+                catch (System.Exception injectionEx)
+                {
+                    Debug.LogWarning($"[AddressableLoadService] VContainer 의존성 주입 실패 (계속 진행): {assetReference.RuntimeKey}, 오류: {injectionEx.Message}");
+                }
+
+                var component = instance.GetComponent<T>();
+                if (component == null)
+                {
+                    Debug.LogError($"[AddressableLoadService] 컴포넌트 {typeof(T).Name}를 찾을 수 없음: {assetReference.RuntimeKey}");
+                    ReleaseInstance(instance);
+                    return null;
+                }
+
+                if (_enableDebugLogs)
+                    Debug.Log($"[AddressableLoadService] AssetReference VContainer 주입 완료: {assetReference.RuntimeKey} -> {typeof(T).Name}");
+
+                return component;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[AddressableLoadService] AssetReference VContainer 주입 실패: {assetReference.RuntimeKey}, {e.Message}");
+                throw;
+            }
         }
     }
 }

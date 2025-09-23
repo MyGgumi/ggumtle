@@ -8,6 +8,7 @@
 package com.ggumtle.mission.ar.renderer
 
 import android.content.Context
+import android.util.Log
 import com.ggumtle.mission.ar.util.V3
 import com.ggumtle.mission.ar.util.ScreenPosition
 import com.ggumtle.mission.ar.arcore.ArCore
@@ -62,6 +63,13 @@ class ModelRenderer(context: Context, private val arCore: ArCore, private val fi
          * @param scale 크기 변화 배율 (1.0 = 동일, 2.0 = 2배 확대)
          */
         data class Update(val rotate: Float, val scale: Float) : ModelEvent()
+
+        /**
+         * 특정 애니메이션 재생 이벤트
+         * @param animationIndex 재생할 애니메이션 인덱스
+         * @param playOnce true면 1회만 재생, false면 루프
+         */
+        data class PlayAnimation(val animationIndex: Int, val playOnce: Boolean) : ModelEvent()
     }
 
     // 모델 조작 이벤트를 전달하는 SharedFlow - UI 컴포넌트에서 이벤트를 방출
@@ -85,6 +93,10 @@ class ModelRenderer(context: Context, private val arCore: ArCore, private val fi
     private var translation: V3 = v3Origin  // 모델의 3D 세계 좌표 (x, y, z) - AR 평면 상의 위치
     private var rotate: Float = 0f          // Y축 기준 회전 각도 (라디안) - 모델의 방향
     private var scale: Float = 1f           // 크기 배율 - 원본 모델 대비 확대/축소 비율
+
+    // 애니메이션 상태 관리 변수들
+    private var isPlayingSpecificAnimation = false  // 특정 애니메이션 재생 중 여부
+    private var defaultAnimationIndex = 7           // 기본 루프 애니메이션 인덱스
 
     // 비동기 작업을 위한 코루틴 스코프 - Main 디스패처 사용으로 UI 스레드에서 실행
     // 모델 로딩, 이벤트 처리, 렌더링 업데이트 등의 비동기 작업을 관리
@@ -176,6 +188,39 @@ class ModelRenderer(context: Context, private val arCore: ArCore, private val fi
                 }
             }
 
+            // 특정 애니메이션 재생 처리 코루틴
+            launch {
+                modelEvents
+                    .mapNotNull { it as? ModelEvent.PlayAnimation }
+                    .collect { animationEvent ->
+                        val animator = filamentAsset.instance.animator
+                        if (animator.animationCount > animationEvent.animationIndex) {
+                            if (animationEvent.playOnce) {
+                                // 기존 루프 애니메이션 일시 정지
+                                isPlayingSpecificAnimation = true
+
+                                // 1회 재생: 애니메이션 시작부터 끝까지 재생
+                                val duration = animator.getAnimationDuration(animationEvent.animationIndex)
+                                val startTime = System.nanoTime()
+
+                                launch {
+                                    while (true) {
+                                        val elapsedTime = (System.nanoTime() - startTime) / 1_000_000_000f
+                                        if (elapsedTime >= duration) break
+
+                                        animator.applyAnimation(animationEvent.animationIndex, elapsedTime)
+                                        animator.updateBoneMatrices()
+                                        kotlinx.coroutines.delay(16) // ~60fps
+                                    }
+
+                                    // 1회 재생 완료 후 기본 애니메이션으로 복귀
+                                    isPlayingSpecificAnimation = false
+                                }
+                            }
+                        }
+                    }
+            }
+
             // 메인 렌더링 루프 코루틴 - 매 프레임마다 모델 업데이트 및 렌더링 수행
             launch {
                 // 모델이 배치될 때까지 대기 - canDrawBehavior에서 Unit 값이 방출되면 시작
@@ -187,15 +232,15 @@ class ModelRenderer(context: Context, private val arCore: ArCore, private val fi
                     val animator = filamentAsset.instance.animator
 
                     // 애니메이션이 있는 경우에만 업데이트 수행
-                    if (animator.animationCount > 0) {
-                        // 시간 기반 애니메이션 진행 - 프레임 타임스탬프를 사용
+                    if (animator.animationCount > 0 && !isPlayingSpecificAnimation) {
+                        // 기본 루프 애니메이션만 특정 애니메이션 재생 중이 아닐 때 실행
                         animator.applyAnimation(
-                            0,  // 첫 번째 애니메이션 인덱스
+                            defaultAnimationIndex,  // 기본 애니메이션 인덱스
                             // 타임스탬프를 초 단위로 변환하고 애니메이션 길이로 나눈 나머지로 루프
                             (frame.timestamp /
                                     TimeUnit.SECONDS.toNanos(1).toDouble())  // 나노초를 초로 변환
                                 .toFloat() %
-                                    animator.getAnimationDuration(0),  // 애니메이션 길이로 나눉 나머지로 루프 효과
+                                    animator.getAnimationDuration(defaultAnimationIndex),  // 기본 애니메이션 길이로 나눈 나머지로 루프 효과
                         )
 
                         // 애니메이션 적용 후 본 매트릭스 업데이트 - 스켈레탈 애니메이션 처리
@@ -213,7 +258,7 @@ class ModelRenderer(context: Context, private val arCore: ArCore, private val fi
                         m4Identity()  // 단위 매트릭스에서 시작
                             .translate(translation.x, translation.y, translation.z)  // 3D 위치 이동 변환
                             .rotate(rotate.toDegrees, 0f, 1f, 0f)  // Y축 기준 회전 (라디안을 도로 변환)
-                            .scale(scale * 0.1f, scale * 0.1f, scale * 0.1f)  // 균등 크기 조절 (0.1배로 축소하여 적절한 크기 유지)
+                            .scale(scale * 0.15f, scale * 0.15f, scale * 0.15f)  // 균등 크기 조절 (0.1배로 축소하여 적절한 크기 유지)
                             .floatArray,  // Filament에서 요구하는 float 배열 형식으로 변환
                     )
                 }
@@ -239,5 +284,79 @@ class ModelRenderer(context: Context, private val arCore: ArCore, private val fi
         // 프레임 데이터를 렌더링 루프에 전달
         // tryEmit 사용으로 비블로킹 방식으로 이벤트 발송 (성능 최적화)
         doFrameEvents.tryEmit(frame)
+    }
+
+    /**
+     * 현재 렌더링된 모델이 있는지 확인
+     * @return 모델이 배치되어 렌더링되고 있으면 true, 아니면 false
+     */
+    fun hasRenderables(): Boolean {
+        return canDrawBehavior.value != null
+    }
+
+    /**
+     * 특정 애니메이션을 1회 실행
+     * @param animationIndex 실행할 애니메이션 인덱스 (0번 = 먹이주기 애니메이션)
+     * @param playOnce true면 1회만 실행, false면 루프
+     * @return 애니메이션 실행 성공 여부
+     */
+    fun playSpecificAnimation(animationIndex: Int, playOnce: Boolean = true): Boolean {
+        return try {
+            // 애니메이션 실행 신호를 특별한 이벤트로 전송
+            val animationEvent = ModelEvent.PlayAnimation(animationIndex, playOnce)
+            modelEvents.tryEmit(animationEvent)
+            true
+        } catch (e: Exception) {
+            Log.e("ModelRenderer", "Failed to play animation $animationIndex: ${e.message}")
+            false
+        }
+    }
+
+    /**
+     * 모델의 3D 위치를 화면 좌표로 변환
+     * @return 화면 좌표 (x, y) 또는 null (모델이 배치되지 않은 경우)
+     */
+    fun getModelScreenPosition(): Pair<Float, Float>? {
+        return if (hasRenderables()) {
+            try {
+                // AR 카메라의 view-projection 매트릭스를 가져와서 3D 좌표를 화면 좌표로 변환
+                val camera = arCore.frame.camera
+                val viewMatrix = FloatArray(16)
+                val projectionMatrix = FloatArray(16)
+
+                camera.getViewMatrix(viewMatrix, 0)
+                camera.getProjectionMatrix(projectionMatrix, 0, 0.1f, 100f)
+
+                // 모델의 3D 위치를 homogeneous 좌표로 변환
+                val modelPos = floatArrayOf(translation.x, translation.y, translation.z, 1f)
+                val viewPos = FloatArray(4)
+                val clipPos = FloatArray(4)
+
+                // View 변환
+                android.opengl.Matrix.multiplyMV(viewPos, 0, viewMatrix, 0, modelPos, 0)
+
+                // Projection 변환
+                android.opengl.Matrix.multiplyMV(clipPos, 0, projectionMatrix, 0, viewPos, 0)
+
+                // NDC로 변환 (perspective divide)
+                if (clipPos[3] != 0f) {
+                    val ndcX = clipPos[0] / clipPos[3]
+                    val ndcY = clipPos[1] / clipPos[3]
+
+                    // 화면 좌표로 변환
+                    val screenX = (ndcX + 1f) * filament.surfaceView.width * 0.5f
+                    val screenY = (ndcY + 1f) * filament.surfaceView.height * 0.5f
+
+                    Pair(screenX, screenY)
+                } else {
+                    null
+                }
+            } catch (e: Exception) {
+                Log.e("ModelRenderer", "Failed to get model screen position: ${e.message}")
+                null
+            }
+        } else {
+            null
+        }
     }
 }

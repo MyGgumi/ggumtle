@@ -1,8 +1,7 @@
 package com.ggumtle.mission
 
 import android.util.Log
-import androidx.activity.ComponentActivity
-import androidx.compose.material3.CircularProgressIndicator
+import android.widget.Toast
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
@@ -10,13 +9,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import com.ggumtle.mission.ar.util.*
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import com.google.ar.core.ArCoreApk
 
 @Composable
 fun MissionRoute(
@@ -65,7 +59,7 @@ fun MissionRoute(
 
     // 화면 회전 감지
     LaunchedEffect(configuration) {
-        viewModel.initializeAR(context)
+        viewModel.initAR(context)
         viewModel.onConfigurationChanged(configuration)
     }
 
@@ -74,7 +68,7 @@ fun MissionRoute(
         Log.d("MissionRoute", "사이드 이펙트: ${sideEffect::class.simpleName}")
         when (sideEffect) {
             is MissionContract.SideEffect.ShowToast -> {
-                // TODO: 토스트 표시
+                Toast.makeText(context, sideEffect.message, Toast.LENGTH_SHORT).show()
             }
 
             is MissionContract.SideEffect.ShowError -> {
@@ -97,6 +91,15 @@ fun MissionRoute(
             viewModel.onTouchEvent(context, motionEvent)
         },
         onBackClick = viewModel::onBackClick,
+        onCapturePhoto = {
+            viewModel.capturePhoto(context)
+        },
+        onImagePreviewClick = viewModel::showImageDialog,
+        onHideImageDialog = viewModel::hideImageDialog,
+        // 먹이주기 관련
+        onFoodDragStart = viewModel::startFoodDrag,
+        onFoodDragEnd = viewModel::endFoodDrag,
+        onFoodDrag = viewModel::updateFoodPosition,
         state = state
     )
 }

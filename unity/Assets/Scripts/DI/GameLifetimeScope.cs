@@ -88,10 +88,6 @@ namespace DI
                 Features.Map.Services.IAddressableLoadService,
                 Features.Map.Services.AddressableLoadServiceImpl
             >(Lifetime.Singleton);
-            builder.Register<
-                Features.Map.Services.IMapSpawnService,
-                Features.Map.Services.MapSpawnServiceImpl
-            >(Lifetime.Singleton);
 
             // NetworkSources for new features
             builder.Register<

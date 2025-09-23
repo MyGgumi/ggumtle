@@ -42,7 +42,7 @@ namespace Features.GameInfo.ViewModels
         #region Private Fields
 
         private readonly CompositeDisposable _disposables = new();
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false;
 
         #endregion
 

@@ -26,6 +26,8 @@ using Features.Scenes.Main.Initializers;
 using Features.GameInfo.Messages;
 using Features.GameInfo.Services;
 using Features.GameInfo.ViewModels;
+using Features.MainGame.Messages;
+using Features.MainGame.Services;
 using Features.PlayerList.Messages;
 using Features.PlayerList.Services;
 using Features.PlayerList.ViewModels;
@@ -112,6 +114,16 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleProgressChangedMessage>(options);
             builder.RegisterMessageBroker<GgumtleLevelChangedMessage>(options);
             builder.RegisterMessageBroker<StatusMessageChangedMessage>(options);
+
+            // MainGame Messages
+            builder.RegisterMessageBroker<GameInitializedMessage>(options);
+            builder.RegisterMessageBroker<GameStartedMessage>(options);
+            builder.RegisterMessageBroker<GamePhaseChangedMessage>(options);
+            builder.RegisterMessageBroker<WinConditionMetMessage>(options);
+            builder.RegisterMessageBroker<GameEndedMessage>(options);
+            builder.RegisterMessageBroker<PlayerEliminatedMessage>(options);
+            builder.RegisterMessageBroker<GameStateSyncMessage>(options);
+            builder.RegisterMessageBroker<GamePausedMessage>(options);
 
             // PlayerList Messages
             builder.RegisterMessageBroker<PlayerUpdatedMessage>(options);
@@ -218,6 +230,7 @@ namespace DI
             builder.Register<IInventoryService, InventoryServiceImpl>(Lifetime.Scoped);
             builder.Register<Features.Feeding.Services.IFeedingService, Features.Feeding.Services.FeedingServiceImpl>(Lifetime.Scoped);
             builder.Register<IGameInfoService, GameInfoServiceImpl>(Lifetime.Scoped);
+            builder.Register<IMainGameService, MainGameServiceImpl>(Lifetime.Scoped);
             builder.Register<IPlayerListService, PlayerListServiceImpl>(Lifetime.Scoped);
             builder.Register<INotificationService, NotificationServiceImpl>(Lifetime.Scoped);
             builder.Register<IChatService, ChatServiceImpl>(Lifetime.Scoped);
@@ -243,6 +256,8 @@ namespace DI
             builder.RegisterEntryPoint<MobileInputService>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MobileInputService EntryPoint 등록 완료");
             builder.RegisterEntryPoint<MainSceneInitializer>();
+            builder.RegisterEntryPoint<MainGameServiceImpl>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] MainGameService EntryPoint 등록 완료");
 
             UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료");
         }

@@ -1,8 +1,9 @@
-using Features.Map.Services;
-using Features.Room.Services;
-using Features.Map.Utils;
-using Features.Ggumtle.Messages;
 using Features.Chest.Messages;
+using Features.Ggumtle.Messages;
+using Features.MainGame.Services;
+using Features.Map.Services;
+using Features.Map.Utils;
+using Features.Room.Services;
 using MessagePipe;
 using Networks;
 using UnityEngine;
@@ -55,7 +56,9 @@ namespace Features.Scenes.Main.Initializers
             var room = RoomStorage.Instance.Room;
             if (room == null || !room.IsInitialized())
             {
-                Debug.LogWarning("[MainSceneInitializer] Room 데이터가 없거나 초기화되지 않음 - 빈 맵으로 시작");
+                Debug.LogWarning(
+                    "[MainSceneInitializer] Room 데이터가 없거나 초기화되지 않음 - 빈 맵으로 시작"
+                );
 
                 // 데이터가 없어도 Main 씬 시스템들은 초기화해야 함
                 InitializeMainSceneSystems();
@@ -64,24 +67,30 @@ namespace Features.Scenes.Main.Initializers
 
             // VContainer EntryPoint에서 호출되므로 항상 MapSpawn 실행
             if (_enableDebugLogs)
-                Debug.Log("[MainSceneInitializer] VContainer EntryPoint에서 호출 - 전체 초기화 진행");
+                Debug.Log(
+                    "[MainSceneInitializer] VContainer EntryPoint에서 호출 - 전체 초기화 진행"
+                );
 
             // RoomData로 변환
             var roomData = RoomDataConverter.ConvertToRoomData(room);
             if (roomData == null || !RoomDataConverter.ValidateRoomData(roomData))
             {
-                Debug.LogWarning("[MainSceneInitializer] RoomData 변환 또는 검증 실패 - 빈 맵으로 시작");
+                Debug.LogWarning(
+                    "[MainSceneInitializer] RoomData 변환 또는 검증 실패 - 빈 맵으로 시작"
+                );
                 InitializeMainSceneSystems();
                 return;
             }
 
             if (_enableDebugLogs)
             {
-                Debug.Log($"[MainSceneInitializer] RoomData 확인 완료: " +
-                         $"Chests={roomData.Chests?.Count ?? 0}, " +
-                         $"Ggumtles={roomData.Ggumtles?.Count ?? 0}, " +
-                         $"HealPacks={roomData.HealPacks?.Count ?? 0}, " +
-                         $"SpeedPacks={roomData.SpeedPacks?.Count ?? 0}");
+                Debug.Log(
+                    $"[MainSceneInitializer] RoomData 확인 완료: "
+                        + $"Chests={roomData.Chests?.Count ?? 0}, "
+                        + $"Ggumtles={roomData.Ggumtles?.Count ?? 0}, "
+                        + $"HealPacks={roomData.HealPacks?.Count ?? 0}, "
+                        + $"SpeedPacks={roomData.SpeedPacks?.Count ?? 0}"
+                );
             }
 
             // MapSpawnService를 통한 오브젝트 스폰 시작
@@ -98,14 +107,18 @@ namespace Features.Scenes.Main.Initializers
         {
             // Loading 씬에서 스폰된 오브젝트들이 있는지 확인
             // DontDestroyOnLoad 오브젝트들이 있으면 Loading 씬에서 온 것으로 판단
-            var spawnedGgumtles = GameObject.FindObjectsOfType<Features.Ggumtle.Views.GgumtleGameObject>();
-            var spawnedChests = GameObject.FindObjectsOfType<Features.Chest.Views.ChestGameObject>();
+            var spawnedGgumtles =
+                GameObject.FindObjectsOfType<Features.Ggumtle.Views.GgumtleGameObject>();
+            var spawnedChests =
+                GameObject.FindObjectsOfType<Features.Chest.Views.ChestGameObject>();
 
             bool hasSpawnedObjects = spawnedGgumtles.Length > 0 || spawnedChests.Length > 0;
 
             if (_enableDebugLogs && hasSpawnedObjects)
             {
-                Debug.Log($"[MainSceneInitializer] Loading에서 스폰된 오브젝트 감지: 꿈틀이={spawnedGgumtles.Length}개, 상자={spawnedChests.Length}개");
+                Debug.Log(
+                    $"[MainSceneInitializer] Loading에서 스폰된 오브젝트 감지: 꿈틀이={spawnedGgumtles.Length}개, 상자={spawnedChests.Length}개"
+                );
             }
 
             return hasSpawnedObjects;
@@ -147,7 +160,8 @@ namespace Features.Scenes.Main.Initializers
         /// </summary>
         private void InitializePlayerSystems()
         {
-            var playerGameObject = GameObject.FindFirstObjectByType<Features.Player.Views.PlayerGameObject>();
+            var playerGameObject =
+                GameObject.FindFirstObjectByType<Features.Player.Views.PlayerGameObject>();
             if (playerGameObject != null)
             {
                 // 플레이어 이동 허용
@@ -166,7 +180,8 @@ namespace Features.Scenes.Main.Initializers
         /// </summary>
         private void InitializeUISystems()
         {
-            var hudInitializer = GameObject.FindFirstObjectByType<Features.UI.Views.HUDInitializer>();
+            var hudInitializer =
+                GameObject.FindFirstObjectByType<Features.UI.Views.HUDInitializer>();
             if (hudInitializer != null)
             {
                 // UI 시스템이 활성화되어 있는지 확인
@@ -188,7 +203,8 @@ namespace Features.Scenes.Main.Initializers
         /// </summary>
         private void InitializeInputSystems()
         {
-            var keyboardController = GameObject.FindFirstObjectByType<Features.MobileControls.Testing.KeyboardDebugController>();
+            var keyboardController =
+                GameObject.FindFirstObjectByType<Features.MobileControls.Testing.KeyboardDebugController>();
             if (keyboardController != null)
             {
                 // 키보드 입력 시스템이 활성화되어 있는지 확인
@@ -200,7 +216,8 @@ namespace Features.Scenes.Main.Initializers
                     Debug.Log("[MainSceneInitializer] 키보드 입력 시스템 초기화 완료");
             }
 
-            var mobileControlsView = GameObject.FindFirstObjectByType<Features.MobileControls.Views.MobileControlsView>();
+            var mobileControlsView =
+                GameObject.FindFirstObjectByType<Features.MobileControls.Views.MobileControlsView>();
             if (mobileControlsView != null)
             {
                 // 모바일 입력 시스템이 활성화되어 있는지 확인
@@ -227,19 +244,24 @@ namespace Features.Scenes.Main.Initializers
                     var constructMethod = detector.GetType().GetMethod("Construct");
                     if (constructMethod != null)
                     {
-                        constructMethod.Invoke(detector, new object[] {
-                            _ggumtleDetectedPublisher,
-                            _ggumtleLeftPublisher
-                        });
-                        Debug.Log($"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 완료: {detector.gameObject.name}");
+                        constructMethod.Invoke(
+                            detector,
+                            new object[] { _ggumtleDetectedPublisher, _ggumtleLeftPublisher }
+                        );
+                        Debug.Log(
+                            $"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 완료: {detector.gameObject.name}"
+                        );
                     }
                 }
                 catch (System.Exception e)
                 {
-                    Debug.LogError($"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 실패: {e.Message}");
+                    Debug.LogError(
+                        $"[MainSceneInitializer] InteractionTriggerDetector 수동 주입 실패: {e.Message}"
+                    );
                 }
             }
         }
+
 
         private async void InitializeMapObjects(Features.Room.Models.RoomData roomData)
         {
@@ -290,17 +312,22 @@ namespace Features.Scenes.Main.Initializers
                 bool protectSpawnedObjects = WasLoadedFromLoadingScene();
 
                 if (protectSpawnedObjects && _enableDebugLogs)
-                    Debug.Log("[MainSceneInitializer] Loading 씬에서 전환됨 - 스폰된 오브젝트들 보호");
+                    Debug.Log(
+                        "[MainSceneInitializer] Loading 씬에서 전환됨 - 스폰된 오브젝트들 보호"
+                    );
 
                 // 기존 꿈틀이들 찾아서 제거 (단, Loading에서 스폰된 것들은 보호)
-                var existingGgumtles = GameObject.FindObjectsOfType<Features.Ggumtle.Views.GgumtleGameObject>();
+                var existingGgumtles =
+                    GameObject.FindObjectsOfType<Features.Ggumtle.Views.GgumtleGameObject>();
                 foreach (var ggumtle in existingGgumtles)
                 {
                     // 플레이어 자신의 꿈틀이는 제거하지 않음
                     if (ggumtle.name.Contains("Player") || ggumtle.name.Contains("LocalPlayer"))
                     {
                         if (_enableDebugLogs)
-                            Debug.Log($"[MainSceneInitializer] 플레이어 꿈틀이는 유지: {ggumtle.name}");
+                            Debug.Log(
+                                $"[MainSceneInitializer] 플레이어 꿈틀이는 유지: {ggumtle.name}"
+                            );
                         continue;
                     }
 
@@ -308,7 +335,9 @@ namespace Features.Scenes.Main.Initializers
                     if (protectSpawnedObjects && ggumtle.name.StartsWith("Ggumtle_"))
                     {
                         if (_enableDebugLogs)
-                            Debug.Log($"[MainSceneInitializer] Loading에서 스폰된 꿈틀이 보호: {ggumtle.name}");
+                            Debug.Log(
+                                $"[MainSceneInitializer] Loading에서 스폰된 꿈틀이 보호: {ggumtle.name}"
+                            );
                         continue;
                     }
 
@@ -322,15 +351,31 @@ namespace Features.Scenes.Main.Initializers
                 foreach (var obj in allGameObjects)
                 {
                     // 씬에 미리 배치된 UI나 시스템 오브젝트가 아닌 스폰된 오브젝트들만 대상
-                    if ((obj.name.Contains("Chest") || obj.name.Contains("HealPack") || obj.name.Contains("SpeedPack"))
-                        && !obj.name.Contains("UI") && !obj.name.Contains("Canvas") && !obj.name.Contains("System"))
+                    if (
+                        (
+                            obj.name.Contains("Chest")
+                            || obj.name.Contains("HealPack")
+                            || obj.name.Contains("SpeedPack")
+                        )
+                        && !obj.name.Contains("UI")
+                        && !obj.name.Contains("Canvas")
+                        && !obj.name.Contains("System")
+                    )
                     {
                         // Loading 씬에서 스폰된 오브젝트들 보호 (이름이 Chest_숫자, HealPack_숫자 등)
-                        if (protectSpawnedObjects &&
-                            (obj.name.StartsWith("Chest_") || obj.name.StartsWith("HealPack_") || obj.name.StartsWith("SpeedPack_")))
+                        if (
+                            protectSpawnedObjects
+                            && (
+                                obj.name.StartsWith("Chest_")
+                                || obj.name.StartsWith("HealPack_")
+                                || obj.name.StartsWith("SpeedPack_")
+                            )
+                        )
                         {
                             if (_enableDebugLogs)
-                                Debug.Log($"[MainSceneInitializer] Loading에서 스폰된 오브젝트 보호: {obj.name}");
+                                Debug.Log(
+                                    $"[MainSceneInitializer] Loading에서 스폰된 오브젝트 보호: {obj.name}"
+                                );
                             continue;
                         }
 

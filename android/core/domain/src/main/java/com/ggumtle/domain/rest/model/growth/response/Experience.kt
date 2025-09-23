@@ -6,5 +6,6 @@ data class Experience(
     val beforePercentage: Double,
     val afterPercentage: Double,
     val beforeLevel: Int,
-    val afterLevel: Int
+    val afterLevel: Int,
+    val nextSuccessRate: Int
 )

@@ -10,7 +10,8 @@ data class ExperienceDto(
     val beforePercentage: Double,
     val afterPercentage: Double,
     val beforeLevel: Int,
-    val afterLevel: Int
+    val afterLevel: Int,
+    val nextSuccessRate: Int
 )
 
 fun ExperienceDto.toDomain() = Experience(
@@ -19,5 +20,6 @@ fun ExperienceDto.toDomain() = Experience(
     beforePercentage = this.beforePercentage,
     afterPercentage = this.afterPercentage,
     beforeLevel = this.beforeLevel,
-    afterLevel = this.afterLevel
+    afterLevel = this.afterLevel,
+    nextSuccessRate = this.nextSuccessRate
 )

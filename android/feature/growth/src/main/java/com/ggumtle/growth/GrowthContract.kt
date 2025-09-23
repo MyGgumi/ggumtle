@@ -29,6 +29,7 @@ object GrowthContract {
         val isShowingEnhanceFailure: Boolean = false,
         val isShowingEnhanceSuccess: Boolean = false,
         val previousCharacterInfo: CharacterInfo? = null, // 강화 전 캐릭터 정보
+        val enhanceExperience: com.ggumtle.domain.rest.model.growth.response.Experience? = null, // 강화 결과 경험치 정보
         val isShowingDailyMission: Boolean = false,
 
         // 강화 버튼 클릭 여부

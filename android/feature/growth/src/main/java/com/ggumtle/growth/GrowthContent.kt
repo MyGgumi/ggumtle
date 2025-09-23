@@ -1,8 +1,10 @@
 package com.ggumtle.growth
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -45,7 +47,7 @@ fun GrowthContent(
 
             CharacterDisplay(
                 characterName = state.myCharacters.getOrNull(state.selectedCharacterIndex)?.monggingClass?.displayName
-                    ?: "힐러 몽깅이",
+                    ?: "- 몽깅이",
                 selectedIndex = state.selectedCharacterIndex,
                 totalCharacters = state.myCharacters.size,
                 onSwipe = onCharacterSwipe,
@@ -81,18 +83,31 @@ fun GrowthContent(
             modifier = Modifier.fillMaxSize()
         )
 
-        // 강화 성공 다이얼로그
-        if (state.isShowingEnhanceSuccess && state.previousCharacterInfo != null) {
-            val previousChar = state.previousCharacterInfo
-            val currentChar = state.myCharacters.getOrNull(state.selectedCharacterIndex)
+        // 다이얼로그 오버레이 배경
+        if (state.isShowingEnhanceSuccess || state.isShowingDailyMission) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.8f))
+                    .clickable(
+                        interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        // 배경 클릭 시 다이얼로그 닫기
+                        if (state.isShowingEnhanceSuccess) onHideEnhanceSuccessDialog()
+                        if (state.isShowingDailyMission) onHideDailyMissionDialog()
+                    }
+            )
+        }
 
-            if (currentChar != null) {
-                EnhanceSuccessDialog(
-                    isVisible = state.isShowingEnhanceSuccess,
-                    onDismiss = onHideEnhanceSuccessDialog,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
+        // 강화 성공 다이얼로그
+        if (state.isShowingEnhanceSuccess && state.enhanceExperience != null) {
+            EnhanceSuccessDialog(
+                isVisible = state.isShowingEnhanceSuccess,
+                experience = state.enhanceExperience,
+                onDismiss = onHideEnhanceSuccessDialog,
+                modifier = Modifier.fillMaxSize()
+            )
         }
 
         // 일일 미션 다이얼로그

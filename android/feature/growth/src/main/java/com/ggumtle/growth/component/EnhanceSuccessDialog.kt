@@ -35,15 +35,17 @@ import androidx.compose.foundation.border
 @Composable
 fun EnhanceSuccessDialog(
     isVisible: Boolean,
-    nextSuccessRate: Int = 1,
-    currentLevel: Int = 4,
-    nextLevel: Int = 5,
-    currentStat: Float = 1.2f,
-    nextStat: Float = 1.25f,
-    statisticName: String = "치료속도",
+    experience: com.ggumtle.domain.rest.model.growth.response.Experience,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // statisticName 변환
+    val statisticNameKorean = when(experience.statisticName) {
+        "heal" -> "치료 속도"
+        "work" -> "작업 속도"
+        "physical" -> "체력 증가"
+        else -> experience.statisticName
+    }
     AnimatedVisibility(
         visible = isVisible,
         enter = fadeIn() + scaleIn(),
@@ -60,7 +62,7 @@ fun EnhanceSuccessDialog(
             Box(
                 modifier = Modifier
                     .width(300.dp)
-                    .height(280.dp)
+                    .height(310.dp)
                     .drawBehind {
                         // 민트색 후광 효과 - 더 크고 밝게
                         drawIntoCanvas { canvas ->
@@ -107,7 +109,7 @@ fun EnhanceSuccessDialog(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "다음 성공확률 ${nextSuccessRate}%",
+                        text = "다음 성공확률 ${experience.nextSuccessRate}%",
                         color = BrandColors.PurpleLight,
                         style = MaterialTheme.typography.bodyMedium,
                         textAlign = TextAlign.Center
@@ -126,7 +128,7 @@ fun EnhanceSuccessDialog(
                         )
 
                         Text(
-                            text = "Lv $currentLevel",
+                            text = "Lv ${experience.beforeLevel}",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -138,7 +140,7 @@ fun EnhanceSuccessDialog(
                         )
 
                         Text(
-                            text = "Lv $nextLevel",
+                            text = "Lv ${experience.afterLevel}",
                             color = BrandColors.Mint,
                             style = MaterialTheme.typography.titleLarge
                         )
@@ -152,13 +154,13 @@ fun EnhanceSuccessDialog(
                     ) {
 
                         Text(
-                            text = statisticName,
+                            text = statisticNameKorean,
                             color = BrandColors.PurpleLight,
                             style = MaterialTheme.typography.bodyMedium
                         )
 
                         Text(
-                            text = "${currentStat}x",
+                            text = "${String.format("%.1f", experience.beforePercentage)}%",
                             color = Color.White,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -170,7 +172,7 @@ fun EnhanceSuccessDialog(
                         )
 
                         Text(
-                            text = "${nextStat}x",
+                            text = "${String.format("%.1f", experience.afterPercentage)}%",
                             color = BrandColors.Mint,
                             style = MaterialTheme.typography.titleLarge
                         )
@@ -184,13 +186,19 @@ fun EnhanceSuccessDialog(
 @Preview(showBackground = true, backgroundColor = 0xFF2D1B69)
 @Composable
 fun EnhanceSuccessDialogPreview() {
+    val mockExperience = com.ggumtle.domain.rest.model.growth.response.Experience(
+        monggingId = 1,
+        statisticName = "heal",
+        beforePercentage = 1.2,
+        afterPercentage = 1.25,
+        beforeLevel = 4,
+        afterLevel = 5,
+        nextSuccessRate = 10
+    )
+
     EnhanceSuccessDialog(
         isVisible = true,
-        nextSuccessRate = 10,
-        currentLevel = 4,
-        nextLevel = 5,
-        currentStat = 1.2f,
-        nextStat = 1.25f,
+        experience = mockExperience,
         onDismiss = {}
     )
 }

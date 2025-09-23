@@ -40,6 +40,7 @@ using Features.PlayerList.Services;
 using Features.PlayerList.ViewModels;
 using Features.Scenes.Main.Initializers;
 using Features.UI.Services;
+using Features.Game.Services;
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -178,6 +179,7 @@ namespace DI
             // Main 씬 컴포넌트들 등록 (씬에 미리 배치된 것들만)
             builder.RegisterComponentInHierarchy<PlayerGameObject>();
             builder.RegisterComponentInHierarchy<Features.UI.Views.HUDInitializer>();
+            builder.RegisterComponentInHierarchy<Features.Scenes.Main.Managers.MainSceneManager>();
 
             // Feature UI Views 등록
             builder.RegisterComponentInHierarchy<Features.GameInfo.Views.GameInfoUIView>();
@@ -210,6 +212,7 @@ namespace DI
                 },
                 Lifetime.Singleton
             );
+
 
             // Main 씬 전용 NetworkSources 등록
             builder.Register<IGgumtleNetworkSource, GgumtleNetworkSource>(Lifetime.Scoped);

@@ -1,4 +1,5 @@
 using Features.Scenes.Loading.Managers;
+using MessagePipe;
 using VContainer;
 using VContainer.Unity;
 
@@ -50,8 +51,13 @@ namespace DI
         {
             UnityEngine.Debug.Log("[LoadingLifetimeScope] Configure 시작");
 
+            // MessagePipe 옵션 가져오기 (부모에서 상속)
+            var options = builder.RegisterMessagePipe();
+
+
             // Loading 씬에 있는 컴포넌트들 등록
             builder.RegisterComponentInHierarchy<LoadingSceneManager>();
+            builder.RegisterComponentInHierarchy<LoadingBackgroundController>();
 
             // Loading 씬 전용 ViewModel 등록
             builder.Register<Features.Scenes.Loading.ViewModels.LoadingViewModel>(Lifetime.Scoped);

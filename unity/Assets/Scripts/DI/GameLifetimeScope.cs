@@ -1,6 +1,7 @@
 using Features.Ggumtle.Messages;
 using Features.MobileControls.Messages;
 using Features.Scenes.Lobby.Messages;
+using Features.Game.Services;
 using MessagePipe;
 using VContainer;
 using VContainer.Unity;
@@ -76,6 +77,12 @@ namespace DI
                 Features.Game.Services.ISceneTransitionService,
                 Features.Game.Services.SceneTransitionServiceImpl
             >(Lifetime.Singleton);
+
+            // SkyboxTransitionManager 등록 (싱글톤 인스턴스 사용)
+            builder.Register<SkyboxTransitionManager>(
+                _ => SkyboxTransitionManager.Instance,
+                Lifetime.Singleton
+            );
 
             // Room Services
             builder.Register<

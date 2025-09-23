@@ -1,7 +1,7 @@
+using System;
 using Features.Map.Services;
 using Features.Room.Services;
 using R3;
-using System;
 using UnityEngine;
 using VContainer;
 
@@ -14,17 +14,18 @@ namespace Features.Scenes.Loading.ViewModels
     {
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IRoomService _roomService;
-        private readonly DisposableBag _disposables = new();
+        private readonly R3.DisposableBag _disposables = new();
         private readonly bool _enableDebugLogs = true;
 
         // UI 상태
-        private readonly ReactiveProperty<float> _loadProgress = new(0f);
+        private readonly ReactiveProperty<float> _overallProgress = new(0f);
         private readonly ReactiveProperty<string> _statusMessage = new("로딩 준비 중...");
         private readonly ReactiveProperty<bool> _isLoading = new(false);
         private readonly ReactiveProperty<bool> _isWaitingForGameStart = new(false);
         private readonly ReactiveProperty<bool> _isComplete = new(false);
 
-        public ReadOnlyReactiveProperty<float> LoadProgress => _loadProgress;
+
+        public ReadOnlyReactiveProperty<float> OverallProgress => _overallProgress;
         public ReadOnlyReactiveProperty<string> StatusMessage => _statusMessage;
         public ReadOnlyReactiveProperty<bool> IsLoading => _isLoading;
         public ReadOnlyReactiveProperty<bool> IsWaitingForGameStart => _isWaitingForGameStart;
@@ -33,7 +34,8 @@ namespace Features.Scenes.Loading.ViewModels
         [Inject]
         public LoadingViewModel(
             IAddressableLoadService addressableLoadService,
-            IRoomService roomService)
+            IRoomService roomService
+        )
         {
             _addressableLoadService = addressableLoadService ?? throw new ArgumentNullException(nameof(addressableLoadService));
             _roomService = roomService ?? throw new ArgumentNullException(nameof(roomService));
@@ -71,13 +73,16 @@ namespace Features.Scenes.Loading.ViewModels
             {
                 _isLoading.Value = true;
                 _statusMessage.Value = "게임 에셋 로딩 중...";
-                _loadProgress.Value = 0f;
+                _overallProgress.Value = 0f;
 
                 if (_enableDebugLogs)
                     Debug.Log($"[LoadingViewModel] 로딩 시작: {assetTag}");
 
                 // Addressable 에셋 로딩
-                await _addressableLoadService.LoadAssetsWithTagAsync(assetTag, OnLoadProgressUpdated);
+                await _addressableLoadService.LoadAssetsWithTagAsync(
+                    assetTag,
+                    OnLoadProgressUpdated
+                );
             }
             catch (Exception e)
             {
@@ -92,13 +97,15 @@ namespace Features.Scenes.Loading.ViewModels
         /// </summary>
         private void OnLoadProgressUpdated(float progress)
         {
-            _loadProgress.Value = progress;
+            // 전체 진행률 계산: 에셋 로딩은 0~90% 구간에 매핑
+            var overallProgress = progress * 0.9f;
+            _overallProgress.Value = overallProgress;
 
-            var percentage = Mathf.RoundToInt(progress * 100);
+            var percentage = Mathf.RoundToInt(overallProgress * 100);
             _statusMessage.Value = $"게임 에셋 로딩 중... {percentage}%";
 
             if (_enableDebugLogs)
-                Debug.Log($"[LoadingViewModel] 로딩 진행률: {percentage}%");
+                Debug.Log($"[LoadingViewModel] 전체 진행률: {overallProgress:P0}");
         }
 
         /// <summary>
@@ -109,10 +116,12 @@ namespace Features.Scenes.Loading.ViewModels
             _isLoading.Value = false;
             _isWaitingForGameStart.Value = true;
             _statusMessage.Value = "다른 플레이어를 기다리는 중...";
-            _loadProgress.Value = 1f;
+
+            // 전체 진행률을 90%로 설정 (에셋 로딩 완료, 게임 시작 대기 단계)
+            _overallProgress.Value = 0.9f;
 
             if (_enableDebugLogs)
-                Debug.Log("[LoadingViewModel] 에셋 로딩 완료 - 게임 시작 대기");
+                Debug.Log("[LoadingViewModel] 에셋 로딩 완료 - 게임 시작 대기, 전체 진행률: 90%");
         }
 
         /// <summary>
@@ -123,6 +132,9 @@ namespace Features.Scenes.Loading.ViewModels
             _isWaitingForGameStart.Value = false;
             _isComplete.Value = true;
             _statusMessage.Value = "게임 시작! 메인 씬으로 이동 중...";
+
+            // 전체 진행률을 100%로 설정 (게임 시작)
+            _overallProgress.Value = 1.0f;
 
             if (_enableDebugLogs)
                 Debug.Log("[LoadingViewModel] 게임 시작 신호 수신");

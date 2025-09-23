@@ -5,9 +5,9 @@ namespace Features.Chest.Messages
     /// </summary>
     public readonly struct ChestLeftMessage
     {
-        public readonly string ChestId;
+        public readonly int ChestId;
 
-        public ChestLeftMessage(string chestId)
+        public ChestLeftMessage(int chestId)
         {
             ChestId = chestId;
         }

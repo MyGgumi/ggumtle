@@ -49,7 +49,7 @@ namespace Features.Chest.Models
     [System.Serializable]
     public class ChestData
     {
-        public string chestId;
+        public int chestId;
         public string chestName;
         public ChestSlot[] slots = new ChestSlot[9];
         public bool isOpen;
@@ -62,7 +62,7 @@ namespace Features.Chest.Models
             InitializeSlots();
         }
 
-        public ChestData(string id, string name, Vector3 pos, GameObject obj = null)
+        public ChestData(int id, string name, Vector3 pos, GameObject obj = null)
         {
             chestId = id;
             chestName = name;
@@ -112,22 +112,22 @@ namespace Features.Chest.Models
     public class ChestModel
     {
         public ChestData currentChest;
-        public Dictionary<string, ChestData> chests = new Dictionary<string, ChestData>();
+        public Dictionary<int, ChestData> chests = new Dictionary<int, ChestData>();
         public bool isChestUIOpen = false;
-        public string currentChestId = "";
+        public int currentChestId = 0;
 
         public bool HasCurrentChest => currentChest != null;
         public bool IsChestOpen => isChestUIOpen && currentChest != null;
 
-        public void RegisterChest(string chestId, string chestName, Vector3 position, GameObject chestObject = null)
+        public void RegisterChest(int chestId, string chestName, Vector3 position, GameObject chestObject = null)
         {
-            if (string.IsNullOrEmpty(chestId)) return;
+            if (chestId <= 0) return;
 
             var chestData = new ChestData(chestId, chestName, position, chestObject);
             chests[chestId] = chestData;
         }
 
-        public void UnregisterChest(string chestId)
+        public void UnregisterChest(int chestId)
         {
             if (chests.ContainsKey(chestId))
             {
@@ -139,17 +139,17 @@ namespace Features.Chest.Models
             }
         }
 
-        public ChestData GetChest(string chestId)
+        public ChestData GetChest(int chestId)
         {
             return chests.ContainsKey(chestId) ? chests[chestId] : null;
         }
 
-        public bool HasChest(string chestId)
+        public bool HasChest(int chestId)
         {
             return chests.ContainsKey(chestId);
         }
 
-        public bool OpenChest(string chestId)
+        public bool OpenChest(int chestId)
         {
             if (!chests.ContainsKey(chestId)) return false;
 
@@ -171,7 +171,7 @@ namespace Features.Chest.Models
             }
 
             currentChest = null;
-            currentChestId = "";
+            currentChestId = 0;
             isChestUIOpen = false;
         }
 
@@ -207,7 +207,7 @@ namespace Features.Chest.Models
             }
         }
 
-        public void SyncChestData(string chestId, ChestSlot[] serverSlots)
+        public void SyncChestData(int chestId, ChestSlot[] serverSlots)
         {
             if (!chests.ContainsKey(chestId)) return;
 
@@ -218,7 +218,7 @@ namespace Features.Chest.Models
             }
         }
 
-        public void SyncChestSlot(string chestId, int slotIndex, string itemId, int count)
+        public void SyncChestSlot(int chestId, int slotIndex, string itemId, int count)
         {
             if (!chests.ContainsKey(chestId)) return;
 

@@ -360,7 +360,7 @@ namespace Features.Chest.Views
             // 인벤토리 서비스를 통해 아이템 전송
             if (_inventoryService != null && viewModel != null)
             {
-                var chestId = int.Parse(viewModel.CurrentChestId.Value);
+                var chestId = viewModel.CurrentChestId.Value;
                 _inventoryService.RequestItemFromChest(chestId, slotIndex);
             }
         }

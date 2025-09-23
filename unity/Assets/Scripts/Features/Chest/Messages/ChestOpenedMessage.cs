@@ -5,10 +5,10 @@ namespace Features.Chest.Messages
     /// </summary>
     public readonly struct ChestOpenedMessage
     {
-        public readonly string ChestId;
+        public readonly int ChestId;
         public readonly string ChestName;
 
-        public ChestOpenedMessage(string chestId, string chestName)
+        public ChestOpenedMessage(int chestId, string chestName)
         {
             ChestId = chestId;
             ChestName = chestName;

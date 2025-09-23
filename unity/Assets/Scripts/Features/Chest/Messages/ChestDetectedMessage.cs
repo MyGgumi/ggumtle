@@ -8,12 +8,12 @@ namespace Features.Chest.Messages
     /// </summary>
     public readonly struct ChestDetectedMessage
     {
-        public readonly string ChestId;
+        public readonly int ChestId;
         public readonly Transform ChestTransform;
         public readonly float Distance;
         public readonly ChestState State;
 
-        public ChestDetectedMessage(string chestId, Transform chestTransform, float distance, ChestState state)
+        public ChestDetectedMessage(int chestId, Transform chestTransform, float distance, ChestState state)
         {
             ChestId = chestId;
             ChestTransform = chestTransform;

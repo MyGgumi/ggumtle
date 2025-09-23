@@ -21,7 +21,7 @@ fun StartUpContent(
 ) {
     Box(modifier = modifier.fillMaxSize()) {
         Image(
-            painter = painterResource(R.drawable.screen_startup),
+            painter = painterResource(R.drawable.screen_startup2),
             contentDescription = null,
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop

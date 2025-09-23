@@ -1,0 +1,61 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/UI/ToolKit/GameResultUI.uss?fileID=7433441132597879392&amp;guid=cc4873c4eca31804593ef61111da0838&amp;type=3#GameResultUI" />
+    <ui:VisualElement name="Root" class="result-container" style="-unity-font-definition: url(&quot;project://database/Assets/Fonts/SuseongHyejeong.ttf?fileID=12800000&amp;guid=78482f790748c2b4a870af3f386b2fe0&amp;type=3#SuseongHyejeong&quot;);">
+        <ui:VisualElement name="Background" class="background" />
+        <ui:VisualElement name="TitleContainer" class="title-container">
+            <ui:Label text="몽깅이 승리" name="GameResultTitle" class="result-title" />
+            <ui:VisualElement name="SubtitleContainer" style="flex-direction: row; align-items: center; justify-content: center;">
+                <ui:Label text="2명" name="EscapeCount" class="result-subtitle" />
+                <ui:Label text=" 탈출" name="EscapeText" class="result-subtitle escape-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="PlayersContainer" class="players-container">
+            <ui:VisualElement name="MongdungPlayer" class="player-slot mongdung-slot">
+                <ui:VisualElement name="MongdungCharacter" class="character-icon mongdung-character" />
+                <ui:Label text="몽둥이" name="MongdungNickname" class="player-nickname mongdung-nickname" />
+                <ui:Label text="패배" name="MongdungStatusText" class="status-text defeat-status" />
+            </ui:VisualElement>
+            <ui:VisualElement name="MonggingPlayers" class="mongging-players">
+                <ui:VisualElement name="MonggingPlayer1" class="player-slot mongging-slot">
+                    <ui:VisualElement name="MonggingCharacterContainer1" class="character-container">
+                        <ui:VisualElement name="MonggingStatus1" class="status-bubble escaped" />
+                        <ui:VisualElement name="MonggingCharacter1" class="character-icon mongging-character mint-mongging" />
+                    </ui:VisualElement>
+                    <ui:Label text="플레이어1" name="MonggingNickname1" class="player-nickname mongging-nickname" />
+                    <ui:Label text="승리" name="MonggingStatusText1" class="status-text victory-status" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MonggingPlayer2" class="player-slot mongging-slot">
+                    <ui:VisualElement name="MonggingCharacterContainer2" class="character-container">
+                        <ui:VisualElement name="MonggingStatus2" class="status-bubble dead" />
+                        <ui:VisualElement name="MonggingCharacter2" class="character-icon mongging-character yellow-mongging" />
+                    </ui:VisualElement>
+                    <ui:Label text="플레이어2" name="MonggingNickname2" class="player-nickname mongging-nickname" />
+                    <ui:Label text="승리" name="MonggingStatusText2" class="status-text victory-status" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MonggingPlayer3" class="player-slot mongging-slot">
+                    <ui:VisualElement name="MonggingCharacterContainer3" class="character-container">
+                        <ui:VisualElement name="MonggingStatus3" class="status-bubble escaped" />
+                        <ui:VisualElement name="MonggingCharacter3" class="character-icon mongging-character purple-mongging" />
+                    </ui:VisualElement>
+                    <ui:Label text="플레이어3" name="MonggingNickname3" class="player-nickname mongging-nickname" />
+                    <ui:Label text="승리" name="MonggingStatusText3" class="status-text victory-status" />
+                </ui:VisualElement>
+                <ui:VisualElement name="MonggingPlayer4" class="player-slot mongging-slot">
+                    <ui:VisualElement name="MonggingCharacterContainer4" class="character-container">
+                        <ui:VisualElement name="MonggingStatus4" class="status-bubble escaped" />
+                        <ui:VisualElement name="MonggingCharacter4" class="character-icon mongging-character mint-mongging" />
+                    </ui:VisualElement>
+                    <ui:Label text="플레이어4" name="MonggingNickname4" class="player-nickname mongging-nickname" />
+                    <ui:Label text="승리" name="MonggingStatusText4" class="status-text victory-status" />
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="RewardContainer" class="reward-container">
+            <ui:VisualElement name="CoinIcon" class="coin-icon" />
+            <ui:Label text="+ 150" name="CoinAmount" class="coin-amount" />
+        </ui:VisualElement>
+        <ui:VisualElement name="ButtonContainer" class="button-container">
+            <ui:Button text="계속" name="ContinueButton" class="continue-button" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

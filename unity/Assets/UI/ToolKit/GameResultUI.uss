@@ -1,0 +1,277 @@
+/* 전체 컨테이너 */
+.result-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, 0.8);
+}
+
+/* 배경 */
+.background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(30, 20, 60, 0.95);
+    background-image: url('project://database/Assets/UI/ToolKit/Sprites/bg_result.png');
+}
+
+/* 제목 영역 */
+.title-container {
+    align-items: center;
+    margin-bottom: 50px;
+    margin-top: -100px;
+}
+
+.result-title {
+    font-size: 68px;
+    color: white;
+    -unity-text-align: middle-center;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.result-subtitle {
+    font-size: 40px;
+    color: rgba(124, 167, 255, 1);
+    -unity-text-align: middle-center;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.escape-text {
+    color: rgb(127, 112, 170);
+}
+
+/* 플레이어 목록 컨테이너 */
+.players-container {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    width: 100%;
+    height: 300px;
+    padding: 0 180px;
+}
+
+/* 몽둥이 슬롯 */
+.mongdung-slot {
+    align-items: center;
+}
+
+/* 몽깅이들 컨테이너 */
+.mongging-players {
+    position: relative;
+    width: 1000px;
+    height: 500px;
+    margin-left: 50px;
+}
+
+/* 플레이어 슬롯 */
+.player-slot {
+    align-items: center;
+    margin: 15px;
+    position: relative;
+    flex-direction: column;
+}
+
+.mongging-slot {
+    position: absolute;
+    width: 180px;
+    height: 400px;
+    align-items: center;
+}
+
+/* 개별 몽깅이 플레이어 위치 - 대각선 배치 */
+#MonggingPlayer1 {
+    top: 230px;
+    left: 0px;
+    z-index: 4;
+}
+
+#MonggingPlayer2 {
+    top: 180px;
+    left: 260px;
+    z-index: 3;
+}
+
+#MonggingPlayer3 {
+    top: 110px;
+    left: 520px;
+    z-index: 2;
+}
+
+#MonggingPlayer4 {
+    top: 40px;
+    left: 780px;
+    z-index: 1;
+}
+
+/* 캐릭터 아이콘 */
+.character-icon {
+    background-size: contain;
+}
+
+.mongdung-character {
+    width: 280px;
+    height: 365px;
+    margin-bottom: 10px;
+    background-image: url('project://database/Assets/UI/Images/mongdung_icon.png');
+}
+
+.mongging-character {
+    width: 162px;
+    height: 164px;
+    margin-bottom: 10px;
+    background-image: url('project://database/Assets/UI/Images/mongging_icon.png');
+}
+
+/* 몽깅이 색상별 */
+.mint-mongging {
+    -unity-background-image-tint-color: rgb(64, 224, 208);
+}
+
+.yellow-mongging {
+    -unity-background-image-tint-color: rgb(255, 165, 0);
+}
+
+.purple-mongging {
+    -unity-background-image-tint-color: rgb(186, 85, 211);
+}
+
+
+/* 캐릭터 컨테이너 */
+.character-container {
+    position: relative;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 상태 말풍선 */
+.status-bubble {
+    width: 97px;
+    height: 110px;
+    position: absolute;
+    top: -120px;
+    left: 60%;
+    translate: -50% 0;
+    align-items: center;
+    justify-content: center;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    z-index: 10;
+}
+
+.status-bubble.escaped {
+    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_alive_result.png');
+}
+
+.status-bubble.alive {
+    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_alive_result.png');
+}
+
+.status-bubble.dead {
+    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_dead_result.png');
+}
+
+/*팀별 결과*/
+.victory-status {
+    background-color: rgba(39, 55, 51, 1);
+    border-radius: 15px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.defeat-status {
+    background-color: rgba(56, 36, 40, 1);
+    border-radius: 15px;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+}
+
+.status-text {
+    font-size: 28px;
+    -unity-text-align: middle-center;
+}
+
+.status-text.victory-status {
+    color: rgba(0, 223, 93, 1);
+}
+
+.status-text.defeat-status {
+    color: rgba(236, 100, 95, 1);
+}
+
+/* 플레이어 닉네임 */
+.player-nickname {
+    font-size: 28px;
+    color: rgba(195, 178, 240, 1);
+    -unity-text-align: middle-center;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    margin-top: 5px;
+    margin-bottom: 5px;
+}
+
+.mongdung-nickname {
+    color: rgba(195, 178, 240, 1);
+}
+
+.mongging-nickname {
+    color: rgba(195, 178, 240, 1);
+}
+
+/* 보상 영역 */
+.reward-container {
+    position: absolute;
+    right: 70px;
+    bottom: 180px;
+    flex-direction: row;
+    align-items: center;
+}
+
+.coin-icon {
+    width: 48px;
+    height: 48px;
+    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_dream_coin.png');
+    background-size: contain;
+    margin-right: 10px;
+}
+
+.coin-amount {
+    font-size: 36px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* 플레이어 슬롯 숨김/표시 */
+.player-slot.hidden {
+    display: none;
+}
+
+.player-slot.visible {
+    display: flex;
+}
+
+/* 버튼 영역 */
+.button-container {
+    position: absolute;
+    bottom: 40px;
+    right: 50px;
+    align-items: center;
+}
+
+.continue-button {
+    width: 320px;
+    height: 140px;
+    font-size: 36px;
+    color: white;
+    background-color: rgba(0, 0, 0, 0);
+    background-image: url('project://database/Assets/UI/ToolKit/Sprites/bg_btn_result.png');
+    border-width: 0;
+}

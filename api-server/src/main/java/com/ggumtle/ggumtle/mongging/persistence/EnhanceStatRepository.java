@@ -31,14 +31,14 @@ public interface EnhanceStatRepository extends JpaRepository<EnhanceStat, Long> 
                 CASE
                     WHEN es.monggingClass.id = 1 THEN es.monggingClass.baseHeal * es.enhancePercentage
                     WHEN es.monggingClass.id = 2 THEN es.monggingClass.baseHealth * es.enhancePercentage
-                    WHEN es.monggingClass.id = 3LTHEN es.monggingClass.baseWork * es.enhancePercentage
-                    ELSE 0
-                END
+                    WHEN es.monggingClass.id = 3THEN es.monggingClass.baseWork * es.enhancePercentage
+                    ELSE 0.0
+                END as additional_stat
         )
         FROM EnhanceStat es
         JOIN Mongging mongging
-        JOIN FETCH es.monggingClass
-        JOIN FETCH mongging.owner
+        JOIN es.monggingClass
+        JOIN mongging.owner
         WHERE mongging.id IN :monggingIds
         AND es.monggingClass.id = mongging.monggingClass.id
         AND es.level = mongging.level

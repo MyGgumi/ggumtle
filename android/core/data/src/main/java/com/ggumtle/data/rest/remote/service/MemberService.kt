@@ -4,6 +4,7 @@ import com.ggumtle.data.rest.model.member.request.EditNicknameRequestDto
 import com.ggumtle.data.rest.model.member.response.EditNicknameResponseDto
 import com.ggumtle.data.rest.model.member.response.MemberCoinResponseDto
 import com.ggumtle.data.rest.model.member.response.MemberInfoResponseDto
+import com.ggumtle.data.rest.model.member.response.DeleteAccountResponseDto
 import com.ggumtle.network.rest.model.NetworkResult
 import retrofit2.http.*
 
@@ -19,5 +20,8 @@ interface MemberService {
 
     @GET("member/coin")
     suspend fun getMemberCoin(): NetworkResult<MemberCoinResponseDto>
+
+    @PATCH("member")
+    suspend fun deleteAccount(): NetworkResult<DeleteAccountResponseDto>
 
 }

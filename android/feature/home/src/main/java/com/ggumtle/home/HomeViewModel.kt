@@ -2,6 +2,8 @@ package com.ggumtle.home
 
 import androidx.lifecycle.ViewModel
 import com.ggumtle.domain.rest.usecase.user.GetMemberInfoUseCase
+import com.ggumtle.domain.rest.usecase.member.DeleteAccountUseCase
+import com.ggumtle.domain.rest.usecase.auth.LogoutUseCase
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.domain.model.MemberConnectionState
 import com.ggumtle.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
@@ -69,7 +71,9 @@ class HomeViewModel @Inject constructor(
     private val observeMatchingCancelledUseCase: ObserveMatchingCancelledUseCase,
     private val getPartyParticipantsUseCase: GetPartyParticipantsUseCase,
     private val observeGetPartyParticipantsUseCase: ObserveGetPartyParticipantsUseCase,
-    private val getMemberInfoUseCase: GetMemberInfoUseCase
+    private val getMemberInfoUseCase: GetMemberInfoUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel(), ContainerHost<HomeContract.State, HomeContract.SideEffect> {
 
     override val container: Container<HomeContract.State, HomeContract.SideEffect> =
@@ -473,12 +477,41 @@ class HomeViewModel @Inject constructor(
     }
 
     fun onLogout() = intent {
-        // TODO: 로그아웃 API 호출
-        authManager.logout(LogoutReason.UserLogout)
+        logoutUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    
+                    authManager.signOutWithGoogle()
+                    authManager.logout(LogoutReason.UserLogout)
+                    reduce { state.copy(isLoading = false) }
+                }
+                is Resource.Failure -> {
+                    reduce { state.copy(isLoading = false) }
+                    postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
+                }
+            }
+        }
     }
 
     fun onDeleteAccount() = intent {
-        // TODO: 회원탈퇴 API 호출
+        deleteAccountUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    if (resource.data.success) {
+                        // 회원탈퇴 성공 시 구글 로그아웃 및 로컬 로그아웃 처리
+                        authManager.signOutWithGoogle()
+                        authManager.logout(LogoutReason.AccountDeleted)
+                    }
+                    reduce { state.copy(isLoading = false) }
+                }
+                is Resource.Failure -> {
+                    reduce { state.copy(isLoading = false) }
+                    postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
+                }
+            }
+        }
     }
 
     // 파티 나가기 확인 다이얼 로그 표시

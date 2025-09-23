@@ -5,6 +5,7 @@ sealed class LogoutReason {
     object TokenExpired : LogoutReason()
     data class SessionExpired(val message: String) : LogoutReason()
     object NetworkError : LogoutReason()
+    object AccountDeleted : LogoutReason()
 
     override fun toString(): String {
         return when (this) {
@@ -12,6 +13,7 @@ sealed class LogoutReason {
             TokenExpired -> "토큰 만료"
             is SessionExpired -> "세션 만료: $message"
             NetworkError -> "네트워크 오류"
+            AccountDeleted -> "회원탈퇴"
         }
     }
 }

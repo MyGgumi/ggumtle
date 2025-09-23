@@ -21,6 +21,7 @@ namespace Networks.Ggumtle
         Success = 1,                        // 성공
         NotDigging = 2                      // 파고있지 않음
     }
+
     public class DiggingStartSend : Sendable
     {
         public override PacketType Type => PacketType.DiggingStart;

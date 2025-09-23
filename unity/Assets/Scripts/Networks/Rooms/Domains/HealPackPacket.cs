@@ -3,7 +3,7 @@ namespace Networks.Rooms.Domains
 {
     public class HealPackPacket
     {
-        public const int Unit = 1000;
+        public const int Unit = 100;
         public int Id;
         public Vector3 Position;
         

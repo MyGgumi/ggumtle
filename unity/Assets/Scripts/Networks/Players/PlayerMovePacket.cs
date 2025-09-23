@@ -7,7 +7,7 @@ namespace Networks.Players
 {
     public class PlayerMoveSend: Sendable
     {
-        public const int Unit = 1000;
+        public const int Unit = 100;
         
         public override PacketType Type => PacketType.PlayerMove;
         
@@ -30,7 +30,7 @@ namespace Networks.Players
 
     public class PlayerMoveCommand : Command
     {
-        public const int Unit = 1000;
+        public const int Unit = 100;
         
         public override PacketType Type => PacketType.PlayerMoveResponse;
         

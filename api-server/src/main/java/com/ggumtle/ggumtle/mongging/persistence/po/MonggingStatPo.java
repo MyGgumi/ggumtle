@@ -6,6 +6,6 @@ public record MonggingStatPo(
         Long monggingId,
         Integer monggingLevel,
         Long monggingClassId,
-        Integer additionalStat
+        Double additionalStat
 ) {
 }

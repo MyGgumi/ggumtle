@@ -16,9 +16,9 @@ public record RequestRoomPayload(
                     po.memberId(),
                     po.nickname(),
                     po.monggingClassId(),
-                    po.monggingClassId() == 1 ? po.additionalStat() : 0,
-                    po.monggingClassId() == 2 ? po.additionalStat() : 0,
-                    po.monggingClassId() == 3 ? po.additionalStat() : 0
+                    (int) (po.monggingClassId() == 1 ? po.additionalStat() : 0),
+                    (int) (po.monggingClassId() == 2 ? po.additionalStat() : 0),
+                    (int) (po.monggingClassId() == 3 ? po.additionalStat() : 0)
             );
 
             players.add(player);

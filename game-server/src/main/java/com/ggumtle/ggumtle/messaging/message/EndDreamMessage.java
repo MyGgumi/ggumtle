@@ -17,12 +17,12 @@ public record EndDreamMessage(
 
     public record PlayerState(
             long id,
-            boolean isWinning
+            int coin
     ) {
         public static PlayerState from(DreamEndEvent.PlayerState event) {
             return new PlayerState(
                     event.id(),
-                    event.isWinning()
+                    event.coin()
             );
         }
     }

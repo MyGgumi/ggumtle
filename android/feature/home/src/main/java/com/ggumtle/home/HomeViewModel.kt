@@ -3,6 +3,7 @@ package com.ggumtle.home
 import androidx.lifecycle.ViewModel
 import com.ggumtle.domain.rest.usecase.user.GetMemberInfoUseCase
 import com.ggumtle.domain.rest.usecase.member.DeleteAccountUseCase
+import com.ggumtle.domain.rest.usecase.member.EditNicknameUseCase
 import com.ggumtle.domain.rest.usecase.auth.LogoutUseCase
 import com.ggumtle.domain.rest.usecase.growth.GetMonggingListUseCase
 import com.ggumtle.datastore.AuthManager
@@ -75,6 +76,7 @@ class HomeViewModel @Inject constructor(
     private val observeGetPartyParticipantsUseCase: ObserveGetPartyParticipantsUseCase,
     private val getMemberInfoUseCase: GetMemberInfoUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
+    private val editNicknameUseCase: EditNicknameUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val getMonggingListUseCase: GetMonggingListUseCase,
     private val unityStartupObserveManager: UnityStartupObserveManager
@@ -472,18 +474,33 @@ class HomeViewModel @Inject constructor(
     // 닉네임 변경
     fun onChangeNickname() = intent {
         if (state.tempNickname.isNotBlank()) {
-            // TODO: 닉네임 변경 API 호출
-            val updatedMembers = state.partyMembers.map { member ->
-                if (member.id == state.userProfile.id)
-                    member.copy(nickname = state.tempNickname) else member
-            }
-            reduce {
-                state.copy(
-                    userProfile = state.userProfile.copy(nickname = state.tempNickname),
-                    isNicknameEditMode = false,
-                    tempNickname = "",
-                    partyMembers = updatedMembers
-                )
+            reduce { state.copy(isLoading = true) }
+            editNicknameUseCase.invoke(state.tempNickname).collect { resource ->
+                when (resource) {
+                    is Resource.Loading -> {}
+                    is Resource.Success -> {
+                        val updatedMembers = state.partyMembers.map { member ->
+                            if (member.id == state.userProfile.id)
+                                member.copy(nickname = state.tempNickname) else member
+                        }
+                        // 유니티 캐릭터 닉네임도 업데이트
+                        enterMyCharacter(state.tempNickname, getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex))
+                        reduce {
+                            state.copy(
+                                userProfile = state.userProfile.copy(nickname = state.tempNickname),
+                                isNicknameEditMode = false,
+                                tempNickname = "",
+                                partyMembers = updatedMembers,
+                                isLoading = false
+                            )
+                        }
+                        postSideEffect(HomeContract.SideEffect.ShowToast("닉네임이 변경되었습니다."))
+                    }
+                    is Resource.Failure -> {
+                        reduce { state.copy(isLoading = false) }
+                        postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
+                    }
+                }
             }
         }
     }

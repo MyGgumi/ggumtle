@@ -11,4 +11,6 @@ public interface PartyInvitationRepository extends CrudRepository<PartyInvitatio
     List<PartyInvitation> findAllByInviteeId(Long inviteeId);
 
     boolean existsByPartyIdAndInviteeId(String partyId, Long inviteeId);
+
+    void deleteAllByInviterId(Long inviterId);
 }

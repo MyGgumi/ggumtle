@@ -1,8 +1,10 @@
 package com.ggumtle.ggumtle.mission.application;
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.exception.code.MissionErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
+import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.mission.application.command.DoMissionCommand;
 import com.ggumtle.ggumtle.mission.application.command.GetMissionsCommand;
 import com.ggumtle.ggumtle.mission.application.command.GetRewardCommand;
@@ -27,6 +29,7 @@ import java.util.List;
 public class MissionService {
     private final MissionRepository missionRepository;
     private final MemberMissionRepository memberMissionRepository;
+    private final MemberRepository memberRepository;
 
     @Transactional
     public void createMemberMission(Member newMember) {
@@ -43,6 +46,13 @@ public class MissionService {
     public GetMissionsResult getMissions(GetMissionsCommand command) {
         Long memberId = command.memberId();
 
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(()-> new GgumtleException(MemberErrorCode.NOT_FOUND));
+
+        if (member.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MissionErrorCode.WITHDRAW_MISSION);
+        }
+
         List<MemberMission> allMissions = memberMissionRepository.findAllWithMissionByMemberId(memberId);
 
         return GetMissionsResult.of(allMissions);
@@ -52,6 +62,10 @@ public class MissionService {
     public DoMissionResult doMission(DoMissionCommand command) {
         MemberMission memberMission = memberMissionRepository.findByIdFetchMissionAndMember(command.memberMissionId())
                 .orElseThrow(() -> new GgumtleException(MissionErrorCode.NOT_FOUND_MEMBER_MISSION));
+
+        if(memberMission.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MissionErrorCode.WITHDRAW_MISSION);
+        }
 
         if (!memberMission.getMember().getId().equals(command.memberId())) {
             throw new GgumtleException(MissionErrorCode.NOT_MISSION_OWNER);
@@ -66,6 +80,10 @@ public class MissionService {
     public GetRewardResult getReward(GetRewardCommand command) {
         MemberMission memberMission = memberMissionRepository.findByIdFetchMissionAndMember(command.memberMissionId())
                 .orElseThrow(() -> new GgumtleException(MissionErrorCode.NOT_FOUND_MEMBER_MISSION));
+
+        if(memberMission.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MissionErrorCode.WITHDRAW_MISSION);
+        }
 
         if (!memberMission.getMember().getId().equals(command.memberId())) {
             throw new GgumtleException(MissionErrorCode.NOT_MISSION_OWNER);

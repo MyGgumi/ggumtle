@@ -25,6 +25,7 @@ import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
+import com.ggumtle.ggumtle.exception.code.MonggingErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
@@ -65,6 +66,10 @@ public class DreamPartyService {
 
         Mongging mongging = monggingRepository.findByOwnerIdAndClassIdFetchClassAndOwner(command.memberId(), PHYSICAL_MONGGING_CLASS_ID)
                 .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_MONGGING));
+
+        if (mongging.getIsDeleted() == Boolean.TRUE) {
+            throw new GgumtleException(MonggingErrorCode.WITHDRAW_MONGGING);
+        }
 
         PartyParticipant partyParticipant = new PartyParticipant(command.memberId(), UUID.randomUUID().toString(), mongging.getId(), mongging.getLevel(), true);
         partyParticipantRepository.save(partyParticipant);
@@ -196,6 +201,15 @@ public class DreamPartyService {
         partyInvitationRepository.save(partyInvitation);
 
         Optional<Member> invitee = memberRepository.findById(inviteeId);
+
+        if (invitee.get().getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
+
+        if (inviter.getMemberId().equals(invitee.get().getId())){
+            throw new GgumtleException(DreamErrorCode.CANNOT_INVITE_SELF);
+        }
+
         String inviteeNickname = invitee.get().getNickname();
         return new InvitePartyResult(inviteeId, partyInvitation.getId(), inviteeNickname);
     }

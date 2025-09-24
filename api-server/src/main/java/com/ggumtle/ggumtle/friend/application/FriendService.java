@@ -3,6 +3,7 @@ package com.ggumtle.ggumtle.friend.application;
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.FriendErrorCode;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.friend.application.command.AcceptFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.CancelFriendRequestCommand;
 import com.ggumtle.ggumtle.friend.application.command.DeleteFriendCommand;
@@ -51,23 +52,27 @@ public class FriendService {
     @Transactional
     public RequestFriendsResult requestFriend(RequestFriendCommand command) {
         Long requesterId = command.requesterId();
-        Long targetMemgerId = command.targetMemberId();
+        Long targetMemberId = command.targetMemberId();
 
-        if (requesterId.equals(targetMemgerId)) {
+        if (requesterId.equals(targetMemberId)) {
             throw new GgumtleException(FriendErrorCode.CANNOT_REQUEST_SELF);
         }
 
         Member requester = memberRepository.findById(requesterId)
                 .orElseThrow(() -> new GgumtleException(FriendErrorCode.TARGET_NOT_FOUND));
-        Member target = memberRepository.findById(targetMemgerId)
+        Member target = memberRepository.findById(targetMemberId)
                 .orElseThrow(() -> new GgumtleException(FriendErrorCode.TARGET_NOT_FOUND));
 
-        if (friendRepository.areFriends(requesterId, targetMemgerId)) {
+        if (target.getIsDeleted() == Boolean.TRUE) {
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
+
+        if (friendRepository.areFriends(requesterId, targetMemberId)) {
             throw new GgumtleException(FriendErrorCode.ALREADY_FRIEND);
         }
 
-        boolean pendingAB = friendRepository.existsByFollower_IdAndFollowee_IdAndStatus(requesterId, targetMemgerId, Status.PENDING);
-        boolean pendingBA = friendRepository.existsByFollower_IdAndFollowee_IdAndStatus(targetMemgerId, requesterId, Status.PENDING);
+        boolean pendingAB = friendRepository.existsByFollower_IdAndFollowee_IdAndStatus(requesterId, targetMemberId, Status.PENDING);
+        boolean pendingBA = friendRepository.existsByFollower_IdAndFollowee_IdAndStatus(targetMemberId, requesterId, Status.PENDING);
 
         if (pendingAB || pendingBA) {
             throw new GgumtleException(FriendErrorCode.ALREADY_REQUEST);
@@ -79,15 +84,15 @@ public class FriendService {
         friendRepository.save(friend);
         Long friendId = friend.getId();
 
-        return RequestFriendsResult.of(friendId, requesterId, requesterNickname, targetMemgerId,targetNickname);
+        return RequestFriendsResult.of(friendId, requesterId, requesterNickname, targetMemberId,targetNickname);
     }
 
     @Transactional(readOnly = true)
     public GetFriendsResult getFriends(GetFriendsCommand command) {
         Long memberId = command.memberId();
 
-        List<Friend> asFollower = friendRepository.findAllByFollower_IdAndStatus(memberId, Status.ACCEPTED);
-        List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndStatus(memberId, Status.ACCEPTED);
+        List<Friend> asFollower = friendRepository.findAllByFollower_IdAndFollowee_IsDeletedFalseAndStatus(memberId, Status.ACCEPTED);
+        List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndFollower_IsDeletedFalseAndStatus(memberId, Status.ACCEPTED);
 
         List<Member> friends = new ArrayList<>();
         asFollower.forEach(f -> friends.add(f.getFollowee()));
@@ -114,7 +119,7 @@ public class FriendService {
     public GetFriendRequestsResult getFriendRequests(GetFriendRequestsCommand command) {
         Long memberId = command.memberId();
 
-        List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndStatus(memberId, Status.PENDING);
+        List<Friend> asFollowee = friendRepository.findAllByFollowee_IdAndFollower_IsDeletedFalseAndStatus(memberId, Status.PENDING);
 
         return  GetFriendRequestsResult.of(asFollowee);
     }
@@ -123,7 +128,7 @@ public class FriendService {
     public GetSentFriendRequestsResult getSentFriendRequests(GetSentFriendRequestsCommand command) {
         Long memberId = command.memberId();
 
-        List<Friend> asFollower = friendRepository.findAllByFollower_IdAndStatus(memberId, Status.PENDING);
+        List<Friend> asFollower = friendRepository.findAllByFollower_IdAndFollowee_IsDeletedFalseAndStatus(memberId, Status.PENDING);
 
         return  GetSentFriendRequestsResult.of(asFollower);
     }
@@ -134,6 +139,10 @@ public class FriendService {
         Long loginMemberId = command.loginMemberId();
         Friend friend = friendRepository.findByIdAndFollowee_Id(friendId, loginMemberId)
                 .orElseThrow(() -> new GgumtleException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        if (friend.getFollower().getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
 
         friend.accept();
         Long followerId = friend.getFollower().getId();
@@ -150,6 +159,10 @@ public class FriendService {
         Long loginMemberId = command.loginMemberId();
         Friend friend = friendRepository.findByIdAndFollowee_Id(friendId, loginMemberId)
                 .orElseThrow(() -> new GgumtleException(FriendErrorCode.REQUEST_NOT_FOUND));
+
+        if (friend.getFollower().getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
 
         Long followerId = friend.getFollower().getId();
         String nickname = friend.getFollower().getNickname();

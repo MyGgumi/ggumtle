@@ -1,8 +1,10 @@
 package com.ggumtle.ggumtle.mongging.application;
 
 import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.exception.code.MonggingErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
+import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.mongging.application.result.EnhanceMonggingResult;
 import com.ggumtle.ggumtle.mongging.application.result.MonggingDetailResult;
 import com.ggumtle.ggumtle.mongging.application.result.MonggingListResult;
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -29,6 +32,7 @@ public class MonggingService {
     private final MonggingClassRepository monggingClassRepository;
     private final EnhanceStatRepository enhanceStatRepository;
     private final EnhanceConfigRepository enhanceConfigRepository;
+    private final MemberRepository memberRepository;
 
     /**
      * 몽깅이 상세 조회
@@ -41,6 +45,11 @@ public class MonggingService {
         // 몽깅이를 조회함
         var mongging = monggingRepository.findById(monggingId)
                 .orElseThrow(() -> new GgumtleException(MonggingErrorCode.MONGGING_NOT_FOUND));
+
+        // isDeleted = true 라면 탈퇴한 회원의 몽깅이이므로 예외
+        if (mongging.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MonggingErrorCode.WITHDRAW_MONGGING);
+        }
 
         // 몽깅이 주인이 아니면 예외
         if (!mongging.getOwner().getId().equals(memberId)) {
@@ -74,6 +83,13 @@ public class MonggingService {
      */
     @Transactional(readOnly = true)
     public MonggingListResult fetchMonggings(Long memberId) {
+        Member owner = memberRepository.findById(memberId)
+                .orElseThrow(() -> new GgumtleException(MemberErrorCode.NOT_FOUND));
+
+        if (owner.getIsDeleted() == Boolean.TRUE) {
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
+
         List<Mongging> monggings = monggingRepository.findAllByOwnerIdFetchClassAndOwner(memberId);
 
         return MonggingListResult.of(monggings);
@@ -94,6 +110,11 @@ public class MonggingService {
     public EnhanceMonggingResult enhanceMongging(Long memberId, Long monggingId){
         var mongging = monggingRepository.findById(monggingId)
             .orElseThrow(() -> new GgumtleException(MonggingErrorCode.MONGGING_NOT_FOUND));
+
+        // isDeleted = true 라면 탈퇴한 회원의 몽깅이이므로 예외
+        if (mongging.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MonggingErrorCode.WITHDRAW_MONGGING);
+        }
 
         // 몽깅이 주인이 아니면 예외
         if (!mongging.getOwner().getId().equals(memberId)) {

@@ -1,6 +1,10 @@
 package com.ggumtle.ggumtle.member.application;
 
+import com.ggumtle.ggumtle.dream.application.DreamPartyService;
+import com.ggumtle.ggumtle.dream.application.command.LeavePartyCommand;
+import com.ggumtle.ggumtle.dream.persistence.PartyInvitationRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
+import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
 import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.member.application.command.GetCoinCommand;
 import com.ggumtle.ggumtle.member.application.command.GetMyInfoCommand;
@@ -27,6 +31,8 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final MemberMissionRepository memberMissionRepository;
     private final MonggingRepository monggingRepository;
+    private final DreamPartyService dreamPartyService;
+    private final PartyInvitationRepository  partyInvitationRepository;
 
     @Transactional(readOnly = true)
     public GetCoinResult getCoin(GetCoinCommand command) {
@@ -34,6 +40,11 @@ public class MemberService {
 
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(()-> new GgumtleException(MemberErrorCode.NOT_FOUND));
+
+        if (member.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
+
         int coin = member.getCoin();
 
         return new GetCoinResult(memberId,coin);
@@ -46,6 +57,10 @@ public class MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(()-> new GgumtleException(MemberErrorCode.NOT_FOUND));
 
+        if (member.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
+
         return GetMyInfoResult.from(member);
     }
 
@@ -57,6 +72,9 @@ public class MemberService {
         Member myInfo = memberRepository.findById(memberId)
                 .orElseThrow(()-> new GgumtleException(MemberErrorCode.NOT_FOUND));
 
+        if (myInfo.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
         memberRepository.findByNickname(newNickname)
                 .ifPresent(member -> {
                     if(!member.getId().equals(memberId)){
@@ -74,11 +92,26 @@ public class MemberService {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new GgumtleException(MemberErrorCode.NOT_FOUND));
 
+        if (member.getIsDeleted() == Boolean.TRUE){
+            throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+        }
+
         List<MemberMission> missions = memberMissionRepository.findByMember_IdAndIsDeletedFalse(memberId);
         List<Mongging> monggings = monggingRepository.findByOwner_IdAndIsDeletedFalse(memberId);
 
         missions.forEach(MemberMission::deleteMemberMission);
         monggings.forEach(Mongging::deleteMongging);
         member.withdraw();
+
+        try {
+            dreamPartyService.leaveParty(new LeavePartyCommand(memberId));
+
+        } catch (GgumtleException e) {
+            if (e.getCode() != DreamErrorCode.NOT_FOUND_PARTY.getCode()) {
+                throw e;
+            }
+        }
+
+        partyInvitationRepository.deleteAllByInviterId(memberId);
     }
 }

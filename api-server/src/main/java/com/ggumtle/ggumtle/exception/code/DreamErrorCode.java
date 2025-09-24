@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Getter
 public enum DreamErrorCode implements ErrorCode {
+    CANNOT_INVITE_SELF(HttpStatus.BAD_REQUEST, "DR40001","자기 자신을 초대할 수 없습니다"),
+
     FORBIDDEN_CANCEL_MATCHING(HttpStatus.FORBIDDEN, "DR40301", "매칭을 취소할 권한이 없습니다"),
     NOT_MY_INVITATION(HttpStatus.FORBIDDEN, "DR40302", "자신이 받은 초대가 아닙니다"),
     NOT_LEADER(HttpStatus.FORBIDDEN, "DR40303", "파티의 리더가 아닙니다"),

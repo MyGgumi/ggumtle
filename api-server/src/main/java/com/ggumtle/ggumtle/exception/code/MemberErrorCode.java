@@ -10,9 +10,11 @@ import org.springframework.http.HttpStatus;
 public enum MemberErrorCode implements ErrorCode {
     NOT_ENOUGH_COIN(HttpStatus.BAD_REQUEST, "MB40001", "코인이 부족합니다"),
 
+    WITHDRAW_MEMBER(HttpStatus.FORBIDDEN, "MB40301","이미 탈퇴한 회원입니다"),
+
     NOT_FOUND(HttpStatus.NOT_FOUND, "MB40401", "사용자를 찾을 수 없습니다"),
 
-    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "MB40901", "중복 된 닉네임입니다")
+    DUPLICATE_NICKNAME(HttpStatus.CONFLICT, "MB40901", "중복된 닉네임입니다"),
     ;
 
     private final HttpStatus httpStatus;

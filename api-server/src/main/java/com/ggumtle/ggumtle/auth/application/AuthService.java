@@ -5,6 +5,7 @@ import com.ggumtle.ggumtle.auth.application.result.LoginResult;
 import com.ggumtle.ggumtle.auth.jwt.TokenBlacklistRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.AuthErrorCode;
+import com.ggumtle.ggumtle.exception.code.MemberErrorCode;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
 import com.ggumtle.ggumtle.auth.jwt.JwtProvider;
@@ -74,7 +75,12 @@ public class AuthService {
                 if (existing == null) throw e;
                 member = existing;
             }
+        }else {
+            if (member.getIsDeleted() == Boolean.TRUE){
+                throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
+            }
         }
+
         String accessToken = jwtProvider.issueAccessToken(member.getId());
         return new LoginResult(member.getId(), accessToken);
     }

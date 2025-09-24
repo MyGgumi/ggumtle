@@ -1,6 +1,5 @@
 package ggumtle.ggumtle.dreamtest.test;
 
-import ggumtle.ggumtle.dreamtest.event.PlayerInfoEvent;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +41,6 @@ public class MoveTester {
             e.printStackTrace();
         }
 
-        monggingClients = testContext.monggingClients();
         mongdungClient = testContext.mongdungClient();
         spawns = testContext.spawns();
         for (Long id : clients.keySet()) {

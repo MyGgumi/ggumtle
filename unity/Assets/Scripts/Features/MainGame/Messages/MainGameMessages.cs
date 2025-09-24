@@ -1,5 +1,6 @@
 using System;
 using Features.MainGame.Models;
+using Features.GameResult.Models;
 
 namespace Features.MainGame.Messages
 {
@@ -74,13 +75,13 @@ namespace Features.MainGame.Messages
     /// </summary>
     public readonly struct GameEndedMessage
     {
-        public readonly GameResult result;
+        public readonly TeamResult result;
         public readonly WinConditionType winCondition;
         public readonly string winnerId;
         public readonly TimeSpan gameDuration;
         public readonly string endReason;
 
-        public GameEndedMessage(GameResult result, WinConditionType winCondition, string winnerId = "",
+        public GameEndedMessage(TeamResult result, WinConditionType winCondition, string winnerId = "",
                                TimeSpan gameDuration = default, string endReason = "")
         {
             this.result = result;

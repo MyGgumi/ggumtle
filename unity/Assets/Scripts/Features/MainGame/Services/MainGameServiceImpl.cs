@@ -1,6 +1,7 @@
 using System;
 using Features.MainGame.Models;
 using Features.MainGame.Messages;
+using Features.GameResult.Models;
 using Features.GameInfo.Services;
 using Features.GameInfo.Messages;
 using Features.PlayerList.Services;
@@ -224,7 +225,7 @@ namespace Features.MainGame.Services
             DebugLog($"게임 시작 완료 - 제한시간: {_gameData.gameDurationMinutes}분, 승리조건: {_gameData.winCondition}");
         }
 
-        public void EndGame(GameResult result, string reason = "")
+        public void EndGame(TeamResult result, string reason = "")
         {
             if (!_gameData.IsGameInProgress)
             {
@@ -320,7 +321,7 @@ namespace Features.MainGame.Services
             // 현재 게임 강제 종료
             if (_gameData.IsGameInProgress)
             {
-                EndGame(GameResult.Aborted, "게임 재시작");
+                EndGame(TeamResult.MongdungWin, "게임 재시작");
             }
 
             // 초기화 후 다시 시작
@@ -354,7 +355,7 @@ namespace Features.MainGame.Services
             if (_gameData.winCondition == WinConditionType.TimeExpired)
             {
                 _winConditionMetPublisher.Publish(new WinConditionMetMessage(WinConditionType.TimeExpired, "", "제한시간 만료"));
-                EndGame(GameResult.Victory, "제한시간 생존 성공");
+                EndGame(TeamResult.MonggingWin, "제한시간 생존 성공");
             }
         }
 
@@ -402,7 +403,7 @@ namespace Features.MainGame.Services
                     {
                         var winner = _gameData.activePlayers.Count > 0 ? _gameData.activePlayers[0] : "";
                         _winConditionMetPublisher.Publish(new WinConditionMetMessage(WinConditionType.LastPlayerStanding, winner));
-                        EndGame(GameResult.Victory, "마지막 생존자");
+                        EndGame(TeamResult.MonggingWin, "마지막 생존자");
                     }
                     break;
 

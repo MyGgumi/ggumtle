@@ -1,11 +1,11 @@
 using System;
 using System.Linq;
 using Features.GameResult.Models;
+using Features.PlayerList.Services;
 using MessagePipe;
 using R3;
 using UnityEngine;
 using VContainer;
-using MVVM.UI;
 
 namespace Features.GameResult.ViewModels
 {
@@ -17,7 +17,7 @@ namespace Features.GameResult.ViewModels
         private readonly bool _enableDebugLogs = true;
 
         // Dependencies
-        private readonly PlayerListViewModel _playerListViewModel;
+        private readonly IPlayerListService _playerListService;
 
         // UI State
         private readonly ReactiveProperty<bool> _isVisible = new(false);
@@ -36,9 +36,9 @@ namespace Features.GameResult.ViewModels
         public ReadOnlyReactiveProperty<GameResultModel> GameResult => _gameResult;
 
         [Inject]
-        public GameResultViewModel(PlayerListViewModel playerListViewModel)
+        public GameResultViewModel(IPlayerListService playerListService)
         {
-            _playerListViewModel = playerListViewModel;
+            _playerListService = playerListService;
 
             if (_enableDebugLogs)
             {
@@ -200,12 +200,13 @@ namespace Features.GameResult.ViewModels
         /// </summary>
         private string GetPlayerNickname(long playerId)
         {
-            if (_playerListViewModel != null && _playerListViewModel.PlayerListDataCache != null)
+            if (_playerListService != null)
             {
                 int id = (int)playerId;
-                if (_playerListViewModel.PlayerListDataCache.ContainsKey(id))
+                var player = _playerListService.GetPlayer(id);
+                if (player != null)
                 {
-                    return _playerListViewModel.PlayerListDataCache[id].nickname;
+                    return player.nickname;
                 }
             }
             return $"Player{playerId}";
@@ -213,17 +214,17 @@ namespace Features.GameResult.ViewModels
 
         /// <summary>
         /// 몽둥이 플레이어인지 확인
-        /// TODO: PlayerListViewModel에서 실제 역할 정보 조회하도록 수정
+        /// TODO: PlayerListService에서 실제 역할 정보 조회하도록 수정
         /// </summary>
         private bool IsMongdungPlayer(long playerId)
         {
-            if (_playerListViewModel != null && _playerListViewModel.PlayerListDataCache != null)
+            if (_playerListService != null)
             {
                 int id = (int)playerId;
                 // TODO: PlayerListData에 역할 정보가 추가되면 여기서 조회
                 // 임시 로직: 첫 번째 플레이어를 몽둥이로 설정
-                var allPlayers = _playerListViewModel.PlayerListDataCache.Keys.OrderBy(k => k).ToList();
-                if (allPlayers.Count > 0 && id == allPlayers[0])
+                var allPlayers = _playerListService.GetAllPlayersList();
+                if (allPlayers.Count > 0 && id == allPlayers.OrderBy(p => p.playerId).First().playerId)
                 {
                     return true;  // 몽둥이
                 }
@@ -249,17 +250,16 @@ namespace Features.GameResult.ViewModels
         }
 
         /// <summary>
-        /// 몽깅이 색상 조회 (PlayerListViewModel 기반 - 백업용)
+        /// 몽깅이 색상 조회 (PlayerListService 기반 - 백업용)
         /// </summary>
         private MonggingColor GetMonggingColor(long playerId)
         {
-            if (_playerListViewModel != null && _playerListViewModel.PlayerListDataCache != null)
+            if (_playerListService != null)
             {
                 int id = (int)playerId;
-                if (_playerListViewModel.PlayerListDataCache.ContainsKey(id))
+                var playerData = _playerListService.GetPlayer(id);
+                if (playerData != null)
                 {
-                    var playerData = _playerListViewModel.PlayerListDataCache[id];
-
                     // colorTheme 문자열을 MonggingColor enum으로 변환
                     return playerData.colorTheme?.ToLower() switch
                     {

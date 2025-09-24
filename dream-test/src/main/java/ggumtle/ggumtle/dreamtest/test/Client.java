@@ -113,8 +113,8 @@ public class Client {
         send(packet);
     }
 
-    public void sendHitMonggingMessage() {
-        byte[] data = ByteBuffer.allocate(20).putInt(1).putInt(1).putInt(1).putLong(1L).array();
+    public void sendHitMonggingMessage(int vx, int vy, int vz, long monggingId) {
+        byte[] data = ByteBuffer.allocate(20).putInt(vx).putInt(vy).putInt(vz).putLong(monggingId).array();
         ReceivePacketType receivePacketType = ReceivePacketType.HIT_MONGGING;
         PacketHeader packetHeader = new PacketHeader(receivePacketType.value, data.length, System.currentTimeMillis());
         Packet packet = new Packet(packetHeader, data);

@@ -43,3 +43,8 @@ jwt:
     expire: ${ACCESS_EXPIRE}
     secret: ${ACCESS_SECRET}
     header: ${ACCESS_NAME}
+
+
+logging:
+  level:
+    com.ggumtle: TRACE

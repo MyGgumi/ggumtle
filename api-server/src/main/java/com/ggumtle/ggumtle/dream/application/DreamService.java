@@ -7,7 +7,7 @@ import com.ggumtle.ggumtle.dream.application.command.StartDreamCommand;
 import com.ggumtle.ggumtle.dream.application.result.CancelMatchingResult;
 import com.ggumtle.ggumtle.dream.application.result.StartDreamResult;
 import com.ggumtle.ggumtle.dream.domain.Dream;
-import com.ggumtle.ggumtle.dream.domain.DreamServer;
+import com.ggumtle.ggumtle.dream.domain.OptimalServer;
 import com.ggumtle.ggumtle.dream.domain.WaitingParty;
 import com.ggumtle.ggumtle.dream.domain.PartyParticipant;
 import com.ggumtle.ggumtle.dream.persistence.DreamRepository;
@@ -18,6 +18,7 @@ import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
 import com.ggumtle.ggumtle.messaging.event.EndDreamEvent;
 import com.ggumtle.ggumtle.messaging.payload.RequestRoomPayload;
+import com.ggumtle.ggumtle.mongging.domain.EnhanceStat;
 import com.ggumtle.ggumtle.mongging.persistence.EnhanceStatRepository;
 import com.ggumtle.ggumtle.mongging.persistence.po.MonggingStatPo;
 import com.ggumtle.ggumtle.presentation.SendSocketEvent;
@@ -49,6 +50,7 @@ public class DreamService {
     private final DreamRepository dreamRepository;
     private final RoomMessageManager roomMessageManager;
     private final EnhanceStatRepository enhanceStatRepository;
+    private final RedisTemplate<String, OptimalServer> optimalServerRedisTemplate;
 
     /**
      * 드림을 시작한다
@@ -57,7 +59,7 @@ public class DreamService {
      * 요청 수신과 매칭 기다리기, 매칭 성공, 드림 시작과 같은 전 과정에 대한 정보를 이벤트로 발행한다
      */
     public void startDream(StartDreamCommand command) {
-        publishEvent(SocketType.START_DREAM, List.of(command.requesterId()), new StartDreamResult(StartDreamResult.START_DREAM_STATUS.RECEIVED, null));
+        publishEvent(SocketType.START_DREAM, List.of(command.requesterId()), StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.RECEIVED));
 
         // 리더의 요청인지 확인
         PartyParticipant requester = partyParticipantRepository.findById(command.requesterId())
@@ -69,10 +71,10 @@ public class DreamService {
         // 모든 파티원이 준비 중인지 확인
         String partyId = requester.getPartyId();
         List<PartyParticipant> participants = partyParticipantRepository.findAllByPartyId(partyId);
-        boolean allReady = participants.stream().allMatch(PartyParticipant::isReady);
-        if (!allReady) {
-            throw new GgumtleException(DreamErrorCode.NOT_ALL_READY);
-        }
+//        boolean allReady = participants.stream().allMatch(PartyParticipant::isReady);
+//        if (!allReady) {
+//            throw new GgumtleException(DreamErrorCode.NOT_ALL_READY);
+//        }
 
         // 중복 시작 방지 - 이미 매칭 중인 파티인지 확인
         Set<WaitingParty> waitingParties = waitingPartyRedisTemplate.opsForZSet().range(WAITING_PARTY_KEY, 0, -1);
@@ -85,15 +87,15 @@ public class DreamService {
 
         // 드림 시작 요청을 수락해 매칭 시작
         List<Long> requesterPartyParticipantIds = convertToId(participants);
-        publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_MATCH, null));
+        publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.START_MATCH));
 
         // 요청한 파티가 드림 플레이어 인원 수와 일치하면 바로 시작
         if (participants.size() == DREAM_PLAYER_SIZE) {
-            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.MATCHED));
             log.info("요청한 파티가 인원 수와 일치해 바로 시작함");
 
             requestRoom(participants);
-            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM));
             return;
         }
 
@@ -107,18 +109,18 @@ public class DreamService {
             waitingPartyRedisTemplate.opsForZSet().add(WAITING_PARTY_KEY, waitingParty, System.currentTimeMillis());
             log.info("매칭 실패 - 대기열에서 대기");
 
-            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.WAITING, null));
+            publishEvent(SocketType.START_DREAM, requesterPartyParticipantIds, StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.WAITING));
             return;
         }
 
         // 매칭 성공 시 매칭된 파티를 대기열에서 삭제하고 드림 시작
         List<PartyParticipant> players = extendAndDeleteMatchedParty(participants, matchedParties);
         List<Long> playerIds = convertToId(players);
-        publishEvent(SocketType.START_DREAM, playerIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.MATCHED, null));
+        publishEvent(SocketType.START_DREAM, playerIds, StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.MATCHED));
         log.info("매칭 성공 - 드림 시작");
 
         requestRoom(players);
-        publishEvent(SocketType.START_DREAM, playerIds, new StartDreamResult(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM, null));
+        publishEvent(SocketType.START_DREAM, playerIds, StartDreamResult.beforeRoomCreation(StartDreamResult.START_DREAM_STATUS.CREATE_ROOM));
     }
 
     /**
@@ -150,14 +152,18 @@ public class DreamService {
      */
     @EventListener
     public void handleCreatedRoom(CreatedRoomEvent event) {
-        Optional<Dream> dream = dreamRepository.findByRoomRequestId(event.requestId());
-        if (dream.isEmpty()) {
+        Optional<Dream> optionalDream = dreamRepository.findByRoomRequestId(event.requestId());
+        if (optionalDream.isEmpty()) {
             log.error("방 생성 응답에 대한 요청 없음");
             return;
         }
 
-        StartDreamResult result = new StartDreamResult(StartDreamResult.START_DREAM_STATUS.START_DREAM, event.roomId(), event.dreamServerId());
-        publishEvent(SocketType.START_DREAM, dream.get().getPlayerIds(), result);
+        Dream dream = optionalDream.get();
+        dream.setId(event.roomId());
+        dreamRepository.save(dream);
+
+        StartDreamResult result = StartDreamResult.afterRoomCreation(StartDreamResult.START_DREAM_STATUS.START_DREAM, dream);
+        publishEvent(SocketType.START_DREAM, dream.getPlayerIds(), result);
     }
 
     /**
@@ -227,16 +233,23 @@ public class DreamService {
     }
 
     private void requestRoom(List<PartyParticipant> participants) {
-        // TODO: 요청할 드림 서버 선정
-        DreamServer dreamServer = new DreamServer("1");
-        String roomRequestId = UUID.randomUUID().toString();
+        OptimalServer dreamServer = optimalServerRedisTemplate.opsForValue().get(OptimalServer.KEY);
+        if (dreamServer == null) {
+            log.error("레디스에 서버가 없음");
+            return;
+        }
 
-        Dream dream = new Dream(roomRequestId, participants.stream().map(PartyParticipant::getMemberId).toList());
+        String roomRequestId = UUID.randomUUID().toString();
+        log.info("드림 서버 선정: 서버={}, 요청 ID={}", dreamServer, roomRequestId);
+
+        Dream dream = new Dream(roomRequestId, participants.stream().map(PartyParticipant::getMemberId).toList(), dreamServer);
         dreamRepository.save(dream);
 
         List<MonggingStatPo> pos = enhanceStatRepository.findAllByMonggingIds(participants.stream().map(PartyParticipant::getMonggingId).toList());
         RequestRoomPayload payload = RequestRoomPayload.of(roomRequestId, pos);
         roomMessageManager.sendMessage(dreamServer, payload);
+
+        log.info("{}번 드림 서버에 방 생성 요청 전송", dreamServer.getId());
     }
 
     private void publishEvent(SocketType socketType, List<Long> memberIds, Object data) {

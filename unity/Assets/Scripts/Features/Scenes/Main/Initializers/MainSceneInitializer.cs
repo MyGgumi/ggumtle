@@ -1,14 +1,17 @@
 using Features.Chest.Messages;
 using Features.Ggumtle.Messages;
 using Features.MainGame.Services;
+using Features.MainGame.NetworkSources;
 using Features.Map.Services;
 using Features.Map.Utils;
 using Features.Room.Services;
 using MessagePipe;
 using Networks;
+using Networks.Rooms.Domains;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
+using Cysharp.Threading.Tasks;
 
 namespace Features.Scenes.Main.Initializers
 {
@@ -19,6 +22,8 @@ namespace Features.Scenes.Main.Initializers
     public class MainSceneInitializer : IStartable
     {
         private readonly IMapSpawnService _mapSpawnService;
+        private readonly IPlayerSpawnService _playerSpawnService;
+        private readonly IMainGameNetworkSource _mainGameNetworkSource;
         private readonly IPublisher<GgumtleDetectedMessage> _ggumtleDetectedPublisher;
         private readonly IPublisher<GgumtleLeftMessage> _ggumtleLeftPublisher;
         private readonly IPublisher<ChestDetectedMessage> _chestDetectedPublisher;
@@ -28,6 +33,8 @@ namespace Features.Scenes.Main.Initializers
         [Inject]
         public MainSceneInitializer(
             IMapSpawnService mapSpawnService,
+            IPlayerSpawnService playerSpawnService,
+            IMainGameNetworkSource mainGameNetworkSource,
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
             IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
@@ -35,6 +42,8 @@ namespace Features.Scenes.Main.Initializers
         )
         {
             _mapSpawnService = mapSpawnService;
+            _playerSpawnService = playerSpawnService;
+            _mainGameNetworkSource = mainGameNetworkSource;
             _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
             _chestDetectedPublisher = chestDetectedPublisher;
@@ -44,7 +53,7 @@ namespace Features.Scenes.Main.Initializers
                 Debug.Log("[MainSceneInitializer] 의존성 주입 완료");
         }
 
-        public void Start()
+        public async void Start()
         {
             if (_enableDebugLogs)
                 Debug.Log("[MainSceneInitializer] Main 씬 초기화 시작");
@@ -95,6 +104,9 @@ namespace Features.Scenes.Main.Initializers
 
             // MapSpawnService를 통한 오브젝트 스폰 시작
             InitializeMapObjects(roomData);
+
+            // PlayerSpawnService를 통한 플레이어 스폰 시작
+            await InitializePlayerObjects(roomData);
 
             // Main 씬 시스템들도 초기화
             InitializeMainSceneSystems();
@@ -396,6 +408,83 @@ namespace Features.Scenes.Main.Initializers
             catch (System.Exception e)
             {
                 Debug.LogWarning($"[MainSceneInitializer] 기존 오브젝트 정리 중 오류: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 플레이어 오브젝트들 초기화 및 스폰
+        /// </summary>
+        private async UniTask InitializePlayerObjects(Features.Room.Models.RoomData roomData)
+        {
+            try
+            {
+                Debug.Log("[MainSceneInitializer] ===== InitializePlayerObjects 시작 =====");
+                Debug.Log($"[MainSceneInitializer] roomData: {roomData != null}");
+                Debug.Log($"[MainSceneInitializer] _playerSpawnService: {_playerSpawnService != null}");
+                Debug.Log($"[MainSceneInitializer] _mainGameNetworkSource: {_mainGameNetworkSource != null}");
+
+                if (roomData?.Players == null || roomData.Players.Count == 0)
+                {
+                    Debug.LogWarning("[MainSceneInitializer] 플레이어 데이터가 없음 - 플레이어 스폰 건너뜀");
+                    return;
+                }
+
+                // 플레이어 데이터 상세 로그 (서버 데이터 형식으로)
+                Debug.Log($"[MainSceneInitializer] 플레이어 데이터 상세:");
+                Debug.Log($"  - 총 플레이어: {roomData.Players.Count}명");
+
+                for (int i = 0; i < roomData.Players.Count; i++)
+                {
+                    var player = roomData.Players[i];
+                    var position = player.ToVector3();
+                    var playerType = player.IsMongging ? "Mongging" : "Mongdung";
+                    var isLocal = player.IsMine ? "true" : "false";
+
+                    Debug.Log($"[INFO] [PLAYER_SPAWN_DATA] [{i}] ID: {player.Id}, Unity Position: ({position.x:F2}, {position.y:F2}, {position.z:F2}), Type: {playerType}, Local: {isLocal}");
+                }
+
+                // 스폰 데이터 준비
+                Debug.Log("[MainSceneInitializer] PlayerSpawnService PrepareSpawnData 호출");
+                _playerSpawnService.PrepareSpawnData(roomData);
+
+                // 모든 플레이어 스폰
+                Debug.Log("[MainSceneInitializer] PlayerSpawnService SpawnAllPlayersAsync 호출");
+                await _playerSpawnService.SpawnAllPlayersAsync();
+
+                Debug.Log("[MainSceneInitializer] 플레이어 오브젝트 초기화 완료");
+
+                // 서버에 씬 준비 완료 알림
+                await NotifyServerSceneReady();
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MainSceneInitializer] 플레이어 오브젝트 초기화 실패: {e.Message}");
+                Debug.LogError($"[MainSceneInitializer] 스택트레이스: {e.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// 서버에 씬 준비 완료 알림
+        /// </summary>
+        private async UniTask NotifyServerSceneReady()
+        {
+            try
+            {
+                Debug.Log("[MainSceneInitializer] 서버에 씬 준비 완료 알림 시작");
+
+                if (_mainGameNetworkSource == null)
+                {
+                    Debug.LogError("[MainSceneInitializer] MainGameNetworkSource가 주입되지 않음");
+                    return;
+                }
+
+                var result = await _mainGameNetworkSource.NotifySceneReadyAsync();
+
+                Debug.Log($"[MainSceneInitializer] 서버 씬 준비 완료 응답: Success={result.Success}, Result={result.Result}");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MainSceneInitializer] 서버 씬 준비 완료 알림 실패: {e.Message}");
             }
         }
     }

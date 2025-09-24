@@ -20,6 +20,7 @@ using Features.Inventory.Services;
 using Features.Inventory.ViewModels;
 using Features.Inventory.Views;
 using Features.MainGame.Messages;
+using Features.MainGame.NetworkSources;
 using Features.MainGame.Services;
 using Features.Map.Services;
 using Features.MobileControls.Messages;
@@ -220,6 +221,7 @@ namespace DI
                 Features.Chest.NetworkSources.IChestNetworkSource,
                 Features.Chest.NetworkSources.ChestNetworkSource
             >(Lifetime.Scoped);
+            builder.Register<IMainGameNetworkSource, MainGameNetworkSource>(Lifetime.Scoped);
 
             // Main 씬 전용 NetworkEventHandlers 등록
             builder.Register<GgumtleNetworkEventHandler>(Lifetime.Scoped);
@@ -235,6 +237,7 @@ namespace DI
             builder.Register<IGgumtleService, GgumtleServiceImpl>(Lifetime.Scoped);
             builder.Register<IChestService, ChestServiceImpl>(Lifetime.Scoped);
             builder.Register<IMapSpawnService, MapSpawnServiceImpl>(Lifetime.Scoped);
+            builder.Register<IPlayerSpawnService, PlayerSpawnServiceImpl>(Lifetime.Scoped);
             builder.Register<IAddressableLoadService, AddressableLoadServiceImpl>(Lifetime.Scoped);
             builder.Register<IInventoryService, InventoryServiceImpl>(Lifetime.Scoped);
             builder.Register<
@@ -270,6 +273,14 @@ namespace DI
             builder.RegisterEntryPoint<MainSceneInitializer>();
             builder.RegisterEntryPoint<MainGameServiceImpl>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MainGameService EntryPoint 등록 완료");
+
+            // MainGameNetworkEventHandler에 MainGameService 주입
+            builder.RegisterBuildCallback(container =>
+            {
+                var mainGameService = container.Resolve<IMainGameService>();
+                MainGameNetworkEventHandler.Initialize(mainGameService);
+                UnityEngine.Debug.Log("[MainLifetimeScope] MainGameNetworkEventHandler 초기화 완료");
+            });
 
             UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료 - Addressable 동적 생성 방식 사용");
         }

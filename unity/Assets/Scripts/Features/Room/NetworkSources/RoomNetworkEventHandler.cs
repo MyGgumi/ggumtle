@@ -1,3 +1,4 @@
+using System;
 using DotNetty.Transport.Channels;
 using Features.Map.Utils;
 using Networks;
@@ -6,7 +7,6 @@ using Networks.Game;
 using Networks.Ggumtle;
 using Networks.Packets;
 using Networks.Rooms;
-using System;
 using UnityEngine;
 
 namespace Features.Room.NetworkSources
@@ -41,7 +41,9 @@ namespace Features.Room.NetworkSources
                     for (int i = 0; i < command.chests.Count; i++)
                     {
                         var chest = command.chests[i];
-                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Position: {chest.Position}");
+                        Debug.Log(
+                            $"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Position: {chest.Position}"
+                        );
                     }
                 }
 
@@ -52,7 +54,9 @@ namespace Features.Room.NetworkSources
                     for (int i = 0; i < command.ggumtles.Count; i++)
                     {
                         var ggumtle = command.ggumtles[i];
-                        Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: {ggumtle.Position}");
+                        Debug.Log(
+                            $"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Position: {ggumtle.Position}"
+                        );
                     }
                 }
 
@@ -77,7 +81,9 @@ namespace Features.Room.NetworkSources
                         {
                             var chest = _staticRoom.chests[i];
                             var unityPos = chest.ToVector3();
-                            Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Unity Position: {unityPos}");
+                            Debug.Log(
+                                $"[SERVER_ROOM_DATA]   [{i}] ID: {chest.Id}, Unity Position: {unityPos}"
+                            );
                         }
                     }
 
@@ -88,7 +94,9 @@ namespace Features.Room.NetworkSources
                         {
                             var ggumtle = _staticRoom.ggumtles[i];
                             var unityPos = ggumtle.ToVector3();
-                            Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}");
+                            Debug.Log(
+                                $"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}"
+                            );
                         }
                     }
                 }
@@ -103,7 +111,10 @@ namespace Features.Room.NetworkSources
         /// 플레이어 초기화 이벤트 처리
         /// </summary>
         [CommandHandler(PacketType.InitializePlayerResponse)]
-        public static void InitializePlayer(InitializePlayerCommand command, IChannelHandlerContext ctx)
+        public static void InitializePlayer(
+            InitializePlayerCommand command,
+            IChannelHandlerContext ctx
+        )
         {
             try
             {
@@ -126,7 +137,9 @@ namespace Features.Room.NetworkSources
                     // 맵과 플레이어 데이터가 모두 준비되면 RoomStorage에 업로드
                     if (_staticRoom.IsInitialized())
                     {
-                        Debug.Log("[SERVER_ROOM_DATA] Room 완전 초기화 완료 - RoomStorage에 업로드 시작");
+                        Debug.Log(
+                            "[SERVER_ROOM_DATA] Room 완전 초기화 완료 - RoomStorage에 업로드 시작"
+                        );
 
                         // 최종 꿈틀이 데이터 확인
                         if (_staticRoom.ggumtles != null && _staticRoom.ggumtles.Count > 0)
@@ -136,7 +149,9 @@ namespace Features.Room.NetworkSources
                             {
                                 var ggumtle = _staticRoom.ggumtles[i];
                                 var unityPos = ggumtle.ToVector3();
-                                Debug.Log($"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}");
+                                Debug.Log(
+                                    $"[SERVER_ROOM_DATA]   [{i}] ID: {ggumtle.Id}, Unity Position: {unityPos}"
+                                );
                             }
                         }
 
@@ -178,14 +193,18 @@ namespace Features.Room.NetworkSources
         {
             try
             {
-                Debug.Log($"[RoomNetworkEventHandler] 게임 종료 수신: Result={command.result}, PlayerCount={command.playerResults?.Count ?? 0}, EscapedCount={command.escapedMonggingCount}");
+                Debug.Log(
+                    $"[RoomNetworkEventHandler] 게임 종료 수신: Result={command.result}, PlayerCount={command.playerResults?.Count ?? 0}, EscapedCount={command.escapedMonggingCount}"
+                );
 
                 // 플레이어 결과 출력
                 if (command.playerResults != null)
                 {
                     foreach (var playerResult in command.playerResults)
                     {
-                        Debug.Log($"  - 플레이어 결과: Id={playerResult.id}, Status={playerResult.status}");
+                        Debug.Log(
+                            $"  - 플레이어 결과: Id={playerResult.id}, Status={playerResult.status}"
+                        );
                     }
                 }
 
@@ -206,7 +225,9 @@ namespace Features.Room.NetworkSources
         {
             try
             {
-                Debug.Log($"[RoomNetworkEventHandler] 꿈틀이 스폰: Id={command.id}, Position={command.position}");
+                Debug.Log(
+                    $"[RoomNetworkEventHandler] 꿈틀이 스폰: Id={command.id}, Position={command.position}"
+                );
 
                 // TODO: RoomService로 처리 위임 필요
                 // var unityPosition = new UnityEngine.Vector3(command.position.X, command.position.Y, command.position.Z);
@@ -226,7 +247,9 @@ namespace Features.Room.NetworkSources
         {
             try
             {
-                Debug.Log($"[RoomNetworkEventHandler] 꿈틀이 상태: Id={command.ggumtleId}, State={command.state}");
+                Debug.Log(
+                    $"[RoomNetworkEventHandler] 꿈틀이 상태: Id={command.ggumtleId}, State={command.state}"
+                );
 
                 // TODO: RoomService로 처리 위임 필요
                 // _roomService.RemoveGgumtle(command.ggumtleId);
@@ -244,5 +267,6 @@ namespace Features.Room.NetworkSources
         // - MonggingRevival
         // - ExitOpen
         // 등등... 필요에 따라 다른 Handler로 분리할 수도 있음
+        // GameStart와 GameEnd 핸들러는 MainGameNetworkEventHandler로 이동됨
     }
 }

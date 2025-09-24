@@ -5,6 +5,10 @@ using VContainer;
 using VContainer.Unity;
 using DI;
 using Cysharp.Threading.Tasks;
+using System;
+using System.Runtime.InteropServices;
+using System.IO;
+using System.Text;
 
 namespace Features.Game.Managers
 {
@@ -17,6 +21,26 @@ namespace Features.Game.Managers
         [Header("서비스 설정")]
         [SerializeField] private bool autoInitializeServices = true;
         [SerializeField] private bool enableDebugLogs = true;
+        [SerializeField] private bool showConsoleInBuild = true; // exe 파일에서 콘솔 창 표시
+
+        // Windows API 함수들 (콘솔 창 제어용)
+        [DllImport("kernel32.dll")]
+        private static extern bool AllocConsole();
+
+        [DllImport("kernel32.dll")]
+        private static extern bool FreeConsole();
+
+        [DllImport("kernel32.dll")]
+        private static extern System.IntPtr GetStdHandle(int nStdHandle);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleTitle(string lpConsoleTitle);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleOutputCP(uint wCodePageID);
+
+        [DllImport("kernel32.dll")]
+        private static extern bool SetConsoleCP(uint wCodePageID);
 
         // Feature Services 의존성 주입
         private IGameStateService _gameStateService;
@@ -47,6 +71,12 @@ namespace Features.Game.Managers
 
         void Start()
         {
+            // exe 빌드에서 콘솔 창 활성화
+            if (showConsoleInBuild)
+            {
+                EnableConsoleWindow();
+            }
+
             // 게임 상태 이벤트 구독
             if (_gameStateService != null)
             {
@@ -59,11 +89,100 @@ namespace Features.Game.Managers
 
         void OnDestroy()
         {
+            // 콘솔 창 정리
+            if (showConsoleInBuild)
+            {
+                DisableConsoleWindow();
+            }
+
             // 이벤트 구독 해제
             if (_gameStateService != null)
             {
                 _gameStateService.OnStateChanged -= OnGameStateChanged;
             }
+        }
+
+        /// <summary>
+        /// exe 빌드에서 콘솔 창 활성화
+        /// </summary>
+        private void EnableConsoleWindow()
+        {
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+            try
+            {
+                AllocConsole();
+
+                // 콘솔 제목 설정
+                SetConsoleTitle("Unity Game Console");
+
+                // 콘솔 코드 페이지를 UTF-8(65001)로 설정
+                SetConsoleOutputCP(65001);
+                SetConsoleCP(65001);
+
+                // 콘솔 인코딩을 UTF-8로 설정 (한글 표시용)
+                Console.OutputEncoding = Encoding.UTF8;
+                Console.InputEncoding = Encoding.UTF8;
+
+                // Unity 로그를 콘솔로 리다이렉트
+                var outStream = Console.OpenStandardOutput();
+                var writer = new StreamWriter(outStream, Encoding.UTF8) { AutoFlush = true };
+                Console.SetOut(writer);
+
+                // Unity 로그 이벤트 구독
+                Application.logMessageReceived += OnLogMessageReceived;
+
+                Console.WriteLine("[GameManager] Console Window Activated Successfully");
+                Debug.Log("[GameManager] 콘솔 창 활성화 완료");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[GameManager] 콘솔 창 활성화 실패: {e.Message}");
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 콘솔 창 비활성화
+        /// </summary>
+        private void DisableConsoleWindow()
+        {
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+            Application.logMessageReceived -= OnLogMessageReceived;
+            FreeConsole();
+#endif
+        }
+
+        /// <summary>
+        /// Unity 로그 메시지를 콘솔에 출력
+        /// </summary>
+        private void OnLogMessageReceived(string logString, string stackTrace, LogType type)
+        {
+#if !UNITY_EDITOR && UNITY_STANDALONE_WIN
+            try
+            {
+                string prefix = type switch
+                {
+                    LogType.Error => "[ERROR] ",
+                    LogType.Warning => "[WARNING] ",
+                    LogType.Log => "[INFO] ",
+                    LogType.Exception => "[EXCEPTION] ",
+                    LogType.Assert => "[ASSERT] ",
+                    _ => "[LOG] "
+                };
+
+                Console.WriteLine($"{prefix}{logString}");
+
+                // 에러나 예외의 경우 스택 트레이스도 출력
+                if ((type == LogType.Error || type == LogType.Exception) && !string.IsNullOrEmpty(stackTrace))
+                {
+                    Console.WriteLine($"Stack Trace: {stackTrace}");
+                }
+            }
+            catch
+            {
+                // 콘솔 출력 실패 시 무시
+            }
+#endif
         }
 
         /// <summary>

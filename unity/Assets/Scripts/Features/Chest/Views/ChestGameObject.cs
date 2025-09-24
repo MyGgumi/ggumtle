@@ -81,14 +81,14 @@ namespace Features.Chest.Views
 
         void Start()
         {
-            Debug.Log(
+            if (enableDebugLogs) Debug.Log(
                 $"[ChestGameObject] Start() 호출됨 - GameObject: {gameObject.name}, Layer: {gameObject.layer}"
             );
 
             // VContainer 의존성 주입이 아직 안 된 경우 Coroutine으로 대기
             if (_viewModel == null || _chestService == null)
             {
-                Debug.Log(
+                if (enableDebugLogs) Debug.Log(
                     $"[ChestGameObject] 의존성 주입 대기 중: {gameObject.name}. ViewModel: {_viewModel != null}, Service: {_chestService != null}"
                 );
                 StartCoroutine(WaitForDependencyInjection());
@@ -111,7 +111,7 @@ namespace Features.Chest.Views
 
             if (_viewModel != null && _chestService != null)
             {
-                Debug.Log($"[ChestGameObject] 의존성 주입 완료 대기 성공: {gameObject.name}");
+                if (enableDebugLogs) Debug.Log($"[ChestGameObject] 의존성 주입 완료 대기 성공: {gameObject.name}");
                 InitializeChestGameObject();
             }
             else
@@ -126,11 +126,11 @@ namespace Features.Chest.Views
         {
             if (_isInitialized)
             {
-                Debug.Log($"[ChestGameObject] 이미 초기화됨, 건너뛰기: {gameObject.name}");
+                if (enableDebugLogs) Debug.Log($"[ChestGameObject] 이미 초기화됨, 건너뛰기: {gameObject.name}");
                 return;
             }
 
-            Debug.Log($"[ChestGameObject] 초기화 시작: {gameObject.name}");
+            if (enableDebugLogs) Debug.Log($"[ChestGameObject] 초기화 시작: {gameObject.name}");
 
             InitializeBasicComponents();
             SetupInteractionLayer();
@@ -138,11 +138,11 @@ namespace Features.Chest.Views
             SubscribeToViewModel();
 
             _isInitialized = true;
-            Debug.Log($"[ChestGameObject] 초기화 완료: {gameObject.name}");
+            if (enableDebugLogs) Debug.Log($"[ChestGameObject] 초기화 완료: {gameObject.name}");
 
             // 최종 상태 확인
             var collider = GetComponent<Collider>();
-            Debug.Log(
+            if (enableDebugLogs) Debug.Log(
                 $"[ChestGameObject] 초기화 완료: {gameObject.name}, ID: {chestId}, Layer: {gameObject.layer}, Collider: {collider != null}, IsTrigger: {collider?.isTrigger}"
             );
         }
@@ -175,25 +175,25 @@ namespace Features.Chest.Views
                     if (int.TryParse(idString, out int parsedId) && parsedId > 0)
                     {
                         chestId = parsedId;
-                        Debug.Log($"[ChestGameObject] GameObject 이름에서 추출된 chestId: {chestId}");
+                        if (enableDebugLogs) Debug.Log($"[ChestGameObject] GameObject 이름에서 추출된 chestId: {chestId}");
                     }
                     else
                     {
                         // 파싱 실패 시 양수 ID 생성 (InstanceID의 절댓값 사용)
                         chestId = Mathf.Abs(GetInstanceID());
-                        Debug.Log($"[ChestGameObject] 이름 파싱 실패, 절댓값 InstanceID 사용: {chestId}");
+                        if (enableDebugLogs) Debug.Log($"[ChestGameObject] 이름 파싱 실패, 절댓값 InstanceID 사용: {chestId}");
                     }
                 }
                 else
                 {
                     // 백업: InstanceID의 절댓값 사용 (양수 보장)
                     chestId = Mathf.Abs(GetInstanceID());
-                    Debug.Log($"[ChestGameObject] 자동 생성된 chestId (절댓값): {chestId}");
+                    if (enableDebugLogs) Debug.Log($"[ChestGameObject] 자동 생성된 chestId (절댓값): {chestId}");
                 }
             }
             else
             {
-                Debug.Log($"[ChestGameObject] 기존 chestId 사용: {chestId}");
+                if (enableDebugLogs) Debug.Log($"[ChestGameObject] 기존 chestId 사용: {chestId}");
             }
 
             // 컴포넌트 자동 찾기
@@ -228,14 +228,14 @@ namespace Features.Chest.Views
                 sphereCollider.isTrigger = true;
                 sphereCollider.radius = 2f; // 기본 상호작용 범위
 
-                Debug.Log($"[ChestGameObject] SphereCollider 자동 생성: {gameObject.name}");
+                if (enableDebugLogs) Debug.Log($"[ChestGameObject] SphereCollider 자동 생성: {gameObject.name}");
             }
             else
             {
                 if (!collider.isTrigger)
                 {
                     collider.isTrigger = true;
-                    Debug.Log(
+                    if (enableDebugLogs) Debug.Log(
                         $"[ChestGameObject] Collider를 Trigger로 자동 설정: {gameObject.name}"
                     );
                 }
@@ -262,7 +262,7 @@ namespace Features.Chest.Views
             try
             {
                 _chestService.RegisterChest(chestId, chestName, transform.position, gameObject);
-                Debug.Log(
+                if (enableDebugLogs) Debug.Log(
                     $"[ChestGameObject] ChestService 등록 완료: {gameObject.name}, ID: {chestId}"
                 );
             }
@@ -291,7 +291,7 @@ namespace Features.Chest.Views
             try
             {
                 _chestService.UnregisterChest(chestId);
-                Debug.Log(
+                if (enableDebugLogs) Debug.Log(
                     $"[ChestGameObject] ChestService 해제 완료: {gameObject.name}, ID: {chestId}"
                 );
             }

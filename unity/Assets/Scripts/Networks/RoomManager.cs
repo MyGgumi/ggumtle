@@ -104,12 +104,6 @@ namespace Networks
             Debug.Log($"[RoomManager] 플레이어 이동: PlayerId={command.PlayerId}, Position={command.Position}");
         }
 
-        [CommandHandler(PacketType.DiggingDoneResponse)]
-        public async void DiggingDone(DiggingDoneCommand command, IChannelHandlerContext ctx)
-        {
-            Debug.Log($"[RoomManager] 꿈틀이 파기 완료: Id={command.Id}, IsRealGgumtle={command.IsRealGgumtle}");
-        }
-
         [CommandHandler(PacketType.JellyForceQuitResponse)]
         public async void JellyForceQuit(JellyForceQuitCommand command, IChannelHandlerContext ctx)
         {
@@ -169,15 +163,6 @@ namespace Networks
             
             // 꿈틀이 스폰 처리 로직을 여기에 추가
             // 예: 꿈틀이 오브젝트 생성, UI 업데이트 등
-        }
-
-        [CommandHandler(PacketType.GgumtleNirvana)]
-        public async void GgumtleNirvana(GgumtleNirvanaCommand command, IChannelHandlerContext ctx)
-        {
-            Debug.Log($"[RoomManager] 꿈틀이 성불: Id={command.id}");
-            
-            // 꿈틀이 성불 처리 로직을 여기에 추가
-            // 예: 꿈틀이 오브젝트 제거, UI 업데이트, 효과 재생 등
         }
 
         [CommandHandler(PacketType.MonggingStateBroadcast)]

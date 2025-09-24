@@ -24,16 +24,4 @@ namespace Networks.Ggumtle
             position = new Vector3(xFloat, yFloat, zFloat);
         }
     }
-
-    public class GgumtleNirvanaCommand : Command
-    {
-        public override PacketType Type => PacketType.GgumtleNirvana;
-
-        public int id;
-
-        public GgumtleNirvanaCommand(int id)
-        {
-            this.id = id;
-        }
-    }
 }

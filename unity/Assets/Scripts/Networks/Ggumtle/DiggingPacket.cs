@@ -79,18 +79,4 @@ namespace Networks.Ggumtle
         
         public bool Success => Result == DiggingQuitResult.Success;
     }
-
-    public class DiggingDoneCommand : Command
-    {
-        public override PacketType Type => PacketType.DiggingDoneResponse;
-
-        public int Id { get; set; }
-        public bool IsRealGgumtle { get; set; }
-        
-        public DiggingDoneCommand(int id, bool isRealGgumtle)
-        {
-            Id = id;
-            IsRealGgumtle = isRealGgumtle;
-        }
-    }
 }

@@ -30,18 +30,4 @@ namespace Networks.Factories
             return new DiggingQuitCommand(result);
         }
     }
-
-    [CommandFactory(PacketType.DiggingDoneResponse)]
-    public class DiggingDoneFactory
-    {
-        public static DiggingDoneCommand Create(byte[] bytes)
-        {
-            var buffer = Unpooled.WrappedBuffer(bytes);
-            
-            var id = buffer.ReadInt();
-            var isRealGgumtle = buffer.ReadBoolean();
-            
-            return new DiggingDoneCommand(id, isRealGgumtle);
-        }
-    }
 }

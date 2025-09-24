@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Features.GameResult.Models;
 
 namespace Features.MainGame.Models
 {
@@ -55,16 +56,6 @@ namespace Features.MainGame.Models
         ObjectiveCompleted
     }
 
-    /// <summary>
-    /// 게임 결과
-    /// </summary>
-    public enum GameResult
-    {
-        Victory,
-        Defeat,
-        Draw,
-        Aborted
-    }
 
     /// <summary>
     /// 메인 게임의 상태 데이터
@@ -99,7 +90,7 @@ namespace Features.MainGame.Models
         /// <summary>
         /// 게임 결과
         /// </summary>
-        public GameResult? gameResult = null;
+        public TeamResult? gameResult = null;
 
         /// <summary>
         /// 게임 종료 시간

@@ -1,5 +1,6 @@
 using System;
 using Features.MainGame.Models;
+using Features.GameResult.Models;
 using R3;
 
 namespace Features.MainGame.Services
@@ -48,7 +49,7 @@ namespace Features.MainGame.Services
         /// <summary>
         /// 게임 강제 종료
         /// </summary>
-        void EndGame(GameResult result, string reason = "");
+        void EndGame(TeamResult result, string reason = "");
 
         /// <summary>
         /// 게임 일시정지/재개

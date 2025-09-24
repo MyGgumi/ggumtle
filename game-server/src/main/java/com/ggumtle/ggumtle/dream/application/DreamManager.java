@@ -1391,7 +1391,19 @@ public class DreamManager {
     // TODO: 클래스 별 체력, 속도 초기화
     private void initializePlayers() {
         List<Long> playerIds = room.getPlayerIds().stream().toList();
-        List<PlayerSpawn> playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
+        List<PlayerSpawn> playerSpawns;
+
+        if (this.room.id < 0) {
+            playerSpawns = List.of(
+                    new PlayerSpawn(1, 45 * 100, 5 * 100, 0 * 100),
+                    new PlayerSpawn(1, 45 * 100, 5 * 100, 2 * 100),
+                    new PlayerSpawn(1, 47 * 100, 5 * 100, 4 * 100),
+                    new PlayerSpawn(1, 47 * 100, 5 * 100, 0 * 100),
+                    new PlayerSpawn(1, 47 * 100, 5 * 100, 6 * 100)
+            );
+        } else {
+            playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
+        }
 
         if (this.room.id == -4) {
             Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()), this.room.getPlayerInfo(playerIds.getFirst()));

@@ -24,7 +24,7 @@ services:
       - .env
     environment:
       - TZ=${TIMEZONE}
-      -
+
   spring-3:
     container_name: ggumtle-spring-3
     build:

@@ -41,6 +41,7 @@ public class MoveTester {
             e.printStackTrace();
         }
 
+        monggingClients = testContext.monggingClients();
         mongdungClient = testContext.mongdungClient();
         spawns = testContext.spawns();
         for (Long id : clients.keySet()) {

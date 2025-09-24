@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import java.lang.management.GarbageCollectorMXBean;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryPoolMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.Arrays;
 import java.util.List;
@@ -81,6 +82,25 @@ public class MetricScrapper {
                         m -> m.getHeapMemoryUsage().getCommitted())
                 .description("JVM Heap 예약량")
                 .register(MetricRegistry.registry);
+
+        List<MemoryPoolMXBean> pools = ManagementFactory.getMemoryPoolMXBeans();
+        for (MemoryPoolMXBean pool : pools) {
+            String poolName = pool.getName().replaceAll("\\s", "_");
+
+            // 사용량
+            Gauge.builder("jvm_memory_pool_used_bytes", pool,
+                            p -> p.getUsage().getUsed())
+                    .tag("pool_name", poolName)
+                    .description("JVM 메모리 풀 사용량")
+                    .register(MetricRegistry.registry);
+
+            // 예약량
+            Gauge.builder("jvm_memory_pool_committed_bytes", pool,
+                            p -> p.getUsage().getCommitted())
+                    .tag("pool_name", poolName)
+                    .description("JVM 메모리 풀 예약량")
+                    .register(MetricRegistry.registry);
+        }
     }
 
     private void thread() {

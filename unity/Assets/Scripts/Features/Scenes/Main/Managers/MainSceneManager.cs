@@ -1,6 +1,7 @@
 using Features.Map.Services;
 using Features.Room.Services;
 using Features.Game.Services;
+using Networks;
 using UnityEngine;
 using VContainer;
 
@@ -13,29 +14,18 @@ namespace Features.Scenes.Main.Managers
     public class MainSceneManager : MonoBehaviour
     {
         [Header("게임 설정")]
-        [SerializeField] private bool autoSpawnObjects = true;
         [SerializeField] private bool enableDebugLogs = true;
 
         // 의존성 주입
-        private IRoomService _roomService;
-        private IMapSpawnService _mapSpawnService;
-        private IAddressableLoadService _addressableLoadService;
         private SkyboxTransitionManager _skyboxManager;
 
         [Inject]
-        public void Construct(
-            IRoomService roomService,
-            IMapSpawnService mapSpawnService,
-            IAddressableLoadService addressableLoadService,
-            SkyboxTransitionManager skyboxManager)
+        public void Construct(SkyboxTransitionManager skyboxManager)
         {
-            _roomService = roomService;
-            _mapSpawnService = mapSpawnService;
-            _addressableLoadService = addressableLoadService;
             _skyboxManager = skyboxManager;
         }
 
-        async void Start()
+        void Start()
         {
             if (enableDebugLogs)
                 Debug.Log("[MainSceneManager] 메인 씬 시작");
@@ -62,12 +52,6 @@ namespace Features.Scenes.Main.Managers
             // 이벤트 구독
             SubscribeToServices();
 
-            // 맵 오브젝트 스폰
-            if (autoSpawnObjects)
-            {
-                await SpawnGameObjects();
-            }
-
             if (enableDebugLogs)
                 Debug.Log("[MainSceneManager] 메인 씬 초기화 완료");
         }
@@ -79,9 +63,6 @@ namespace Features.Scenes.Main.Managers
 
             // 서비스 이벤트 구독 해제
             UnsubscribeFromServices();
-
-            // Addressable 에셋 해제
-            CleanupAssets();
         }
 
         /// <summary>
@@ -89,22 +70,23 @@ namespace Features.Scenes.Main.Managers
         /// </summary>
         private void CheckRoomStatus()
         {
-            if (_roomService?.CurrentRoom == null)
+            var room = RoomStorage.Instance.Room;
+            if (room == null)
             {
-                Debug.LogError("[MainSceneManager] 방 데이터가 없음");
+                Debug.LogWarning("[MainSceneManager] RoomStorage에 방 데이터가 없음 - 아직 초기화 전임");
                 return;
             }
 
-            if (!_roomService.IsRoomInitialized())
+            if (!room.IsInitialized())
             {
-                Debug.LogError("[MainSceneManager] 방이 완전히 초기화되지 않음");
+                Debug.LogWarning("[MainSceneManager] 방이 완전히 초기화되지 않음");
                 return;
             }
 
             if (enableDebugLogs)
             {
                 Debug.Log("[MainSceneManager] 방 상태 확인 완료");
-                _roomService.CurrentRoom.DebugLogRoomInfo();
+                Debug.Log($"[MainSceneManager] 플레이어 수: {room.players?.Count ?? 0}명");
             }
         }
 
@@ -113,18 +95,7 @@ namespace Features.Scenes.Main.Managers
         /// </summary>
         private void SubscribeToServices()
         {
-            if (_mapSpawnService != null)
-            {
-                _mapSpawnService.OnObjectSpawned += OnObjectSpawned;
-                _mapSpawnService.OnObjectRemoved += OnObjectRemoved;
-                _mapSpawnService.OnAllObjectsSpawned += OnAllObjectsSpawned;
-            }
-
-            if (_roomService != null)
-            {
-                // 런타임 이벤트 구독 (추후 필요시)
-                // _roomService.OnSomethingHappened += OnSomethingHappened;
-            }
+            // 현재 구독할 이벤트가 없음 - 플레이어 스폰은 MainSceneInitializer에서 처리
 
             if (enableDebugLogs)
                 Debug.Log("[MainSceneManager] 서비스 이벤트 구독 완료");
@@ -135,115 +106,9 @@ namespace Features.Scenes.Main.Managers
         /// </summary>
         private void UnsubscribeFromServices()
         {
-            if (_mapSpawnService != null)
-            {
-                _mapSpawnService.OnObjectSpawned -= OnObjectSpawned;
-                _mapSpawnService.OnObjectRemoved -= OnObjectRemoved;
-                _mapSpawnService.OnAllObjectsSpawned -= OnAllObjectsSpawned;
-            }
+            // 현재 구독 중인 이벤트가 없음
         }
 
-        /// <summary>
-        /// 게임 오브젝트 스폰
-        /// </summary>
-        private async Cysharp.Threading.Tasks.UniTask SpawnGameObjects()
-        {
-            if (_roomService?.CurrentRoom == null || _mapSpawnService == null)
-            {
-                Debug.LogError("[MainSceneManager] 필요한 서비스가 주입되지 않음");
-                return;
-            }
-
-            try
-            {
-                if (enableDebugLogs)
-                    Debug.Log("[MainSceneManager] 게임 오브젝트 스폰 시작");
-
-                var roomData = _roomService.CurrentRoom;
-
-                // 방 데이터로부터 스폰 데이터 준비
-                _mapSpawnService.PrepareSpawnData(roomData);
-
-                // 모든 오브젝트 스폰
-                await _mapSpawnService.SpawnAllObjectsAsync();
-
-                if (enableDebugLogs)
-                    Debug.Log("[MainSceneManager] 게임 오브젝트 스폰 완료");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[MainSceneManager] 게임 오브젝트 스폰 실패: {e.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 에셋 정리
-        /// </summary>
-        private void CleanupAssets()
-        {
-            try
-            {
-                // 맵 오브젝트 정리
-                _mapSpawnService?.ClearAllObjects();
-
-                // Addressable 에셋 해제
-                _addressableLoadService?.ReleaseAssetsWithTag("InGame");
-
-                if (enableDebugLogs)
-                    Debug.Log("[MainSceneManager] 에셋 정리 완료");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[MainSceneManager] 에셋 정리 중 오류: {e.Message}");
-            }
-        }
-
-        #region 스폰 이벤트 핸들러
-
-        /// <summary>
-        /// 오브젝트 스폰 완료 이벤트 핸들러
-        /// </summary>
-        private void OnObjectSpawned(string objectType, GameObject spawnedObject)
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[MainSceneManager] 오브젝트 스폰: {objectType} - {spawnedObject.name}");
-        }
-
-        /// <summary>
-        /// 오브젝트 제거 완료 이벤트 핸들러
-        /// </summary>
-        private void OnObjectRemoved(string objectType, GameObject removedObject)
-        {
-            if (enableDebugLogs)
-                Debug.Log($"[MainSceneManager] 오브젝트 제거: {objectType} - {removedObject.name}");
-        }
-
-        /// <summary>
-        /// 모든 오브젝트 스폰 완료 이벤트 핸들러
-        /// </summary>
-        private void OnAllObjectsSpawned()
-        {
-            if (enableDebugLogs)
-                Debug.Log("[MainSceneManager] 모든 오브젝트 스폰 완료");
-
-            // 게임 플레이 준비 완료
-            // 여기서 추가적인 게임 시작 로직 실행 가능
-            StartGameplay();
-        }
-
-        /// <summary>
-        /// 실제 게임플레이 시작
-        /// </summary>
-        private void StartGameplay()
-        {
-            if (enableDebugLogs)
-                Debug.Log("[MainSceneManager] 게임플레이 시작!");
-
-            // 플레이어 활성화, UI 표시, 게임 타이머 시작 등
-            // 필요한 게임 시작 로직들을 여기에 추가
-        }
-
-        #endregion
 
         #region Skybox Setup
 
@@ -269,21 +134,17 @@ namespace Features.Scenes.Main.Managers
         #region Debug Methods
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        public void DebugSpawnObjects()
-        {
-            _ = SpawnGameObjects();
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        public void DebugClearObjects()
-        {
-            _mapSpawnService?.ClearAllObjects();
-        }
-
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         public void DebugRoomInfo()
         {
-            _roomService?.CurrentRoom?.DebugLogRoomInfo();
+            var room = RoomStorage.Instance.Room;
+            if (room != null)
+            {
+                Debug.Log($"[MainSceneManager] Room Debug - PlayerCount: {room.players?.Count ?? 0}, Initialized: {room.IsInitialized()}");
+            }
+            else
+            {
+                Debug.Log("[MainSceneManager] Room Debug - No room data in RoomStorage");
+            }
         }
 
         #endregion

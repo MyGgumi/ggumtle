@@ -3,6 +3,7 @@ using Features.Scenes.Lobby.Messages;
 using Features.Scenes.Lobby.NetworkSources;
 using Features.Scenes.Lobby.ViewModels;
 using MessagePipe;
+using Networks;
 using R3;
 using UnityEngine;
 using UnityEngine.UI;
@@ -28,7 +29,7 @@ namespace Features.Scenes.Lobby.Managers
         private int testPort = 8888;
 
         [SerializeField]
-        private int testRoomId = -4; // -1은 자동 매칭
+        private int testRoomId = -1; // -1은 자동 매칭
 
         [Header("UI References")]
         [SerializeField]
@@ -36,6 +37,12 @@ namespace Features.Scenes.Lobby.Managers
 
         [SerializeField]
         private Text statusText;
+
+        [SerializeField]
+        private InputField tokenInputField;
+
+        [SerializeField]
+        private InputField roomIdInputField;
 
         // 의존성 주입
         private LobbyViewModel _viewModel;
@@ -46,7 +53,6 @@ namespace Features.Scenes.Lobby.Managers
         private readonly CompositeDisposable _disposables = new();
         private readonly System.Collections.Generic.List<System.IDisposable> _messageDisposables =
             new();
-
 
         [Inject]
         public void Construct(
@@ -77,7 +83,6 @@ namespace Features.Scenes.Lobby.Managers
         {
             Debug.Log("[LobbySceneManager] 로비 씬 시작");
 
-
             // UI 초기화
             InitializeUI();
 
@@ -87,13 +92,12 @@ namespace Features.Scenes.Lobby.Managers
             // 네트워크 이벤트 구독
             SubscribeToNetworkEvents();
 
-            // 더미 데이터로 자동 초기화
-            InitializeNetworkWithDummyData();
+            // UI 상태를 대기 상태로 설정
+            PublishUIState(LobbyUIStateMessage.Ready("토큰을 입력하고 게임 시작을 눌러주세요"));
         }
 
         void OnDestroy()
         {
-
             // R3 구독 해제
             _disposables.Dispose();
 
@@ -114,9 +118,24 @@ namespace Features.Scenes.Lobby.Managers
             if (joinRoomButton != null)
                 joinRoomButton.onClick.AddListener(OnJoinRoomButtonClicked);
 
+            // 토큰 입력 필드 초기화
+            if (tokenInputField != null)
+            {
+                tokenInputField.text = testAccessToken; // 기본값으로 테스트 토큰 설정
+                tokenInputField.placeholder.GetComponent<Text>().text = "액세스 토큰을 입력하세요";
+            }
+
+            // 방 번호 입력 필드 초기화
+            if (roomIdInputField != null)
+            {
+                roomIdInputField.text = testRoomId.ToString(); // 기본값으로 테스트 방 번호 설정
+                roomIdInputField.placeholder.GetComponent<Text>().text = "방 번호 입력 (-1은 자동 매칭)";
+                Debug.Log($"[LobbySceneManager] 방 번호 필드 초기화: testRoomId={testRoomId}, 입력값='{roomIdInputField.text}'");
+            }
+
             // 초기 상태 설정
             if (joinRoomButton != null)
-                joinRoomButton.interactable = false;
+                joinRoomButton.interactable = true;
 
             Debug.Log("[LobbySceneManager] UI 초기화 완료");
         }
@@ -159,10 +178,98 @@ namespace Features.Scenes.Lobby.Managers
                 })
                 .AddTo(_disposables);
 
-
             Debug.Log("[LobbySceneManager] ViewModel 이벤트 구독 완료");
         }
 
+        /// <summary>
+        /// 입력된 토큰과 방 번호로 게임 시작
+        /// </summary>
+        private async void StartGameWithTokenAndRoom(string token, int roomId)
+        {
+            try
+            {
+                PublishUIState(LobbyUIStateMessage.Connecting("서버 연결 중..."));
+
+                // 네트워크 초기화
+                await _lobbyNetworkSource.InitializeNetworkAsync(testHost, testPort);
+                Debug.Log("[LobbySceneManager] 네트워크 초기화 성공");
+
+                // 토큰 인증
+                PublishUIState(LobbyUIStateMessage.Connecting("토큰 인증 중..."));
+                var authResult = await _lobbyNetworkSource.VerifyTokenAsync(token);
+                Debug.Log($"[LobbySceneManager] 토큰 인증 결과: {authResult.Success}");
+
+                if (authResult.Success)
+                {
+                    // 방 입장 시도
+                    PublishUIState(LobbyUIStateMessage.Connecting($"방 {roomId} 입장 중..."));
+                    var joinResult = await _lobbyNetworkSource.JoinRoomAsync(roomId);
+
+                    if (joinResult.Success)
+                    {
+                        PublishUIState(LobbyUIStateMessage.Connecting("방 입장 성공! 맵과 플레이어 데이터 대기 중..."));
+                        Debug.Log($"[LobbySceneManager] 방 {roomId} 입장 성공 - 맵과 플레이어 데이터 대기");
+
+                        // Room 데이터가 완전히 초기화될 때까지 대기
+                        WaitForRoomInitialization();
+                    }
+                    else
+                    {
+                        PublishUIState(LobbyUIStateMessage.Error($"방 입장 실패: {joinResult.Result}"));
+                        Debug.LogError($"[LobbySceneManager] 방 입장 실패: {joinResult.Result}");
+                    }
+                }
+                else
+                {
+                    PublishUIState(LobbyUIStateMessage.Error("토큰 인증 실패"));
+                    Debug.LogError("[LobbySceneManager] 토큰 인증 실패");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[LobbySceneManager] 게임 시작 오류: {e.Message}");
+                PublishUIState(LobbyUIStateMessage.Error($"게임 시작 실패: {e.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Room 초기화 완료까지 대기
+        /// </summary>
+        private async void WaitForRoomInitialization()
+        {
+            Debug.Log("[LobbySceneManager] Room 초기화 대기 시작");
+
+            const int maxWaitTime = 60000; // 60초 최대 대기
+            const int checkInterval = 100; // 100ms마다 체크
+            int elapsedTime = 0;
+
+            while (elapsedTime < maxWaitTime)
+            {
+                var roomStorage = RoomStorage.Instance;
+                if (roomStorage?.Room != null && roomStorage.Room.IsInitialized())
+                {
+                    Debug.Log("[LobbySceneManager] Room 초기화 완료! 로딩 씬으로 전환");
+                    PublishUIState(LobbyUIStateMessage.Ready("맵과 플레이어 데이터 수신 완료! 로딩 중..."));
+                    OnRoomJoinedSuccessfully();
+                    return;
+                }
+
+                await System.Threading.Tasks.Task.Delay(checkInterval);
+                elapsedTime += checkInterval;
+
+                // 중간 상태 업데이트
+                if (elapsedTime % 1000 == 0)
+                {
+                    int remainingSeconds = (maxWaitTime - elapsedTime) / 1000;
+                    PublishUIState(LobbyUIStateMessage.Connecting($"맵과 플레이어 데이터 대기 중... ({remainingSeconds}초 남음)"));
+                    Debug.Log($"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음");
+                }
+            }
+
+            // 타임아웃
+            Debug.LogError("[LobbySceneManager] Room 초기화 타임아웃!");
+            PublishUIState(LobbyUIStateMessage.Error("서버로부터 게임 데이터를 받는데 실패했습니다 (타임아웃)"));
+        }
 
         /// <summary>
         /// 더미 데이터로 초기화
@@ -200,11 +307,50 @@ namespace Features.Scenes.Lobby.Managers
         /// </summary>
         private void OnJoinRoomButtonClicked()
         {
-            Debug.Log("[LobbySceneManager] 🎮 방 입장 버튼 클릭!");
-            Debug.Log($"[LobbySceneManager] testRoomId: {testRoomId}");
+            Debug.Log("[LobbySceneManager] 🎮 게임 시작 버튼 클릭!");
 
-            // 방 입장 시도 (LobbySceneManager에서 직접 처리)
-            AttemptJoinRoom(testRoomId);
+            // 입력된 토큰 가져오기
+            string inputToken = tokenInputField != null ? tokenInputField.text.Trim() : "";
+
+            if (string.IsNullOrEmpty(inputToken))
+            {
+                PublishUIState(LobbyUIStateMessage.Error("토큰을 입력해주세요"));
+                return;
+            }
+
+            // 입력된 방 번호 가져오기
+            int inputRoomId = testRoomId; // 기본값
+            Debug.Log($"[LobbySceneManager] 방 번호 파싱 시작: testRoomId={testRoomId}");
+
+            if (roomIdInputField != null)
+            {
+                string roomIdText = roomIdInputField.text.Trim();
+                Debug.Log($"[LobbySceneManager] 입력 필드 값: '{roomIdText}' (비어있음: {string.IsNullOrEmpty(roomIdText)})");
+
+                if (!string.IsNullOrEmpty(roomIdText))
+                {
+                    if (!int.TryParse(roomIdText, out inputRoomId))
+                    {
+                        Debug.LogError($"[LobbySceneManager] 방 번호 파싱 실패: '{roomIdText}'");
+                        PublishUIState(LobbyUIStateMessage.Error("방 번호는 숫자여야 합니다"));
+                        return;
+                    }
+                    Debug.Log($"[LobbySceneManager] 방 번호 파싱 성공: {inputRoomId}");
+                }
+                else
+                {
+                    Debug.Log($"[LobbySceneManager] 입력 필드가 비어있어서 기본값 사용: {inputRoomId}");
+                }
+            }
+            else
+            {
+                Debug.Log("[LobbySceneManager] 방 번호 입력 필드가 null이어서 기본값 사용");
+            }
+
+            Debug.Log($"[LobbySceneManager] 최종 사용할 방 번호: {inputRoomId}");
+
+            // 입력된 토큰과 방 번호로 게임 시작
+            StartGameWithTokenAndRoom(inputToken, inputRoomId);
         }
 
         /// <summary>
@@ -239,9 +385,8 @@ namespace Features.Scenes.Lobby.Managers
             else
             {
                 Debug.LogWarning($"[LobbySceneManager] 토큰 인증 실패: {message.ErrorMessage}");
-                // 더미 모드로 진행
                 PublishUIState(
-                    LobbyUIStateMessage.Authenticated("토큰 인증 실패 - 더미 모드로 진행")
+                    LobbyUIStateMessage.Error($"토큰 인증 실패: {message.ErrorMessage}")
                 );
             }
         }

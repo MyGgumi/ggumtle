@@ -37,7 +37,7 @@ namespace Features.Game.Services
         private float transitionDuration = 2f;
 
         [SerializeField]
-        private float cameraBlendDuration = 1f; // 카메라 전환 블렌드 시간
+        private float cameraBlendDuration = 0f; // 카메라 전환 블렌드 시간 (즉시 전환)
 
         [SerializeField]
         private bool enableDebugLogs = true;
@@ -84,6 +84,13 @@ namespace Features.Game.Services
             _defaultSkybox = RenderSettings.skybox;
 
             DebugLog("SkyboxTransitionManager 초기화 완료");
+        }
+
+        private void Start()
+        {
+            // 메인 씬만 실행할 때 플레이어 카메라 즉시 활성화
+            SetPlayerViewModeImmediate();
+            DebugLog("메인씬 직접 실행 - 플레이어 카메라 활성화");
         }
 
         #endregion
@@ -245,7 +252,7 @@ namespace Features.Game.Services
         /// </summary>
         public void SetPlayerViewMode()
         {
-            SetPlayerViewModeSmooth();
+            SetPlayerViewModeImmediate();
         }
 
         /// <summary>
@@ -431,8 +438,8 @@ namespace Features.Game.Services
             RenderSettings.skybox = targetSkybox;
             DynamicGI.UpdateEnvironment();
 
-            // 카메라를 플레이어 뷰로 부드럽게 전환
-            SetPlayerViewModeSmooth();
+            // 카메라를 플레이어 뷰로 즉시 전환
+            SetPlayerViewModeImmediate();
 
             // 페이드 인 단계
             elapsed = 0f;

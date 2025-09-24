@@ -24,6 +24,19 @@ services:
       - .env
     environment:
       - TZ=${TIMEZONE}
+      -
+  spring-3:
+    container_name: ggumtle-spring-3
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - ${GAME_SERVER_PORT_3}:${GAME_SERVER_PORT}
+      - ${METRIC_SERVER_PORT_3}:${METRIC_SERVER_PORT}
+    env_file:
+      - .env
+    environment:
+      - TZ=${TIMEZONE}
 
   mysql:
     image: mysql:8.0

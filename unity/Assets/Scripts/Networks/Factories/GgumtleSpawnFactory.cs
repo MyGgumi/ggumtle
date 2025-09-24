@@ -20,17 +20,4 @@ namespace Networks.Factories
             return new GgumtleSpawnCommand(id, x, y, z);
         }
     }
-
-    [CommandFactory(PacketType.GgumtleNirvana)]
-    public class GgumtleNirvanaFactory
-    {
-        public static GgumtleNirvanaCommand Create(byte[] bytes)
-        {
-            var buffer = Unpooled.WrappedBuffer(bytes);
-
-            var id = buffer.ReadInt();
-
-            return new GgumtleNirvanaCommand(id);
-        }
-    }
 }

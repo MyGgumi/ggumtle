@@ -57,18 +57,24 @@ namespace Features.Map.Services
 
         public void PrepareSpawnData(RoomData roomData)
         {
-            Debug.Log($"[MapSpawnService] ===== PrepareSpawnData 메서드 시작 =====");
-            Debug.Log($"[MapSpawnService] roomData 매개변수: {roomData != null}");
+            if (_enableDebugLogs)
+            {
+                Debug.Log($"[MapSpawnService] ===== PrepareSpawnData 메서드 시작 =====");
+                Debug.Log($"[MapSpawnService] roomData 매개변수: {roomData != null}");
+            }
 
             _roomData = roomData ?? throw new ArgumentNullException(nameof(roomData));
 
-            Debug.Log("[MapSpawnService] 스폰 데이터 준비 완료:");
-            Debug.Log($"  - 상자: {_roomData.Chests?.Count ?? 0}개");
-            Debug.Log($"  - 꿈틀이: {_roomData.Ggumtles?.Count ?? 0}개");
-            Debug.Log($"  - 힐팩: {_roomData.HealPacks?.Count ?? 0}개");
-            Debug.Log($"  - 스피드팩: {_roomData.SpeedPacks?.Count ?? 0}개");
+            if (_enableDebugLogs)
+            {
+                Debug.Log("[MapSpawnService] 스폰 데이터 준비 완료:");
+                Debug.Log($"  - 상자: {_roomData.Chests?.Count ?? 0}개");
+                Debug.Log($"  - 꿈틀이: {_roomData.Ggumtles?.Count ?? 0}개");
+                Debug.Log($"  - 힐팩: {_roomData.HealPacks?.Count ?? 0}개");
+                Debug.Log($"  - 스피드팩: {_roomData.SpeedPacks?.Count ?? 0}개");
+            }
 
-            if (_roomData.Chests != null && _roomData.Chests.Count > 0)
+            if (_enableDebugLogs && _roomData.Chests != null && _roomData.Chests.Count > 0)
             {
                 Debug.Log($"[MapSpawnService] 상자 상세 정보:");
                 foreach (var chest in _roomData.Chests)
@@ -153,7 +159,8 @@ namespace Features.Map.Services
                         Debug.Log($"[MapSpawnService] 상자 생성 완료: ID={chestData.Id}, Position={chestData.ToVector3()}");
                 }
 
-                Debug.Log($"[MapSpawnService] 상자 동적 생성 완료: {_spawnedChests.Count}개");
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 상자 동적 생성 완료: {_spawnedChests.Count}개");
             }
             catch (Exception e)
             {
@@ -194,7 +201,8 @@ namespace Features.Map.Services
                         Debug.Log($"[MapSpawnService] 꿈틀이 생성 완료: ID={ggumtleData.Id}, Position={ggumtleData.ToVector3()}");
                 }
 
-                Debug.Log($"[MapSpawnService] 꿈틀이 동적 생성 완료: {_spawnedGgumtles.Count}개");
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 꿈틀이 동적 생성 완료: {_spawnedGgumtles.Count}개");
             }
             catch (Exception e)
             {
@@ -233,7 +241,8 @@ namespace Features.Map.Services
                         Debug.Log($"[MapSpawnService] 힐팩 생성 완료: ID={healPackData.Id}, Position={healPackData.ToVector3()}");
                 }
 
-                Debug.Log($"[MapSpawnService] 힐팩 동적 생성 완료: {_spawnedHealPacks.Count}개");
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 힐팩 동적 생성 완료: {_spawnedHealPacks.Count}개");
             }
             catch (Exception e)
             {
@@ -272,7 +281,8 @@ namespace Features.Map.Services
                         Debug.Log($"[MapSpawnService] 스피드팩 생성 완료: ID={speedPackData.Id}, Position={speedPackData.ToVector3()}");
                 }
 
-                Debug.Log($"[MapSpawnService] 스피드팩 동적 생성 완료: {_spawnedSpeedPacks.Count}개");
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 스피드팩 동적 생성 완료: {_spawnedSpeedPacks.Count}개");
             }
             catch (Exception e)
             {
@@ -286,7 +296,8 @@ namespace Features.Map.Services
             if (parent == null)
             {
                 parent = new GameObject(parentName);
-                Debug.Log($"[MapSpawnService] 부모 오브젝트 생성: {parentName}");
+                if (_enableDebugLogs)
+                    Debug.Log($"[MapSpawnService] 부모 오브젝트 생성: {parentName}");
             }
             return parent.transform;
         }
@@ -478,7 +489,8 @@ namespace Features.Map.Services
                 if (chestIdField != null)
                 {
                     chestIdField.SetValue(chestObject, id);
-                    Debug.Log($"[MapSpawnService] ChestId 설정 완료: {id}");
+                    if (_enableDebugLogs)
+                        Debug.Log($"[MapSpawnService] ChestId 설정 완료: {id}");
                 }
                 else
                 {
@@ -500,7 +512,8 @@ namespace Features.Map.Services
                 if (ggumtleIdField != null)
                 {
                     ggumtleIdField.SetValue(ggumtleObject, id);
-                    Debug.Log($"[MapSpawnService] GgumtleId 설정 완료: {id}");
+                    if (_enableDebugLogs)
+                        Debug.Log($"[MapSpawnService] GgumtleId 설정 완료: {id}");
                 }
                 else
                 {

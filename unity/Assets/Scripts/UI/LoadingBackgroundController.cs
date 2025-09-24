@@ -19,6 +19,9 @@ public class LoadingPhase
 
 public class LoadingBackgroundController : MonoBehaviour
 {
+    [Header("Debug Settings")]
+    [SerializeField]
+    private bool enableDebugLogs = false;
     [Header("UI Document")]
     [SerializeField]
     private UIDocument uiDocument;
@@ -54,7 +57,7 @@ public class LoadingBackgroundController : MonoBehaviour
         // 이미지를 미리 StyleBackground로 변환하여 캐싱
         PreloadImages();
 
-        Debug.Log("[LoadingBackgroundController] UI 이미지 캐싱 완료");
+        if (enableDebugLogs) Debug.Log("[LoadingBackgroundController] UI 이미지 캐싱 완료");
     }
 
     private void PreloadImages()
@@ -69,7 +72,7 @@ public class LoadingBackgroundController : MonoBehaviour
                     cachedBackgrounds[i] = new StyleBackground(loadingPhases[i].sunOrMoonSprite);
                 }
             }
-            Debug.Log(
+            if (enableDebugLogs) Debug.Log(
                 $"[LoadingBackgroundController] {cachedBackgrounds.Length}개 이미지 프리로드 완료"
             );
         }
@@ -100,7 +103,7 @@ public class LoadingBackgroundController : MonoBehaviour
             {
                 // LoadingSceneManager 이벤트 구독
                 SubscribeToLoadingSceneManager();
-                Debug.Log("[LoadingBackgroundController] 진행률 기반 전환 모드 활성화");
+                if (enableDebugLogs) Debug.Log("[LoadingBackgroundController] 진행률 기반 전환 모드 활성화");
             }
         }
     }
@@ -156,7 +159,7 @@ public class LoadingBackgroundController : MonoBehaviour
             // 이미지는 ApplyPhase로 처리
             ApplyPhase(0);
 
-            Debug.Log("[LoadingBackgroundController] 첫 번째 페이즈 UI 설정 완료");
+            if (enableDebugLogs) Debug.Log("[LoadingBackgroundController] 첫 번째 페이즈 UI 설정 완료");
         }
     }
 
@@ -184,21 +187,21 @@ public class LoadingBackgroundController : MonoBehaviour
 
         LoadingPhase phase = loadingPhases[phaseIndex];
 
-        Debug.Log(
+        if (enableDebugLogs) Debug.Log(
             $"🔧 [LoadingBackgroundController] ApplyPhase({phaseIndex}) 시작 - {phase.phaseName} 적용"
         );
 
         // 모든 변경사항을 즉시 적용
         ApplyPhaseImmediate(phase);
 
-        Debug.Log(
+        if (enableDebugLogs) Debug.Log(
             $"🏁 [LoadingBackgroundController] ApplyPhase({phaseIndex}) 완료 - {phase.phaseName} 적용됨"
         );
     }
 
     private void ApplyPhaseImmediate(LoadingPhase phase)
     {
-        Debug.Log(
+        if (enableDebugLogs) Debug.Log(
             $"🎨 [LoadingBackgroundController] 아이콘 변경 시작 - {phase.phaseName} (Index: {currentPhaseIndex})"
         );
 
@@ -216,14 +219,14 @@ public class LoadingBackgroundController : MonoBehaviour
                     sunElement.style.backgroundImage = cachedBackgrounds[currentPhaseIndex];
                     sunElement.style.display = DisplayStyle.Flex;
                     var newIcon = cachedBackgrounds[currentPhaseIndex].value.sprite?.name ?? "None";
-                    Debug.Log(
+                    if (enableDebugLogs) Debug.Log(
                         $"🔄 [LoadingBackgroundController] 아이콘 변경: {oldIcon} → {newIcon}"
                     );
                 }
                 else
                 {
                     sunElement.style.display = DisplayStyle.None;
-                    Debug.Log("🚫 [LoadingBackgroundController] 아이콘 숨김 (스프라이트 없음)");
+                    if (enableDebugLogs) Debug.Log("🚫 [LoadingBackgroundController] 아이콘 숨김 (스프라이트 없음)");
                 }
             }
         }
@@ -235,7 +238,7 @@ public class LoadingBackgroundController : MonoBehaviour
                 var oldIcon = sunElement.style.backgroundImage.value.sprite?.name ?? "None";
                 sunElement.style.backgroundImage = new StyleBackground(phase.sunOrMoonSprite);
                 sunElement.style.display = DisplayStyle.Flex;
-                Debug.Log(
+                if (enableDebugLogs) Debug.Log(
                     $"🔄 [LoadingBackgroundController] 아이콘 변경 (폴백): {oldIcon} → {phase.sunOrMoonSprite.name}"
                 );
             }
@@ -318,7 +321,7 @@ public class LoadingBackgroundController : MonoBehaviour
     {
         int targetPhaseIndex = GetPhaseIndexFromProgress(progress);
 
-        Debug.Log(
+        if (enableDebugLogs) Debug.Log(
             $"📊 [LoadingBackgroundController] 진행률 {progress:P0} → 대상 페이즈: {targetPhaseIndex}, 현재 페이즈: {currentPhaseIndex}"
         );
 
@@ -350,7 +353,7 @@ public class LoadingBackgroundController : MonoBehaviour
         else
         {
             var currentPhaseName = currentPhaseIndex < loadingPhases.Length ? loadingPhases[currentPhaseIndex].phaseName : "Unknown";
-            Debug.Log(
+            if (enableDebugLogs) Debug.Log(
                 $"⏭️ [LoadingBackgroundController] 페이즈 전환 불필요 (이미 {currentPhaseName}({currentPhaseIndex})번 페이즈) [진행률: {progress:P0}]"
             );
         }

@@ -26,7 +26,7 @@ namespace Features.Chest.Services
         private readonly ReactiveProperty<bool> _isUIVisible = new(false);
 
         // Debug Settings
-        private bool _enableDebugLogs = true;
+        private bool _enableDebugLogs = false;
 
         [Inject]
         public ChestServiceImpl(

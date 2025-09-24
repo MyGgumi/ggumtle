@@ -41,10 +41,9 @@ public enum SendPacketType {
     // 꿈틀이 상호작용
     DIG_UP_RECEIVE((short) 101),
     STOP_DIGGING((short) 103),
-    DIG_UP_DONE((short) 104),
     START_FEED((short) 111),
     STOP_FEED((short) 113),
-    FEED_DONE((short) 120),
+    GGUMTLE_STATUS((short) 120),
 
     // 탈출
     OPEN_EXIT((short) 130),

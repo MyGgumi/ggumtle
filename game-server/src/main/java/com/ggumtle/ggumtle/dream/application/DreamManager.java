@@ -6,11 +6,10 @@ import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
-import com.ggumtle.ggumtle.dream.application.body.DigUpBody;
+import com.ggumtle.ggumtle.dream.application.body.GgumtleStatusBody;
 import com.ggumtle.ggumtle.dream.application.body.DoneReviveBody;
 import com.ggumtle.ggumtle.dream.application.body.ExitOpen;
 import com.ggumtle.ggumtle.dream.application.body.EscapeBody;
-import com.ggumtle.ggumtle.dream.application.body.FeedDoneBody;
 import com.ggumtle.ggumtle.dream.application.body.HitMonggingBody;
 import com.ggumtle.ggumtle.dream.application.body.InitializeMapBody;
 import com.ggumtle.ggumtle.dream.application.body.InitializePlayerBody;
@@ -464,8 +463,8 @@ public class DreamManager {
 
     /**
      * 필드 아이템 사용
-     * @param itemId
-     * @param session
+     * @param itemId 사용할 필드 아이템의 ID
+     * @param session 요청한 사용자의 세션
      */
     public void useFieldItem(int itemId, Session session) {
         // 몽깅이 존재 확인
@@ -522,8 +521,9 @@ public class DreamManager {
 
     /**
      * 상자 열기
-     * @param boxId
-     * @param session
+     * 상자의 데이터를 사용자에게 반환하고, 상자를 보고 있는 사용자 정보에 요청한 사용자를 추가한다
+     * @param boxId 열 상자의 ID
+     * @param session 요청한 사용자의 세션
      */
     public void showBox(int boxId, Session session) {
         // 상자가 존재하지 않으면 실패
@@ -575,8 +575,9 @@ public class DreamManager {
 
     /**
      * 상자 닫기
-     * @param boxId
-     * @param session
+     * 해당 상자를 보고 있는 사용자 정보에서 요청한 사용자를 제거한다
+     * @param boxId 닫을 상자의 ID
+     * @param session 요청한 사용자의 세션
      */
     public void closeBox(int boxId, Session session) {
         // 상자 존재 확인
@@ -595,9 +596,9 @@ public class DreamManager {
 
     /**
      * 상자에서 아이템 꺼내기
-     * @param boxId
-     * @param index
-     * @param session
+     * @param boxId 아이템을 꺼낼 상자 ID
+     * @param index 상자의 인덱스
+     * @param session 요청한 사용자의 세션
      */
     public void takeItem(int boxId, int index, Session session) {
         // 상자 존재 확인
@@ -711,9 +712,9 @@ public class DreamManager {
 
     /**
      * 상자에 아이템 넣기
-     * @param itemId
-     * @param boxId
-     * @param session
+     * @param itemId 상자에 넣을 아이템 ID
+     * @param boxId 아이템을 넣을 상자 ID
+     * @param session 요청한 사용자의 세션
      */
     public void putItem(int itemId, int boxId, Session session) {
         // 아이템 존재 확인
@@ -884,26 +885,44 @@ public class DreamManager {
                 return;
             }
 
-            Body body = new DigUpBody(ggumtle.id, digUpResult == 1);
-            Packet packet = Packet.of(SendPacketType.DIG_UP_DONE, System.currentTimeMillis(), body);
-            this.room.broadcast(packet);
-
             log.info("[{} - {}] 꿈틀이 파기 완료: {}번 꿈틀이 파기 완료", session.getChannel().id(), room.id, ggumtleId);
 
-            // 가짜 꿈틀이를 파면 스턴 상태 브로드캐스팅
+            // 꿈틀이에 따른 브로드캐스팅
+            if (digUpResult == 1) {
+                Body body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.NORMAL);
+                Packet packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+            }
+
             if (digUpResult == -1) {
+                Body body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.FAKE);
+                Packet packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.STUNNED);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
                 this.room.broadcast(packet);
 
-                log.info("[{} - {}] 꿈틀이 파기 스턴: {}번 몽깅이 스턴", session.getChannel().id(), room.id, session.getMemberId());
+                log.info("[{} - {}] 꿈틀이 파기 스턴: 가짜 꿈틀이를 파낸 {}번 몽깅이 스턴", session.getChannel().id(), room.id, session.getMemberId());
             }
         }, 3, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.id));
 
+        // 꿈틀이 파기 시작 성공 응답
         Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.START_DIGGING);
         Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
         session.sendPacket(packet);
+
+        // 다른 몽깅이가 해당 꿈틀이에 작업 중이었는지 확인
+        long count = workingThreads.values().stream()
+                .filter(thread -> thread.playerId != session.getMemberId() && thread.ggumtleId == ggumtle.id)
+                .count();
+        if (count == 0) {
+            body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.DIGGING);
+            packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
+            log.info("[{} - {}] 꿈틀이 파기 시작 방송: {}번 꿈틀이의 상태를 파는 중으로 방송", session.getChannel().id(), room.id, ggumtleId);
+        }
 
         log.info("[{} - {}] 꿈틀이 파기 시작 완료: 잠시 후 {}번 꿈틀이 파기 완료 예정", session.getChannel().id(), room.id, ggumtleId);
     }
@@ -911,21 +930,33 @@ public class DreamManager {
     public void stopDigging(Session session) {
         WorkingThread targetThread = workingThreads.getOrDefault(session.getMemberId(), null);
 
-        Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.DIG_UP) {
             targetThread.scheduledFuture.cancel(true);
             workingThreads.remove(session.getMemberId());
 
-            body = new StopDiggingBody(StopDiggingBody.Result.STOP);
+            Body body = new StopDiggingBody(StopDiggingBody.Result.STOP);
+            Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
             log.info("[{} - {}] 꿈틀이 파기 중단 완료: {}번 사용자의 작업 중단", session.getChannel().id(), room.id, session.getMemberId());
+
+            // 다른 몽깅이가 해당 꿈틀이에 작업 중이 아니면, 묻힘 상태 전파
+            long count = workingThreads.values().stream()
+                    .filter(thread -> thread.ggumtleId == targetThread.ggumtleId)
+                    .count();
+            if (count == 0 && !ggumtles.get(targetThread.ggumtleId).isDugUp()) {
+                body = new GgumtleStatusBody(targetThread.ggumtleId, GgumtleStatusBody.Status.BURY);
+                packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+                log.info("[{} - {}] 꿈틀이 파기 중단 전파: {}번 꿈틀이에 작업 중인 사용자가 없어 묻힘 상태로 전파", session.getChannel().id(), room.id, session.getMemberId());
+            }
         } else {
-            body = new StopDiggingBody(StopDiggingBody.Result.NOT_FOUND_DIGGING);
+            Body body = new StopDiggingBody(StopDiggingBody.Result.NOT_FOUND_DIGGING);
+            Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
             log.warn("[{} - {}] 꿈틀이 파기 중단 실패: {}번 사용자가 꿈틀이 파내기 작업 없음", session.getChannel().id(), room.id, session.getMemberId());
         }
-        Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), body);
-        session.sendPacket(packet);
     }
 
     public void startFeed(int ggumtleId, Session session) {
@@ -938,8 +969,8 @@ public class DreamManager {
             return;
         }
 
-        Ggumtle ggumtle = ggumtles.get(ggumtleId);
-        if (!ggumtle.isDugUp()) {
+        Ggumtle targetGgumtle = ggumtles.get(ggumtleId);
+        if (!targetGgumtle.isDugUp()) {
             Body body = new StartFeedBody(StartFeedBody.Result.YET_DIG_UP);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
@@ -948,7 +979,7 @@ public class DreamManager {
             return;
         }
 
-        if (ggumtle.isDone()) {
+        if (targetGgumtle.isDone()) {
             Body body = new StartFeedBody(StartFeedBody.Result.ALREADY_DONE);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
@@ -968,7 +999,7 @@ public class DreamManager {
         }
 
         Position position = mongging.getPositionAt(System.currentTimeMillis());
-        if (!ggumtle.detectFeed(position)) {
+        if (!targetGgumtle.detectFeed(position)) {
             Body body = new StartFeedBody(StartFeedBody.Result.NOT_AROUND);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
             session.sendPacket(packet);
@@ -978,7 +1009,7 @@ public class DreamManager {
         }
 
         Runnable task = () -> {
-            final int left = ggumtle.feed();
+            final int left = targetGgumtle.feed();
             mongging.popItem(ItemDictionary.LIGHT_JELLY.boxableItem);
 
             // 성불시키면 종료
@@ -986,7 +1017,7 @@ public class DreamManager {
                 Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<Long, WorkingThread> entry = iterator.next();
-                    if (entry.getValue().ggumtleId == ggumtle.id) {
+                    if (entry.getValue().ggumtleId == targetGgumtle.id) {
                         entry.getValue().scheduledFuture.cancel(true);
                         iterator.remove();
                     }
@@ -996,8 +1027,8 @@ public class DreamManager {
                 Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
-                body = new FeedDoneBody(ggumtle.id);
-                packet = Packet.of(SendPacketType.FEED_DONE, System.currentTimeMillis(), body);
+                body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.DONE);
+                packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
                 this.room.broadcast(packet);
 
                 tryOpenExit();
@@ -1016,16 +1047,37 @@ public class DreamManager {
                 WorkingThread removedThread = workingThreads.remove(session.getMemberId());
                 removedThread.scheduledFuture.cancel(true);
 
+                // 작업 중인 몽깅이가 없으면 일반 상태로 전파
+                boolean isWorking = workingThreads.values().stream()
+                        .anyMatch(thread -> thread.ggumtleId == targetGgumtle.id);
+                if (!isWorking) {
+                    body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.NORMAL);
+                    packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
+                    this.room.broadcast(packet);
+                    log.info("[{} - {}] 꿈틀이 먹이기 전파: {}번 꿈틀이에 작업 중인 몽깅이가 없어 일반 상태로 전파", session.getChannel().id(), room.id, targetGgumtle.id);
+                }
+
                 log.info("[{} - {}] 꿈틀이 먹이기 완료: 아이템을 모두 소진해 종료", session.getChannel().id(), room.id);
                 return;
             }
         };
         ScheduledFuture<?> future = workerThreadPool.scheduleAtFixedRate(task, 1, 1, TimeUnit.SECONDS);
-        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.FEED, ggumtle.id));
+        workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.FEED, targetGgumtle.id));
 
         Body body = new StartFeedBody(StartFeedBody.Result.START_FEEDING);
         Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
         session.sendPacket(packet);
+
+        // 다른 사용자가 작업중이 아니면 DIGGING으로 전파
+        boolean isWorking = workingThreads.values().stream()
+                .anyMatch(thread -> thread.ggumtleId == targetGgumtle.id && thread.playerId != session.getMemberId());
+        if (!isWorking) {
+            body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.DIGGING);
+            packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
+
+            log.info("[{} - {}] 꿈틀이 먹이기 시작 전파: {}번 사용자가 {}번 꿈틀이에게 빛젤리 먹이기 전파", session.getChannel().id(), room.id, session.getMemberId(), ggumtleId);
+        }
 
         log.info("[{} - {}] 꿈틀이 먹이기 시작 성공: {}번 사용자가 {}번 꿈틀이에게 빛젤리 먹이기 시작함", session.getChannel().id(), room.id, session.getMemberId(), ggumtleId);
     }
@@ -1036,21 +1088,33 @@ public class DreamManager {
         Mongging mongging = (Mongging) players.get(session.getMemberId());
         int leftLightJellyCount = mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem);
 
-        Body body;
         if (targetThread != null && targetThread.threadType == WorkingThread.ThreadType.FEED) {
             targetThread.scheduledFuture.cancel(true);
             workingThreads.remove(session.getMemberId());
 
-            body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
+            Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
+            Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
-            log.info("[{} - {}] 꿈틀이 먹이기 종료 성공: {}번 사용자의 빛젤리 먹이기 작업 종료", session.getChannel().id(), room.id, session.getMemberId());
+            log.info("[{} - {}] 꿈틀이 먹이기 중단 성공: {}번 사용자의 빛젤리 먹이기 작업 중단", session.getChannel().id(), room.id, session.getMemberId());
+
+            // 다른 몽깅이가 해당 꿈틀이에 작업 중이 아니면, 일반 상태 전파
+            long count = workingThreads.values().stream()
+                    .filter(thread -> thread.ggumtleId == targetThread.ggumtleId)
+                    .count();
+            if (count == 0 && !ggumtles.get(targetThread.ggumtleId).isDone()) {
+                body = new GgumtleStatusBody(targetThread.ggumtleId, GgumtleStatusBody.Status.NORMAL);
+                packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+                log.info("[{} - {}] 꿈틀이 먹이기 중단 전파: {}번 꿈틀이에 작업 중인 사용자가 없어 일반 상태로 전파", session.getChannel().id(), room.id, session.getMemberId());
+            }
         } else {
-            body = new StopFeedingBody(StopFeedingBody.Result.NOT_FOUND, leftLightJellyCount);
+            Body body = new StopFeedingBody(StopFeedingBody.Result.NOT_FOUND, leftLightJellyCount);
+            Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
             log.error("[{} - {}] 꿈틀이 먹이기 종료 실패: {}번 사용자에게 빛젤리 먹이기 작업 없음", session.getChannel().id(), room.id, session.getMemberId());
         }
-        Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
-        session.sendPacket(packet);
     }
 
     public void tryOpenExit() {

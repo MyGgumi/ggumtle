@@ -36,11 +36,10 @@ public interface EnhanceStatRepository extends JpaRepository<EnhanceStat, Long> 
                 END as additional_stat
         )
         FROM EnhanceStat es
-        JOIN Mongging mongging
         JOIN es.monggingClass
+        JOIN Mongging mongging ON mongging.monggingClass.id = es.monggingClass.id
         JOIN mongging.owner
         WHERE mongging.id IN :monggingIds
-        AND es.monggingClass.id = mongging.monggingClass.id
         AND es.level = mongging.level
     """)
     List<MonggingStatPo> findAllByMonggingIds(List<Long> monggingIds);

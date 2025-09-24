@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.infra.redis;
 
+import com.ggumtle.ggumtle.dream.domain.OptimalServer;
 import com.ggumtle.ggumtle.dream.domain.WaitingParty;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -46,6 +47,17 @@ public class RedisConfig {
         redisTemplate.setConnectionFactory(redisConnectionFactory());
         redisTemplate.setKeySerializer(RedisSerializer.string());
         redisTemplate.setValueSerializer(RedisSerializer.string());
+
+        return redisTemplate;
+    }
+
+    @Bean
+    public RedisTemplate<String, OptimalServer> optimalServerRedisTemplate() {
+        RedisTemplate<String, OptimalServer> redisTemplate = new RedisTemplate<>();
+
+        redisTemplate.setConnectionFactory(redisConnectionFactory());
+        redisTemplate.setKeySerializer(RedisSerializer.string());
+        redisTemplate.setValueSerializer(new Jackson2JsonRedisSerializer<>(OptimalServer.class));
 
         return redisTemplate;
     }

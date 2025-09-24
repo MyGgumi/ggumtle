@@ -27,7 +27,7 @@ game-server:
     port: ${GAME_SERVER_PORT}
     max-players-per-room: 6
     tick-rate: 30
-    id: 1
+    id: ${GAME_SERVER_ID}
 metric-server:
   port: ${METRIC_SERVER_PORT}
 

@@ -1,15 +1,22 @@
 package com.ggumtle.ggumtle.dream.domain;
 
-import lombok.AllArgsConstructor;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import lombok.AccessLevel;
 import lombok.Getter;
-import org.springframework.data.annotation.Id;
-import org.springframework.data.redis.core.RedisHash;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
-@RedisHash("dream-server")
-@AllArgsConstructor
+@Entity
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
+@ToString
 public class DreamServer {
 
     @Id
-    private String id;
+    private Long id;
+
+    private String host;
+
+    private int port;
 }

@@ -13,16 +13,19 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
 public class TestRunner {
+    private final ClientTester clientTester;
     private final MoveTester moveTester;
     private final DigUpTester digUpTester;
     private final MyChestTester myChestTester;
-    
+
     @Value("${TEST_ID}")
     private int testId;
 
     @EventListener(ApplicationReadyEvent.class)
     public void runTest() {
         switch (testId) {
+            case 0: clientTester.run(); break;
+
             case 1: moveTester.run(); break;
 
             case 2: digUpTester.run(); break;

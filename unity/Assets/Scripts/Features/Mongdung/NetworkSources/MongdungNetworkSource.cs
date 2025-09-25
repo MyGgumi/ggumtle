@@ -53,9 +53,34 @@ namespace Features.Mongdung.NetworkSources
                     );
                 }
 
-                // TODO: NetworkApi에 몽둥이 액션 메서드 추가 필요
-                // 현재는 임시로 성공 반환
-                await UniTask.Delay(100); // 네트워크 지연 시뮬레이션
+                if (_networkApi == null)
+                {
+                    Debug.LogError("[MongdungNetworkSource] NetworkApi가 null입니다");
+                    return false;
+                }
+
+                // 액션 타입에 따라 적절한 NetworkApi 메서드 호출
+                switch (actionType)
+                {
+                    case MongdungActionType.Attack:
+                        // Attack은 direction과 targetId 필요 (targetId는 임시로 0 사용)
+                        _networkApi.MongdungAttack(direction, 0);
+                        break;
+
+                    case MongdungActionType.TrapSetting:
+                        // TrapSetting: skillType = 2
+                        _networkApi.MongdungSkill(2);
+                        break;
+
+                    case MongdungActionType.Frighten:
+                        // Frighten: skillType = 1
+                        _networkApi.MongdungSkill(1);
+                        break;
+
+                    default:
+                        Debug.LogWarning($"[MongdungNetworkSource] 알 수 없는 액션 타입: {actionType}");
+                        return false;
+                }
 
                 if (_enableDebugLogs)
                 {

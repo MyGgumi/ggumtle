@@ -141,9 +141,9 @@ public class Box {
         }
     }
 
-    public void removeViewer(Session session) {
+    public boolean removeViewer(Session session) {
         synchronized (this.viewer) {
-            this.viewer.remove(session);
+            return this.viewer.remove(session);
         }
     }
 

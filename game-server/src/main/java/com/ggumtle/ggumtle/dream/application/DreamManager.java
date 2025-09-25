@@ -2,6 +2,7 @@ package com.ggumtle.ggumtle.dream.application;
 
 import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.common.event.DreamEndEvent;
+import com.ggumtle.ggumtle.dream.application.body.CloseBoxBody;
 import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
@@ -589,7 +590,12 @@ public class DreamManager {
         }
 
         // 상자를 보고있는 세션 삭제
-        box.removeViewer(session);
+        boolean success = box.removeViewer(session);
+
+        // 상자 닫기 응답 전송
+        Body body = new CloseBoxBody(success ? CloseBoxBody.CloseResult.SUCCESS : CloseBoxBody.CloseResult.NOT_VIEWER);
+        Packet packet = Packet.of(SendPacketType.CLOSE_BOX, System.currentTimeMillis(), body);
+        session.sendPacket(packet);
 
         log.info("[{} - {}] 상자 닫기 성공: {}번 상자에 {}번 세션 삭제", session.getChannel().id(), room.id, boxId, session.getSessionId());
     }

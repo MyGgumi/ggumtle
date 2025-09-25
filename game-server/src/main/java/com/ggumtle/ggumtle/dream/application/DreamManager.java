@@ -28,6 +28,7 @@ import com.ggumtle.ggumtle.dream.application.body.StopDiggingBody;
 import com.ggumtle.ggumtle.dream.application.body.StopFeedingBody;
 import com.ggumtle.ggumtle.dream.application.body.UseFieldItemBody;
 import com.ggumtle.ggumtle.dream.application.body.UseMonggingItemBody;
+import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.domain.item.Attackable;
 import com.ggumtle.ggumtle.dream.domain.item.Box;
 import com.ggumtle.ggumtle.dream.domain.exit.Exit;
@@ -138,33 +139,33 @@ public class DreamManager {
         log.info("{}번 드림의 타이머 설정 완료: 시작 시간 = {}, 딜레이 = {}", room.id, startTimestamp, delay);
     }
 
-    public void movePlayer(Session session, int x, int y, int z) {
+    public void movePlayer(Session session, PlayerMoveCommand command) {
         long now = System.currentTimeMillis();
 
         Player player = players.get(session.getMemberId());
 
         Position lastPosition = player.getLastPosition();
-        Position currentPosition = new Position(x, y, z, now);
+        Position currentPosition = new Position(command.x(), command.y(), command.z(), now);
 
         int distanceSquare = lastPosition.getDistanceSquareWith(currentPosition);
         double maxDistance = player.moveSpeed * (now - lastPosition.timestamp);
 
         if (distanceSquare > maxDistance * maxDistance) {
-            Body body = new PlayerMoveBody(player.getId(), lastPosition);
+            Body body = PlayerMoveBody.rollbackOf(player.getId(), lastPosition);
             Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
 
-            log.warn("[{} - {}] {}번 사용자의 이동 핸들링: 비정상적인 이동 감지: {{}, {}, {}}", session.getChannel().id(), room.id, session.getMemberId(), x, y, z);
+            log.warn("[{} - {}] {}번 사용자의 이동 핸들링: 비정상적인 이동 감지: {{}, {}, {}}", session.getChannel().id(), room.id, session.getMemberId(), command.x(), command.y(), command.z());
             return;
         }
 
         player.addPosition(currentPosition);
 
-        Body body = new PlayerMoveBody(player.getId(), x, y, z);
+        Body body = new PlayerMoveBody(player.getId(), command.x(), command.y(), command.z(), command.vx(), command.vy(), command.vz());
         Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
 
-        log.debug("[{} - {}] {}번 사용자의 이동 핸들링: {{}, {}, {}}", session.getChannel().id(), room.id, session.getMemberId(), x, y, z);
+        log.debug("[{} - {}] {}번 사용자의 이동 핸들링: {{}, {}, {}}", session.getChannel().id(), room.id, session.getMemberId(), command.x(), command.y(), command.z());
     }
 
     public void hitMongging(HitMonggingCommand command, Session session) {

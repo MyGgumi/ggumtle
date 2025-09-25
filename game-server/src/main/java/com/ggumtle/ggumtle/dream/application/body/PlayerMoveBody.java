@@ -10,20 +10,26 @@ public record PlayerMoveBody(
         long id,
         int x,
         int y,
-        int z
+        int z,
+        int vx,
+        int vy,
+        int vz
 ) implements Body {
-    public PlayerMoveBody(long id, Position position) {
-        this(id, position.x, position.y, position.z);
+    public static PlayerMoveBody rollbackOf(long id, Position position) {
+        return new PlayerMoveBody(id, position.x, position.y, position.z, -1, -1, -1);
     }
 
     @Override
     public byte[] toBytes(Charset charsets) {
-        ByteBuffer buffer = ByteBuffer.allocate(8 + 4 * 3);
+        ByteBuffer buffer = ByteBuffer.allocate(8 + 4 * 3 * 2);
 
         buffer.putLong(id);
         buffer.putInt(x);
         buffer.putInt(y);
         buffer.putInt(z);
+        buffer.putInt(vx);
+        buffer.putInt(vy);
+        buffer.putInt(vz);
 
         return buffer.array();
     }

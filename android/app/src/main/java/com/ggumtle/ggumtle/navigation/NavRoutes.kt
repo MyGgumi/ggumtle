@@ -19,3 +19,6 @@ data object GrowthRoute
 
 @Serializable
 data object MissionRoute
+
+@Serializable
+data object InGameRoute

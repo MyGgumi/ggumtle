@@ -59,6 +59,7 @@ object HomeContract {
         data class ShowToast(val message: String) : SideEffect
         data object NavigateToSocial : SideEffect
         data object NavigateToGrowth : SideEffect
+        data object NavigateToInGame : SideEffect
         data object StartGame : SideEffect
     }
 }

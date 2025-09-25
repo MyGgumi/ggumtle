@@ -45,11 +45,12 @@ dependencies {
     implementation(projects.feature.home)
     implementation(projects.feature.growth)
     implementation(projects.feature.mission)
+    implementation(projects.feature.ingame)
 
     implementation(project(":unityLibrary"))
     implementation("androidx.games:games-activity:3.0.5")
     implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation(files("C:\\Users\\SSAFY\\Documents\\unity\\mainpagetest2\\unityLibrary\\libs\\unity-classes.jar"))
+    implementation(files("C:\\Users\\SSAFY\\Documents\\unity\\testcom\\unityLibrary\\libs\\unity-classes.jar"))
 
     // 필라멘트
     implementation(libs.filament.utils.android)

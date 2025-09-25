@@ -17,6 +17,7 @@ import com.ggumtle.startup.StartUpRoute
 import com.ggumtle.home.HomeRoute
 import com.ggumtle.social.SocialRoute
 import com.ggumtle.growth.GrowthRoute
+import com.ggumtle.ingame.InGameRoute
 import com.ggumtle.mission.MissionRoute
 import kotlinx.coroutines.delay
 
@@ -81,6 +82,11 @@ fun AppNavigation(
                 },
                 onNavigateToGrowth = {
                     navController.navigate(GrowthRoute){}
+                },
+                onNavigateToInGame = {
+                    navController.navigate(InGameRoute){
+                        popUpTo(HomeRoute) { inclusive = true }
+                    }
                 }
             )
         }
@@ -132,6 +138,10 @@ fun AppNavigation(
                     }
                 }
             )
+        }
+
+        composable<InGameRoute>{
+            InGameRoute()
         }
     }
 }

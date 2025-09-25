@@ -23,6 +23,9 @@ class UnityStartupObserveObserveManagerImpl @Inject constructor() : UnityStartup
     private val _completionFlow = MutableSharedFlow<Unit>(replay = 1)
     override val completionFlow: SharedFlow<Unit> = _completionFlow.asSharedFlow()
 
+    private val _goToInGameFlow = MutableSharedFlow<Unit>(replay = 1)
+    override val goToInGameFlow: SharedFlow<Unit> = _goToInGameFlow.asSharedFlow()
+
     private val _characterTypeChangeFlow = MutableSharedFlow<String>()
     override val characterTypeChangeFlow: SharedFlow<String> = _characterTypeChangeFlow.asSharedFlow()
 
@@ -41,4 +44,11 @@ class UnityStartupObserveObserveManagerImpl @Inject constructor() : UnityStartup
         Log.d("unityStartUpObserveManager", "캐릭터 타입 변경: $characterType")
         _characterTypeChangeFlow.tryEmit(characterType)
     }
+
+    override fun goToInGame() {
+        Log.d("unityStartUpObserveManager", "인게임 이동 처리")
+        _goToInGameFlow.tryEmit(Unit)
+    }
+
+
 }

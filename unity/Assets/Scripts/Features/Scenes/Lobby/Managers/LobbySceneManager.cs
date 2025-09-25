@@ -1,3 +1,4 @@
+using System;
 using Features.Game.Managers;
 using Features.Scenes.Lobby.Messages;
 using Features.Scenes.Lobby.NetworkSources;
@@ -96,6 +97,16 @@ namespace Features.Scenes.Lobby.Managers
             PublishUIState(LobbyUIStateMessage.Ready("토큰을 입력하고 게임 시작을 눌러주세요"));
         }
 
+        void Update()
+        {
+            if (Input.GetKeyDown(KeyCode.A))
+            {
+                string testParams = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzU4MDczOTQ4LCJleHAiOjE3NTkyODM1NDh9.cfillJjXl1d92Cw8-dPPSYbZQ90lKhcj2_B8TM-QK9c,-4,p-ryan.iptime.org,8888";
+                Debug.Log($"[LobbySceneManager] T키 테스트: {testParams}");
+                StartGameCommandFromAndroid(testParams);
+            }
+        }
+
         void OnDestroy()
         {
             // R3 구독 해제
@@ -179,6 +190,26 @@ namespace Features.Scenes.Lobby.Managers
                 .AddTo(_disposables);
 
             Debug.Log("[LobbySceneManager] ViewModel 이벤트 구독 완료");
+        }
+
+        public void StartGameCommandFromAndroid(string paramsString) 
+        {
+            var parts = paramsString.Split(',');
+            
+            if (parts.Length < 4 || 
+                !int.TryParse(parts[1], out int roomId) || 
+                !int.TryParse(parts[3], out int port))
+            {
+                Debug.LogError($"Invalid parameters: {paramsString}");
+                return;
+            }
+
+            String token = parts[0];
+            String host = parts[2];
+            testHost = host;
+            testPort = port;
+            
+            StartGameWithTokenAndRoom(token, roomId);
         }
 
         /// <summary>
@@ -481,12 +512,29 @@ namespace Features.Scenes.Lobby.Managers
 
             try
             {
+                CallAndroidFunction("onInGameLoadingStart");
                 await _gameManager.TransitionToLoading();
             }
             catch (System.Exception e)
             {
                 Debug.LogError($"[LobbySceneManager] Loading 씬 전환 실패: {e.Message}");
             }
+        }
+
+        void CallAndroidFunction(string functionName, params string[] parameters)
+        {
+        #if UNITY_ANDROID && !UNITY_EDITOR
+            using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+            {
+                using (AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                {
+                    currentActivity.Call(functionName, parameters);
+                    Debug.Log($"안드로이드 함수 호출: {functionName}({string.Join(", ", parameters)})");
+                }
+            }
+        #else
+            Debug.Log($"[에디터/비안드로이드] 안드로이드 함수 호출 시뮬레이션: {functionName}({string.Join(", ", parameters)})");
+        #endif
         }
 
         #region Debug Methods

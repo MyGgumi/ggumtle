@@ -12,6 +12,7 @@ import com.ggumtle.designsystem.dialog.DialogContainer
 fun HomeRoute(
     onNavigateToSocial: () -> Unit = {},
     onNavigateToGrowth: () -> Unit = {},
+    onNavigateToInGame: () -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
     val state by viewModel.collectAsState()
@@ -26,6 +27,7 @@ fun HomeRoute(
             }
             is HomeContract.SideEffect.NavigateToSocial -> onNavigateToSocial()
             is HomeContract.SideEffect.NavigateToGrowth -> onNavigateToGrowth()
+            is HomeContract.SideEffect.NavigateToInGame -> onNavigateToInGame()
         }
     }
 

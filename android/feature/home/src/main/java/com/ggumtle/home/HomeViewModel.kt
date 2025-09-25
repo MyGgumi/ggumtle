@@ -1,6 +1,7 @@
 package com.ggumtle.home
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.ggumtle.domain.rest.usecase.user.GetMemberInfoUseCase
 import com.ggumtle.domain.rest.usecase.member.DeleteAccountUseCase
 import com.ggumtle.domain.rest.usecase.member.EditNicknameUseCase
@@ -42,6 +43,8 @@ import com.ggumtle.domain.unity.UnityStartupObserveManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import org.orbitmvi.orbit.Container
 import org.orbitmvi.orbit.ContainerHost
@@ -93,6 +96,15 @@ class HomeViewModel @Inject constructor(
         createParty()
         observeHomeEvent()
         observeCharacterTypeChange()
+        observeGameLoadingStart()
+    }
+
+    private fun observeGameLoadingStart() = intent{
+        unityStartupObserveManager.goToInGameFlow
+            .onEach {
+                postSideEffect(HomeContract.SideEffect.NavigateToInGame)
+            }
+            .launchIn(viewModelScope)
     }
 
     private fun observeHomeEvent() {
@@ -135,7 +147,7 @@ class HomeViewModel @Inject constructor(
                 if (result.leftMemberId == myId) return@collect
                 val leftMember = state.partyMembers.find { it.id == result.leftMemberId }
                 val leftMemberNickname = leftMember?.nickname
-                if(leftMemberNickname != null) {
+                if (leftMemberNickname != null) {
                     unitySendManager.removeTargetCharacter(leftMemberNickname)
                 }
                 val updatedMembers = state.partyMembers
@@ -308,14 +320,21 @@ class HomeViewModel @Inject constructor(
 
     // 게임 시작
     fun onStartGame() = intent {
-//        unitySendManager.goToInGame("-1","12")
-        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
-        try {
-            readyGameUseCase.invoke()
-            startGameUseCase.invoke()
-        } catch (e: Exception) {
-            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
-        }
+        val token = authManager.getAccessToken()
+        if(token==null)return@intent
+        unitySendManager.goToInGame(
+            token,
+            -4,
+            "p-ryan.iptime.org",
+            8888
+        )
+//        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
+//        try {
+//            readyGameUseCase.invoke()
+//            startGameUseCase.invoke()
+//        } catch (e: Exception) {
+//            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
+//        }
     }
 
     // TODO: 게임 시작 observe
@@ -388,6 +407,7 @@ class HomeViewModel @Inject constructor(
                         loadMonggingList(userProfile.nickname)
                     }
                 }
+
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
             }
         }
@@ -400,9 +420,11 @@ class HomeViewModel @Inject constructor(
                 is Resource.Loading -> {}
                 is Resource.Success -> {
                     reduce { state.copy(monggings = resource.data.monggings) }
-                    val currentLevel = getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex)
+                    val currentLevel =
+                        getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex)
                     enterMyCharacter(nickname, currentLevel)
                 }
+
                 is Resource.Failure -> {
                     enterMyCharacter(nickname, 1)
                 }
@@ -411,7 +433,10 @@ class HomeViewModel @Inject constructor(
     }
 
     // 현재 선택된 캐릭터의 레벨 가져오기
-    private fun getCurrentCharacterLevel(monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>, selectedIndex: Int): Int {
+    private fun getCurrentCharacterLevel(
+        monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>,
+        selectedIndex: Int
+    ): Int {
         return if (monggings.isNotEmpty() && selectedIndex < monggings.size) {
             monggings[selectedIndex].level
         } else {
@@ -436,7 +461,10 @@ class HomeViewModel @Inject constructor(
     }
 
     // 몽깅이 타입으로 인덱스 찾기
-    private fun findMonggingIndexByType(characterType: String, monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>): Int {
+    private fun findMonggingIndexByType(
+        characterType: String,
+        monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>
+    ): Int {
         return monggings.indexOfFirst { mongging ->
             when (characterType.lowercase()) {
                 "healmongging", "heal" -> mongging.monggingClass.lowercase() == "heal"
@@ -484,7 +512,10 @@ class HomeViewModel @Inject constructor(
                                 member.copy(nickname = state.tempNickname) else member
                         }
                         // 유니티 캐릭터 닉네임도 업데이트
-                        enterMyCharacter(state.tempNickname, getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex))
+                        enterMyCharacter(
+                            state.tempNickname,
+                            getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex)
+                        )
                         reduce {
                             state.copy(
                                 userProfile = state.userProfile.copy(nickname = state.tempNickname),
@@ -496,6 +527,7 @@ class HomeViewModel @Inject constructor(
                         }
                         postSideEffect(HomeContract.SideEffect.ShowToast("닉네임이 변경되었습니다."))
                     }
+
                     is Resource.Failure -> {
                         reduce { state.copy(isLoading = false) }
                         postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
@@ -556,11 +588,12 @@ class HomeViewModel @Inject constructor(
             when (resource) {
                 is Resource.Loading -> reduce { state.copy(isLoading = true) }
                 is Resource.Success -> {
-                    
+
                     authManager.signOutWithGoogle()
                     authManager.logout(LogoutReason.UserLogout)
                     reduce { state.copy(isLoading = false) }
                 }
+
                 is Resource.Failure -> {
                     reduce { state.copy(isLoading = false) }
                     postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
@@ -581,6 +614,7 @@ class HomeViewModel @Inject constructor(
                     }
                     reduce { state.copy(isLoading = false) }
                 }
+
                 is Resource.Failure -> {
                     reduce { state.copy(isLoading = false) }
                     postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))

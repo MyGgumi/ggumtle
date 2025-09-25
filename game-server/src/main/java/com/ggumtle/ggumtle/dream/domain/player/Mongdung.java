@@ -9,7 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public class Mongdung extends Player {
-    private static final int BASE_MOVE_SPEED = 100;
+    private static final int BASE_MOVE_SPEED = 1_000_000_000;
     private static final int BASE_DAMAGE = 40;
     private static final int BASE_SCARE_COOL_TIME = 30 * 1000;
     private static final int MAX_BURY_COUNT = 3;

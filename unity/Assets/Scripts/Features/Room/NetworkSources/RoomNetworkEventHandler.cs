@@ -118,8 +118,24 @@ namespace Features.Room.NetworkSources
         {
             try
             {
-                Debug.Log("[RoomNetworkEventHandler] 플레이어 초기화 수신");
-                Debug.Log($"  - 플레이어: {command.players?.Count ?? 0}명");
+                Debug.Log("[SERVER_PLAYER_DATA] 플레이어 초기화 수신");
+                Debug.Log($"[SERVER_PLAYER_DATA]   - 플레이어: {command.players?.Count ?? 0}명");
+
+                // 플레이어 상세 정보 로깅
+                if (command.players != null && command.players.Count > 0)
+                {
+                    Debug.Log($"[SERVER_PLAYER_DATA] 플레이어 상세 정보:");
+                    for (int i = 0; i < command.players.Count; i++)
+                    {
+                        var player = command.players[i];
+                        string playerType = player.IsMongging ? $"Mongging(Class:{player.ClassId})" : "Mongdung";
+                        Debug.Log($"[SERVER_PLAYER_DATA]   [{i}] ID: {player.Id}, 타입: {playerType}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]       닉네임: {player.NickName}, 로컬: {player.IsMine}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]       위치: {player.Position}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]       이동속도: {player.MoveSpeed}, 최대HP: {player.MaxHp}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]       힐속도: {player.HealSpeed}, 작업속도: {player.WorkSpeed}");
+                    }
+                }
 
                 // RoomStorage 처리
                 var roomStorage = RoomStorage.Instance;

@@ -176,6 +176,9 @@ namespace DI
             // Player Messages
             builder.RegisterMessageBroker<PlayerRoleChangedMessage>(options);
 
+            // PlayerManagerService Messages
+            builder.RegisterMessageBroker<Features.Player.Services.PlayerStateChangedMessage>(options);
+
             // Main 씬 컴포넌트들 등록 (씬에 미리 배치된 것들만)
             builder.RegisterComponentInHierarchy<PlayerGameObject>();
             builder.RegisterComponentInHierarchy<Features.UI.Views.HUDInitializer>();
@@ -252,6 +255,10 @@ namespace DI
             builder.Register<IPlayerHealthService, PlayerHealthServiceImpl>(Lifetime.Scoped);
             builder.Register<IPlayerRoleService, PlayerRoleServiceImpl>(Lifetime.Scoped);
             builder.Register<IUIAssetService, UIAssetServiceImpl>(Lifetime.Scoped);
+
+            // PlayerManagerService 등록 (새로 추가)
+            builder.Register<PlayerManagerService>(Lifetime.Scoped);
+
             // Legacy InventoryModel and InventoryService removed
 
             // Main 씬 전용 ViewModels 등록 (씬 생명주기와 동일하게 Scoped)

@@ -69,23 +69,34 @@ namespace Features.Player.Views
 
         private void Awake()
         {
-            // FreeLook 카메라가 Inspector에서 설정되지 않은 경우에만 자동으로 찾기
-            if (_freeLookCamera == null)
+            // Local 플레이어인지 확인 - 오브젝트 이름으로 판단
+            bool isLocalPlayer = gameObject.name.Contains("Local");
+
+            if (isLocalPlayer)
             {
-                _freeLookCamera = FindFirstObjectByType<CinemachineFreeLook>();
+                // Local 플레이어만 카메라 설정
                 if (_freeLookCamera == null)
                 {
-                    Debug.LogError(
-                        "[PlayerGameObject] FreeLook 카메라가 설정되지 않았고 씬에서도 찾을 수 없습니다!"
-                    );
-                    return;
+                    _freeLookCamera = FindFirstObjectByType<CinemachineFreeLook>();
+                    if (_freeLookCamera == null)
+                    {
+                        Debug.LogError(
+                            "[PlayerGameObject] FreeLook 카메라가 설정되지 않았고 씬에서도 찾을 수 없습니다!"
+                        );
+                        return;
+                    }
                 }
+
+                if (enableDebugLogs)
+                    Debug.Log($"[PlayerGameObject] Local 플레이어 - FreeLook 카메라 연결됨: {_freeLookCamera.name}");
+
+                SetupFreeLookCamera();
             }
-
-            if (enableDebugLogs)
-                Debug.Log($"[PlayerGameObject] FreeLook 카메라 연결됨: {_freeLookCamera.name}");
-
-            SetupFreeLookCamera();
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[PlayerGameObject] Remote 플레이어 - 카메라 설정 건너뜀: {gameObject.name}");
+            }
         }
 
         [Inject]

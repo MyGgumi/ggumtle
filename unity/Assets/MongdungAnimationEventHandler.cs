@@ -18,6 +18,9 @@ public class MongdungAnimationEventHandler : MonoBehaviour
 
     [SerializeField] private bool enableDebugLogs = false;
 
+    // Local/Remote 구분
+    private bool isLocalPlayer = true;
+
     private bool wasAttacking = false;
     private bool wasTrapSetting = false;
     private bool wasFrightened = false;
@@ -53,20 +56,31 @@ public class MongdungAnimationEventHandler : MonoBehaviour
         // 모든 이펙트 초기화 (꺼진 상태로)
         InitializeEffects();
 
-        // PlayerMovementService 연결
-        var lifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
-        if (lifetimeScope != null)
+        // Local/Remote 구분 - 오브젝트 이름으로 판단
+        isLocalPlayer = gameObject.name.Contains("Local") || GetComponent<Features.Player.Views.PlayerGameObject>() != null;
+
+        // Local 플레이어만 PlayerMovementService 연결
+        if (isLocalPlayer)
         {
-            movementService = lifetimeScope.Container.Resolve<PlayerMovementService>();
-
-            if (movementService != null)
+            var lifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
+            if (lifetimeScope != null)
             {
-                movementService.MovingStateChanged += OnMovingStateChanged;
-                animator.SetBool("IsMoving", movementService.IsMoving);
+                movementService = lifetimeScope.Container.Resolve<PlayerMovementService>();
 
-                if (enableDebugLogs)
-                    Debug.Log("[MongdungAnimationEventHandler] PlayerMovementService 연결 완료");
+                if (movementService != null)
+                {
+                    movementService.MovingStateChanged += OnMovingStateChanged;
+                    animator.SetBool("IsMoving", movementService.IsMoving);
+
+                    if (enableDebugLogs)
+                        Debug.Log("[MongdungAnimationEventHandler] Local 플레이어 - PlayerMovementService 연결 완료");
+                }
             }
+        }
+        else
+        {
+            if (enableDebugLogs)
+                Debug.Log("[MongdungAnimationEventHandler] Remote 플레이어 - PlayerMovementService 연결 안함");
         }
     }
 
@@ -110,7 +124,21 @@ public class MongdungAnimationEventHandler : MonoBehaviour
             animator.SetBool("IsMoving", isMoving);
 
             if (enableDebugLogs)
-                Debug.Log($"[MongdungAnimationEventHandler] IsMoving: {isMoving}");
+                Debug.Log($"[MongdungAnimationEventHandler] Local IsMoving: {isMoving}");
+        }
+    }
+
+    /// <summary>
+    /// Remote 플레이어용 애니메이션 상태 설정 (외부에서 호출)
+    /// </summary>
+    public void SetMovingState(bool isMoving)
+    {
+        if (animator != null && !isLocalPlayer)
+        {
+            animator.SetBool("IsMoving", isMoving);
+
+            if (enableDebugLogs)
+                Debug.Log($"[MongdungAnimationEventHandler] Remote IsMoving: {isMoving}");
         }
     }
 

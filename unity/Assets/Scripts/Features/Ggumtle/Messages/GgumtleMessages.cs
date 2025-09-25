@@ -61,20 +61,6 @@ namespace Features.Ggumtle.Messages
         }
     }
 
-    /// <summary>
-    /// 꿈틀이 정화가 완료되었을 때 발행되는 메시지
-    /// </summary>
-    public readonly struct GgumtlePurifiedMessage
-    {
-        public readonly string GgumtleId;
-        public readonly Vector3 Position;
-
-        public GgumtlePurifiedMessage(string ggumtleId, Vector3 position)
-        {
-            GgumtleId = ggumtleId;
-            Position = position;
-        }
-    }
 
     /// <summary>
     /// 홀드 진행률 업데이트 메시지
@@ -163,16 +149,19 @@ namespace Features.Ggumtle.Messages
         }
     }
 
+
     /// <summary>
-    /// 꿈틀이 성불 네트워크 이벤트 메시지
+    /// 꿈틀이 상태 브로드캐스트 네트워크 이벤트 메시지
     /// </summary>
-    public readonly struct GgumtleNirvanaMessage
+    public readonly struct GgumtleStateBroadcastMessage
     {
         public readonly int GgumtleId;
+        public readonly int Status; // 1=buried, 2=digging, 10=emerged, 11=fake, 20=feeding, 30=purified
 
-        public GgumtleNirvanaMessage(int ggumtleId)
+        public GgumtleStateBroadcastMessage(int ggumtleId, int status)
         {
             GgumtleId = ggumtleId;
+            Status = status;
         }
     }
 }

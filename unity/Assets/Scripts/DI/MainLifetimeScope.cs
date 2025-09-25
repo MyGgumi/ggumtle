@@ -65,7 +65,6 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleLeftMessage>(options);
             builder.RegisterMessageBroker<GgumtleStateChangedMessage>(options);
             builder.RegisterMessageBroker<GgumtleDetectedMessage>(options);
-            builder.RegisterMessageBroker<GgumtlePurifiedMessage>(options);
             builder.RegisterMessageBroker<GgumtleHoldProgressMessage>(options);
             builder.RegisterMessageBroker<GgumtleFoodAddedMessage>(options);
 
@@ -93,7 +92,7 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleDiggingDoneMessage>(options);
             builder.RegisterMessageBroker<GgumtleJellyForceQuitMessage>(options);
             builder.RegisterMessageBroker<GgumtleSpawnMessage>(options);
-            builder.RegisterMessageBroker<GgumtleNirvanaMessage>(options);
+            builder.RegisterMessageBroker<GgumtleStateBroadcastMessage>(options);
 
             builder.RegisterMessageBroker<JoystickInputMessage>(options);
             builder.RegisterMessageBroker<JoystickEndMessage>(options);

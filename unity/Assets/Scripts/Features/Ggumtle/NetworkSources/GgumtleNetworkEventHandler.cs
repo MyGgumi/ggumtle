@@ -19,49 +19,99 @@ namespace Features.Ggumtle.NetworkSources
         private static readonly bool _enableDebugLogs = true;
 
         /// <summary>
-        /// 꿈틀이 파기 완료 이벤트 처리
+        /// 꿈틀이 파기 시작 응답 처리
         /// </summary>
-        [CommandHandler(PacketType.DiggingDoneResponse)]
-        public static void DiggingDone(DiggingDoneCommand command, IChannelHandlerContext ctx)
+        [CommandHandler(PacketType.DiggingStartResponse)]
+        public static void DiggingStart(DiggingStartCommand command, IChannelHandlerContext ctx)
         {
             try
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log(
-                        $"[GgumtleNetworkEventHandler] 꿈틀이 파기 완료 이벤트: Id={command.Id}, IsRealGgumtle={command.IsRealGgumtle}"
-                    );
+                    Debug.Log($"[GgumtleNetworkEventHandler] 꿈틀이 파기 시작 응답: Result={command.Result}, Success={command.Success}");
                 }
 
-                // MessagePipeBridge를 통해 이벤트 발행
-                var bridge = Networks.MessagePipeBridge.Instance;
-                if (bridge != null)
-                {
-                    var message = new GgumtleDiggingDoneMessage(command.Id, command.IsRealGgumtle);
-                    bridge.PublishMessage(message);
-
-                    if (_enableDebugLogs)
-                    {
-                        Debug.Log(
-                            "[GgumtleNetworkEventHandler] 파기 완료 메시지 발행 성공 → GgumtleService"
-                        );
-                    }
-                }
-                else
-                {
-                    Debug.LogError("[GgumtleNetworkEventHandler] MessagePipeBridge를 찾을 수 없음!");
-                }
+                // NetworkApi의 pending request 완료
+                var networkApi = GameObject.Find("NetworkApi")?.GetComponent<Networks.NetworkApi>();
+                networkApi?.HandleResponse(command);
             }
             catch (Exception e)
             {
-                Debug.LogError(
-                    $"[GgumtleNetworkEventHandler] 파기 완료 이벤트 처리 실패: {e.Message}"
-                );
+                Debug.LogError($"[GgumtleNetworkEventHandler] 파기 시작 응답 처리 실패: {e.Message}");
             }
         }
 
         /// <summary>
-        /// 젤리 강제 종료 이벤트 처리
+        /// 꿈틀이 파기 중단 응답 처리
+        /// </summary>
+        [CommandHandler(PacketType.DiggingQuitResponse)]
+        public static void DiggingQuit(DiggingQuitCommand command, IChannelHandlerContext ctx)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[GgumtleNetworkEventHandler] 꿈틀이 파기 중단 응답: Result={command.Result}, Success={command.Success}");
+                }
+
+                // NetworkApi의 pending request 완료
+                var networkApi = GameObject.Find("NetworkApi")?.GetComponent<Networks.NetworkApi>();
+                networkApi?.HandleResponse(command);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleNetworkEventHandler] 파기 중단 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 젤리 먹이기 시작 응답 처리
+        /// </summary>
+        [CommandHandler(PacketType.JellyStartResponse)]
+        public static void JellyFeedingStart(JellyStartCommand command, IChannelHandlerContext ctx)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[GgumtleNetworkEventHandler] 젤리 먹이기 시작 응답: Result={command.Result}, Success={command.Success}");
+                }
+
+                // NetworkApi의 pending request 완료
+                var networkApi = GameObject.Find("NetworkApi")?.GetComponent<Networks.NetworkApi>();
+                networkApi?.HandleResponse(command);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleNetworkEventHandler] 젤리 먹이기 시작 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 젤리 먹이기 중단 응답 처리
+        /// </summary>
+        [CommandHandler(PacketType.JellyQuitResponse)]
+        public static void JellyFeedingQuit(JellyQuitCommand command, IChannelHandlerContext ctx)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[GgumtleNetworkEventHandler] 젤리 먹이기 중단 응답: Result={command.Result}, Success={command.Success}, LeftCount={command.LeftJellyCount}");
+                }
+
+                // NetworkApi의 pending request 완료
+                var networkApi = GameObject.Find("NetworkApi")?.GetComponent<Networks.NetworkApi>();
+                networkApi?.HandleResponse(command);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleNetworkEventHandler] 젤리 먹이기 중단 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 젤리 먹이기 강제 종료 이벤트 처리
         /// </summary>
         [CommandHandler(PacketType.JellyForceQuitResponse)]
         public static void JellyForceQuit(JellyForceQuitCommand command, IChannelHandlerContext ctx)
@@ -152,31 +202,27 @@ namespace Features.Ggumtle.NetworkSources
         }
 
         /// <summary>
-        /// 꿈틀이 성불 이벤트 처리
+        /// 꿈틀이 상태 이벤트 처리
         /// </summary>
-        [CommandHandler(PacketType.GgumtleNirvana)]
-        public static void GgumtleNirvana(GgumtleNirvanaCommand command, IChannelHandlerContext ctx)
+        [CommandHandler(PacketType.GgumtleState)]
+        public static void GgumtleState(GgumtleStatusCommand command, IChannelHandlerContext ctx)
         {
             try
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[GgumtleNetworkEventHandler] 꿈틀이 성불 이벤트: Id={command.id}");
+                    Debug.Log($"[GgumtleNetworkEventHandler] 꿈틀이 상태: Id={command.ggumtleId}, State={command.state}");
                 }
 
-                // MessagePipeBridge를 통해 이벤트 발행
+                // 상태 브로드캐스트 메시지 발행
                 var bridge = Networks.MessagePipeBridge.Instance;
                 if (bridge != null)
                 {
-                    var message = new GgumtleNirvanaMessage(command.id);
-                    bridge.PublishMessage(message);
+                    var stateBroadcastMessage = new GgumtleStateBroadcastMessage(command.ggumtleId, (int)command.state);
+                    bridge.PublishMessage(stateBroadcastMessage);
 
                     if (_enableDebugLogs)
-                    {
-                        Debug.Log(
-                            "[GgumtleNetworkEventHandler] 꿈틀이 성불 메시지 발행 성공 → GgumtleService"
-                        );
-                    }
+                        Debug.Log($"[GgumtleNetworkEventHandler] 상태 브로드캐스트 메시지 발행: State={command.state}");
                 }
                 else
                 {
@@ -186,7 +232,7 @@ namespace Features.Ggumtle.NetworkSources
             catch (Exception e)
             {
                 Debug.LogError(
-                    $"[GgumtleNetworkEventHandler] 꿈틀이 성불 이벤트 처리 실패: {e.Message}"
+                    $"[GgumtleNetworkEventHandler] 꿈틀이 상태 이벤트 처리 실패: {e.Message}"
                 );
             }
         }

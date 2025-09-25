@@ -2,6 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using Features.GameInfo.Messages;
 using Features.GameInfo.Models;
+using Features.Ggumtle.Messages;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -30,7 +31,7 @@ namespace Features.GameInfo.Services
         private readonly ReactiveProperty<TimeSpan> _currentTime = new(TimeSpan.Zero);
         private readonly ReactiveProperty<string> _statusMessage = new("");
         private readonly ReactiveProperty<bool> _isTimeWarning = new(false);
-        private readonly ReactiveProperty<int> _ggumtleLevel = new(1);
+        private readonly ReactiveProperty<int> _ggumtleLevel = new(0);
         private readonly ReactiveProperty<float> _ggumtleProgress = new(0f);
         private readonly ReactiveProperty<bool> _isGgumtleComplete = new(false);
 
@@ -50,6 +51,8 @@ namespace Features.GameInfo.Services
         private readonly IPublisher<TimeWarningMessage> _timeWarningPublisher;
         private readonly IPublisher<GameTimeExpiredMessage> _timeExpiredPublisher;
 
+        private readonly ISubscriber<GgumtleStateBroadcastMessage> _ggumtleStateBroadcastSubscriber;
+
         #endregion
 
         #region Constructor
@@ -60,7 +63,8 @@ namespace Features.GameInfo.Services
             IPublisher<GameStatusChangedMessage> statusChangedPublisher,
             IPublisher<GgumtleProgressChangedMessage> progressChangedPublisher,
             IPublisher<TimeWarningMessage> timeWarningPublisher,
-            IPublisher<GameTimeExpiredMessage> timeExpiredPublisher
+            IPublisher<GameTimeExpiredMessage> timeExpiredPublisher,
+            ISubscriber<GgumtleStateBroadcastMessage> ggumtleStateBroadcastSubscriber
         )
         {
             _timeChangedPublisher = timeChangedPublisher;
@@ -68,6 +72,7 @@ namespace Features.GameInfo.Services
             _progressChangedPublisher = progressChangedPublisher;
             _timeWarningPublisher = timeWarningPublisher;
             _timeExpiredPublisher = timeExpiredPublisher;
+            _ggumtleStateBroadcastSubscriber = ggumtleStateBroadcastSubscriber;
 
             Initialize();
         }
@@ -85,6 +90,11 @@ namespace Features.GameInfo.Services
                     (level, progress) => level >= _gameInfoData.maxGgumtleLevel && progress >= 1.0f
                 )
                 .Subscribe(isComplete => _isGgumtleComplete.Value = isComplete)
+                .AddTo(_disposables);
+
+            // 꿈틀이 정화 완료 브로드캐스트 구독
+            _ggumtleStateBroadcastSubscriber
+                .Subscribe(OnGgumtleStateBroadcast)
                 .AddTo(_disposables);
 
             if (_enableDebugLogs)
@@ -214,6 +224,19 @@ namespace Features.GameInfo.Services
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// 꿈틀이 상태 브로드캐스트 처리 - 정화 완료시 카운트 증가
+        /// </summary>
+        private void OnGgumtleStateBroadcast(GgumtleStateBroadcastMessage message)
+        {
+            // status 30 = Disappear (정화 완료)
+            if (message.Status == 30)
+            {
+                IncrementGgumtleLevel();
+                DebugLog($"꿈틀이 정화 완료 - 카운트 증가: {_ggumtleLevel.Value}");
+            }
+        }
 
         private async UniTaskVoid StartTimerAsync()
         {

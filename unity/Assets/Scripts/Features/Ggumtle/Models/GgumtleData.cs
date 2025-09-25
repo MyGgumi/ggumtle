@@ -12,8 +12,10 @@ namespace Features.Ggumtle.Models
         Buried, // 땅에 묻혀있음 (초기 상태)
         Digging, // 파내는 중 (홀드 진행 중)
         Emerging, // 나오는 중 (애니메이션 실행 중, 상호작용 불가)
-        Feeding, // 먹이 주기 가능 상태
+        Emerged, // 나와 있음 (먹이주기 대기 상태)
+        Feeding, // 먹이 주기 중 상태
         Purified, // 정화 완료 (제거됨)
+        Fake, // 짭꿈틀 (이펙트 재생 후 삭제)
     }
 
     /// <summary>

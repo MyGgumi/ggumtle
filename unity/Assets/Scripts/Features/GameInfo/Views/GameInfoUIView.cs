@@ -81,7 +81,9 @@ namespace Features.GameInfo.Views
             _timeLabel = _root.Q<Label>("timeLabel");
             _statusLabel = _root.Q<Label>("statusText");
             _ggumtleArea = _root.Q<VisualElement>("ggumtleArea");
-            _countLabel = _root.Q<Label>("count")?.Q<Label>();
+            // count는 VisualElement이고, 그 안에 Label이 있음
+            var countElement = _root.Q<VisualElement>("count");
+            _countLabel = countElement?.Q<Label>();
 
             // UXML의 하드코딩된 텍스트들 즉시 제거
             if (_timeLabel != null)
@@ -124,7 +126,7 @@ namespace Features.GameInfo.Views
                 _timeLabel.text = "15:00";
             UpdateStatusDisplay("");
             UpdateTimeWarningStyle(false);
-            UpdateGgumtleProgress(1, 0f);
+            UpdateGgumtleProgress(0, 0f);
 
             if (enableDebugLogs)
                 Debug.Log("[GameInfoUIView] UI 초기화 완료");
@@ -209,10 +211,10 @@ namespace Features.GameInfo.Views
 
         private void UpdateGgumtleProgress(int level, float progress)
         {
-            // 카운트 라벨 업데이트
+            // 카운트 라벨 업데이트 (분수 형태로 표시)
             if (_countLabel != null)
             {
-                _countLabel.text = level.ToString();
+                _countLabel.text = $"{level}/3";
             }
 
             // 각 단계별 fill 요소 업데이트

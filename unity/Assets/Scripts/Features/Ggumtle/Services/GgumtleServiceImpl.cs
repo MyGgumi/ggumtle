@@ -21,7 +21,6 @@ namespace Features.Ggumtle.Services
         private readonly IPublisher<GgumtleStateChangedMessage> _stateChangePublisher;
         private readonly IPublisher<GgumtleHoldProgressMessage> _holdProgressPublisher;
         private readonly IPublisher<GgumtleFoodAddedMessage> _foodAddedPublisher;
-        private readonly IPublisher<GgumtlePurifiedMessage> _purifiedPublisher;
         private readonly IPublisher<Features.Notification.Messages.NotificationMessage> _notificationPublisher;
         private readonly IGgumtleNetworkSource _networkSource;
 
@@ -29,7 +28,6 @@ namespace Features.Ggumtle.Services
         private readonly ISubscriber<GgumtleDiggingDoneMessage> _diggingDoneSubscriber;
         private readonly ISubscriber<GgumtleJellyForceQuitMessage> _jellyForceQuitSubscriber;
         private readonly ISubscriber<GgumtleSpawnMessage> _spawnSubscriber;
-        private readonly ISubscriber<GgumtleNirvanaMessage> _nirvanaSubscriber;
 
         #endregion
 
@@ -48,31 +46,26 @@ namespace Features.Ggumtle.Services
             IPublisher<GgumtleStateChangedMessage> stateChangePublisher,
             IPublisher<GgumtleHoldProgressMessage> holdProgressPublisher,
             IPublisher<GgumtleFoodAddedMessage> foodAddedPublisher,
-            IPublisher<GgumtlePurifiedMessage> purifiedPublisher,
             IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher,
             IGgumtleNetworkSource networkSource,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
             ISubscriber<GgumtleJellyForceQuitMessage> jellyForceQuitSubscriber,
-            ISubscriber<GgumtleSpawnMessage> spawnSubscriber,
-            ISubscriber<GgumtleNirvanaMessage> nirvanaSubscriber
+            ISubscriber<GgumtleSpawnMessage> spawnSubscriber
         )
         {
             _stateChangePublisher = stateChangePublisher;
             _holdProgressPublisher = holdProgressPublisher;
             _foodAddedPublisher = foodAddedPublisher;
-            _purifiedPublisher = purifiedPublisher;
             _notificationPublisher = notificationPublisher;
             _networkSource = networkSource;
             _diggingDoneSubscriber = diggingDoneSubscriber;
             _jellyForceQuitSubscriber = jellyForceQuitSubscriber;
             _spawnSubscriber = spawnSubscriber;
-            _nirvanaSubscriber = nirvanaSubscriber;
 
             // 네트워크 이벤트 구독
             _disposables.Add(_diggingDoneSubscriber.Subscribe(OnDiggingDoneReceived));
             _disposables.Add(_jellyForceQuitSubscriber.Subscribe(OnJellyForceQuitReceived));
             _disposables.Add(_spawnSubscriber.Subscribe(OnSpawnReceived));
-            _disposables.Add(_nirvanaSubscriber.Subscribe(OnNirvanaReceived));
 
             DebugLog("[GgumtleServiceImpl] 서비스 초기화 완료");
         }
@@ -315,8 +308,7 @@ namespace Features.Ggumtle.Services
                 new GgumtleStateChangedMessage(ggumtleId, previousState, GgumtleState.Purified)
             );
 
-            // 정화 완료 알림
-            _purifiedPublisher.Publish(new GgumtlePurifiedMessage(ggumtleId, data.position));
+            // 정화 완료 알림 (GgumtleStateBroadcastMessage를 통해 처리됨)
         }
 
         #endregion
@@ -728,18 +720,6 @@ namespace Features.Ggumtle.Services
             }
         }
 
-        private void OnNirvanaReceived(GgumtleNirvanaMessage message)
-        {
-            try
-            {
-                DebugLog($"[GgumtleServiceImpl] 꿈틀이 성불 이벤트 수신: Id={message.GgumtleId}");
-                HandleGgumtleNirvana(message.GgumtleId);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[GgumtleServiceImpl] 꿈틀이 성불 이벤트 처리 실패: {e.Message}");
-            }
-        }
 
         #endregion
 

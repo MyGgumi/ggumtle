@@ -219,21 +219,21 @@ namespace Features.Room.NetworkSources
         }
 
         /// <summary>
-        /// 꿈틀이 성불 이벤트 처리
+        /// 꿈틀이 상태 이벤트 처리
         /// </summary>
-        [CommandHandler(PacketType.GgumtleNirvana)]
-        public static void GgumtleNirvana(GgumtleNirvanaCommand command, IChannelHandlerContext ctx)
+        [CommandHandler(PacketType.GgumtleState)]
+        public static void GgumtleState(GgumtleStatusCommand command, IChannelHandlerContext ctx)
         {
             try
             {
-                Debug.Log($"[RoomNetworkEventHandler] 꿈틀이 성불: Id={command.id}");
+                Debug.Log($"[RoomNetworkEventHandler] 꿈틀이 상태: Id={command.ggumtleId}, State={command.state}");
 
                 // TODO: RoomService로 처리 위임 필요
-                // _roomService.RemoveGgumtle(command.id);
+                // _roomService.RemoveGgumtle(command.ggumtleId);
             }
             catch (Exception e)
             {
-                Debug.LogError($"[RoomNetworkEventHandler] 꿈틀이 성불 처리 실패: {e.Message}");
+                Debug.LogError($"[RoomNetworkEventHandler] 꿈틀이 상태 처리 실패: {e.Message}");
             }
         }
 

@@ -21,7 +21,7 @@ interface UnitySendManager {
     fun changeGrowthCharacterTypePrevious()
     fun playEnhanceSuccessEffect()
     fun playEnhanceFailEffect()
-    fun goToInGame(partyId: String, accessToken: String)
+    fun goToInGame(accessToken: String, roomId: Int, host: String, port: Int)
     fun goToOutGame()
 
 }

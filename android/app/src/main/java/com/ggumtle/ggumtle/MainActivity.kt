@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.widget.FrameLayout
@@ -50,6 +51,12 @@ class MainActivity : UnityPlayerGameActivity() {
 
     // Unity SurfaceView 캐시
     private var unitySurfaceViewCache: SurfaceView? = null
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // 구성 변경 시에도 Activity 재생성하지 않음
+        Log.d("MainActivity", "Configuration changed but Activity not recreated")
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -126,7 +133,7 @@ class MainActivity : UnityPlayerGameActivity() {
                 UnityPlayer.UnitySendMessage(
                     message.target,
                     message.methodName,
-                    message.params.joinToString()
+                    message.params.joinToString(",")
                 )
             }
         }
@@ -155,6 +162,13 @@ class MainActivity : UnityPlayerGameActivity() {
         val characterType = parameters.getOrNull(0) ?: ""
         lifecycleScope.launch {
             unityStartupObserveManager.onCharacterTypeChanged(characterType)
+        }
+    }
+
+    fun onInGameLoadingStart(parameters: Array<String>) {
+        Log.d("MainActivity", "onInGameLoadingStart 호출됨, 파라미터: ${parameters.contentToString()}")
+        lifecycleScope.launch {
+            unityStartupObserveManager.goToInGame()
         }
     }
 

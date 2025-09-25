@@ -43,7 +43,7 @@ enum class UnityMethod(val value: String) {
     // MAIN_SCENE_MANAGER
 
     // GoToInGameWithData(String partyId, String accessToken) : 인게임으로 전환, partyid 엑세스토큰 넘김
-    GO_TO_IN_GAME_WITH_DATA("GoToInGameWithData"),
+    START_GAME_COMMAND_FROM_ANDROID("StartGameCommandFromAndroid"),
 
     // IN_GAME_SCENE_MANAGER
 

@@ -509,7 +509,8 @@ fun DailyMissionDialogPreview() {
             description = "AR에서 몽깅이와 사진을 찍어보세요",
             requiredCount = 1,
             doneCount = 1,
-            state = "SUCCESS"
+            state = "SUCCESS",
+            missionId = 1
         ),
         Mission(
             memberMissionId = 2L,
@@ -517,7 +518,8 @@ fun DailyMissionDialogPreview() {
             description = "악몽에서 성공적으로 탈출하세요",
             requiredCount = 1,
             doneCount = 1,
-            state = "AFTER_REWARD"
+            state = "AFTER_REWARD",
+            missionId = 1
         ),
         Mission(
             memberMissionId = 3L,
@@ -525,7 +527,8 @@ fun DailyMissionDialogPreview() {
             description = "친구에게 좋은 꿈을 선물하세요",
             requiredCount = 1,
             doneCount = 0,
-            state = "BEFORE_SUCCESS"
+            state = "BEFORE_SUCCESS",
+            missionId = 1
         ),
         Mission(
             memberMissionId = 4L,
@@ -533,7 +536,8 @@ fun DailyMissionDialogPreview() {
             description = "몽깅이를 3번 쓰다듬어 주세요",
             requiredCount = 3,
             doneCount = 1,
-            state = "BEFORE_SUCCESS"
+            state = "BEFORE_SUCCESS",
+            missionId = 1
         ),
         Mission(
             memberMissionId = 5L,
@@ -541,7 +545,8 @@ fun DailyMissionDialogPreview() {
             description = "몽깅이에게 맛있는 밥을 주세요",
             requiredCount = 1,
             doneCount = 1,
-            state = "SUCCESS"
+            state = "SUCCESS",
+            missionId = 1
         )
     )
 

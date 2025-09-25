@@ -107,19 +107,15 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
         )
     }
 
-    override fun goToInGame(partyId: String, accessToken: String) {
+    override fun goToInGame(accessToken: String, roomId: Int, host: String, port: Int) {
         sendToUnity(
-            UnityTarget.MAIN_SCENE_MANAGER.value,
-            UnityMethod.GO_TO_IN_GAME_WITH_DATA.value,
-            listOf(partyId, accessToken)
+            UnityTarget.LOBBY_SCENE_MANAGER.value,
+            UnityMethod.START_GAME_COMMAND_FROM_ANDROID.value,
+            listOf(accessToken, roomId, host, port)
         )
     }
 
     override fun goToOutGame() {
-        sendToUnity(
-            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-            UnityMethod.EXIT_TO_OUT_GAME.value
-        )
     }
 
     override fun sendToUnity(target: String, methodName: String, params: List<Any>) {

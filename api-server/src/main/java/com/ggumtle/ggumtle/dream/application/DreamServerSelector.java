@@ -30,7 +30,7 @@ public class DreamServerSelector {
 
     @Autowired
     protected DreamServerSelector(
-            @Value("${PROMETHEUS}") String url,
+            @Value("${prometheus.url}") String url,
             ObjectMapper objectMapper,
             DreamServerRepository dreamServerRepository,
             RedisTemplate<String, OptimalServer> optimalServerRedisTemplate) {

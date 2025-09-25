@@ -44,6 +44,8 @@ jwt:
     secret: ${ACCESS_SECRET}
     header: ${ACCESS_NAME}
 
+prometheus:
+  url: ${PROMETHEUS}
 
 logging:
   level:

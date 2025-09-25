@@ -163,7 +163,7 @@ public class DreamService {
         dreamManager.attackWithItem(command, session);
     }
 
-    @PacketCommandHandler(type = ReceivePacketType.ATTACK_WITH_ITEM)
+    @PacketCommandHandler(type = ReceivePacketType.USE_FIELD_ITEM)
     public void handleUseFieldItem(UseFieldItemCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 

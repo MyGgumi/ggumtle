@@ -15,7 +15,8 @@ import org.springframework.stereotype.Component;
 public class TestRunner {
     private final MoveTester moveTester;
     private final DigUpTester digUpTester;
-
+    private final MyChestTester myChestTester;
+    
     @Value("${TEST_ID}")
     private int testId;
 
@@ -25,6 +26,8 @@ public class TestRunner {
             case 1: moveTester.run(); break;
 
             case 2: digUpTester.run(); break;
+
+            case 3: myChestTester.run(); break;
 
             default: log.error("Test ID {}에 해당하는 테스트를 찾을 수 없습니다", testId);
         }

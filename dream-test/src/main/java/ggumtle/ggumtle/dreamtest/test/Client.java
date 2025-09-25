@@ -184,8 +184,8 @@ public class Client {
         send(packet);
     }
 
-    public void sendPutItemMessage(int boxId, int index) {
-        byte[] data = ByteBuffer.allocate(8).putInt(boxId).putInt(index).array();
+    public void sendPutItemMessage(int boxId, int itemId) {
+        byte[] data = ByteBuffer.allocate(8).putInt(boxId).putInt(itemId).array();
         ReceivePacketType receivePacketType = ReceivePacketType.PUT_ITEM_TO_BOX;
         PacketHeader packetHeader = new PacketHeader(receivePacketType.value, data.length, System.currentTimeMillis());
         Packet packet = new Packet(packetHeader, data);

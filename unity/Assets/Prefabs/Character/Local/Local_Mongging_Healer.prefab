@@ -137,7 +137,7 @@ MonoBehaviour:
   interactionLayerMask:
     serializedVersion: 2
     m_Bits: 128
-  enableDebugLogs: 1
+  enableDebugLogs: 0
   showGizmosInEditor: 1
 --- !u!54 &4694739611131235458
 Rigidbody:
@@ -10212,7 +10212,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1609257566296013356}
   - component: {fileID: 7919259365994777527}
-  - component: {fileID: 1612137333599180626}
+  - component: {fileID: -1567495749905756551}
+  - component: {fileID: 6162130015059647955}
   m_Layer: 3
   m_Name: Local_Mongging_Healer
   m_TagString: Player
@@ -10262,7 +10263,7 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 1, z: 0}
---- !u!114 &1612137333599180626
+--- !u!114 &-1567495749905756551
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10271,11 +10272,47 @@ MonoBehaviour:
   m_GameObject: {fileID: 2197908680002170458}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad722af3a19f6934a9bdbf650a4f97b7, type: 3}
+  m_Script: {fileID: 11500000, guid: c172256b04cd26b49b27be0e9f8c1e83, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoSetup: 1
-  setupOnAwake: 1
+  MoveSpeed: 2.5
+  SprintSpeed: 5.335
+  RotationSmoothTime: 0.12
+  SpeedChangeRate: 10
+  JumpHeight: 1.2
+  Gravity: -15
+  JumpTimeout: 0.3
+  FallTimeout: 0.15
+  Grounded: 1
+  GroundedOffset: -0.14
+  GroundedRadius: 0.28
+  GroundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  useFreeLookCamera: 1
+  CameraSensitivity: 0.05
+  CameraInputSmoothing: 0.1
+  InvertY: 1
+  canMove: 1
+  enableDebugLogs: 0
+  _freeLookCamera: {fileID: 0}
+--- !u!114 &6162130015059647955
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2197908680002170458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2c65b0e06d906b4b8c643836ef0ec6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxHp: 100
+  _currentHp: 100
+  _healSpeed: 10
+  _workSpeed: 10
+  _currentStatus: 0
   _enableDebugLogs: 0
 --- !u!1 &2230277772371151514
 GameObject:

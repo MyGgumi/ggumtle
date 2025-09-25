@@ -28,6 +28,8 @@ using Features.MobileControls.Services;
 using Features.MobileControls.Testing;
 using Features.MobileControls.ViewModels;
 using Features.Notification.Messages;
+using Features.Player.NetworkSources;
+using Features.Player.Services;
 using Features.Notification.Services;
 using Features.Notification.ViewModels;
 using Features.Player.Messages;
@@ -175,6 +177,9 @@ namespace DI
 
             // Player Messages
             builder.RegisterMessageBroker<PlayerRoleChangedMessage>(options);
+            builder.RegisterMessageBroker<PlayerMoveResponseMessage>(options);
+            builder.RegisterMessageBroker<PlayerJumpMessage>(options);
+            builder.RegisterMessageBroker<PlayerAnimationStateMessage>(options);
 
             // PlayerManagerService Messages
             builder.RegisterMessageBroker<Features.Player.Services.PlayerStateChangedMessage>(options);
@@ -225,6 +230,7 @@ namespace DI
                 Features.Chest.NetworkSources.ChestNetworkSource
             >(Lifetime.Scoped);
             builder.Register<IMainGameNetworkSource, MainGameNetworkSource>(Lifetime.Scoped);
+            builder.Register<IPlayerNetworkSource, PlayerNetworkSource>(Lifetime.Scoped);
 
             // Main 씬 전용 NetworkEventHandlers 등록
             builder.Register<GgumtleNetworkEventHandler>(Lifetime.Scoped);

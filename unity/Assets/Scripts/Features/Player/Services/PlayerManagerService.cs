@@ -7,6 +7,7 @@ using Features.PlayerList.Models;
 using Features.PlayerList.Services;
 using Features.Player.Systems;
 using Features.Player.Views;
+using Features.Player.Messages;
 using VContainer;
 using R3;
 using MessagePipe;
@@ -22,11 +23,21 @@ namespace Features.Player.Services
     {
         private readonly IPlayerListService _playerListService;
         private readonly IPublisher<PlayerStateChangedMessage> _stateChangePublisher;
+        private readonly ISubscriber<PlayerMoveResponseMessage> _playerMoveSubscriber;
+        private readonly ISubscriber<PlayerJumpMessage> _playerJumpSubscriber;
+        private readonly ISubscriber<PlayerAnimationStateMessage> _playerAnimationSubscriber;
+        private IDisposable _playerMoveSubscription;
+        private IDisposable _playerJumpSubscription;
+        private IDisposable _playerAnimationSubscription;
 
         // 플레이어 데이터 저장소
         private readonly Dictionary<long, PlayerPacket> _playerPackets = new();
         private readonly Dictionary<long, GameObject> _playerObjects = new();
         private readonly Dictionary<long, PlayerInfo> _playerInfos = new();
+
+        // 서버 ID → UI 슬롯 매핑 (0,1,2,3 → 1,2,3,4)
+        private readonly Dictionary<long, int> _serverIdToUiSlot = new();
+        private int _nextUiSlot = 1; // UI 슬롯은 1부터 시작
 
         // Observable Properties
         private readonly ReactiveProperty<int> _totalPlayersReactive = new(0);
@@ -46,14 +57,25 @@ namespace Features.Player.Services
         [Inject]
         public PlayerManagerService(
             IPlayerListService playerListService,
-            IPublisher<PlayerStateChangedMessage> stateChangePublisher)
+            IPublisher<PlayerStateChangedMessage> stateChangePublisher,
+            ISubscriber<PlayerMoveResponseMessage> playerMoveSubscriber,
+            ISubscriber<PlayerJumpMessage> playerJumpSubscriber,
+            ISubscriber<PlayerAnimationStateMessage> playerAnimationSubscriber)
         {
             _playerListService = playerListService;
             _stateChangePublisher = stateChangePublisher;
+            _playerMoveSubscriber = playerMoveSubscriber;
+            _playerJumpSubscriber = playerJumpSubscriber;
+            _playerAnimationSubscriber = playerAnimationSubscriber;
+
+            // 메시지 구독
+            _playerMoveSubscription = _playerMoveSubscriber.Subscribe(OnPlayerMoveReceived);
+            _playerJumpSubscription = _playerJumpSubscriber.Subscribe(OnPlayerJumpReceived);
+            _playerAnimationSubscription = _playerAnimationSubscriber.Subscribe(OnPlayerAnimationReceived);
 
             if (_enableDebugLogs)
             {
-                Debug.Log("[PlayerManagerService] 서비스 초기화 완료");
+                Debug.Log("[PlayerManagerService] 서비스 초기화 완료 - 모든 플레이어 메시지 구독 시작");
             }
         }
 
@@ -124,10 +146,10 @@ namespace Features.Player.Services
             _playerInfos.Remove(playerId);
 
             // PlayerList UI에서도 제거 (오프라인으로 설정)
-            int uiPlayerId = (int)playerId;
-            if (uiPlayerId >= 1 && uiPlayerId <= 4)
+            if (_serverIdToUiSlot.TryGetValue(playerId, out int uiSlot))
             {
-                _playerListService.SetPlayerOnlineStatus(uiPlayerId, false);
+                _playerListService.SetPlayerOnlineStatus(uiSlot, false);
+                ReleaseUiSlot(playerId); // 슬롯 해제
             }
 
             // Reactive Property 업데이트
@@ -158,10 +180,9 @@ namespace Features.Player.Services
             _playerInfos[playerId].CurrentStatus = newStatus;
 
             // PlayerList UI 동기화
-            int uiPlayerId = (int)playerId;
-            if (uiPlayerId >= 1 && uiPlayerId <= 4)
+            if (_serverIdToUiSlot.TryGetValue(playerId, out int uiSlot))
             {
-                _playerListService.SetPlayerStatus(uiPlayerId, newStatus);
+                _playerListService.SetPlayerStatus(uiSlot, newStatus);
             }
 
             // 메시지 발행
@@ -184,13 +205,13 @@ namespace Features.Player.Services
         /// </summary>
         private void SyncToPlayerListUI(PlayerPacket packet)
         {
-            int uiPlayerId = (int)packet.Id;
+            // 서버 ID → UI 슬롯 매핑
+            int uiSlot = GetOrAssignUiSlot(packet.Id);
 
-            // PlayerList는 1-4 ID만 지원
-            if (uiPlayerId < 1 || uiPlayerId > 4)
+            if (uiSlot == -1)
             {
                 if (_enableDebugLogs)
-                    Debug.Log($"[PlayerManagerService] PlayerList UI 범위 외 ID: {packet.Id}");
+                    Debug.Log($"[PlayerManagerService] UI 슬롯 할당 실패: 서버ID={packet.Id}");
                 return;
             }
 
@@ -198,7 +219,7 @@ namespace Features.Player.Services
             string colorTheme = GetColorTheme(packet);
 
             _playerListService.UpdatePlayer(
-                uiPlayerId,
+                uiSlot,
                 packet.NickName,
                 colorTheme,
                 "default",
@@ -208,7 +229,7 @@ namespace Features.Player.Services
 
             if (_enableDebugLogs)
             {
-                Debug.Log($"[PlayerManagerService] PlayerList UI 동기화: ID={uiPlayerId}, 닉네임={packet.NickName}, 색상={colorTheme}");
+                Debug.Log($"[PlayerManagerService] PlayerList UI 동기화: 서버ID={packet.Id} → UI슬롯={uiSlot}, 닉네임={packet.NickName}, 색상={colorTheme}");
             }
         }
 
@@ -340,10 +361,269 @@ namespace Features.Player.Services
             return _playerInfos.Values.Where(p => p.IsMongging == isMongging).ToList();
         }
 
+        /// <summary>
+        /// 원격 플레이어의 이동 정보 업데이트
+        /// </summary>
+        public bool UpdateRemotePlayerTransform(long playerId, Vector3 position, Vector3 direction, bool isMoving, float speed)
+        {
+            var playerObject = GetPlayerObject(playerId);
+            if (playerObject == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] 원격 플레이어 GameObject를 찾을 수 없습니다: ID={playerId}");
+                }
+                return false;
+            }
+
+            // RemotePlayerGameObject 찾기
+            var remotePlayerGameObject = playerObject.GetComponent<Features.Player.Views.RemotePlayerGameObject>();
+            if (remotePlayerGameObject == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] RemotePlayerGameObject 컴포넌트를 찾을 수 없습니다: ID={playerId}");
+                }
+                return false;
+            }
+
+            // 네트워크 이동 정보 업데이트 (direction 사용)
+            remotePlayerGameObject.UpdateNetworkTransform(position, direction, isMoving, speed);
+
+            if (_enableDebugLogs && Time.frameCount % 300 == 0) // 5초마다 로그
+            {
+                Debug.Log($"[PlayerManagerService] 원격 플레이어 이동 업데이트: ID={playerId}, Position={position}");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 원격 플레이어의 점프 정보 업데이트
+        /// </summary>
+        public bool UpdateRemotePlayerJump(long playerId, bool isJumping)
+        {
+            var playerObject = GetPlayerObject(playerId);
+            if (playerObject == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] 원격 플레이어 GameObject를 찾을 수 없습니다: ID={playerId}");
+                }
+                return false;
+            }
+
+            var remotePlayerGameObject = playerObject.GetComponent<Features.Player.Views.RemotePlayerGameObject>();
+            if (remotePlayerGameObject == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] RemotePlayerGameObject 컴포넌트를 찾을 수 없습니다: ID={playerId}");
+                }
+                return false;
+            }
+
+            remotePlayerGameObject.UpdateNetworkJump(isJumping);
+
+            if (_enableDebugLogs)
+            {
+                Debug.Log($"[PlayerManagerService] 원격 플레이어 점프 업데이트: ID={playerId}, IsJumping={isJumping}");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// 원격 플레이어의 애니메이션 트리거
+        /// </summary>
+        public bool TriggerRemotePlayerAnimation(long playerId, string triggerName)
+        {
+            var playerObject = GetPlayerObject(playerId);
+            if (playerObject == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] 원격 플레이어 GameObject를 찾을 수 없습니다: ID={playerId}");
+                }
+                return false;
+            }
+
+            var remotePlayerGameObject = playerObject.GetComponent<Features.Player.Views.RemotePlayerGameObject>();
+            if (remotePlayerGameObject == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] RemotePlayerGameObject 컴포넌트를 찾을 수 없습니다: ID={playerId}");
+                }
+                return false;
+            }
+
+            remotePlayerGameObject.TriggerAnimation(triggerName);
+
+            if (_enableDebugLogs)
+            {
+                Debug.Log($"[PlayerManagerService] 원격 플레이어 애니메이션 트리거: ID={playerId}, Animation={triggerName}");
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// PlayerMoveResponseMessage 수신 시 처리
+        /// </summary>
+        private void OnPlayerMoveReceived(PlayerMoveResponseMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerManagerService] 플레이어 이동 메시지 수신: ID={message.playerId}, Position={message.position}");
+                }
+
+                // 로컬 플레이어 메시지는 무시 (로컬 플레이어는 RemotePlayerGameObject가 아님)
+                if (IsLocalPlayer(message.playerId))
+                {
+                    if (_enableDebugLogs)
+                    {
+                        Debug.Log($"[PlayerManagerService] 로컬 플레이어 메시지 무시: ID={message.playerId}");
+                    }
+                    return;
+                }
+
+                // UpdateRemotePlayerTransform 메서드 호출
+                var success = UpdateRemotePlayerTransform(
+                    message.playerId,
+                    message.position,
+                    message.direction, // rotation에서 direction으로 변경
+                    message.isMoving,
+                    message.speed
+                );
+
+                if (!success && _enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] 플레이어 이동 업데이트 실패: ID={message.playerId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[PlayerManagerService] 플레이어 이동 메시지 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 로컬 플레이어인지 확인
+        /// </summary>
+        private bool IsLocalPlayer(long playerId)
+        {
+            if (!_playerInfos.TryGetValue(playerId, out var playerInfo))
+            {
+                return false;
+            }
+
+            return playerInfo.IsMine;
+        }
+
+        /// <summary>
+        /// 서버 ID에 대한 UI 슬롯 할당 또는 조회
+        /// </summary>
+        private int GetOrAssignUiSlot(long serverId)
+        {
+            // 이미 할당된 슬롯이 있으면 반환
+            if (_serverIdToUiSlot.TryGetValue(serverId, out int existingSlot))
+            {
+                return existingSlot;
+            }
+
+            // 새 슬롯 할당 (최대 4개 슬롯)
+            if (_nextUiSlot <= 4)
+            {
+                int assignedSlot = _nextUiSlot++;
+                _serverIdToUiSlot[serverId] = assignedSlot;
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerManagerService] UI 슬롯 할당: 서버ID={serverId} → UI슬롯={assignedSlot}");
+                }
+
+                return assignedSlot;
+            }
+
+            // 슬롯 부족 시 -1 반환
+            Debug.LogWarning($"[PlayerManagerService] UI 슬롯 부족: 서버ID={serverId}");
+            return -1;
+        }
+
+        /// <summary>
+        /// 서버 ID의 UI 슬롯 해제
+        /// </summary>
+        private void ReleaseUiSlot(long serverId)
+        {
+            if (_serverIdToUiSlot.Remove(serverId))
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerManagerService] UI 슬롯 해제: 서버ID={serverId}");
+                }
+            }
+        }
+
+        /// <summary>
+        /// PlayerJumpMessage 수신 시 처리
+        /// </summary>
+        private void OnPlayerJumpReceived(PlayerJumpMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerManagerService] 플레이어 점프 메시지 수신: ID={message.playerId}, IsJumping={message.isJumping}");
+                }
+
+                var success = UpdateRemotePlayerJump(message.playerId, message.isJumping);
+
+                if (!success && _enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] 플레이어 점프 업데이트 실패: ID={message.playerId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[PlayerManagerService] 플레이어 점프 메시지 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// PlayerAnimationStateMessage 수신 시 처리
+        /// </summary>
+        private void OnPlayerAnimationReceived(PlayerAnimationStateMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerManagerService] 플레이어 애니메이션 메시지 수신: ID={message.playerId}, State={message.animationState}");
+                }
+
+                var success = TriggerRemotePlayerAnimation(message.playerId, message.animationState);
+
+                if (!success && _enableDebugLogs)
+                {
+                    Debug.LogWarning($"[PlayerManagerService] 플레이어 애니메이션 업데이트 실패: ID={message.playerId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[PlayerManagerService] 플레이어 애니메이션 메시지 처리 실패: {e.Message}");
+            }
+        }
+
         public void Dispose()
         {
             _totalPlayersReactive?.Dispose();
             _alivePlayersReactive?.Dispose();
+            _playerMoveSubscription?.Dispose();
+            _playerJumpSubscription?.Dispose();
+            _playerAnimationSubscription?.Dispose();
 
             _playerPackets.Clear();
             _playerObjects.Clear();

@@ -2,6 +2,7 @@ using Features.Player.Views;
 using Features.Player.Systems;
 using Networks.Rooms.Domains;
 using UnityEngine;
+using VContainer;
 
 namespace Player
 {
@@ -28,7 +29,7 @@ namespace Player
 
         [Header("Debug Settings")]
         [SerializeField]
-        private bool _enableDebugLogs = false;
+        private bool _enableDebugLogs = true; // 디버깅을 위해 임시로 활성화
 
         void Awake()
         {
@@ -139,6 +140,10 @@ namespace Player
                 {
                     var playerGameObject = gameObject.AddComponent<PlayerGameObject>();
                     playerGameObject.GroundLayers = LayerMask.GetMask("Default"); // GroundLayer를 Default로 설정
+
+                    // VContainer 수동 주입
+                    TryInjectPlayerGameObject(playerGameObject);
+
                     if (_enableDebugLogs)
                         Debug.Log("[PlayerSetup] PlayerGameObject (Local) 추가 완료, GroundLayers=Default");
                 }
@@ -211,18 +216,13 @@ namespace Player
         /// </summary>
         private void ApplyPacketData(PlayerPacket packet)
         {
-            // 서버 속도를 Unity 속도로 변환
-            float convertedSpeed = packet.MoveSpeed * SERVER_SPEED_TO_UNITY_SPEED;
-
             if (packet.IsMine)
             {
                 // 로컬 플레이어: PlayerGameObject 설정
                 var playerGameObject = GetComponent<PlayerGameObject>();
                 if (playerGameObject != null)
                 {
-                    playerGameObject.MoveSpeed = convertedSpeed;
-                    if (_enableDebugLogs)
-                        Debug.Log($"[PlayerSetup] PlayerGameObject 속도 설정: 서버={packet.MoveSpeed} → Unity={convertedSpeed}");
+                    playerGameObject.SetServerSpeed(packet.MoveSpeed);
                 }
             }
             else
@@ -293,6 +293,58 @@ namespace Player
             Debug.Log($"  - MongdungSystem: {mongdungSystem != null}");
             Debug.Log($"  - Animator: {animator != null}");
             Debug.Log($"  - Tag: {gameObject.tag}");
+        }
+
+        /// <summary>
+        /// VContainer를 통해 PlayerGameObject에 수동으로 의존성 주입
+        /// </summary>
+        private void TryInjectPlayerGameObject(PlayerGameObject playerGameObject)
+        {
+            try
+            {
+                Debug.Log($"[PlayerSetup] VContainer 수동 주입 시도 시작 - GameObject: {gameObject.name}");
+
+                // MainLifetimeScope 찾기 (여러 방법으로 시도)
+                var mainLifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
+
+                if (mainLifetimeScope == null)
+                {
+                    // 다른 방법으로 찾기
+                    var allLifetimeScopes = FindObjectsByType<DI.MainLifetimeScope>(FindObjectsSortMode.None);
+                    if (allLifetimeScopes != null && allLifetimeScopes.Length > 0)
+                    {
+                        mainLifetimeScope = allLifetimeScopes[0];
+                        Debug.Log($"[PlayerSetup] MainLifetimeScope를 배열 검색으로 찾음: {allLifetimeScopes.Length}개 중 첫 번째 사용");
+                    }
+                }
+
+                if (mainLifetimeScope != null && mainLifetimeScope.Container != null)
+                {
+                    // VContainer를 통해 수동 주입
+                    mainLifetimeScope.Container.Inject(playerGameObject);
+
+                    Debug.Log($"[PlayerSetup] ✅ PlayerGameObject에 VContainer 수동 주입 완료 - GameObject: {gameObject.name}");
+
+                    // 주입 결과 검증
+                    var networkSourceField = typeof(PlayerGameObject).GetField("_playerNetworkSource",
+                        System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+                    if (networkSourceField != null)
+                    {
+                        var networkSource = networkSourceField.GetValue(playerGameObject);
+                        Debug.Log($"[PlayerSetup] 주입 검증: PlayerNetworkSource = {networkSource != null}");
+                    }
+                }
+                else
+                {
+                    Debug.LogError($"[PlayerSetup] ❌ MainLifetimeScope를 찾을 수 없어 수동 주입 실패 - GameObject: {gameObject.name}");
+                    Debug.LogError($"[PlayerSetup] MainLifetimeScope = {mainLifetimeScope}, Container = {mainLifetimeScope?.Container}");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[PlayerSetup] ❌ VContainer 수동 주입 실패 - GameObject: {gameObject.name}, Error: {e.Message}");
+                Debug.LogError($"[PlayerSetup] StackTrace: {e.StackTrace}");
+            }
         }
 
         [ContextMenu("Check Player Status")]

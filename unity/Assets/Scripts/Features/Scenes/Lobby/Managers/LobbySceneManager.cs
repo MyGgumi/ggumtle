@@ -54,6 +54,7 @@ namespace Features.Scenes.Lobby.Managers
         private readonly CompositeDisposable _disposables = new();
         private readonly System.Collections.Generic.List<System.IDisposable> _messageDisposables =
             new();
+        private System.Threading.CancellationTokenSource _cancellationTokenSource;
 
         [Inject]
         public void Construct(
@@ -84,6 +85,9 @@ namespace Features.Scenes.Lobby.Managers
         {
             Debug.Log("[LobbySceneManager] 로비 씬 시작");
 
+            // CancellationTokenSource 초기화
+            _cancellationTokenSource = new System.Threading.CancellationTokenSource();
+
             // UI 초기화
             InitializeUI();
 
@@ -109,6 +113,10 @@ namespace Features.Scenes.Lobby.Managers
 
         void OnDestroy()
         {
+            // 비동기 작업 취소
+            _cancellationTokenSource?.Cancel();
+            _cancellationTokenSource?.Dispose();
+
             // R3 구독 해제
             _disposables.Dispose();
 
@@ -118,6 +126,8 @@ namespace Features.Scenes.Lobby.Managers
                 disposable.Dispose();
             }
             _messageDisposables.Clear();
+
+            Debug.Log("[LobbySceneManager] 정리 완료 - 모든 비동기 작업이 취소되었습니다.");
         }
 
         /// <summary>
@@ -279,32 +289,50 @@ namespace Features.Scenes.Lobby.Managers
             const int checkInterval = 100; // 100ms마다 체크
             int elapsedTime = 0;
 
-            while (elapsedTime < maxWaitTime)
+            try
             {
-                var roomStorage = RoomStorage.Instance;
-                if (roomStorage?.HasReceivedNewRoomData() == true)
+                while (elapsedTime < maxWaitTime)
                 {
-                    Debug.Log("[LobbySceneManager] Room 초기화 완료! 로딩 씬으로 전환");
-                    PublishUIState(LobbyUIStateMessage.Ready("맵과 플레이어 데이터 수신 완료! 로딩 중..."));
-                    OnRoomJoinedSuccessfully();
-                    return;
+                    // CancellationToken 체크
+                    if (_cancellationTokenSource?.Token.IsCancellationRequested == true)
+                    {
+                        Debug.Log("[LobbySceneManager] Room 초기화 대기가 취소되었습니다.");
+                        return;
+                    }
+
+                    var roomStorage = RoomStorage.Instance;
+                    if (roomStorage?.HasReceivedNewRoomData() == true)
+                    {
+                        Debug.Log("[LobbySceneManager] Room 초기화 완료! 로딩 씬으로 전환");
+                        PublishUIState(LobbyUIStateMessage.Ready("맵과 플레이어 데이터 수신 완료! 로딩 중..."));
+                        OnRoomJoinedSuccessfully();
+                        return;
+                    }
+
+                    await System.Threading.Tasks.Task.Delay(checkInterval, _cancellationTokenSource?.Token ?? default);
+                    elapsedTime += checkInterval;
+
+                    // 중간 상태 업데이트
+                    if (elapsedTime % 1000 == 0)
+                    {
+                        int remainingSeconds = (maxWaitTime - elapsedTime) / 1000;
+                        PublishUIState(LobbyUIStateMessage.Connecting($"맵과 플레이어 데이터 대기 중... ({remainingSeconds}초 남음)"));
+                        Debug.Log($"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음, HasReceivedNewRoomData: {roomStorage?.HasReceivedNewRoomData() ?? false}");
+                    }
                 }
 
-                await System.Threading.Tasks.Task.Delay(checkInterval);
-                elapsedTime += checkInterval;
-
-                // 중간 상태 업데이트
-                if (elapsedTime % 1000 == 0)
-                {
-                    int remainingSeconds = (maxWaitTime - elapsedTime) / 1000;
-                    PublishUIState(LobbyUIStateMessage.Connecting($"맵과 플레이어 데이터 대기 중... ({remainingSeconds}초 남음)"));
-                    Debug.Log($"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음, HasReceivedNewRoomData: {roomStorage?.HasReceivedNewRoomData() ?? false}");
-                }
+                // 타임아웃
+                Debug.LogError("[LobbySceneManager] Room 초기화 타임아웃!");
+                PublishUIState(LobbyUIStateMessage.Error("서버로부터 게임 데이터를 받는데 실패했습니다 (타임아웃)"));
             }
-
-            // 타임아웃
-            Debug.LogError("[LobbySceneManager] Room 초기화 타임아웃!");
-            PublishUIState(LobbyUIStateMessage.Error("서버로부터 게임 데이터를 받는데 실패했습니다 (타임아웃)"));
+            catch (System.OperationCanceledException)
+            {
+                Debug.Log("[LobbySceneManager] Room 초기화 대기가 취소되었습니다.");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[LobbySceneManager] Room 초기화 대기 중 오류: {e.Message}");
+            }
         }
 
         /// <summary>

@@ -25095,7 +25095,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4613722994468228716}
   - component: {fileID: 8958555568053254617}
-  - component: {fileID: 6287329779866868127}
+  - component: {fileID: 734954636650283088}
+  - component: {fileID: -5379348639785867065}
   m_Layer: 3
   m_Name: Local_Mongdung
   m_TagString: Player
@@ -25144,7 +25145,7 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0
   m_Center: {x: 0, y: 1.03, z: 0}
---- !u!114 &6287329779866868127
+--- !u!114 &734954636650283088
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -25153,12 +25154,48 @@ MonoBehaviour:
   m_GameObject: {fileID: 6083004312846073984}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad722af3a19f6934a9bdbf650a4f97b7, type: 3}
+  m_Script: {fileID: 11500000, guid: f7c3947b06253654da34d697505a25ce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoSetup: 1
-  setupOnAwake: 1
+  _moveSpeed: 10
+  _workSpeed: 10
+  _currentStatus: 0
+  _catchRange: 2
+  _specialAbilityCooldown: 10
   _enableDebugLogs: 0
+--- !u!114 &-5379348639785867065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6083004312846073984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c172256b04cd26b49b27be0e9f8c1e83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  MoveSpeed: 2.5
+  SprintSpeed: 5.335
+  RotationSmoothTime: 0.12
+  SpeedChangeRate: 10
+  JumpHeight: 1.2
+  Gravity: -15
+  JumpTimeout: 0.3
+  FallTimeout: 0.15
+  Grounded: 1
+  GroundedOffset: -0.14
+  GroundedRadius: 0.28
+  GroundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  useFreeLookCamera: 1
+  CameraSensitivity: 0.05
+  CameraInputSmoothing: 0.1
+  InvertY: 1
+  canMove: 1
+  enableDebugLogs: 0
+  _freeLookCamera: {fileID: 0}
 --- !u!1 &6246423556193479333
 GameObject:
   m_ObjectHideFlags: 0

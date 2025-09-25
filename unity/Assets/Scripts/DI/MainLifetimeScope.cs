@@ -14,6 +14,11 @@ using Features.Ggumtle.NetworkSources;
 using Features.Ggumtle.Services;
 using Features.Ggumtle.ViewModels;
 using Features.Ggumtle.Views;
+using Features.Mongdung.Messages;
+using Features.Mongdung.NetworkSources;
+using Features.Mongdung.Services;
+using Features.Mongdung.ViewModels;
+using Features.Mongdung.Views;
 using Features.Inventory.Messages;
 using Features.Inventory.NetworkSources;
 using Features.Inventory.Services;
@@ -70,6 +75,14 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleDetectedMessage>(options);
             builder.RegisterMessageBroker<GgumtleHoldProgressMessage>(options);
             builder.RegisterMessageBroker<GgumtleFoodAddedMessage>(options);
+
+            // Mongdung Messages
+            builder.RegisterMessageBroker<MongdungActionStartedMessage>(options);
+            builder.RegisterMessageBroker<MongdungActionCompletedMessage>(options);
+            builder.RegisterMessageBroker<MongdungActionCooldownMessage>(options);
+            builder.RegisterMessageBroker<MongdungStateChangedMessage>(options);
+            builder.RegisterMessageBroker<MongdungActionBroadcastMessage>(options);
+            builder.RegisterMessageBroker<MongdungMovementBlockedMessage>(options);
 
             // Chest Messages
             builder.RegisterMessageBroker<ChestDetectedMessage>(options);
@@ -231,12 +244,14 @@ namespace DI
             >(Lifetime.Scoped);
             builder.Register<IMainGameNetworkSource, MainGameNetworkSource>(Lifetime.Scoped);
             builder.Register<IPlayerNetworkSource, PlayerNetworkSource>(Lifetime.Scoped);
+            builder.Register<IMongdungNetworkSource, MongdungNetworkSource>(Lifetime.Scoped);
 
             // Main 씬 전용 NetworkEventHandlers 등록
             builder.Register<GgumtleNetworkEventHandler>(Lifetime.Scoped);
             builder.Register<Features.Chest.NetworkSources.ChestNetworkEventHandler>(
                 Lifetime.Scoped
             );
+            builder.Register<MongdungNetworkEventHandler>(Lifetime.Scoped);
 
             // Main 씬 전용 Services 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<PlayerMovementService>(Lifetime.Scoped);
@@ -260,6 +275,7 @@ namespace DI
             builder.Register<IChatService, ChatServiceImpl>(Lifetime.Scoped);
             builder.Register<IPlayerHealthService, PlayerHealthServiceImpl>(Lifetime.Scoped);
             builder.Register<IPlayerRoleService, PlayerRoleServiceImpl>(Lifetime.Scoped);
+            builder.Register<IMongdungService, MongdungServiceImpl>(Lifetime.Scoped);
             builder.Register<IUIAssetService, UIAssetServiceImpl>(Lifetime.Scoped);
 
             // PlayerManagerService 등록 (새로 추가)
@@ -269,6 +285,7 @@ namespace DI
 
             // Main 씬 전용 ViewModels 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<GgumtleViewModel>(Lifetime.Scoped);
+            builder.Register<MongdungViewModel>(Lifetime.Scoped);
             builder.Register<Features.Chest.ViewModels.ChestViewModel>(Lifetime.Scoped);
             builder.Register<Features.Inventory.ViewModels.InventoryViewModel>(Lifetime.Scoped);
             builder.Register<Features.Feeding.ViewModels.FeedingViewModel>(Lifetime.Scoped);

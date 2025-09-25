@@ -75,6 +75,10 @@ namespace Features.Player.Views
         private bool _hasAnimator;
         private bool _isLocalPlayer;
 
+        // 관성 처리용 변수들
+        private Vector3 _lastMovementDirection;
+        private float _lastSpeed;
+
         private void Awake()
         {
             // Local 플레이어인지 확인 - 오브젝트 이름으로 판단
@@ -151,7 +155,27 @@ namespace Features.Player.Views
         {
             Debug.Log($"[PlayerGameObject] Start 호출됨 - GameObject: {gameObject.name}");
 
-            _hasAnimator = TryGetComponent(out _animator);
+            // 하위 오브젝트에서 Animator 찾기 (모델이 하위에 있는 경우)
+            _animator = GetComponentInChildren<Animator>();
+            if (_animator == null)
+            {
+                // 혹시 자기 자신에 있는지도 확인
+                _animator = GetComponent<Animator>();
+            }
+            _hasAnimator = _animator != null;
+
+            if (_animator == null)
+            {
+                Debug.LogWarning($"[PlayerGameObject] Animator 컴포넌트를 찾을 수 없습니다 (자신 및 하위 오브젝트): {gameObject.name}");
+            }
+            else
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerGameObject] Animator 발견: {_animator.gameObject.name} (Controller: {_animator.runtimeAnimatorController?.name ?? "None"})");
+                }
+            }
+
             _controller = GetComponent<CharacterController>();
 
             // VContainer 의존성 주입 확인 및 대체 방법 시도
@@ -305,7 +329,7 @@ namespace Features.Player.Views
                 );
             }
 
-            if (_hasAnimator)
+            if (_hasAnimator && _animator.runtimeAnimatorController != null)
             {
                 _animator.SetBool(_animIDGrounded, Grounded);
             }
@@ -320,7 +344,33 @@ namespace Features.Player.Views
             if (!canMove)
             {
                 if (enableDebugLogs)
-                    Debug.Log("[PlayerGameObject] canMove가 false여서 이동하지 않습니다.");
+                    Debug.Log("[PlayerGameObject] canMove가 false - 액션별 이동 제한 적용");
+
+                // 몽둥이 액션 중인지 확인
+                var mongdungGameObject = GetComponent<Features.Mongdung.Views.MongdungGameObject>();
+                var currentAction = mongdungGameObject?.GetCurrentExecutingAction();
+
+                if (currentAction == Features.Mongdung.Models.MongdungActionType.TrapSetting ||
+                    currentAction == Features.Mongdung.Models.MongdungActionType.Frighten)
+                {
+                    // TrapSetting, Frighten: 완전 정지 (관성도 제거, 점프도 금지)
+                    if (_controller != null)
+                    {
+                        _controller.Move(new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+                    }
+                }
+                else
+                {
+                    // Attack: 기존 속도 유지하면서 중력 적용 (관성 유지)
+                    if (_controller != null)
+                    {
+                        Vector3 horizontalMovement = _lastMovementDirection * _lastSpeed * Time.deltaTime;
+                        _controller.Move(horizontalMovement + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime);
+
+                        // 관성 감쇠 (서서히 느려짐)
+                        _lastSpeed *= 0.95f;
+                    }
+                }
                 return;
             }
 
@@ -431,12 +481,19 @@ namespace Features.Player.Views
                 }
             }
 
+            // 관성 정보 저장 (액션 중에 사용하기 위해)
+            if (targetDirection != Vector3.zero)
+            {
+                _lastMovementDirection = targetDirection.normalized;
+                _lastSpeed = _speed;
+            }
+
             _controller.Move(
                 targetDirection.normalized * (_speed * Time.deltaTime)
                     + new Vector3(0.0f, _verticalVelocity, 0.0f) * Time.deltaTime
             );
 
-            if (_hasAnimator)
+            if (_hasAnimator && _animator.runtimeAnimatorController != null)
             {
                 _animator.SetFloat(_animIDSpeed, _animationBlend);
                 _animator.SetFloat(_animIDMotionSpeed, inputMagnitude);
@@ -601,6 +658,20 @@ namespace Features.Player.Views
 
         private void OnJumpInputChanged(bool jumpInput)
         {
+            // TrapSetting 중일 때는 점프 금지
+            var mongdungGameObject = GetComponent<Features.Mongdung.Views.MongdungGameObject>();
+            var currentAction = mongdungGameObject?.GetCurrentExecutingAction();
+
+            if (currentAction == Features.Mongdung.Models.MongdungActionType.TrapSetting ||
+                currentAction == Features.Mongdung.Models.MongdungActionType.Frighten)
+            {
+                if (enableDebugLogs && jumpInput)
+                {
+                    Debug.Log($"[PlayerGameObject] {currentAction} 중에는 점프 금지");
+                }
+                return;
+            }
+
             // 점프 입력이 True일 때만 처리 (False는 무시)
             if (jumpInput && Grounded && _jumpTimeoutDelta <= 0.0f)
             {
@@ -624,7 +695,7 @@ namespace Features.Player.Views
                 Debug.Log($"[PlayerGameObject] 점프 실행! 수직속도: {_verticalVelocity}");
             }
 
-            if (_hasAnimator)
+            if (_hasAnimator && _animator.runtimeAnimatorController != null)
             {
                 _animator.SetBool(_animIDJump, true);
             }
@@ -636,7 +707,7 @@ namespace Features.Player.Views
             {
                 _fallTimeoutDelta = FallTimeout;
 
-                if (_hasAnimator)
+                if (_hasAnimator && _animator.runtimeAnimatorController != null)
                 {
                     _animator.SetBool(_animIDJump, false);
                     _animator.SetBool(_animIDFreeFall, false);
@@ -664,7 +735,7 @@ namespace Features.Player.Views
                 }
                 else
                 {
-                    if (_hasAnimator)
+                    if (_hasAnimator && _animator.runtimeAnimatorController != null)
                     {
                         _animator.SetBool(_animIDFreeFall, true);
                     }

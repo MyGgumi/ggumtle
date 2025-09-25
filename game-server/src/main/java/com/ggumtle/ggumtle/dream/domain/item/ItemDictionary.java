@@ -7,6 +7,7 @@ public enum ItemDictionary {
     LIGHT_JELLY(1, new LightJelly(1, 60, 6, 99)),
     FLASH(2, new Flash(2, 3, 1, 3)),
     TASER(3, new Taser(3, 3, 1, 3)),
+    DEFIBRILLATOR(4, new Defibrillator(4, 2, 1, 1)),
     ;
 
     public final int id;

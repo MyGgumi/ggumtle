@@ -15,7 +15,7 @@ namespace Features.GameInfo.Models
         public bool isTimeWarning = false;
 
         [Header("Ggumtle Progress")]
-        public int ggumtleLevel = 1;
+        public int ggumtleLevel = 0;
         public float ggumtleProgress = 0f;
         public int maxGgumtleLevel = 3;
 
@@ -56,7 +56,7 @@ namespace Features.GameInfo.Models
             if (ggumtleLevel < maxGgumtleLevel)
             {
                 ggumtleLevel++;
-                ggumtleProgress = 1.0f;
+                ggumtleProgress = (float)ggumtleLevel / maxGgumtleLevel;
                 return true;
             }
             return false;
@@ -70,7 +70,7 @@ namespace Features.GameInfo.Models
             currentTime = TimeSpan.Zero;
             statusMessage = "";
             isTimeWarning = false;
-            ggumtleLevel = 1;
+            ggumtleLevel = 0;
             ggumtleProgress = 0f;
         }
 

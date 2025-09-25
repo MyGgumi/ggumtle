@@ -1,4 +1,8 @@
+using Features.Ggumtle.Messages;
+using MessagePipe;
+using R3;
 using UnityEngine;
+using VContainer;
 
 public class GgumtleAnimationEventHandler : MonoBehaviour
 {
@@ -83,6 +87,13 @@ public class GgumtleAnimationEventHandler : MonoBehaviour
             audioSource = GetComponentInChildren<AudioSource>();
         }
 
+        // GgumtleGameObject 찾기 (상위 오브젝트에서)
+        ggumtleGameObject = GetComponentInParent<Features.Ggumtle.Views.GgumtleGameObject>();
+        if (ggumtleGameObject == null)
+        {
+            Debug.LogWarning("GgumtleGameObject를 찾을 수 없습니다!");
+        }
+
         if (purified_effect == null)
             Debug.LogWarning("purified_effect를 찾을 수 없습니다!");
         if (after_pullup_effect == null)
@@ -141,12 +152,45 @@ public class GgumtleAnimationEventHandler : MonoBehaviour
 
     private bool wasDigging = false;
     private bool wasEating = false;
+    private bool wasFake = false;
+    private Features.Ggumtle.Views.GgumtleGameObject ggumtleGameObject;
+
+    // 네트워크 브로드캐스트 구독
+    private ISubscriber<GgumtleStateBroadcastMessage> _stateBroadcastSubscriber;
+    private CompositeDisposable _disposables = new();
 
     void Update()
     {
         if (animator != null)
         {
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+
+            // Fake 상태 체크 (짭꿈틀)
+            bool isFake = stateInfo.IsName("fake") || stateInfo.IsName("Fake");
+
+            // Fake 상태로 전환될 때
+            if (isFake && !wasFake)
+            {
+                // GgumtleGameObject의 ViewModel 상태를 Fake로 변경
+                // GgumtleGameObject에서 이펙트와 삭제를 처리함
+                if (ggumtleGameObject != null)
+                {
+                    Debug.Log("GgumtleGameObject를 통한 짭꿈틀 처리");
+                    ggumtleGameObject.SetFakeState();
+                }
+                else
+                {
+                    Debug.LogWarning("GgumtleGameObject가 없어서 Fake 상태 처리 실패");
+                }
+                wasFake = true;
+                return; // fake 처리 후 다른 상태 체크 안함
+            }
+
+            // Fake 상태가 아닐 때만 다른 상태 체크
+            if (!isFake)
+            {
+                wasFake = false;
+            }
 
             // Digging 상태 체크
             bool isDigging = stateInfo.IsName("Digging");

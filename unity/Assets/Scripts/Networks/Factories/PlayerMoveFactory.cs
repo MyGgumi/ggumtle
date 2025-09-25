@@ -13,11 +13,16 @@ namespace Networks.Factories
             var buffer = Unpooled.WrappedBuffer(bytes);
 
             var playerId = buffer.ReadLong();
+
             var x = buffer.ReadInt();
             var y = buffer.ReadInt();
             var z = buffer.ReadInt();
-            
-            return new PlayerMoveCommand(playerId, x, y, z);
+
+            var vx = buffer.ReadInt();
+            var vy = buffer.ReadInt();
+            var vz = buffer.ReadInt();
+
+            return new PlayerMoveCommand(playerId, x, y, z, vx, vy, vz);
         }
     }
 }

@@ -1,4 +1,5 @@
 using Cinemachine;
+using Features.Player.NetworkSources;
 using Features.Player.Services;
 using UnityEngine;
 using VContainer;
@@ -8,6 +9,9 @@ namespace Features.Player.Views
     [RequireComponent(typeof(CharacterController))]
     public class PlayerGameObject : MonoBehaviour
     {
+        // 서버 속도 값을 Unity 속도로 변환하는 상수
+        private const float SERVER_SPEED_TO_UNITY_SPEED = 2.5f / 1000000000f; // 서버 100 = Unity 2.5
+
         [Header("플레이어 이동")]
         public float MoveSpeed = 2.5f;
         public float SprintSpeed = 5.335f;
@@ -58,6 +62,9 @@ namespace Features.Player.Views
         private CharacterController _controller;
         private PlayerMovementService _playerMovementService;
 
+        [Inject]
+        private IPlayerNetworkSource _playerNetworkSource;
+
         [Header("카메라 설정")]
         [SerializeField]
         private CinemachineFreeLook _freeLookCamera;
@@ -66,13 +73,18 @@ namespace Features.Player.Views
         private Vector2 _currentCameraInput;
 
         private bool _hasAnimator;
+        private bool _isLocalPlayer;
 
         private void Awake()
         {
             // Local 플레이어인지 확인 - 오브젝트 이름으로 판단
-            bool isLocalPlayer = gameObject.name.Contains("Local");
+            _isLocalPlayer = gameObject.name.Contains("Local");
 
-            if (isLocalPlayer)
+            Debug.Log(
+                $"[PlayerGameObject] Awake 호출됨 - GameObject: {gameObject.name}, IsLocal: {_isLocalPlayer}"
+            );
+
+            if (_isLocalPlayer)
             {
                 // Local 플레이어만 카메라 설정
                 if (_freeLookCamera == null)
@@ -88,35 +100,57 @@ namespace Features.Player.Views
                 }
 
                 if (enableDebugLogs)
-                    Debug.Log($"[PlayerGameObject] Local 플레이어 - FreeLook 카메라 연결됨: {_freeLookCamera.name}");
+                    Debug.Log(
+                        $"[PlayerGameObject] Local 플레이어 - FreeLook 카메라 연결됨: {_freeLookCamera.name}"
+                    );
 
                 SetupFreeLookCamera();
             }
             else
             {
                 if (enableDebugLogs)
-                    Debug.Log($"[PlayerGameObject] Remote 플레이어 - 카메라 설정 건너뜀: {gameObject.name}");
+                    Debug.Log(
+                        $"[PlayerGameObject] Remote 플레이어 - 카메라 설정 건너뜀: {gameObject.name}"
+                    );
             }
         }
 
         [Inject]
         public void Initialize(PlayerMovementService playerMovementService)
         {
+            Debug.Log(
+                $"[PlayerGameObject] Initialize 호출됨 - GameObject: {gameObject.name}, MovementService: {playerMovementService != null}"
+            );
+
             _playerMovementService = playerMovementService;
 
             // 점프 이벤트 직접 구독
             _playerMovementService.JumpInputChanged += OnJumpInputChanged;
 
-            if (enableDebugLogs)
+            // 네트워크 전송 시작
+            if (_playerNetworkSource != null)
             {
+                _playerNetworkSource.StartNetworkTransmission();
                 Debug.Log(
-                    $"[PlayerGameObject] PlayerMovementService 연결 및 이벤트 구독 완료: {_playerMovementService != null}"
+                    $"[PlayerGameObject] 네트워크 전송 시작 - NetworkSource: {_playerNetworkSource.GetType().Name}"
                 );
             }
+            else
+            {
+                Debug.LogWarning(
+                    $"[PlayerGameObject] PlayerNetworkSource가 null - GameObject: {gameObject.name}"
+                );
+            }
+
+            Debug.Log(
+                $"[PlayerGameObject] PlayerMovementService 연결 및 이벤트 구독 완료: {_playerMovementService != null}"
+            );
         }
 
         private void Start()
         {
+            Debug.Log($"[PlayerGameObject] Start 호출됨 - GameObject: {gameObject.name}");
+
             _hasAnimator = TryGetComponent(out _animator);
             _controller = GetComponent<CharacterController>();
 
@@ -124,7 +158,7 @@ namespace Features.Player.Views
             if (_playerMovementService == null)
             {
                 Debug.LogWarning(
-                    "[PlayerGameObject] PlayerMovementService가 주입되지 않음. MainLifetimeScope에서 직접 찾기 시도..."
+                    $"[PlayerGameObject] PlayerMovementService가 주입되지 않음 - GameObject: {gameObject.name}. MainLifetimeScope에서 직접 찾기 시도..."
                 );
 
                 try
@@ -134,30 +168,48 @@ namespace Features.Player.Views
                     {
                         var playerMovementService =
                             mainLifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
+
+                        // PlayerNetworkSource도 함께 주입받기 시도
+                        try
+                        {
+                            _playerNetworkSource =
+                                mainLifetimeScope.Container.Resolve<IPlayerNetworkSource>();
+                            Debug.Log(
+                                $"[PlayerGameObject] PlayerNetworkSource 수동 주입 성공 - GameObject: {gameObject.name}"
+                            );
+                        }
+                        catch (VContainer.VContainerException)
+                        {
+                            Debug.LogWarning(
+                                $"[PlayerGameObject] PlayerNetworkSource가 DI 컨테이너에 등록되지 않음 - GameObject: {gameObject.name}"
+                            );
+                        }
+
                         Initialize(playerMovementService);
                         Debug.Log(
-                            "[PlayerGameObject] MainLifetimeScope에서 PlayerMovementService 찾기 성공"
+                            $"[PlayerGameObject] MainLifetimeScope에서 PlayerMovementService 찾기 성공 - GameObject: {gameObject.name}"
                         );
                     }
                     else
                     {
-                        Debug.LogError("[PlayerGameObject] MainLifetimeScope를 찾을 수 없습니다!");
+                        Debug.LogError(
+                            $"[PlayerGameObject] MainLifetimeScope를 찾을 수 없습니다! - GameObject: {gameObject.name}"
+                        );
                         return;
                     }
                 }
                 catch (System.Exception e)
                 {
                     Debug.LogError(
-                        $"[PlayerGameObject] PlayerMovementService 수동 해결 실패: {e.Message}"
+                        $"[PlayerGameObject] PlayerMovementService 수동 해결 실패 - GameObject: {gameObject.name}: {e.Message}"
                     );
                     return;
                 }
             }
 
-            if (enableDebugLogs)
-            {
-                Debug.Log("[PlayerGameObject] VContainer 의존성 주입 완료. 플레이어 초기화 시작.");
-            }
+            Debug.Log(
+                $"[PlayerGameObject] VContainer 의존성 주입 완료. 플레이어 초기화 시작 - GameObject: {gameObject.name}"
+            );
 
             AssignAnimationIDs();
 
@@ -173,10 +225,35 @@ namespace Features.Player.Views
 
             _hasAnimator = TryGetComponent(out _animator);
 
+            // 위치 변화 추적 (5초마다)
+            if (Time.frameCount % 300 == 0)
+            {
+                Debug.Log(
+                    $"[PlayerGameObject] 현재 위치: {transform.position}, GameObject: {gameObject.name}, Grounded: {Grounded}"
+                );
+            }
+
             JumpAndGravity();
             GroundedCheck();
             Move();
             CameraLook();
+        }
+
+        /// <summary>
+        /// 네트워크 전송을 위한 FixedUpdate (일정한 주기 보장)
+        /// </summary>
+        private void FixedUpdate()
+        {
+            // FixedUpdate 호출 디버그 (5초마다)
+            if (Time.fixedTime % 5f < Time.fixedDeltaTime)
+            {
+                Debug.Log(
+                    $"[PlayerGameObject] FixedUpdate 호출됨 - GameObject: {gameObject.name}, NetworkSource: {_playerNetworkSource != null}"
+                );
+            }
+
+            // 네트워크로 이동 데이터 전송 (일정한 주기)
+            SendMovementDataToNetworkFixed();
         }
 
         private void AssignAnimationIDs()
@@ -366,6 +443,124 @@ namespace Features.Player.Views
             }
         }
 
+        /// <summary>
+        /// FixedUpdate에서 호출되는 네트워크 전송 (일정한 주기 보장)
+        /// </summary>
+        private async void SendMovementDataToNetworkFixed()
+        {
+            // 메서드 호출 확인 (5초마다)
+            if (Time.fixedTime % 5f < Time.fixedDeltaTime)
+            {
+                Debug.Log(
+                    $"[PlayerGameObject] SendMovementDataToNetworkFixed 호출됨 - NetworkSource: {_playerNetworkSource != null}"
+                );
+            }
+
+            if (_playerNetworkSource == null)
+            {
+                if (Time.frameCount % 300 == 0) // 5초마다
+                {
+                    Debug.LogWarning(
+                        $"[PlayerGameObject] PlayerNetworkSource가 null입니다! GameObject: {gameObject.name}"
+                    );
+                }
+                return;
+            }
+
+            try
+            {
+                // 현재 상태 정보 수집
+                Vector3 position = transform.position;
+                Vector2 moveInput = _playerMovementService?.MoveInput ?? Vector2.zero;
+                bool isMoving = moveInput != Vector2.zero && _speed > 0.1f;
+                float currentSpeed = _speed;
+
+                // 이동 방향 계산 (Move() 메서드와 동일한 로직)
+                Vector3 direction = Vector3.zero;
+                if (moveInput != Vector2.zero && _freeLookCamera != null)
+                {
+                    // 카메라 기준 상대적 이동 방향 계산
+                    float cameraYRotation = _freeLookCamera.m_XAxis.Value;
+                    Vector3 cameraForward =
+                        Quaternion.Euler(0, cameraYRotation, 0) * Vector3.forward;
+                    Vector3 cameraRight = Quaternion.Euler(0, cameraYRotation, 0) * Vector3.right;
+
+                    // 입력에 따른 이동 방향 계산 (카메라 기준 상대적)
+                    direction = (
+                        cameraForward * moveInput.y + cameraRight * moveInput.x
+                    ).normalized;
+                }
+                else if (isMoving)
+                {
+                    // 카메라 정보가 없을 때는 transform의 forward 사용
+                    direction = transform.forward;
+                }
+
+                // 5초마다 상세 디버깅
+                if (Time.fixedTime % 5f < Time.fixedDeltaTime)
+                {
+                    Debug.Log(
+                        $"[PlayerGameObject] 전송 데이터 - Pos: {position}, Direction: {direction}, MoveInput: {moveInput}, Speed: {_speed:F2}, IsMoving: {isMoving}"
+                    );
+                }
+
+                // FixedUpdate 주기에 맞춰 네트워크 전송
+                var success = await _playerNetworkSource.SendPlayerMoveAsync(
+                    position,
+                    direction,
+                    isMoving,
+                    currentSpeed
+                );
+
+                // 전송 성공 시 로그 (3초마다)
+                if (success && enableDebugLogs && Time.frameCount % 150 == 0)
+                {
+                    Debug.Log(
+                        $"[PlayerGameObject] 네트워크 전송 성공: Pos={position}, Dir={direction}, Moving={isMoving}, Speed={currentSpeed:F2}"
+                    );
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogError($"[PlayerGameObject] 네트워크 이동 데이터 전송 예외: {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 이동 데이터를 네트워크로 전송 (레거시 - 필요시 사용)
+        /// </summary>
+        private async void SendMovementDataToNetwork()
+        {
+            if (_playerNetworkSource == null)
+                return;
+
+            try
+            {
+                // 현재 상태 정보 수집
+                Vector3 position = transform.position;
+                Vector3 rotation = transform.eulerAngles;
+                bool isMoving = _playerMovementService?.MoveInput != Vector2.zero && _speed > 0.1f;
+                float currentSpeed = _speed;
+
+                // 네트워크로 전송 (비동기)
+                await _playerNetworkSource.SendPlayerMoveAsync(
+                    position,
+                    rotation,
+                    isMoving,
+                    currentSpeed
+                );
+            }
+            catch (System.Exception ex)
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.LogWarning(
+                        $"[PlayerGameObject] 네트워크 이동 데이터 전송 실패: {ex.Message}"
+                    );
+                }
+            }
+        }
+
         public void SetMovementEnabled(bool enabled)
         {
             canMove = enabled;
@@ -398,6 +593,22 @@ namespace Features.Player.Views
                 {
                     Debug.Log($"[PlayerGameObject] 이동 제한 - {reason}");
                 }
+            }
+        }
+
+        /// <summary>
+        /// 서버 속도를 Unity 속도로 변환하여 설정
+        /// </summary>
+        public void SetServerSpeed(int serverSpeed)
+        {
+            // Unity 속도로 변환
+            MoveSpeed = serverSpeed * SERVER_SPEED_TO_UNITY_SPEED;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log(
+                    $"[PlayerGameObject] 서버 속도 설정: 서버={serverSpeed} → Unity={MoveSpeed}"
+                );
             }
         }
 
@@ -551,6 +762,16 @@ namespace Features.Player.Views
             if (_playerMovementService != null)
             {
                 _playerMovementService.JumpInputChanged -= OnJumpInputChanged;
+            }
+
+            // 네트워크 전송 중지
+            if (_playerNetworkSource != null)
+            {
+                _playerNetworkSource.StopNetworkTransmission();
+                if (enableDebugLogs)
+                {
+                    Debug.Log("[PlayerGameObject] 네트워크 전송 중지");
+                }
             }
         }
 

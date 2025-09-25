@@ -50,7 +50,9 @@ namespace Networks
 
             if (client == null)
             {
-                Debug.LogWarning("[NetworkApi] Client가 설정되지 않았습니다. Inspector에서 Client를 설정해주세요.");
+                Debug.LogWarning(
+                    "[NetworkApi] Client가 설정되지 않았습니다. Inspector에서 Client를 설정해주세요."
+                );
                 return;
             }
 
@@ -65,6 +67,26 @@ namespace Networks
             Debug.Log("[NetworkApi] 네트워크 초기화 시작");
 
             await client.ConnectAsync(host, port);
+        }
+
+        public void SendPlayerMove(Vector3 position, Vector3 direction)
+        {
+            try
+            {
+                Debug.Log(
+                    $"[NetworkApi] 플레이어 이동 전송: Position=({position.x}, {position.y}, {position.z})"
+                );
+
+                var playerMoveSend = new PlayerMoveSend(position, direction);
+                client.Send(playerMoveSend);
+
+                Debug.Log("[NetworkApi] 플레이어 이동 패킷 전송 완료");
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[NetworkApi] 플레이어 이동 전송 실패: {ex.Message}");
+                throw;
+            }
         }
 
         public async Task<DiggingStartCommand> DiggingStart(int ggumtleId)

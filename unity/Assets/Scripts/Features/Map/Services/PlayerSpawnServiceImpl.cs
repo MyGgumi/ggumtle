@@ -178,16 +178,35 @@ namespace Features.Map.Services
 
                 var playerObject = spawnedObjects[0].gameObject;
 
-                // PlayerSetup을 통한 초기화
-                var playerSetup = playerObject.GetComponent<PlayerSetup>();
-                if (playerSetup != null)
+                // 프리팹 방식: 직접 컴포넌트 초기화
+                if (player.IsMine)
                 {
-                    playerSetup.InitializeFromPacket(player);
+                    // 로컬 플레이어: PlayerGameObject 초기화
+                    var playerGameObject = playerObject.GetComponent<PlayerGameObject>();
+                    if (playerGameObject != null)
+                    {
+                        // 서버 속도를 Unity 속도로 변환
+                        playerGameObject.SetServerSpeed(player.MoveSpeed);
+                        if (_enableDebugLogs)
+                            Debug.Log($"[PlayerSpawnService] 로컬 PlayerGameObject 초기화: 속도={playerGameObject.MoveSpeed}");
+                    }
                 }
                 else
                 {
-                    Debug.LogWarning($"[PlayerSpawnService] PlayerSetup 컴포넌트를 찾을 수 없음: {playerObject.name}");
+                    // 원격 플레이어: RemotePlayerGameObject 초기화
+                    var remotePlayerGameObject = playerObject.GetComponent<RemotePlayerGameObject>();
+                    if (remotePlayerGameObject != null)
+                    {
+                        remotePlayerGameObject.InitializeFromPacket(player);
+                        if (_enableDebugLogs)
+                            Debug.Log($"[PlayerSpawnService] 원격 PlayerGameObject 초기화 완료");
+                    }
                 }
+
+                // GameObject 이름 설정
+                string playerType = GetPlayerTypeString(player);
+                string localPrefix = player.IsMine ? "Local" : "Remote";
+                playerObject.name = $"{localPrefix}_{playerType}_{player.Id}";
 
                 // 관리 리스트에 추가
                 _spawnedPlayers.Add(playerObject);
@@ -196,8 +215,7 @@ namespace Features.Map.Services
                 // PlayerManagerService에 등록
                 _playerManagerService.RegisterPlayer(player, playerObject);
 
-                // 이벤트 발생
-                string playerType = GetPlayerTypeString(player);
+                // 이벤트 발생 (playerType 재사용)
                 OnPlayerSpawned?.Invoke(playerType, playerObject);
 
                 if (_enableDebugLogs)

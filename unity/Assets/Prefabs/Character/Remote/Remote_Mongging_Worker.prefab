@@ -10212,7 +10212,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1609257566296013356}
   - component: {fileID: 6718802550868187550}
-  - component: {fileID: -742152775942302401}
+  - component: {fileID: 1238701575588355194}
+  - component: {fileID: 2383480952645197185}
   m_Layer: 3
   m_Name: Remote_Mongging_Worker
   m_TagString: Player
@@ -10255,14 +10256,14 @@ CharacterController:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Height: 2
-  m_Radius: 0.5
+  m_Height: 1.2
+  m_Radius: 0.4
   m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.08
+  m_StepOffset: 0.25
+  m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
-  m_Center: {x: 0, y: 0, z: 0}
---- !u!114 &-742152775942302401
+  m_Center: {x: 0, y: 1, z: 0}
+--- !u!114 &1238701575588355194
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10271,11 +10272,41 @@ MonoBehaviour:
   m_GameObject: {fileID: 2197908680002170458}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ad722af3a19f6934a9bdbf650a4f97b7, type: 3}
+  m_Script: {fileID: 11500000, guid: 82b0a90fa0eb8194290cf27339d54b8d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  autoSetup: 1
-  setupOnAwake: 1
+  MoveSpeed: 2.5
+  RotationSmoothTime: 0.12
+  SpeedChangeRate: 10
+  JumpHeight: 1.2
+  Gravity: -15
+  Grounded: 1
+  GroundedOffset: -0.14
+  GroundedRadius: 0.28
+  GroundLayers:
+    serializedVersion: 2
+    m_Bits: 1
+  enableDebugLogs: 1
+  PlayerId: 0
+  IsMongging: 1
+  ClassId: 0
+--- !u!114 &2383480952645197185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2197908680002170458}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c2c65b0e06d906b4b8c643836ef0ec6b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _maxHp: 100
+  _currentHp: 100
+  _healSpeed: 10
+  _workSpeed: 10
+  _currentStatus: 0
   _enableDebugLogs: 0
 --- !u!1 &2230277772371151514
 GameObject:

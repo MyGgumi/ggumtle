@@ -17,7 +17,7 @@ namespace Features.Player.NetworkSources
         public float positionThreshold = 0.02f; // 더 정밀한 위치 동기화
 
         [Tooltip("방향 변화 임계값 - 이 값 이하의 변화는 전송하지 않음 (도 단위)")]
-        public float directionThreshold = 5.0f; // 방향 변화 감지를 위한 각도 임계값
+        public float directionThreshold = 1.0f; // 방향 변화 감지를 위한 각도 임계값 (더 민감하게)
 
         /// <summary>
         /// 호환성을 위한 회전 임계값 프로퍼티 (directionThreshold와 동일)
@@ -30,7 +30,7 @@ namespace Features.Player.NetworkSources
         public float interpolationTime = 0.1f; // 100ms 버퍼
 
         [Tooltip("보간 속도 - 높을수록 빠르게 목표 위치로 이동")]
-        public float interpolationSpeed = 15f; // 더 부드러운 보간
+        public float interpolationSpeed = 25f; // SmoothDamp 최적화를 위해 증가
 
         [Tooltip("텔레포트 거리 임계값 - 이 거리 이상 차이날 때 즉시 이동")]
         public float teleportThreshold = 10.0f; // 텔레포트 빈도 감소

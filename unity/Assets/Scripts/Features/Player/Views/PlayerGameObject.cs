@@ -475,24 +475,11 @@ namespace Features.Player.Views
                 bool isMoving = moveInput != Vector2.zero && _speed > 0.1f;
                 float currentSpeed = _speed;
 
-                // 이동 방향 계산 (Move() 메서드와 동일한 로직)
+                // 실제 캐릭터가 바라보는 방향 사용 (다른 플레이어에게 정확한 방향 전달)
                 Vector3 direction = Vector3.zero;
-                if (moveInput != Vector2.zero && _freeLookCamera != null)
+                if (isMoving)
                 {
-                    // 카메라 기준 상대적 이동 방향 계산
-                    float cameraYRotation = _freeLookCamera.m_XAxis.Value;
-                    Vector3 cameraForward =
-                        Quaternion.Euler(0, cameraYRotation, 0) * Vector3.forward;
-                    Vector3 cameraRight = Quaternion.Euler(0, cameraYRotation, 0) * Vector3.right;
-
-                    // 입력에 따른 이동 방향 계산 (카메라 기준 상대적)
-                    direction = (
-                        cameraForward * moveInput.y + cameraRight * moveInput.x
-                    ).normalized;
-                }
-                else if (isMoving)
-                {
-                    // 카메라 정보가 없을 때는 transform의 forward 사용
+                    // 캐릭터가 실제로 바라보고 있는 방향 사용
                     direction = transform.forward;
                 }
 

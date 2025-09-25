@@ -4,6 +4,25 @@ using Networks.Rooms.Domains;
 using UnityEngine;
 using VContainer;
 
+/// <summary>
+/// 네트워크 스냅샷 데이터
+/// </summary>
+public struct NetworkSnapshot
+{
+    public Vector3 position;
+    public Vector3 velocity;
+    public float timestamp;
+    public bool isMoving;
+
+    public NetworkSnapshot(Vector3 pos, Vector3 vel, float time, bool moving)
+    {
+        position = pos;
+        velocity = vel;
+        timestamp = time;
+        isMoving = moving;
+    }
+}
+
 namespace Features.Player.Views
 {
     /// <summary>
@@ -74,10 +93,22 @@ namespace Features.Player.Views
         // 간단한 보간 시스템용 데이터
         private PlayerNetworkSettings _networkSettings = new PlayerNetworkSettings();
 
-        // 간단한 보간용 변수들
+        // 고급 보간용 변수들
         private Vector3 _targetPosition;
         private Vector3 _previousPosition;
         private bool _useInterpolation = true;
+
+        // SmoothDamp 보간용
+        private Vector3 _smoothDampVelocity = Vector3.zero;
+
+        // 클라이언트 예측용
+        private Vector3 _predictedPosition;
+        private Vector3 _currentVelocity = Vector3.zero;
+        private float _lastUpdateTime;
+
+        // 네트워크 히스토리 버퍼
+        private Queue<NetworkSnapshot> _networkHistory = new Queue<NetworkSnapshot>();
+        private const int MAX_HISTORY_SIZE = 5;
 
         private void Start()
         {
@@ -269,13 +300,36 @@ namespace Features.Player.Views
                 _lastValidDirection = direction;
             }
 
+            // 속도 계산 (예측을 위해)
+            Vector3 calculatedVelocity = Vector3.zero;
+            float currentTime = Time.time;
+            if (_lastUpdateTime > 0)
+            {
+                float deltaTime = currentTime - _lastUpdateTime;
+                if (deltaTime > 0.001f) // 너무 작은 시간 차이 방지
+                {
+                    calculatedVelocity = (position - _networkPosition) / deltaTime;
+                }
+            }
+
+            // 네트워크 히스토리에 추가
+            var snapshot = new NetworkSnapshot(position, calculatedVelocity, currentTime, isMoving);
+            _networkHistory.Enqueue(snapshot);
+
+            // 히스토리 크기 제한
+            while (_networkHistory.Count > MAX_HISTORY_SIZE)
+            {
+                _networkHistory.Dequeue();
+            }
+
             // 네트워크 데이터 업데이트 (이전 네트워크 위치를 저장)
             _previousPosition = _networkPosition; // ✅ 수정: 이전 네트워크 위치를 저장
             _networkPosition = position;
             _networkDirection = filteredDirection; // 필터링된 방향값 사용
             _networkIsMoving = isMoving;
             _networkSpeed = speed;
-            _lastNetworkUpdateTime = Time.time;
+            _currentVelocity = calculatedVelocity;
+            _lastUpdateTime = currentTime;
 
             // 텔레포트 거리 체크 (distanceFromCurrent는 이미 계산됨)
             if (distanceFromCurrent > _networkSettings.teleportThreshold)
@@ -296,8 +350,9 @@ namespace Features.Player.Views
             }
             else
             {
-                // 보간 시작
-                _targetPosition = position;
+                // 클라이언트 예측으로 목표 위치 계산
+                _predictedPosition = CalculatePredictedPosition(position, calculatedVelocity);
+                _targetPosition = _predictedPosition;
                 _useInterpolation = true;
                 _isInterpolating = true;
 
@@ -464,22 +519,59 @@ namespace Features.Player.Views
         }
 
         /// <summary>
-        /// 간단한 보간된 움직임 처리
+        /// 클라이언트 예측으로 목표 위치 계산
+        /// </summary>
+        private Vector3 CalculatePredictedPosition(Vector3 currentPos, Vector3 velocity)
+        {
+            // 예측 시간 (네트워크 지연 보상)
+            float predictionTime = _networkSettings.predictionTime;
+
+            // 속도가 너무 크면 제한 (텔레포트 방지)
+            float maxPredictionDistance = 2.0f;
+            Vector3 predictionOffset = velocity * predictionTime;
+            if (predictionOffset.magnitude > maxPredictionDistance)
+            {
+                predictionOffset = predictionOffset.normalized * maxPredictionDistance;
+            }
+
+            Vector3 predictedPos = currentPos + predictionOffset;
+
+            if (enableDebugLogs && Time.frameCount % 180 == 0)
+            {
+                Debug.Log(
+                    $"[REMOTE_PLAYER] ID={PlayerId}: 🔮 예측 계산"
+                        + $"\n현재 위치: {currentPos}"
+                        + $"\n속도: {velocity} (크기: {velocity.magnitude:F2})"
+                        + $"\n예측 시간: {predictionTime:F3}s"
+                        + $"\n예측 위치: {predictedPos}"
+                        + $"\n예측 거리: {predictionOffset.magnitude:F3}m"
+                );
+            }
+
+            return predictedPos;
+        }
+
+
+        /// <summary>
+        /// SmoothDamp 기반 보간 움직임 처리
         /// </summary>
         private void ProcessInterpolatedMovement()
         {
-            // 네트워크 위치 기준으로 보간 계산
-            float distanceToTarget = Vector3.Distance(_previousPosition, _targetPosition);
+            Vector3 currentPosition = transform.position;
 
-            // 보간 진행률 계산 (0~1)
-            float lerpSpeed = _networkSettings.interpolationSpeed;
-            float lerpProgress = Time.deltaTime * lerpSpeed;
+            // SmoothDamp를 사용한 부드러운 보간
+            Vector3 newPosition = Vector3.SmoothDamp(
+                currentPosition,
+                _targetPosition,
+                ref _smoothDampVelocity,
+                _networkSettings.interpolationTime,
+                Mathf.Infinity,
+                Time.deltaTime
+            );
 
-            // 이전 네트워크 위치에서 새 네트워크 위치로 보간
-            Vector3 newPosition = Vector3.Lerp(_previousPosition, _targetPosition, lerpProgress);
+            float distanceToTarget = Vector3.Distance(currentPosition, _targetPosition);
 
             // CharacterController를 통한 이동
-            Vector3 currentPosition = transform.position;
             Vector3 moveVector = newPosition - currentPosition;
             if (moveVector.magnitude > 0.001f)
             {
@@ -489,14 +581,13 @@ namespace Features.Player.Views
                 if (enableDebugLogs && Time.frameCount % 180 == 0)
                 {
                     Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎭 보간 처리중"
-                            + $"\n이전 네트워크: {_previousPosition}"
-                            + $"\n목표 네트워크: {_targetPosition}"
+                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 SmoothDamp 보간 처리중"
                             + $"\n현재 실제: {currentPosition}"
+                            + $"\n목표 위치: {_targetPosition}"
                             + $"\n새 위치: {newPosition}"
                             + $"\n이동벡터: {moveVector} (크기: {moveVector.magnitude:F4})"
                             + $"\n목표거리: {distanceToTarget:F4}m"
-                            + $"\n보간진행: {lerpProgress:F3}"
+                            + $"\n보간속도: {_smoothDampVelocity.magnitude:F4}"
                     );
                 }
             }
@@ -542,18 +633,18 @@ namespace Features.Player.Views
                 }
             }
 
-            // 보간 완료 체크 및 강제 스냅 (네트워크 위치 기준)
-            float currentToTargetDistance = Vector3.Distance(transform.position, _targetPosition);
-            if (currentToTargetDistance < 0.05f || distanceToTarget < 0.01f)
+            // 보간 완료 체크 및 강제 스냅
+            if (distanceToTarget < 0.05f)
             {
                 // 목표에 거의 도달 - 정확히 목표로 스냅
                 transform.position = _targetPosition;
                 _isInterpolating = false;
+                _smoothDampVelocity = Vector3.zero; // SmoothDamp 속도 초기화
 
                 if (enableDebugLogs)
                 {
                     Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 보간 완료 및 스냅 - 네트워크거리: {distanceToTarget:F6}m, 실제거리: {currentToTargetDistance:F6}m"
+                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 보간 완료 및 스냅 - 거리: {distanceToTarget:F6}m"
                     );
                 }
             }

@@ -25095,8 +25095,9 @@ GameObject:
   m_Component:
   - component: {fileID: 4613722994468228716}
   - component: {fileID: -2773361240605053500}
-  - component: {fileID: 3288889709414648112}
   - component: {fileID: -7938411020700505055}
+  - component: {fileID: 3733715737769871850}
+  - component: {fileID: 88767854155525091}
   m_Layer: 3
   m_Name: Remote_Mongdung
   m_TagString: Player
@@ -25145,24 +25146,6 @@ CharacterController:
   m_SkinWidth: 0.02
   m_MinMoveDistance: 0.001
   m_Center: {x: 0, y: 1, z: 0}
---- !u!114 &3288889709414648112
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6083004312846073984}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f7c3947b06253654da34d697505a25ce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _moveSpeed: 10
-  _workSpeed: 10
-  _currentStatus: 0
-  _catchRange: 2
-  _specialAbilityCooldown: 10
-  _enableDebugLogs: 0
 --- !u!114 &-7938411020700505055
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -25190,6 +25173,67 @@ MonoBehaviour:
   PlayerId: 0
   IsMongging: 0
   ClassId: 0
+--- !u!95 &3733715737769871850
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6083004312846073984}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &88767854155525091
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6083004312846073984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 418a5c31c2212a84abd9cada35fa3a6e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  mongdungData:
+    playerId: 0
+    playerName: 
+    currentState: 0
+    actionDataArray:
+    - actionType: 0
+      executionDuration: 1.5
+      cooldownDuration: 8
+      animatorParameter: Attack
+      range: 3
+      blockMovement: 1
+    - actionType: 1
+      executionDuration: 2
+      cooldownDuration: 12
+      animatorParameter: TrapSetting
+      range: 2
+      blockMovement: 1
+    - actionType: 2
+      executionDuration: 1
+      cooldownDuration: 6
+      animatorParameter: Frighten
+      range: 4
+      blockMovement: 1
+  attackKey: 113
+  trapKey: 101
+  frightenKey: 114
+  enableDebugLogs: 1
 --- !u!1 &6246423556193479333
 GameObject:
   m_ObjectHideFlags: 0

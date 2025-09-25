@@ -16,7 +16,7 @@ public record TakeItemBody(
     Boxable[] itemsOfBox,
     Boxable takenItem
 ) implements Body {
-    private static final int bufferSize = 4 + 4 + 4 * Box.BOX_SIZE;
+    private static final int bufferSize = 4 + 8 + 4 + 4 + 4 * Box.BOX_SIZE + 4;
 
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {

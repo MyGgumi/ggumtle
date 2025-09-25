@@ -701,9 +701,11 @@ public class DreamManager {
                 }
 
                 // 아이템 꺼내기 성공 시 성공 응답 전송
-                Body body = new TakeItemBody(TakeItemBody.Result.SUCCESS, session.getMemberId(), boxId, popResult, popResult[Box.BOX_SIZE]);
-                Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-                session.sendPacket(packet);
+                box.getViewers().forEach(viewer -> {
+                    Body body = new TakeItemBody(TakeItemBody.Result.SUCCESS, viewer.getMemberId(), boxId, popResult, popResult[Box.BOX_SIZE]);
+                    Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
+                    session.sendPacket(packet);
+                });
 
                 log.info("[{} - {}] 상자에서 아이템 꺼내기 성공: {}번 몽깅이가 {} 아이템 획득", session.getChannel().id(), room.id, session.getMemberId(), popResult[Box.BOX_SIZE]);
             }

@@ -2,6 +2,7 @@ package ggumtle.ggumtle.dreamtest.config;
 
 import ggumtle.ggumtle.dreamtest.event.PlayerInfoEvent;
 import ggumtle.ggumtle.dreamtest.event.StartGameEvent;
+import ggumtle.ggumtle.dreamtest.event.TakeItemEvent;
 import ggumtle.ggumtle.dreamtest.packet.SendPacketType;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -60,6 +61,12 @@ public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
                 StartGameEvent event = new StartGameEvent();
                 applicationEventPublisher.publishEvent(event);
             }, 1, TimeUnit.SECONDS);
+            return;
+        }
+
+        if (packet.header().receivePacketType() == SendPacketType.TAKE_ITEM.getValue()) {
+            TakeItemEvent event = TakeItemEvent.of(packet.data());
+            applicationEventPublisher.publishEvent(event);
             return;
         }
     }

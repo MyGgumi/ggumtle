@@ -41,6 +41,7 @@ dependencies {
 	// ETC
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
 	// OAuth2
 	implementation 'com.google.api-client:google-api-client:2.2.0'

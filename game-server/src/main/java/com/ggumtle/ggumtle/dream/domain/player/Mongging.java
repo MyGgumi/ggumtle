@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class Mongging extends Player {
     private static final int BASE_HP = 100;
     private static final int REVIVE_HP = 50;
-    private static final int BASE_MOVE_SPEED = 100;
+    private static final int BASE_MOVE_SPEED = 1_000_000_000;
     private static final int BASE_HEAL_SPEED = 100;
     private static final int BASE_WORK_SPEED = 100;
     private static final int INVENTORY_SIZE = 3;

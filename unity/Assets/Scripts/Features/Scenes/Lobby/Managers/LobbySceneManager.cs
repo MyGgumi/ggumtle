@@ -201,6 +201,11 @@ namespace Features.Scenes.Lobby.Managers
 
                 if (authResult.Success)
                 {
+                    // 방 입장 전 RoomStorage 초기화
+                    var roomStorage = RoomStorage.Instance;
+                    roomStorage.ClearRoom();
+                    Debug.Log("[LobbySceneManager] RoomStorage 초기화 완료");
+
                     // 방 입장 시도
                     PublishUIState(LobbyUIStateMessage.Connecting($"방 {roomId} 입장 중..."));
                     var joinResult = await _lobbyNetworkSource.JoinRoomAsync(roomId);
@@ -246,7 +251,7 @@ namespace Features.Scenes.Lobby.Managers
             while (elapsedTime < maxWaitTime)
             {
                 var roomStorage = RoomStorage.Instance;
-                if (roomStorage?.Room != null && roomStorage.Room.IsInitialized())
+                if (roomStorage?.HasReceivedNewRoomData() == true)
                 {
                     Debug.Log("[LobbySceneManager] Room 초기화 완료! 로딩 씬으로 전환");
                     PublishUIState(LobbyUIStateMessage.Ready("맵과 플레이어 데이터 수신 완료! 로딩 중..."));
@@ -262,7 +267,7 @@ namespace Features.Scenes.Lobby.Managers
                 {
                     int remainingSeconds = (maxWaitTime - elapsedTime) / 1000;
                     PublishUIState(LobbyUIStateMessage.Connecting($"맵과 플레이어 데이터 대기 중... ({remainingSeconds}초 남음)"));
-                    Debug.Log($"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음");
+                    Debug.Log($"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음, HasReceivedNewRoomData: {roomStorage?.HasReceivedNewRoomData() ?? false}");
                 }
             }
 

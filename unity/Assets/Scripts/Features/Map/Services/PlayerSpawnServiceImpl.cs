@@ -2,7 +2,9 @@ using Cysharp.Threading.Tasks;
 using Features.Room.Models;
 using Features.Map.Utils;
 using Features.Player.Views;
+using Features.Player.Services;
 using Networks.Rooms.Domains;
+using Player;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,28 +21,35 @@ namespace Features.Map.Services
     public class PlayerSpawnServiceImpl : IPlayerSpawnService
     {
         private readonly IAddressableLoadService _addressableLoadService;
+        private readonly PlayerManagerService _playerManagerService;
         private readonly bool _enableDebugLogs = true;
 
         // 설정할 데이터
         private RoomData _roomData;
 
         // 동적 생성된 플레이어들 관리
-        private readonly List<PlayerGameObject> _spawnedMonggings = new();
-        private readonly List<PlayerGameObject> _spawnedMongdungs = new();
-        private readonly Dictionary<long, PlayerGameObject> _playerIdToGameObject = new();
+        private readonly List<GameObject> _spawnedPlayers = new();
+        private readonly Dictionary<long, GameObject> _playerIdToGameObject = new();
 
-        // Addressable 키 상수
-        private const string MONGGING_PREFAB_KEY = "Mongging";
-        private const string MONGDUNG_PREFAB_KEY = "Mongdung";
+        // Addressable 키 상수 (8개 프리팹)
+        private const string LOCAL_MONGGING_TANKER_KEY = "Local_Mongging_Tanker";
+        private const string LOCAL_MONGGING_HEALER_KEY = "Local_Mongging_Healer";
+        private const string LOCAL_MONGGING_WORKER_KEY = "Local_Mongging_Worker";
+        private const string LOCAL_MONGDUNG_KEY = "Local_Mongdung";
+        private const string REMOTE_MONGGING_TANKER_KEY = "Remote_Mongging_Tanker";
+        private const string REMOTE_MONGGING_HEALER_KEY = "Remote_Mongging_Healer";
+        private const string REMOTE_MONGGING_WORKER_KEY = "Remote_Mongging_Worker";
+        private const string REMOTE_MONGDUNG_KEY = "Remote_Mongdung";
 
         public event Action<string, GameObject> OnPlayerSpawned;
         public event Action<string, GameObject> OnPlayerRemoved;
         public event Action OnAllPlayersSpawned;
 
         [Inject]
-        public PlayerSpawnServiceImpl(IAddressableLoadService addressableLoadService)
+        public PlayerSpawnServiceImpl(IAddressableLoadService addressableLoadService, PlayerManagerService playerManagerService)
         {
             _addressableLoadService = addressableLoadService ?? throw new ArgumentNullException(nameof(addressableLoadService));
+            _playerManagerService = playerManagerService ?? throw new ArgumentNullException(nameof(playerManagerService));
 
             if (_enableDebugLogs)
                 Debug.Log("[PlayerSpawnService] 초기화 완료");
@@ -63,10 +72,20 @@ namespace Features.Map.Services
 
                 if (_roomData.Players != null && _roomData.Players.Count > 0)
                 {
-                    Debug.Log($"[PlayerSpawnService] 플레이어 상세 정보:");
+                    Debug.Log($"[SERVER_PLAYER_DATA] 플레이어 상세 정보:");
                     foreach (var player in _roomData.Players)
                     {
-                        Debug.Log($"  - 플레이어 ID: {player.Id}, 타입: {(player.IsMongging ? "Mongging" : "Mongdung")}, 로컬: {player.IsMine}, 위치: {player.Position}");
+                        string playerType = player.IsMongging ? $"Mongging(Class:{player.ClassId})" : "Mongdung";
+                        Debug.Log($"[SERVER_PLAYER_DATA]   - ID: {player.Id}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     타입: {playerType}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     로컬: {player.IsMine}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     위치: {player.Position}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     닉네임: {player.NickName}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     이동속도: {player.MoveSpeed}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     최대HP: {player.MaxHp}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     힐속도: {player.HealSpeed}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]     작업속도: {player.WorkSpeed}");
+                        Debug.Log($"[SERVER_PLAYER_DATA]   ==================");
                     }
                 }
             }
@@ -96,7 +115,7 @@ namespace Features.Map.Services
                     await SpawnPlayersAsync(_roomData.Players, playersParent);
 
                 if (_enableDebugLogs)
-                    Debug.Log($"[PlayerSpawnService] 모든 플레이어 동적 생성 완료 - Mongging:{_spawnedMonggings.Count}, Mongdung:{_spawnedMongdungs.Count}");
+                    Debug.Log($"[PlayerSpawnService] 모든 플레이어 동적 생성 완료 - 총 플레이어:{_spawnedPlayers.Count}개");
 
                 OnAllPlayersSpawned?.Invoke();
             }
@@ -119,94 +138,13 @@ namespace Features.Map.Services
                 if (_enableDebugLogs)
                     Debug.Log($"[PlayerSpawnService] 플레이어 동적 생성 시작: {players.Count}개");
 
-                // Mongging과 Mongdung을 분리하여 처리
-                var monggingPlayers = players.Where(p => p.IsMongging).ToList();
-                var mongdungPlayers = players.Where(p => !p.IsMongging).ToList();
-
-                // Mongging 플레이어들 스폰
-                if (monggingPlayers.Count > 0)
+                foreach (var player in players)
                 {
-                    if (_enableDebugLogs)
-                        Debug.Log($"[PlayerSpawnService] Mongging 스폰 시작: {monggingPlayers.Count}개, Addressable Key: '{MONGGING_PREFAB_KEY}'");
-
-                    var positions = monggingPlayers.Select(p => p.ToVector3()).ToList();
-
-                    if (_enableDebugLogs)
-                    {
-                        Debug.Log($"[PlayerSpawnService] Mongging 위치 정보:");
-                        for (int i = 0; i < positions.Count; i++)
-                        {
-                            Debug.Log($"  - [{i}] {positions[i]}");
-                        }
-                    }
-
-                    var spawnedMonggings = await _addressableLoadService.SpawnMultipleAsync<PlayerGameObject>(
-                        MONGGING_PREFAB_KEY, positions, parent);
-
-                    if (_enableDebugLogs)
-                        Debug.Log($"[PlayerSpawnService] Mongging Addressable 스폰 결과: {spawnedMonggings?.Count ?? 0}개");
-
-                    for (int i = 0; i < spawnedMonggings.Count && i < monggingPlayers.Count; i++)
-                    {
-                        var playerData = monggingPlayers[i];
-                        var playerObject = spawnedMonggings[i];
-
-                        // 플레이어 ID 설정 및 관리 리스트에 추가
-                        SetupPlayerObject(playerObject, playerData);
-                        _spawnedMonggings.Add(playerObject);
-                        _playerIdToGameObject[playerData.Id] = playerObject;
-
-                        // 이벤트 발생
-                        OnPlayerSpawned?.Invoke("Mongging", playerObject.gameObject);
-
-                        if (_enableDebugLogs)
-                            Debug.Log($"[PlayerSpawnService] Mongging 생성 완료: ID={playerData.Id}, Position={playerData.ToVector3()}, 로컬={playerData.IsMine}");
-                    }
-                }
-
-                // Mongdung 플레이어들 스폰
-                if (mongdungPlayers.Count > 0)
-                {
-                    if (_enableDebugLogs)
-                        Debug.Log($"[PlayerSpawnService] Mongdung 스폰 시작: {mongdungPlayers.Count}개, Addressable Key: '{MONGDUNG_PREFAB_KEY}'");
-
-                    var positions = mongdungPlayers.Select(p => p.ToVector3()).ToList();
-
-                    if (_enableDebugLogs)
-                    {
-                        Debug.Log($"[PlayerSpawnService] Mongdung 위치 정보:");
-                        for (int i = 0; i < positions.Count; i++)
-                        {
-                            Debug.Log($"  - [{i}] {positions[i]}");
-                        }
-                    }
-
-                    var spawnedMongdungs = await _addressableLoadService.SpawnMultipleAsync<PlayerGameObject>(
-                        MONGDUNG_PREFAB_KEY, positions, parent);
-
-                    if (_enableDebugLogs)
-                        Debug.Log($"[PlayerSpawnService] Mongdung Addressable 스폰 결과: {spawnedMongdungs?.Count ?? 0}개");
-
-                    for (int i = 0; i < spawnedMongdungs.Count && i < mongdungPlayers.Count; i++)
-                    {
-                        var playerData = mongdungPlayers[i];
-                        var playerObject = spawnedMongdungs[i];
-
-                        // 플레이어 ID 설정 및 관리 리스트에 추가
-                        SetupPlayerObject(playerObject, playerData);
-                        _spawnedMongdungs.Add(playerObject);
-                        _playerIdToGameObject[playerData.Id] = playerObject;
-
-                        // 이벤트 발생
-                        OnPlayerSpawned?.Invoke("Mongdung", playerObject.gameObject);
-
-                        if (_enableDebugLogs)
-                            Debug.Log($"[PlayerSpawnService] Mongdung 생성 완료: ID={playerData.Id}, Position={playerData.ToVector3()}, 로컬={playerData.IsMine}");
-                    }
+                    await SpawnSinglePlayerAsync(player, parent);
                 }
 
                 if (_enableDebugLogs)
-                    Debug.Log($"[PlayerSpawnService] 플레이어 동적 생성 완료: Mongging {_spawnedMonggings.Count}개, Mongdung {_spawnedMongdungs.Count}개");
+                    Debug.Log($"[PlayerSpawnService] 플레이어 동적 생성 완료: 총 {_spawnedPlayers.Count}개");
 
             }
             catch (Exception e)
@@ -215,32 +153,111 @@ namespace Features.Map.Services
             }
         }
 
-        private void SetupPlayerObject(PlayerGameObject playerObject, PlayerPacket playerData)
+        /// <summary>
+        /// 단일 플레이어 스폰
+        /// </summary>
+        private async UniTask SpawnSinglePlayerAsync(PlayerPacket player, Transform parent)
         {
-            // 플레이어 GameObject에 ID와 기타 정보 설정
-            playerObject.name = $"Player_{playerData.Id}_{(playerData.IsMongging ? "Mongging" : "Mongdung")}";
-
-            // 로컬 플레이어인 경우 카메라 설정
-            if (playerData.IsMine)
+            try
             {
-                SetupLocalPlayerCamera(playerObject);
+                // 프리팹 키 결정
+                string prefabKey = GetPrefabKey(player);
+
+                if (_enableDebugLogs)
+                    Debug.Log($"[PlayerSpawnService] 플레이어 스폰: ID={player.Id}, 키={prefabKey}, 위치={player.ToVector3()}");
+
+                // Addressable로 프리팹 스폰
+                var spawnedObjects = await _addressableLoadService.SpawnMultipleAsync<MonoBehaviour>(
+                    prefabKey, new List<Vector3> { player.ToVector3() }, parent);
+
+                if (spawnedObjects == null || spawnedObjects.Count == 0)
+                {
+                    Debug.LogError($"[PlayerSpawnService] 플레이어 스폰 실패: 키='{prefabKey}' 프리팹을 찾을 수 없음");
+                    return;
+                }
+
+                var playerObject = spawnedObjects[0].gameObject;
+
+                // PlayerSetup을 통한 초기화
+                var playerSetup = playerObject.GetComponent<PlayerSetup>();
+                if (playerSetup != null)
+                {
+                    playerSetup.InitializeFromPacket(player);
+                }
+                else
+                {
+                    Debug.LogWarning($"[PlayerSpawnService] PlayerSetup 컴포넌트를 찾을 수 없음: {playerObject.name}");
+                }
+
+                // 관리 리스트에 추가
+                _spawnedPlayers.Add(playerObject);
+                _playerIdToGameObject[player.Id] = playerObject;
+
+                // PlayerManagerService에 등록
+                _playerManagerService.RegisterPlayer(player, playerObject);
+
+                // 이벤트 발생
+                string playerType = GetPlayerTypeString(player);
+                OnPlayerSpawned?.Invoke(playerType, playerObject);
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerSpawnService] 플레이어 생성 완료: ID={player.Id}, 타입={playerType}, 로컬={player.IsMine}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[PlayerSpawnService] 단일 플레이어 스폰 실패: ID={player.Id}, {e.Message}");
             }
         }
 
-        private void SetupLocalPlayerCamera(PlayerGameObject playerObject)
+        /// <summary>
+        /// PlayerPacket 정보로 Addressable 키 결정
+        /// </summary>
+        private string GetPrefabKey(PlayerPacket player)
         {
-            // SkyboxTransitionManager를 통해 카메라를 플레이어 뷰로 전환
-            var skyboxManager = Features.Game.Services.SkyboxTransitionManager.Instance;
-            if (skyboxManager != null)
+            string localPrefix = player.IsMine ? "Local" : "Remote";
+
+            if (player.IsMongging)
             {
-                skyboxManager.SetPlayerViewMode();
-                if (_enableDebugLogs)
-                    Debug.Log($"[PlayerSpawnService] 로컬 플레이어 카메라 설정 완료: {playerObject.name}");
+                // 몽깅이 - 클래스별 구분 (서버에서 0부터 시작)
+                return player.ClassId switch
+                {
+                    0 => player.IsMine ? LOCAL_MONGGING_TANKER_KEY : REMOTE_MONGGING_TANKER_KEY,  // Tanker
+                    1 => player.IsMine ? LOCAL_MONGGING_HEALER_KEY : REMOTE_MONGGING_HEALER_KEY,  // Healer
+                    2 => player.IsMine ? LOCAL_MONGGING_WORKER_KEY : REMOTE_MONGGING_WORKER_KEY,  // Worker
+                    _ => player.IsMine ? LOCAL_MONGGING_TANKER_KEY : REMOTE_MONGGING_TANKER_KEY   // 기본값
+                };
             }
             else
             {
-                Debug.LogWarning("[PlayerSpawnService] SkyboxTransitionManager를 찾을 수 없습니다");
+                // 몽둥이
+                return player.IsMine ? LOCAL_MONGDUNG_KEY : REMOTE_MONGDUNG_KEY;
             }
+        }
+
+        /// <summary>
+        /// 플레이어 타입 문자열 반환
+        /// </summary>
+        private string GetPlayerTypeString(PlayerPacket player)
+        {
+            if (!player.IsMongging) return "Mongdung";
+
+            string result = player.ClassId switch
+            {
+                0 => "Mongging_Tanker",   // 서버에서 0부터 시작
+                1 => "Mongging_Healer",
+                2 => "Mongging_Worker",
+                _ => "Mongging_Unknown"
+            };
+
+            // Unknown인 경우 디버깅 로그 출력
+            if (result == "Mongging_Unknown")
+            {
+                Debug.LogWarning($"[PlayerSpawnService] Unknown ClassId 발견: ID={player.Id}, ClassId={player.ClassId}, IsMongging={player.IsMongging}");
+            }
+
+            return result;
         }
 
         private Transform GetOrCreateParent(string parentName)
@@ -273,16 +290,18 @@ namespace Features.Map.Services
             {
                 if (_playerIdToGameObject.TryGetValue(playerId, out var playerObject))
                 {
+                    // PlayerManagerService에서 제거
+                    _playerManagerService.RemovePlayer(playerId);
+
                     // 리스트에서 제거
-                    _spawnedMonggings.Remove(playerObject);
-                    _spawnedMongdungs.Remove(playerObject);
+                    _spawnedPlayers.Remove(playerObject);
                     _playerIdToGameObject.Remove(playerId);
 
                     // Addressable 해제
-                    _addressableLoadService.ReleaseInstance(playerObject.gameObject);
+                    _addressableLoadService.ReleaseInstance(playerObject);
 
                     string playerType = playerObject.name.Contains("Mongging") ? "Mongging" : "Mongdung";
-                    OnPlayerRemoved?.Invoke(playerType, playerObject.gameObject);
+                    OnPlayerRemoved?.Invoke(playerType, playerObject);
 
                     if (_enableDebugLogs)
                         Debug.Log($"[PlayerSpawnService] 플레이어 제거 완료: ID={playerId}");
@@ -315,27 +334,16 @@ namespace Features.Map.Services
 
                 int totalReleased = 0;
 
-                // Mongging 플레이어들 해제
-                foreach (var player in _spawnedMonggings)
+                // 모든 플레이어들 해제
+                foreach (var player in _spawnedPlayers)
                 {
-                    if (player != null && player.gameObject != null)
+                    if (player != null)
                     {
-                        _addressableLoadService.ReleaseInstance(player.gameObject);
+                        _addressableLoadService.ReleaseInstance(player);
                         totalReleased++;
                     }
                 }
-                _spawnedMonggings.Clear();
-
-                // Mongdung 플레이어들 해제
-                foreach (var player in _spawnedMongdungs)
-                {
-                    if (player != null && player.gameObject != null)
-                    {
-                        _addressableLoadService.ReleaseInstance(player.gameObject);
-                        totalReleased++;
-                    }
-                }
-                _spawnedMongdungs.Clear();
+                _spawnedPlayers.Clear();
 
                 // ID 매핑 정리
                 _playerIdToGameObject.Clear();
@@ -354,20 +362,15 @@ namespace Features.Map.Services
 
         public GameObject GetLocalPlayer()
         {
-            var localPlayer = _playerIdToGameObject.Values.FirstOrDefault(p =>
-            {
-                // PlayerGameObject에서 로컬 플레이어 확인하는 방법이 필요
-                // 현재는 이름으로 확인 (실제로는 PlayerPacket의 IsMine 정보를 저장해야 함)
-                return p.name.EndsWith("_Mine") || p.gameObject.CompareTag("LocalPlayer");
-            });
-
-            return localPlayer?.gameObject;
+            // PlayerManagerService를 통해 로컬 플레이어 찾기
+            var localPlayerInfo = _playerManagerService.GetLocalPlayer();
+            return localPlayerInfo?.GameObject;
         }
 
         public GameObject GetPlayer(long playerId)
         {
             return _playerIdToGameObject.TryGetValue(playerId, out var playerObject)
-                ? playerObject.gameObject
+                ? playerObject
                 : null;
         }
 
@@ -375,9 +378,9 @@ namespace Features.Map.Services
         {
             return playerType switch
             {
-                "Mongging" => _spawnedMonggings.Count(p => p != null),
-                "Mongdung" => _spawnedMongdungs.Count(p => p != null),
-                _ => 0
+                "Mongging" => _spawnedPlayers.Count(p => p != null && p.name.Contains("Mongging")),
+                "Mongdung" => _spawnedPlayers.Count(p => p != null && p.name.Contains("Mongdung")),
+                _ => _spawnedPlayers.Count(p => p != null)
             };
         }
     }

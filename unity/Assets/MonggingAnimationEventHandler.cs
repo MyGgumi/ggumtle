@@ -21,6 +21,9 @@ public class MonggingAnimationEventHandler : MonoBehaviour
     [Header("Debug")]
     [SerializeField] private bool enableDebugLogs = false;
 
+    // Local/Remote 구분
+    private bool isLocalPlayer = true;
+
 
     void Start()
     {
@@ -46,23 +49,34 @@ public class MonggingAnimationEventHandler : MonoBehaviour
         // 모든 이펙트 초기 비활성화
         DisableAllParticleEffects();
 
-        // PlayerMovementService 연결
-        var lifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
-        if (lifetimeScope != null)
+        // Local/Remote 구분 - 오브젝트 이름으로 판단
+        isLocalPlayer = gameObject.name.Contains("Local") || GetComponent<Features.Player.Views.PlayerGameObject>() != null;
+
+        // Local 플레이어만 PlayerMovementService 연결
+        if (isLocalPlayer)
         {
-            movementService = lifetimeScope.Container.Resolve<PlayerMovementService>();
-
-            if (movementService != null)
+            var lifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
+            if (lifetimeScope != null)
             {
-                // isMoving 상태 변경 이벤트 구독
-                movementService.MovingStateChanged += OnMovingStateChanged;
+                movementService = lifetimeScope.Container.Resolve<PlayerMovementService>();
 
-                // 초기 상태 설정
-                animator.SetBool("IsMoving", movementService.IsMoving);
+                if (movementService != null)
+                {
+                    // isMoving 상태 변경 이벤트 구독
+                    movementService.MovingStateChanged += OnMovingStateChanged;
 
-                if (enableDebugLogs)
-                    Debug.Log("[MonggingAnimationEventHandler] PlayerMovementService 연결 완료");
+                    // 초기 상태 설정
+                    animator.SetBool("IsMoving", movementService.IsMoving);
+
+                    if (enableDebugLogs)
+                        Debug.Log("[MonggingAnimationEventHandler] Local 플레이어 - PlayerMovementService 연결 완료");
+                }
             }
+        }
+        else
+        {
+            if (enableDebugLogs)
+                Debug.Log("[MonggingAnimationEventHandler] Remote 플레이어 - PlayerMovementService 연결 안함");
         }
     }
 
@@ -73,7 +87,21 @@ public class MonggingAnimationEventHandler : MonoBehaviour
             animator.SetBool("IsMoving", isMoving);
 
             if (enableDebugLogs)
-                Debug.Log($"[MonggingAnimationEventHandler] IsMoving: {isMoving}");
+                Debug.Log($"[MonggingAnimationEventHandler] Local IsMoving: {isMoving}");
+        }
+    }
+
+    /// <summary>
+    /// Remote 플레이어용 애니메이션 상태 설정 (외부에서 호출)
+    /// </summary>
+    public void SetMovingState(bool isMoving)
+    {
+        if (animator != null && !isLocalPlayer)
+        {
+            animator.SetBool("IsMoving", isMoving);
+
+            if (enableDebugLogs)
+                Debug.Log($"[MonggingAnimationEventHandler] Remote IsMoving: {isMoving}");
         }
     }
 

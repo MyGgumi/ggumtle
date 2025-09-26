@@ -7,37 +7,52 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 @Slf4j
-public class ClientTester {
+public class TakeAndFeedTester {
     private final TestContext testContext;
     private final PacketHandler packetHandler;
 
-    private ConcurrentHashMap<Long, Client> clients;
     private List<Client> monggingClients;
-    private Client mongdungClient;
 
     public void run() {
         // 클라이언트 생성
         long roomId = -1L;
         int clientSize = 3;
-        this.clients = testContext.initializeClients(roomId, clientSize, packetHandler);
+        testContext.initializeClients(roomId, clientSize, packetHandler);
 
         sleep(1000);
 
         monggingClients = testContext.monggingClients();
-        mongdungClient = testContext.mongdungClient();
 
         log.info("테스트 시나리오 설정 완료");
 
         sleep(1000);
 
-        log.info("테스트 시작");
+        log.info("꿈틀이 먹이기 테스트 시작");
+        monggingClients.getFirst().sendShowBoxMessage(1);
 
-        // 테스트 할 로직 작성
+        sleep(1000);
+
+        log.info("1번 상자의 0번째 아이템 꺼내기 시도");
+        monggingClients.getFirst().sendTakeItemMessage(1, 0);
+
+        sleep(1000);
+
+        log.info("꿈틀이 파내기 전에 먹이기 시도");
+        monggingClients.getFirst().sendStartFeedMessage(1);
+
+        sleep(1000);
+
+        log.info("꿈틀이 파내기");
+        monggingClients.getFirst().sendDigUpMessage(1);
+
+        sleep(3000);
+
+        log.info("꿈틀이 먹이기 시도");
+        monggingClients.getFirst().sendStartFeedMessage(1);
     }
 
     private void sleep(long millis) {

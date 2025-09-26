@@ -1061,7 +1061,7 @@ public class DreamManager {
                         .anyMatch(thread -> thread.ggumtleId == targetGgumtle.id);
                 if (!isWorking) {
                     body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.NORMAL);
-                    packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
+                    packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
                     this.room.broadcast(packet);
                     log.info("[{} - {}] 꿈틀이 먹이기 전파: {}번 꿈틀이에 작업 중인 몽깅이가 없어 일반 상태로 전파", session.getChannel().id(), room.id, targetGgumtle.id);
                 }
@@ -1077,11 +1077,11 @@ public class DreamManager {
         Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
         session.sendPacket(packet);
 
-        // 다른 사용자가 작업중이 아니면 DIGGING으로 전파
+        // 다른 사용자가 작업중이 아니면 Feeding으로 전파
         boolean isWorking = workingThreads.values().stream()
                 .anyMatch(thread -> thread.ggumtleId == targetGgumtle.id && thread.playerId != session.getMemberId());
         if (!isWorking) {
-            body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.DIGGING);
+            body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.FEEDING);
             packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
 

@@ -1445,6 +1445,7 @@ public class DreamManager {
         List<Long> playerIds = room.getPlayerIds().stream().sorted().toList();
         List<PlayerSpawn> playerSpawns;
 
+        // TEST
         int mongdungIndex;
         if (this.room.id < 0) {
             mongdungIndex = 0;
@@ -1460,6 +1461,7 @@ public class DreamManager {
             playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
         }
 
+        // TEST
         if (this.room.id == -4) {
             Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()), this.room.getPlayerInfo(playerIds.getFirst()));
             this.players.put(mongging.getId(), mongging);
@@ -1478,6 +1480,13 @@ public class DreamManager {
                 }
                 Mongging mongging = new Mongging(playerIds.get(i), Position.from(playerSpawns.get(i)), this.room.getPlayerInfo(playerIds.get(i)));
                 this.players.put(mongging.getId(), mongging);
+
+                // TEST
+                if (this.room.id < 0) {
+                    for (int j = 0; j < 10; j++) {
+                        mongging.addItem(ItemDictionary.LIGHT_JELLY.boxableItem);
+                    }
+                }
             }
         }
 

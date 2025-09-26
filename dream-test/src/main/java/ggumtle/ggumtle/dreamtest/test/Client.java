@@ -166,6 +166,14 @@ public class Client {
         send(packet);
     }
 
+    public void sendUseDefibrillator() {
+        ReceivePacketType receivePacketType = ReceivePacketType.USE_DEFIBRILLATOR;
+        PacketHeader packetHeader = new PacketHeader(receivePacketType.value, 0, System.currentTimeMillis());
+        Packet packet = new Packet(packetHeader, null);
+
+        send(packet);
+    }
+
     public void sendShowBoxMessage(int boxId) {
         byte[] data = ByteBuffer.allocate(4).putInt(boxId).array();
         ReceivePacketType receivePacketType = ReceivePacketType.SHOW_BOX;

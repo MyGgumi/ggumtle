@@ -1061,7 +1061,7 @@ public class DreamManager {
                         .anyMatch(thread -> thread.ggumtleId == targetGgumtle.id);
                 if (!isWorking) {
                     body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.NORMAL);
-                    packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                    packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
                     this.room.broadcast(packet);
                     log.info("[{} - {}] 꿈틀이 먹이기 전파: {}번 꿈틀이에 작업 중인 몽깅이가 없어 일반 상태로 전파", session.getChannel().id(), room.id, targetGgumtle.id);
                 }

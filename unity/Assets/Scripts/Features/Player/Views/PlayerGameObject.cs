@@ -249,13 +249,6 @@ namespace Features.Player.Views
 
             _hasAnimator = TryGetComponent(out _animator);
 
-            // 위치 변화 추적 (5초마다)
-            if (Time.frameCount % 300 == 0)
-            {
-                Debug.Log(
-                    $"[PlayerGameObject] 현재 위치: {transform.position}, GameObject: {gameObject.name}, Grounded: {Grounded}"
-                );
-            }
 
             JumpAndGravity();
             GroundedCheck();
@@ -268,13 +261,6 @@ namespace Features.Player.Views
         /// </summary>
         private void FixedUpdate()
         {
-            // FixedUpdate 호출 디버그 (5초마다)
-            if (Time.fixedTime % 5f < Time.fixedDeltaTime)
-            {
-                Debug.Log(
-                    $"[PlayerGameObject] FixedUpdate 호출됨 - GameObject: {gameObject.name}, NetworkSource: {_playerNetworkSource != null}"
-                );
-            }
 
             // 네트워크로 이동 데이터 전송 (일정한 주기)
             SendMovementDataToNetworkFixed();
@@ -505,13 +491,13 @@ namespace Features.Player.Views
         /// </summary>
         private async void SendMovementDataToNetworkFixed()
         {
-            // 메서드 호출 확인 (5초마다)
-            if (Time.fixedTime % 5f < Time.fixedDeltaTime)
-            {
-                Debug.Log(
-                    $"[PlayerGameObject] SendMovementDataToNetworkFixed 호출됨 - NetworkSource: {_playerNetworkSource != null}"
-                );
-            }
+            // 메서드 호출 확인 (5초마다) - 주석 처리
+            // if (Time.fixedTime % 5f < Time.fixedDeltaTime)
+            // {
+            //     Debug.Log(
+            //         $"[PlayerGameObject] SendMovementDataToNetworkFixed 호출됨 - NetworkSource: {_playerNetworkSource != null}"
+            //     );
+            // }
 
             if (_playerNetworkSource == null)
             {
@@ -540,13 +526,13 @@ namespace Features.Player.Views
                     direction = transform.forward;
                 }
 
-                // 5초마다 상세 디버깅
-                if (Time.fixedTime % 5f < Time.fixedDeltaTime)
-                {
-                    Debug.Log(
-                        $"[PlayerGameObject] 전송 데이터 - Pos: {position}, Direction: {direction}, MoveInput: {moveInput}, Speed: {_speed:F2}, IsMoving: {isMoving}"
-                    );
-                }
+                // 5초마다 상세 디버깅 - 주석 처리
+                // if (Time.fixedTime % 5f < Time.fixedDeltaTime)
+                // {
+                //     Debug.Log(
+                //         $"[PlayerGameObject] 전송 데이터 - Pos: {position}, Direction: {direction}, MoveInput: {moveInput}, Speed: {_speed:F2}, IsMoving: {isMoving}"
+                //     );
+                // }
 
                 // FixedUpdate 주기에 맞춰 네트워크 전송
                 var success = await _playerNetworkSource.SendPlayerMoveAsync(

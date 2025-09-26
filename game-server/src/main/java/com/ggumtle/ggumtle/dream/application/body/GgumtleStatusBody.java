@@ -13,7 +13,7 @@ public record GgumtleStatusBody(
 ) implements Body {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Status {
-        BURY(1), NORMAL(10), DIGGING(2), EATING(20), DONE(30), FAKE(11);
+        BURY(1), NORMAL(10), DIGGING(2), FEEDING(20), DONE(30), FAKE(11);
 
         private final int value;
     }

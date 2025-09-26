@@ -26,7 +26,11 @@ public class MyChestTester {
     private List<Client> monggingClients;
     private ConcurrentHashMap<Client, HashMap<Integer, Integer>> clientInventories;
 
+    private boolean isRunner = false;
+
     public void run() {
+        isRunner = true;
+
         long roomId = -1L;
         int clientSize = 3;
         clients = testContext.initializeClients(roomId, clientSize, packetHandler);
@@ -188,6 +192,10 @@ public class MyChestTester {
 
     @EventListener
     public void onTakeItemEvent(TakeItemEvent event) {
+        if (!isRunner) {
+            return;
+        }
+
         if (event.success()) {
             log.info("아이템 가져가기 성공: playerId={}, boxId={}, takenItem={}", event.playerId(), event.boxId(), event.takenItem());
 
@@ -203,6 +211,10 @@ public class MyChestTester {
 
     @EventListener
     public void onPutItemEvent(PutItemEvent event) {
+        if (!isRunner) {
+            return;
+        }
+
         if (event.result() == PutItemEvent.Result.SUCCESS) {
             log.info("아이템 넣기 성공: 상자 아이템 상태={}", java.util.Arrays.toString(event.items()));
         } else {

@@ -1404,10 +1404,12 @@ public class DreamManager {
 
     // TODO: 클래스 별 체력, 속도 초기화
     private void initializePlayers() {
-        List<Long> playerIds = room.getPlayerIds().stream().toList();
+        List<Long> playerIds = room.getPlayerIds().stream().sorted().toList();
         List<PlayerSpawn> playerSpawns;
 
+        int mongdungIndex;
         if (this.room.id < 0) {
+            mongdungIndex = 0;
             playerSpawns = List.of(
                     new PlayerSpawn(1, 45 * 100, 5 * 100, 0 * 100),
                     new PlayerSpawn(1, 45 * 100, 5 * 100, 2 * 100),
@@ -1416,6 +1418,7 @@ public class DreamManager {
                     new PlayerSpawn(1, 47 * 100, 5 * 100, 6 * 100)
             );
         } else {
+            mongdungIndex = pickMongdungIndex(playerIds.size());
             playerSpawns = spawnCache.getRandomPlayerSpawns(playerIds.size());
         }
 
@@ -1428,8 +1431,6 @@ public class DreamManager {
             this.players.put(mongdung.getId(), mongdung);
         }
         else {
-            int mongdungIndex = pickMongdungIndex(playerIds.size());
-
             this.players.clear();
             for (int i = 0; i < playerIds.size(); i++) {
                 if (i == mongdungIndex) {

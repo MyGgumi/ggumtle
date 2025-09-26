@@ -48,7 +48,7 @@ namespace Features.Mongdung.Services
             }
         }
 
-        public async UniTask<bool> ExecuteActionAsync(long playerId, MongdungActionType actionType, Vector3 position, Vector3 direction)
+        public async UniTask<bool> ExecuteActionAsync(long playerId, MongdungActionType actionType, Vector3 position, Vector3 direction, long targetId = -1)
         {
             if (!CanExecuteAction(playerId, actionType))
             {
@@ -88,7 +88,7 @@ namespace Features.Mongdung.Services
                 _actionStartedPublisher.Publish(new MongdungActionStartedMessage(playerId, actionType, position, actionData.executionDuration));
 
                 // 서버에 액션 전송
-                bool networkSuccess = await _networkSource.SendMongdungActionAsync(actionType, position, direction);
+                bool networkSuccess = await _networkSource.SendMongdungActionAsync(actionType, position, direction, targetId);
 
                 if (networkSuccess)
                 {

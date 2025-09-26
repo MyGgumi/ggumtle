@@ -42,6 +42,9 @@ namespace Features.Player.Views
         [Header("Debug Settings")]
         public bool enableDebugLogs = false;
 
+        [Header("Player Info")]
+        public long PlayerId { get; private set; } = -1;
+
         private float _speed;
         private float _animationBlend;
         private float _targetRotation = 0.0f;
@@ -639,6 +642,18 @@ namespace Features.Player.Views
                 Debug.Log(
                     $"[PlayerGameObject] 서버 속도 설정: 서버={serverSpeed} → Unity={MoveSpeed}"
                 );
+            }
+        }
+
+        /// <summary>
+        /// 플레이어 ID 설정
+        /// </summary>
+        public void SetPlayerId(long playerId)
+        {
+            PlayerId = playerId;
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[PlayerGameObject] PlayerId 설정: {playerId}");
             }
         }
 

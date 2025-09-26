@@ -27,9 +27,9 @@ namespace Features.Mongdung.NetworkSources
             }
         }
 
-        public async UniTask<bool> SendAttackActionAsync(Vector3 position, Vector3 direction)
+        public async UniTask<bool> SendAttackActionAsync(Vector3 position, Vector3 direction, long targetId = -1)
         {
-            return await SendMongdungActionAsync(MongdungActionType.Attack, position, direction);
+            return await SendMongdungActionAsync(MongdungActionType.Attack, position, direction, targetId);
         }
 
         public async UniTask<bool> SendTrapSettingActionAsync(Vector3 position, Vector3 direction)
@@ -42,14 +42,14 @@ namespace Features.Mongdung.NetworkSources
             return await SendMongdungActionAsync(MongdungActionType.Frighten, position, direction);
         }
 
-        public async UniTask<bool> SendMongdungActionAsync(MongdungActionType actionType, Vector3 position, Vector3 direction)
+        public async UniTask<bool> SendMongdungActionAsync(MongdungActionType actionType, Vector3 position, Vector3 direction, long targetId = -1)
         {
             try
             {
                 if (_enableDebugLogs)
                 {
                     Debug.Log(
-                        $"[MongdungNetworkSource] 몽둥이 액션 전송: ActionType={actionType}, Position={position}, Direction={direction}"
+                        $"[MongdungNetworkSource] 몽둥이 액션 전송: ActionType={actionType}, Position={position}, Direction={direction}, TargetId={targetId}"
                     );
                 }
 
@@ -63,8 +63,8 @@ namespace Features.Mongdung.NetworkSources
                 switch (actionType)
                 {
                     case MongdungActionType.Attack:
-                        // Attack은 direction과 targetId 필요 (targetId는 임시로 0 사용)
-                        _networkApi.MongdungAttack(direction, 0);
+                        // Attack은 direction과 targetId 필요
+                        _networkApi.MongdungAttack(direction, targetId);
                         break;
 
                     case MongdungActionType.TrapSetting:

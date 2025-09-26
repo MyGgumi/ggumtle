@@ -6,6 +6,7 @@ import com.ggumtle.ggumtle.dream.application.body.CloseBoxBody;
 import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
 import com.ggumtle.ggumtle.dream.application.body.GgumtleFedJellyCountBody;
 import com.ggumtle.ggumtle.dream.application.body.LeftJellyCountBody;
+import com.ggumtle.ggumtle.dream.application.body.UseDefibrillatorBody;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
@@ -240,14 +241,14 @@ public class DreamManager {
 
         // 몽깅이 기절
         if (targetMongging.isKnockout()) {
-            body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.KNOCKOUT);
-            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-            this.room.broadcast(packet);
-
             WorkingThread removedThread = workingThreads.remove(session.getMemberId());
             if (removedThread != null) {
                 removedThread.scheduledFuture.cancel(true);
             }
+
+            body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.KNOCKOUT);
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
 
             distributeDroppedItem(targetMongging);
 
@@ -256,14 +257,14 @@ public class DreamManager {
 
         // 몽깅이 사망
         if (targetMongging.isDead()) {
-            body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.DEAD);
-            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-            this.room.broadcast(packet);
-
             WorkingThread removedThread = workingThreads.remove(session.getMemberId());
             if (removedThread != null) {
                 removedThread.scheduledFuture.cancel(true);
             }
+
+            body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.DEAD);
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
 
             distributeDroppedItem(targetMongging);
 
@@ -530,6 +531,52 @@ public class DreamManager {
         this.room.broadcast(packet);
 
         log.info("[{} - {}] 필드 아이템 사용 성공: {}번 필드 아이템 사용", session.getChannel().id(), room.id, itemId);
+    }
+
+    /**
+     * 자가 제세동기 사용
+     * 기절한 상태에서 자가 제세동기를 사용해 부활한다
+     */
+    public void useDefibrillator(Session session) {
+        // 몽깅이 존재 확인
+        if (!(players.getOrDefault(session.getMemberId(), null) instanceof Mongging mongging)) {
+            Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_FOUND_MONGGING, -1);
+            Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.error("[{} - {}] 제세동기 사용 실패: 요청자 {}번 사용자가 없거나 몽깅이가 아님", session.getChannel().id(), room.id, session.getMemberId());
+            return;
+        }
+
+        int result = mongging.useDefibrillator();
+
+        if (result == -1) {
+            Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_KNOCK_OUT, -1);
+            Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.error("[{} - {}] 제세동기 사용 실패: {}번 몽깅이가 기절 상태가 아님", session.getChannel().id(), room.id, session.getMemberId());
+            return;
+        }
+
+        if (result == -2) {
+            Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_FOUND_DEFIBRILLATOR, -1);
+            Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.error("[{} - {}] 제세동기 사용 실패: {}번 몽깅이에게 제세동기가 없음", session.getChannel().id(), room.id, session.getMemberId());
+            return;
+        }
+
+        Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.SUCCESS, result);
+        Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
+        session.sendPacket(packet);
+
+        body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+        packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+        this.room.broadcast(packet);
+
+        log.error("[{} - {}] 제세동기 사용 성공: {}번 몽깅이가 제세동기로 부활함", session.getChannel().id(), room.id, session.getMemberId());
     }
 
     /**
@@ -1068,12 +1115,12 @@ public class DreamManager {
 
             // 다른 몽깅이가 먼저 성불시킴
             if (leftNeedJellyCount < 0) {
+                WorkingThread removedThread = workingThreads.remove(session.getMemberId());
+                removedThread.scheduledFuture.cancel(true);
+
                 Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
-
-                WorkingThread removedThread = workingThreads.remove(session.getMemberId());
-                removedThread.scheduledFuture.cancel(true);
 
                 log.info("[{} - {}] 꿈틀이 먹이기 종료: 다른 몽깅이가 성불시켜 종료", session.getChannel().id(), room.id);
                 return;
@@ -1092,12 +1139,12 @@ public class DreamManager {
 
             // 남은 아이템이 없으면 종료
             if (leftLightJellyCount == 0) {
+                WorkingThread removedThread = workingThreads.remove(session.getMemberId());
+                removedThread.scheduledFuture.cancel(true);
+
                 body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
                 packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
-
-                WorkingThread removedThread = workingThreads.remove(session.getMemberId());
-                removedThread.scheduledFuture.cancel(true);
 
                 // 작업 중인 몽깅이가 없으면 일반 상태로 전파
                 boolean isWorking = workingThreads.values().stream()
@@ -1311,6 +1358,8 @@ public class DreamManager {
         for (Map.Entry<Boxable, Integer> entry : droppedItems.entrySet()) {
             ItemDistributor.distribute(entry.getKey(), boxes.values().stream().toList(), entry.getValue());
         }
+
+        log.info("[{} - {}] 기절 및 사망한 몽깅이의 아이템 재공급: {}", null, room.id, droppedItems);
     }
 
     private void endDream(boolean isMonggingWin) {

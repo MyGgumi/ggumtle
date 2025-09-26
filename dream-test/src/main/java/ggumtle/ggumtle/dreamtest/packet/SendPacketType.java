@@ -12,13 +12,13 @@ public enum SendPacketType {
     // 방 관리
     ROOM_JOIN((short) 11),
 
-    // 게임 초기화
+    // 드림 초기화
     INITIALIZE_MAP((short) 20),
     INITIALIZE_PLAYER((short) 21),
     SCENE_CHANGE((short) 31),
     GAME_START((short) 35),
 
-    // 게임 플레이
+    // 드림 플레이
     PLAYER_MOVE_RELAY((short) 41),
     MONGGING_STATUS((short) 42),
     NEW_GGUMTLE((short) 43),
@@ -31,6 +31,7 @@ public enum SendPacketType {
     MONGDUNG_SKILL((short) 68),
     ATTACK_WITH_ITEM((short) 70),
     USE_FIELD_ITEM((short) 72),
+    USE_DEFIBRILLATOR((short) 74),
 
     // 상자 상호작용
     SHOW_BOX((short) 51),
@@ -41,16 +42,17 @@ public enum SendPacketType {
     // 꿈틀이 상호작용
     DIG_UP_RECEIVE((short) 101),
     STOP_DIGGING((short) 103),
-    DIG_UP_DONE((short) 104),
     START_FEED((short) 111),
     STOP_FEED((short) 113),
-    FEED_DONE((short) 120),
+    GGUMTLE_STATUS((short) 120),
+    LEFT_JELLY_COUNT((short) 121),
+    GGUMTLE_FED_JELLY((short) 122),
 
     // 탈출
     OPEN_EXIT((short) 130),
     ESCAPE_RESULT((short) 141),
 
-    // 게임 종료
+    // 드림 종료
     END((short) 200)
     ;
 

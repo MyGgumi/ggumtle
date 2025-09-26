@@ -170,6 +170,13 @@ public class DreamService {
         dreamManager.useFieldItem(command.itemId(), session);
     }
 
+    @PacketCommandHandler(type = ReceivePacketType.USE_DEFIBRILLATOR)
+    public void handleUseDefibrillator(Session session) {
+        DreamManager dreamManager = getDreamManager(session);
+
+        dreamManager.useDefibrillator(session);
+    }
+
     @PacketCommandHandler(type = ReceivePacketType.SHOW_BOX)
     public void handleShowBox(ShowBoxCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);

@@ -1,10 +1,12 @@
 package com.ggumtle.ggumtle.dream.domain.player;
 
 import com.ggumtle.ggumtle.dream.domain.item.Boxable;
+import com.ggumtle.ggumtle.dream.domain.item.ItemDictionary;
 import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -30,7 +32,7 @@ public class Mongging extends Player {
     private int knockOutCount;
     private final Object statusLock;
 
-    private final ConcurrentHashMap <Boxable, Integer> inventory;
+    private final ConcurrentHashMap<Boxable, Integer> inventory;
     private final ConcurrentHashMap<Boxable, Integer> droppedItems;
     private final Object inventoryLock;
 
@@ -63,14 +65,23 @@ public class Mongging extends Player {
                 }
 
                 this.hp = 0;
-                this.droppedItems.clear();
-                this.droppedItems.putAll(this.inventory);
-                this.inventory.clear();
-                this.status = Status.KNOCKOUT;
                 this.knockOutCount++;
+
+                this.droppedItems.clear();
+                Iterator<Boxable> itemIterator = this.inventory.keySet().iterator();
+                while (itemIterator.hasNext()) {
+                    Boxable item = itemIterator.next();
+
+                    if (item.id != ItemDictionary.DEFIBRILLATOR.boxableItem.id) {
+                        this.droppedItems.put(item, this.inventory.get(item));
+                        itemIterator.remove();
+                    }
+                }
 
                 if (this.knockOutCount > MAX_KNOCKOUT_COUNT) {
                     this.status = Status.DEAD;
+                } else {
+                    this.status = Status.KNOCKOUT;
                 }
 
                 return this.hp;
@@ -173,6 +184,31 @@ public class Mongging extends Player {
     public boolean isEscaped() {
         synchronized (statusLock) {
             return this.status == Status.ESCAPED;
+        }
+    }
+
+    public int useDefibrillator() {
+        synchronized (statusLock) {
+            synchronized (inventoryLock) {
+                if (this.status != Status.KNOCKOUT) {
+                    return -1;
+                }
+
+                Boxable defibrillator = ItemDictionary.DEFIBRILLATOR.boxableItem;
+                int count = this.inventory.getOrDefault(defibrillator, 0);
+                if (count == 0) {
+                    return -2;
+                }
+
+                if (count == 1) {
+                    this.inventory.remove(defibrillator);
+                } else {
+                    this.inventory.put(defibrillator, count - 1);
+                }
+                this.hp = REVIVE_HP;
+                this.status = Status.ALIVE;
+                return this.hp;
+            }
         }
     }
 

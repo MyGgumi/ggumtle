@@ -31,6 +31,7 @@ public enum SendPacketType {
     MONGDUNG_SKILL((short) 68),
     ATTACK_WITH_ITEM((short) 70),
     USE_FIELD_ITEM((short) 72),
+    USE_DEFIBRILLATOR((short) 74),
 
     // 상자 상호작용
     SHOW_BOX((short) 51),

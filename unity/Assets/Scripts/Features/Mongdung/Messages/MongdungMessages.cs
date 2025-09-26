@@ -1,4 +1,5 @@
 using Features.Mongdung.Models;
+using Networks.Players;
 using UnityEngine;
 
 namespace Features.Mongdung.Messages
@@ -183,6 +184,100 @@ namespace Features.Mongdung.Messages
             StatusCode = statusCode;
             Position = position;
             Direction = direction;
+        }
+    }
+
+    // ===== 네트워크 응답 전용 메시지들 =====
+
+    /// <summary>
+    /// 몽둥이 공격 응답 메시지 (서버→모든 클라이언트)
+    /// </summary>
+    public readonly struct MongdungAttackResponseMessage
+    {
+        public readonly MongdungAttackResult Result;
+        public readonly long TargetId;
+        public readonly int LeftHp;
+        public readonly bool Success;
+
+        public MongdungAttackResponseMessage(
+            MongdungAttackResult result,
+            long targetId,
+            int leftHp)
+        {
+            Result = result;
+            TargetId = targetId;
+            LeftHp = leftHp;
+            Success = result == MongdungAttackResult.HitSuccess;
+        }
+    }
+
+    /// <summary>
+    /// 몽둥이 스킬 응답 메시지 (서버→모든 클라이언트)
+    /// </summary>
+    public readonly struct MongdungSkillResponseMessage
+    {
+        public readonly int SkillType;
+        public readonly MongdungActionType ActionType;
+        public readonly MongdungSkillResult Result;
+        public readonly bool Success;
+
+        public MongdungSkillResponseMessage(
+            int skillType,
+            MongdungActionType actionType,
+            MongdungSkillResult result)
+        {
+            SkillType = skillType;
+            ActionType = actionType;
+            Result = result;
+            Success = result == MongdungSkillResult.Success;
+        }
+    }
+
+    // ===== 직접 액션 실행 메시지들 =====
+
+    /// <summary>
+    /// 몽둥이 공격 액션 메시지 - 모든 몽둥이/몽깅이가 Attack 애니메이션 실행
+    /// 서버의 MongdungAttackCommand 데이터를 그대로 포함
+    /// </summary>
+    public readonly struct MongdungAttackActionMessage
+    {
+        public readonly MongdungAttackResult Result;
+        public readonly long TargetId;
+        public readonly int LeftHp;
+        public readonly bool Success;
+
+        public MongdungAttackActionMessage(
+            MongdungAttackResult result,
+            long targetId,
+            int leftHp)
+        {
+            Result = result;
+            TargetId = targetId;
+            LeftHp = leftHp;
+            Success = result == MongdungAttackResult.HitSuccess;
+        }
+    }
+
+    /// <summary>
+    /// 몽둥이 스킬 액션 메시지 - 모든 몽둥이/몽깅이가 해당 Skill 애니메이션 실행
+    /// 서버의 MongdungSkillCommand 데이터를 그대로 포함
+    /// </summary>
+    public readonly struct MongdungSkillActionMessage
+    {
+        public readonly int SkillType;
+        public readonly MongdungActionType ActionType;
+        public readonly MongdungSkillResult Result;
+        public readonly bool Success;
+
+        public MongdungSkillActionMessage(
+            int skillType,
+            MongdungActionType actionType,
+            MongdungSkillResult result)
+        {
+            SkillType = skillType;
+            ActionType = actionType;
+            Result = result;
+            Success = result == MongdungSkillResult.Success;
         }
     }
 }

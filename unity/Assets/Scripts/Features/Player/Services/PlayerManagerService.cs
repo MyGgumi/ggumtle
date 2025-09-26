@@ -52,7 +52,7 @@ namespace Features.Player.Services
         public event Action<long, string> OnPlayerStateChanged;
 
         [Header("Debug Settings")]
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false; // 과도한 이동 로그 방지
 
         [Inject]
         public PlayerManagerService(

@@ -197,7 +197,6 @@ namespace Networks
 
                 var jellyQuitRequest = new JellyQuitSend();
                 client.Send(jellyQuitRequest);
-
             }
             catch (Exception e)
             {
@@ -568,7 +567,6 @@ namespace Networks
 
                 var getItemRequest = new GetItemSend(chestId, index);
                 client.Send(getItemRequest);
-
             }
             catch (Exception e)
             {
@@ -884,17 +882,16 @@ namespace Networks
         {
             if (_pendingRequests.TryGetValue(command.Type, out var tcs))
             {
-                Debug.Log($"[NetworkApi] 응답 처리: {command.Type} (대기중: {_pendingRequests.Count}개)");
+                Debug.Log(
+                    $"[NetworkApi] 응답 처리: {command.Type} (대기중: {_pendingRequests.Count}개)"
+                );
                 tcs.SetResult(command);
             }
             else
             {
-                Debug.LogWarning($"[NetworkApi] 대기 중인 요청 없음: {command.Type}");
-                Debug.LogWarning($"[NetworkApi] 현재 대기 중인 요청들:");
-                foreach (var kvp in _pendingRequests)
-                {
-                    Debug.LogWarning($"[NetworkApi]   - {kvp.Key}");
-                }
+                // 대기 중인 요청이 없는 경우 - fire and forget 요청들은 정상적인 상황
+                // 로그 제거: MongdungAttack, MongdungSkill 등은 비동기 대기가 아님
+                // Debug.LogWarning($"[NetworkApi] 대기 중인 요청 없음: {command.Type}");
             }
         }
     }

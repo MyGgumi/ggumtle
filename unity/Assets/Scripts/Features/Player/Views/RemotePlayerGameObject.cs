@@ -114,20 +114,8 @@ namespace Features.Player.Views
         private Queue<NetworkSnapshot> _networkHistory = new Queue<NetworkSnapshot>();
         private const int MAX_HISTORY_SIZE = 5;
 
-        // MessagePipe 구독 관련
+        // MessagePipe 구독 관련 - 이제 MongdungGameObject가 모든 메시지 처리를 담당
         private CompositeDisposable _disposables = new CompositeDisposable();
-        private ISubscriber<MongdungActionCompletedMessage> _actionCompletedSubscriber;
-
-        [Inject]
-        public void ConstructMessagePipe(ISubscriber<MongdungActionCompletedMessage> actionCompletedSubscriber)
-        {
-            _actionCompletedSubscriber = actionCompletedSubscriber;
-
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[RemotePlayerGameObject] MessagePipe 의존성 주입 완료: {gameObject.name}");
-            }
-        }
 
         private void Start()
         {
@@ -140,8 +128,7 @@ namespace Features.Player.Views
             // 보간 시스템 초기화
             InitializeInterpolationSystem();
 
-            // MessagePipe 구독 설정
-            SetupMessagePipeSubscriptions();
+            // MessagePipe 구독은 이제 MongdungGameObject에서 처리
 
             if (enableDebugLogs)
             {
@@ -189,98 +176,12 @@ namespace Features.Player.Views
             }
         }
 
-        /// <summary>
-        /// MessagePipe 구독 설정
-        /// </summary>
-        private void SetupMessagePipeSubscriptions()
-        {
-            if (_actionCompletedSubscriber == null)
-            {
-                if (enableDebugLogs)
-                {
-                    Debug.LogWarning($"[RemotePlayerGameObject] ActionCompletedSubscriber가 null - MessagePipe 구독 불가: {gameObject.name}");
-                }
-                return;
-            }
+        // SetupMessagePipeSubscriptions 메서드 제거됨
+        // 이제 MongdungGameObject가 모든 메시지 구독을 담당함
 
-            // MongdungActionCompletedMessage 구독
-            _actionCompletedSubscriber
-                .Subscribe(OnMongdungActionCompleted)
-                .AddTo(_disposables);
 
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[RemotePlayerGameObject] MessagePipe 구독 완료: {gameObject.name}");
-            }
-        }
-
-        /// <summary>
-        /// 몽둥이 액션 완료 메시지 처리 (Remote 애니메이션 트리거)
-        /// </summary>
-        private void OnMongdungActionCompleted(MongdungActionCompletedMessage message)
-        {
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[RemotePlayerGameObject] MongdungActionCompleted 메시지 수신: PlayerId={message.PlayerId}, ActionType={message.ActionType}, Success={message.Success}, GameObject={gameObject.name}");
-            }
-
-            // Remote 플레이어는 모든 성공한 액션에 대해 애니메이션 트리거
-            if (!message.Success)
-            {
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"[RemotePlayerGameObject] 액션 실패로 인한 스킵: {message.ActionType}");
-                }
-                return;
-            }
-
-            var mongdungComponent = GetComponent<Features.Mongdung.Views.MongdungGameObject>();
-            if (mongdungComponent == null)
-            {
-                // 몽깅이 플레이어는 MongdungGameObject가 없는 것이 정상 - TODO: 나중에 몽깅이용 액션 처리 구현
-                if (enableDebugLogs && gameObject.name.Contains("Mongdung"))
-                {
-                    Debug.LogWarning($"[RemotePlayerGameObject] 몽둥이인데 MongdungGameObject 컴포넌트를 찾을 수 없음: {gameObject.name}");
-                }
-                else if (enableDebugLogs)
-                {
-                    Debug.Log($"[RemotePlayerGameObject] 몽깅이 플레이어 - TODO: 몽깅이용 액션 처리 구현 필요: {gameObject.name}");
-                }
-                return;
-            }
-
-            // 액션 타입에 따른 애니메이션 트리거
-            string animationTrigger = message.ActionType switch
-            {
-                MongdungActionType.Attack => "Attack",
-                MongdungActionType.TrapSetting => "TrapSetting",
-                MongdungActionType.Frighten => "Frighten",
-                _ => ""
-            };
-
-            if (enableDebugLogs)
-            {
-                Debug.Log($"[RemotePlayerGameObject] 애니메이션 트리거 매핑: {message.ActionType} -> {animationTrigger}");
-            }
-
-            if (!string.IsNullOrEmpty(animationTrigger))
-            {
-                // RemotePlayerGameObject의 TriggerAnimation 메서드 사용
-                TriggerAnimation(animationTrigger);
-
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"[RemotePlayerGameObject] Remote 몽둥이 액션 애니메이션 트리거 완료: {message.ActionType} -> {animationTrigger}");
-                }
-            }
-            else
-            {
-                if (enableDebugLogs)
-                {
-                    Debug.LogWarning($"[RemotePlayerGameObject] 알 수 없는 액션 타입: {message.ActionType}");
-                }
-            }
-        }
+        // OnMongdungActionBroadcast 메서드 제거됨
+        // 이제 MongdungService → ViewModel → MongdungGameObject 플로우로 통합됨
 
         /// <summary>
         /// 간단한 보간 시스템 초기화
@@ -768,12 +669,13 @@ namespace Features.Player.Views
                 _isInterpolating = false;
                 _smoothDampVelocity = Vector3.zero; // SmoothDamp 속도 초기화
 
-                if (enableDebugLogs)
-                {
-                    Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 보간 완료 및 스냅 - 거리: {distanceToTarget:F6}m"
-                    );
-                }
+                // 과도한 로그 방지 - 보간 완료 로그 제거
+                // if (enableDebugLogs)
+                // {
+                //     Debug.Log(
+                //         $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 보간 완료 및 스냅 - 거리: {distanceToTarget:F6}m"
+                //     );
+                // }
             }
             else if (distanceToTarget > 3.0f)
             {

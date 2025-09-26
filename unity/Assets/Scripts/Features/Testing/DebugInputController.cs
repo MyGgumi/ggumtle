@@ -81,13 +81,15 @@ namespace Features.Testing
         {
             // MongdungGameObject 컴포넌트가 있으면 몽둥이 플레이어
             var mongdungGameObject = GetComponent<MongdungGameObject>();
-            if (mongdungGameObject != null) return true;
+            if (mongdungGameObject != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[DebugInputController] MongdungGameObject 컴포넌트 발견 → 몽둥이 플레이어: {gameObject.name}");
+                return true;
+            }
 
-            // GameObject 이름으로 확인 (몽둥이는 "Mongdung"이 포함됨)
-            if (gameObject.name.Contains("Mongdung")) return true;
-
-            // 몽깅이가 아닌 플레이어를 몽둥이로 간주 (IsMongging이 false)
-            // 이 부분은 실제 플레이어 타입 확인 로직으로 대체 필요
+            if (enableDebugLogs)
+                Debug.Log($"[DebugInputController] 몽둥이 플레이어 아님: {gameObject.name}");
             return false;
         }
 

@@ -14,7 +14,7 @@ namespace Features.Player.NetworkSources
     /// </summary>
     public static class PlayerNetworkEventHandler
     {
-        private static readonly bool _enableDebugLogs = true;
+        private static readonly bool _enableDebugLogs = false; // 과도한 이동 로그 방지
 
         /// <summary>
         /// 플레이어 이동 이벤트 처리

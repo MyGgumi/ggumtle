@@ -35,6 +35,8 @@ namespace Features.Mongdung.Views
         private IMongdungService _mongdungService;
         private MongdungViewModel _viewModel;
         private IPublisher<MongdungMovementBlockedMessage> _movementBlockedPublisher;
+        private ISubscriber<MongdungAttackActionMessage> _attackActionSubscriber;
+        private ISubscriber<MongdungSkillActionMessage> _skillActionSubscriber;
 
         // 컴포넌트
         private Animator _animator;
@@ -57,11 +59,15 @@ namespace Features.Mongdung.Views
         public void Construct(
             IMongdungService mongdungService,
             MongdungViewModel viewModel,
-            IPublisher<MongdungMovementBlockedMessage> movementBlockedPublisher)
+            IPublisher<MongdungMovementBlockedMessage> movementBlockedPublisher,
+            ISubscriber<MongdungAttackActionMessage> attackActionSubscriber,
+            ISubscriber<MongdungSkillActionMessage> skillActionSubscriber)
         {
             _mongdungService = mongdungService ?? throw new ArgumentNullException(nameof(mongdungService));
             _viewModel = viewModel ?? throw new ArgumentNullException(nameof(viewModel));
             _movementBlockedPublisher = movementBlockedPublisher;
+            _attackActionSubscriber = attackActionSubscriber;
+            _skillActionSubscriber = skillActionSubscriber;
 
             if (enableDebugLogs)
             {
@@ -75,6 +81,7 @@ namespace Features.Mongdung.Views
             InitializeAnimatorParameters();
             InitializePlayerIdFromPlayerGameObject();
             SubscribeToViewModel();
+            SubscribeToDirectActionMessages();
 
             if (enableDebugLogs)
             {
@@ -84,12 +91,8 @@ namespace Features.Mongdung.Views
 
         private void Update()
         {
-            // 로컬 플레이어만 입력 처리
-            if (IsLocalPlayer())
-            {
-                HandleInput();
-            }
-            // Remote 플레이어는 네트워크 메시지만 수신해서 애니메이션 처리
+            // 입력 처리는 이제 DebugInputController 등 외부에서 MongdungService를 통해 처리
+            // MongdungGameObject는 오직 ViewModel의 상태 변화에만 반응
         }
 
         /// <summary>
@@ -191,11 +194,11 @@ namespace Features.Mongdung.Views
         }
 
         /// <summary>
-        /// PlayerGameObject에서 PlayerId를 가져와서 초기화
+        /// PlayerGameObject 또는 RemotePlayerGameObject에서 PlayerId를 가져와서 초기화
         /// </summary>
         private void InitializePlayerIdFromPlayerGameObject()
         {
-            // 같은 GameObject에서 PlayerGameObject 컴포넌트 찾기
+            // 로컬 플레이어: PlayerGameObject에서 PlayerId 가져오기
             var playerGameObject = GetComponent<Features.Player.Views.PlayerGameObject>();
             if (playerGameObject != null && playerGameObject.PlayerId != -1)
             {
@@ -216,13 +219,36 @@ namespace Features.Mongdung.Views
                 {
                     Debug.Log($"[MongdungGameObject] PlayerGameObject에서 PlayerId 설정: {PlayerId}");
                 }
+                return;
             }
-            else
+
+            // 원격 플레이어: RemotePlayerGameObject에서 PlayerId 가져오기
+            var remotePlayerGameObject = GetComponent<Features.Player.Views.RemotePlayerGameObject>();
+            if (remotePlayerGameObject != null && remotePlayerGameObject.PlayerId != -1)
             {
+                PlayerId = remotePlayerGameObject.PlayerId;
+                PlayerName = $"Player_{PlayerId}";
+
+                // 몽둥이 데이터 업데이트
+                mongdungData.playerId = PlayerId;
+                mongdungData.playerName = PlayerName;
+
+                // ViewModel 초기화
+                if (_viewModel != null)
+                {
+                    _viewModel.Initialize(PlayerId, PlayerName);
+                }
+
                 if (enableDebugLogs)
                 {
-                    Debug.LogWarning($"[MongdungGameObject] PlayerGameObject를 찾을 수 없거나 PlayerId가 -1입니다: {gameObject.name}");
+                    Debug.Log($"[MongdungGameObject] RemotePlayerGameObject에서 PlayerId 설정: {PlayerId}");
                 }
+                return;
+            }
+
+            if (enableDebugLogs)
+            {
+                Debug.LogWarning($"[MongdungGameObject] PlayerGameObject 또는 RemotePlayerGameObject를 찾을 수 없거나 PlayerId가 -1입니다: {gameObject.name}");
             }
         }
 
@@ -234,51 +260,97 @@ namespace Features.Mongdung.Views
                 return;
             }
 
-            // 상태 변경 구독
+            // 상태 변경 구독 (기본 상태 관리용)
             _viewModel.CurrentState.Subscribe(OnStateChanged).AddTo(_disposables);
 
             // 이동 제한 구독
             _viewModel.IsMovementBlocked.Subscribe(OnMovementBlockedChanged).AddTo(_disposables);
 
-            // 각 액션 실행 상태 구독
-            _viewModel.GetActionExecuting(MongdungActionType.Attack)
-                .Subscribe(isExecuting => OnActionExecutingChanged(MongdungActionType.Attack, isExecuting))
+            // 액션 실행 상태 구독은 제거 - 이제 서버 이벤트에만 반응
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[MongdungGameObject] ViewModel 구독 완료 (서버 이벤트 전용)");
+            }
+        }
+
+        /// <summary>
+        /// 직접 액션 메시지 구독 (서버 응답 시 바로 애니메이션 실행)
+        /// </summary>
+        private void SubscribeToDirectActionMessages()
+        {
+            if (_attackActionSubscriber == null || _skillActionSubscriber == null)
+            {
+                Debug.LogError($"[MongdungGameObject] ActionMessage Subscriber가 null입니다: {gameObject.name}");
+                return;
+            }
+
+            // Attack 액션 메시지 구독
+            _attackActionSubscriber
+                .Subscribe(OnAttackActionReceived)
                 .AddTo(_disposables);
 
-            _viewModel.GetActionExecuting(MongdungActionType.TrapSetting)
-                .Subscribe(isExecuting => OnActionExecutingChanged(MongdungActionType.TrapSetting, isExecuting))
-                .AddTo(_disposables);
-
-            _viewModel.GetActionExecuting(MongdungActionType.Frighten)
-                .Subscribe(isExecuting => OnActionExecutingChanged(MongdungActionType.Frighten, isExecuting))
+            // Skill 액션 메시지 구독
+            _skillActionSubscriber
+                .Subscribe(OnSkillActionReceived)
                 .AddTo(_disposables);
 
             if (enableDebugLogs)
             {
-                Debug.Log($"[MongdungGameObject] ViewModel 구독 완료");
+                Debug.Log($"[MongdungGameObject] 직접 액션 메시지 구독 완료");
             }
         }
 
-        private void HandleInput()
+        /// <summary>
+        /// 서버에서 Attack 액션 메시지 받았을 때 처리 (바로 애니메이션 실행)
+        /// </summary>
+        private void OnAttackActionReceived(MongdungAttackActionMessage message)
         {
-            // Attack 액션
-            if (Input.GetKeyDown(attackKey))
+            try
             {
-                TryExecuteAction(MongdungActionType.Attack);
-            }
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungGameObject] 서버 Attack 액션 메시지 수신: Result={message.Result}, TargetId={message.TargetId}, Success={message.Success} - 애니메이션 실행");
+                }
 
-            // TrapSetting 액션
-            if (Input.GetKeyDown(trapKey))
-            {
-                TryExecuteAction(MongdungActionType.TrapSetting);
-            }
+                // 서버 이벤트 수신 시 바로 Attack 애니메이션 실행
+                TriggerActionAnimation(MongdungActionType.Attack);
 
-            // Frighten 액션
-            if (Input.GetKeyDown(frightenKey))
+                // 현재 실행 중인 액션 추적
+                _currentExecutingAction = MongdungActionType.Attack;
+            }
+            catch (System.Exception e)
             {
-                TryExecuteAction(MongdungActionType.Frighten);
+                Debug.LogError($"[MongdungGameObject] 서버 Attack 액션 처리 실패: {e.Message}");
             }
         }
+
+        /// <summary>
+        /// 서버에서 Skill 액션 메시지 받았을 때 처리 (바로 애니메이션 실행)
+        /// </summary>
+        private void OnSkillActionReceived(MongdungSkillActionMessage message)
+        {
+            try
+            {
+                if (enableDebugLogs)
+                {
+                    string skillName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungGameObject] 서버 Skill 액션 메시지 수신: SkillType={message.SkillType}, ActionType={skillName}, Success={message.Success} - 애니메이션 실행");
+                }
+
+                // 서버 이벤트 수신 시 바로 해당 Skill 애니메이션 실행
+                TriggerActionAnimation(message.ActionType);
+
+                // 현재 실행 중인 액션 추적
+                _currentExecutingAction = message.ActionType;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungGameObject] 서버 Skill 액션 처리 실패: {e.Message}");
+            }
+        }
+
+        // HandleInput 메서드 제거 - 이제 외부에서 MongdungService를 통해 액션 실행
 
         /// <summary>
         /// 액션 실행 시도
@@ -401,29 +473,7 @@ namespace Features.Mongdung.Views
             }
         }
 
-        private void OnActionExecutingChanged(MongdungActionType actionType, bool isExecuting)
-        {
-            if (isExecuting)
-            {
-                _currentExecutingAction = actionType;
-                TriggerActionAnimation(actionType);
-
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"[MongdungGameObject] 액션 실행 시작: {actionType}");
-                }
-            }
-            else if (_currentExecutingAction == actionType)
-            {
-                _currentExecutingAction = null;
-                StopActionAnimation(actionType);
-
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"[MongdungGameObject] 액션 실행 완료: {actionType}");
-                }
-            }
-        }
+        // OnActionExecutingChanged 메서드 제거 - 이제 서버 이벤트에만 반응
 
         private void TriggerActionAnimation(MongdungActionType actionType)
         {

@@ -28,6 +28,7 @@ namespace Features.Mongdung.NetworkSources
             set => _enableDebugLogs = value;
         }
 
+
         /// <summary>
         /// 서버에서 오는 몽둥이 액션 브로드캐스트 처리
         /// </summary>
@@ -179,8 +180,6 @@ namespace Features.Mongdung.NetworkSources
         {
             try
             {
-                Debug.Log("🎯 [MongdungNetworkEventHandler] HandleMongdungAttackResponse 호출됨!");
-
                 if (_enableDebugLogs)
                 {
                     Debug.Log(
@@ -188,29 +187,21 @@ namespace Features.Mongdung.NetworkSources
                     );
                 }
 
-                // NetworkApi의 pending request는 CommandDispatcher에서 이미 처리됨
-                // 중복 호출 방지를 위해 제거
-                Debug.Log($"📡 NetworkApi.Instance 존재 여부: {Networks.NetworkApi.Instance != null}");
-
-                // 성공한 경우 Remote 플레이어들에게 애니메이션 트리거 메시지 발행
-                if (command.Success)
+                // MessagePipeBridge를 통해 이벤트 발행 (모든 몽둥이에게 브로드캐스트)
+                var bridge = Networks.MessagePipeBridge.Instance;
+                if (bridge != null)
                 {
-                    var bridge = Networks.MessagePipeBridge.Instance;
-                    if (bridge != null)
-                    {
-                        var message = new MongdungActionCompletedMessage(
-                            0, // Local 플레이어의 ID는 별도로 구해야 하지만 일단 0으로
-                            MongdungActionType.Attack,
-                            true,
-                            Vector3.zero
-                        );
-                        bridge.PublishMessage(message);
-
-                        if (_enableDebugLogs)
-                        {
-                            Debug.Log("[MongdungNetworkEventHandler] Attack 성공 - Remote 애니메이션 트리거 메시지 발행");
-                        }
-                    }
+                    // 몽둥이 공격 응답 메시지 발행
+                    var attackResponseMessage = new MongdungAttackResponseMessage(
+                        command.Result,
+                        command.targetId,
+                        command.leftHp
+                    );
+                    bridge.PublishMessage(attackResponseMessage);
+                }
+                else
+                {
+                    Debug.LogError("[MongdungNetworkEventHandler] MessagePipeBridge를 찾을 수 없음!");
                 }
             }
             catch (System.Exception e)
@@ -232,46 +223,37 @@ namespace Features.Mongdung.NetworkSources
         {
             try
             {
-                Debug.Log("🎯 [MongdungNetworkEventHandler] HandleMongdungSkillResponse 호출됨!");
-
                 // skillType을 MongdungActionType으로 변환
                 MongdungActionType actionType = command.skillType switch
                 {
                     1 => MongdungActionType.Frighten,
                     2 => MongdungActionType.TrapSetting,
-                    _ => MongdungActionType.Attack, // 기본값
+                    _ => MongdungActionType.Attack,
                 };
 
                 if (_enableDebugLogs)
                 {
+                    string skillName = actionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : actionType.ToString();
                     Debug.Log(
-                        $"[MongdungNetworkEventHandler] 몽둥이 스킬 응답: SkillType={command.skillType}, ActionType={actionType}, Result={command.Result}, Success={command.Success}"
+                        $"[MongdungNetworkEventHandler] 몽둥이 스킬 응답: SkillType={command.skillType}, ActionType={skillName}, Result={command.Result}, Success={command.Success}"
                     );
                 }
 
-                // NetworkApi의 pending request는 CommandDispatcher에서 이미 처리됨
-                // 중복 호출 방지를 위해 제거
-                Debug.Log($"📡 NetworkApi.Instance 존재 여부: {Networks.NetworkApi.Instance != null}");
-
-                // 성공한 경우 Remote 플레이어들에게 애니메이션 트리거 메시지 발행
-                if (command.Success)
+                // MessagePipeBridge를 통해 이벤트 발행 (모든 몽둥이에게 브로드캐스트)
+                var bridge = Networks.MessagePipeBridge.Instance;
+                if (bridge != null)
                 {
-                    var bridge = Networks.MessagePipeBridge.Instance;
-                    if (bridge != null)
-                    {
-                        var message = new MongdungActionCompletedMessage(
-                            0, // Local 플레이어의 ID는 별도로 구해야 하지만 일단 0으로
-                            actionType,
-                            true,
-                            Vector3.zero
-                        );
-                        bridge.PublishMessage(message);
-
-                        if (_enableDebugLogs)
-                        {
-                            Debug.Log($"[MongdungNetworkEventHandler] {actionType} 성공 - Remote 애니메이션 트리거 메시지 발행");
-                        }
-                    }
+                    // 몽둥이 스킬 응답 메시지 발행
+                    var skillResponseMessage = new MongdungSkillResponseMessage(
+                        command.skillType,
+                        actionType,
+                        command.Result
+                    );
+                    bridge.PublishMessage(skillResponseMessage);
+                }
+                else
+                {
+                    Debug.LogError("[MongdungNetworkEventHandler] MessagePipeBridge를 찾을 수 없음!");
                 }
             }
             catch (System.Exception e)

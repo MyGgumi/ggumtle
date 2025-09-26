@@ -5,6 +5,7 @@ using Features.Mongdung.NetworkSources;
 using Features.Mongdung.Messages;
 using Cysharp.Threading.Tasks;
 using MessagePipe;
+using R3;
 using UnityEngine;
 using VContainer;
 
@@ -21,12 +22,20 @@ namespace Features.Mongdung.Services
         private readonly IPublisher<MongdungActionCompletedMessage> _actionCompletedPublisher;
         private readonly IPublisher<MongdungStateChangedMessage> _stateChangedPublisher;
         private readonly IPublisher<MongdungMovementBlockedMessage> _movementBlockedPublisher;
+        private readonly IPublisher<MongdungAttackActionMessage> _attackActionPublisher;
+        private readonly IPublisher<MongdungSkillActionMessage> _skillActionPublisher;
+        private readonly ISubscriber<MongdungActionNetworkResponseMessage> _networkResponseSubscriber;
+        private readonly ISubscriber<MongdungActionBroadcastMessage> _actionBroadcastSubscriber;
+        private readonly ISubscriber<MongdungActionRequestMessage> _actionRequestSubscriber;
+        private readonly ISubscriber<MongdungAttackResponseMessage> _attackResponseSubscriber;
+        private readonly ISubscriber<MongdungSkillResponseMessage> _skillResponseSubscriber;
 
         private readonly bool _enableDebugLogs = true;
 
         // 플레이어별 몽둥이 데이터 관리
         private readonly Dictionary<long, MongdungData> _playerDataMap = new();
         private readonly Dictionary<long, Dictionary<MongdungActionType, MongdungActionState>> _actionStatesMap = new();
+        private readonly CompositeDisposable _disposables = new CompositeDisposable();
 
         [Inject]
         public MongdungServiceImpl(
@@ -34,13 +43,52 @@ namespace Features.Mongdung.Services
             IPublisher<MongdungActionStartedMessage> actionStartedPublisher,
             IPublisher<MongdungActionCompletedMessage> actionCompletedPublisher,
             IPublisher<MongdungStateChangedMessage> stateChangedPublisher,
-            IPublisher<MongdungMovementBlockedMessage> movementBlockedPublisher)
+            IPublisher<MongdungMovementBlockedMessage> movementBlockedPublisher,
+            IPublisher<MongdungAttackActionMessage> attackActionPublisher,
+            IPublisher<MongdungSkillActionMessage> skillActionPublisher,
+            ISubscriber<MongdungActionNetworkResponseMessage> networkResponseSubscriber,
+            ISubscriber<MongdungActionBroadcastMessage> actionBroadcastSubscriber,
+            ISubscriber<MongdungActionRequestMessage> actionRequestSubscriber,
+            ISubscriber<MongdungAttackResponseMessage> attackResponseSubscriber,
+            ISubscriber<MongdungSkillResponseMessage> skillResponseSubscriber)
         {
             _networkSource = networkSource ?? throw new ArgumentNullException(nameof(networkSource));
             _actionStartedPublisher = actionStartedPublisher;
             _actionCompletedPublisher = actionCompletedPublisher;
             _stateChangedPublisher = stateChangedPublisher;
             _movementBlockedPublisher = movementBlockedPublisher;
+            _attackActionPublisher = attackActionPublisher;
+            _skillActionPublisher = skillActionPublisher;
+            _networkResponseSubscriber = networkResponseSubscriber;
+            _actionBroadcastSubscriber = actionBroadcastSubscriber;
+            _actionRequestSubscriber = actionRequestSubscriber;
+            _attackResponseSubscriber = attackResponseSubscriber;
+            _skillResponseSubscriber = skillResponseSubscriber;
+
+            // 네트워크 응답 구독
+            _networkResponseSubscriber
+                .Subscribe(OnNetworkResponseReceived)
+                .AddTo(_disposables);
+
+            // 액션 브로드캐스트 구독 (원격 플레이어 애니메이션용)
+            _actionBroadcastSubscriber
+                .Subscribe(OnActionBroadcastReceived)
+                .AddTo(_disposables);
+
+            // 액션 요청 구독 (로컬 입력 처리용)
+            _actionRequestSubscriber
+                .Subscribe(OnActionRequestReceived)
+                .AddTo(_disposables);
+
+            // 공격 응답 구독
+            _attackResponseSubscriber
+                .Subscribe(OnAttackResponseReceived)
+                .AddTo(_disposables);
+
+            // 스킬 응답 구독
+            _skillResponseSubscriber
+                .Subscribe(OnSkillResponseReceived)
+                .AddTo(_disposables);
 
             if (_enableDebugLogs)
             {
@@ -323,6 +371,268 @@ namespace Features.Mongdung.Services
             };
 
             _actionStatesMap[playerId] = actionStates;
+        }
+
+        /// <summary>
+        /// 액션 요청 메시지 처리 (로컬 입력 처리용)
+        /// </summary>
+        private async void OnActionRequestReceived(MongdungActionRequestMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] 액션 요청 수신: PlayerId={message.PlayerId}, ActionType={actionName}, Source={message.RequestSource}");
+                }
+
+                // AttackHitDetector를 위해 targetId 계산 (Attack 액션의 경우)
+                long targetId = message.TargetId;
+                if (message.ActionType == MongdungActionType.Attack)
+                {
+                    // AttackHitDetector 로직 추가 예정 (현재는 -1로 기본값)
+                    targetId = -1;
+                }
+
+                // ExecuteActionAsync 호출
+                bool success = await ExecuteActionAsync(
+                    message.PlayerId,
+                    message.ActionType,
+                    message.Position,
+                    message.Direction,
+                    targetId
+                );
+
+                if (_enableDebugLogs)
+                {
+                    string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] 액션 요청 처리 결과: {actionName} = {success}");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] 액션 요청 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 액션 브로드캐스트 메시지 처리 (원격 플레이어 애니메이션용)
+        /// </summary>
+        private void OnActionBroadcastReceived(MongdungActionBroadcastMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] 액션 브로드캐스트 수신: PlayerId={message.PlayerId}, ActionType={actionName}, Status={message.StatusCode}");
+                }
+
+                // StatusCode 0 = 액션 시작
+                if (message.StatusCode == 0)
+                {
+                    // 액션 시작 메시지를 모든 등록된 몽둥이 플레이어에게 발행
+                    foreach (var playerId in _playerDataMap.Keys)
+                    {
+                        var playerData = GetOrCreatePlayerData(playerId);
+                        var actionData = playerData.GetActionData(message.ActionType);
+
+                        _actionStartedPublisher.Publish(new MongdungActionStartedMessage(
+                            playerId,
+                            message.ActionType,
+                            message.Position,
+                            actionData.executionDuration
+                        ));
+                    }
+
+                    if (_enableDebugLogs)
+                    {
+                        string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                        Debug.Log($"[MongdungServiceImpl] 액션 시작 메시지를 모든 몽둥이에게 발행: {actionName}");
+                    }
+                }
+                // StatusCode 1 = 액션 완료 성공
+                else if (message.StatusCode == 1)
+                {
+                    // 액션 완료 성공 메시지를 모든 등록된 몽둥이 플레이어에게 발행
+                    foreach (var playerId in _playerDataMap.Keys)
+                    {
+                        _actionCompletedPublisher.Publish(new MongdungActionCompletedMessage(
+                            playerId,
+                            message.ActionType,
+                            true,
+                            message.Position
+                        ));
+                    }
+
+                    if (_enableDebugLogs)
+                    {
+                        string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                        Debug.Log($"[MongdungServiceImpl] 액션 완료 성공 메시지를 모든 몽둥이에게 발행: {actionName}");
+                    }
+                }
+                // StatusCode 2 = 액션 완료 실패
+                else if (message.StatusCode == 2)
+                {
+                    // 액션 완료 실패 메시지를 모든 등록된 몽둥이 플레이어에게 발행
+                    foreach (var playerId in _playerDataMap.Keys)
+                    {
+                        _actionCompletedPublisher.Publish(new MongdungActionCompletedMessage(
+                            playerId,
+                            message.ActionType,
+                            false,
+                            message.Position
+                        ));
+                    }
+
+                    if (_enableDebugLogs)
+                    {
+                        string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                        Debug.Log($"[MongdungServiceImpl] 액션 완료 실패 메시지를 모든 몽둥이에게 발행: {actionName}");
+                    }
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] 액션 브로드캐스트 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 네트워크 응답 메시지 처리
+        /// </summary>
+        private void OnNetworkResponseReceived(MongdungActionNetworkResponseMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] 네트워크 응답 수신: PlayerId={message.PlayerId}, ActionType={actionName}, Success={message.Success}");
+                }
+
+                // 액션 완료 처리
+                var playerData = GetOrCreatePlayerData(message.PlayerId);
+                var actionStates = GetOrCreateActionStates(message.PlayerId);
+                var actionState = actionStates[message.ActionType];
+                var actionData = playerData.GetActionData(message.ActionType);
+
+                // 액션 실행 상태 정리
+                actionState.IsExecuting = false;
+
+                // 성공한 경우 쿨다운 시작
+                if (message.Success)
+                {
+                    actionState.IsOnCooldown = true;
+                    actionState.RemainingCooldownTime = actionData.cooldownDuration;
+
+                    // 쿨다운 타이머 시작
+                    _ = StartCooldownTimer(message.PlayerId, message.ActionType, actionData.cooldownDuration);
+                }
+
+                // 상태를 Idle로 복귀
+                var previousState = playerData.currentState;
+                playerData.currentState = MongdungState.Idle;
+
+                // 이동 제한 해제
+                if (actionData.blockMovement)
+                {
+                    _movementBlockedPublisher.Publish(new MongdungMovementBlockedMessage(message.PlayerId, false, "Network response completed"));
+                }
+
+                // 상태 변경 메시지 발행
+                _stateChangedPublisher.Publish(new MongdungStateChangedMessage(message.PlayerId, previousState, MongdungState.Idle));
+
+                // 액션 완료 메시지 발행 (ViewModel과 View에서 처리)
+                _actionCompletedPublisher.Publish(new MongdungActionCompletedMessage(
+                    message.PlayerId,
+                    message.ActionType,
+                    message.Success,
+                    Vector3.zero
+                ));
+
+                if (_enableDebugLogs)
+                {
+                    string actionName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] 네트워크 응답 처리 완료: {actionName}, Success={message.Success}");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] 네트워크 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 몽둥이 공격 응답 처리 - 바로 AttackAction 메시지 발행
+        /// </summary>
+        private void OnAttackResponseReceived(MongdungAttackResponseMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungServiceImpl] 몽둥이 공격 응답 수신: Result={message.Result}, TargetId={message.TargetId}, LeftHp={message.LeftHp}, Success={message.Success}");
+                }
+
+                // 모든 몽둥이/몽깅이에게 Attack 애니메이션 실행 메시지 발행
+                var attackActionMessage = new MongdungAttackActionMessage(
+                    message.Result,
+                    message.TargetId,
+                    message.LeftHp
+                );
+                _attackActionPublisher.Publish(attackActionMessage);
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungServiceImpl] Attack 애니메이션 메시지를 모든 몽둥이/몽깅이에게 발행: Success={message.Success}");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] 공격 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 몽둥이 스킬 응답 처리 - 바로 SkillAction 메시지 발행
+        /// </summary>
+        private void OnSkillResponseReceived(MongdungSkillResponseMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    string skillName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] 몽둥이 스킬 응답 수신: SkillType={message.SkillType}, ActionType={skillName}, Result={message.Result}, Success={message.Success}");
+                }
+
+                // 모든 몽둥이/몽깅이에게 Skill 애니메이션 실행 메시지 발행
+                var skillActionMessage = new MongdungSkillActionMessage(
+                    message.SkillType,
+                    message.ActionType,
+                    message.Result
+                );
+                _skillActionPublisher.Publish(skillActionMessage);
+
+                if (_enableDebugLogs)
+                {
+                    string skillName = message.ActionType == MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
+                    Debug.Log($"[MongdungServiceImpl] {skillName} 애니메이션 메시지를 모든 몽둥이/몽깅이에게 발행: Success={message.Success}");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] 스킬 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 리소스 정리
+        /// </summary>
+        public void Dispose()
+        {
+            _disposables?.Dispose();
         }
     }
 }

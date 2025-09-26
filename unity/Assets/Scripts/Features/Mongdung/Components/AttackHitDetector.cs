@@ -10,15 +10,22 @@ namespace Features.Mongdung.Components
     public class AttackHitDetector : MonoBehaviour
     {
         [Header("공격 범위 설정")]
-        [SerializeField] private float attackRange = 3f;
-        [SerializeField] private float attackAngle = 60f; // 공격 각도 (도)
-        [SerializeField] private bool enableDebugVisualization = true;
+        [SerializeField]
+        private float attackRange = 3f;
+
+        [SerializeField]
+        private float attackAngle = 60f; // 공격 각도 (도)
+
+        [SerializeField]
+        private bool enableDebugVisualization = true;
 
         [Header("레이어 설정")]
-        [SerializeField] private LayerMask monggingLayerMask = -1; // Player_Mongging 레이어
+        [SerializeField]
+        private LayerMask monggingLayerMask = 3; // Player_Mongging 레이어
 
         [Header("Debug Settings")]
-        [SerializeField] private bool enableDebugLogs = true;
+        [SerializeField]
+        private bool enableDebugLogs = true;
 
         /// <summary>
         /// 공격 방향으로 적중 대상 검출
@@ -35,7 +42,8 @@ namespace Features.Mongdung.Components
             }
 
             // 공격 중심점 계산 (플레이어 앞쪽으로 약간 이동)
-            Vector3 attackCenter = transform.position + attackDirection.normalized * (attackRange * 0.3f);
+            Vector3 attackCenter =
+                transform.position + attackDirection.normalized * (attackRange * 0.3f);
 
             // 구체 범위로 1차 검출 (Player_Mongging 레이어만)
             var hits = Physics.OverlapSphere(attackCenter, attackRange, monggingLayerMask);
@@ -79,7 +87,9 @@ namespace Features.Mongdung.Components
                 {
                     if (enableDebugLogs)
                     {
-                        Debug.Log($"[AttackHitDetector] 같은 Player ID로 제외: {hit.name}, ID: {targetPlayerId}");
+                        Debug.Log(
+                            $"[AttackHitDetector] 같은 Player ID로 제외: {hit.name}, ID: {targetPlayerId}"
+                        );
                     }
                     continue;
                 }
@@ -90,7 +100,9 @@ namespace Features.Mongdung.Components
 
                 if (enableDebugLogs)
                 {
-                    Debug.Log($"[AttackHitDetector] 대상: {hit.name}, ID: {targetPlayerId}, 각도: {angle:F1}°, 허용각도: {attackAngle * 0.5f:F1}°");
+                    Debug.Log(
+                        $"[AttackHitDetector] 대상: {hit.name}, ID: {targetPlayerId}, 각도: {angle:F1}°, 허용각도: {attackAngle * 0.5f:F1}°"
+                    );
                 }
 
                 // 공격 각도 내에 있는지 체크
@@ -107,7 +119,9 @@ namespace Features.Mongdung.Components
 
                         if (enableDebugLogs)
                         {
-                            Debug.Log($"[AttackHitDetector] 새로운 가장 가까운 대상: {hit.name}, ID: {targetPlayerId}, 거리: {distance:F2}m");
+                            Debug.Log(
+                                $"[AttackHitDetector] 새로운 가장 가까운 대상: {hit.name}, ID: {targetPlayerId}, 거리: {distance:F2}m"
+                            );
                         }
                     }
                 }
@@ -118,7 +132,9 @@ namespace Features.Mongdung.Components
             {
                 if (closestTargetId != -1)
                 {
-                    Debug.Log($"[AttackHitDetector] ✅ 공격 적중! 대상: {closestTarget.name}, PlayerId: {closestTargetId}, 거리: {closestDistance:F2}m");
+                    Debug.Log(
+                        $"[AttackHitDetector] ✅ 공격 적중! 대상: {closestTarget.name}, PlayerId: {closestTargetId}, 거리: {closestDistance:F2}m"
+                    );
                 }
                 else
                 {
@@ -141,7 +157,9 @@ namespace Features.Mongdung.Components
             if (playerGameObject != null)
             {
                 if (enableDebugLogs)
-                    Debug.Log($"[AttackHitDetector] Local Player 발견: {obj.name}, ID: {playerGameObject.PlayerId}");
+                    Debug.Log(
+                        $"[AttackHitDetector] Local Player 발견: {obj.name}, ID: {playerGameObject.PlayerId}"
+                    );
                 return playerGameObject.PlayerId;
             }
 
@@ -150,12 +168,16 @@ namespace Features.Mongdung.Components
             if (remotePlayerGameObject != null)
             {
                 if (enableDebugLogs)
-                    Debug.Log($"[AttackHitDetector] Remote Player 발견: {obj.name}, ID: {remotePlayerGameObject.PlayerId}");
+                    Debug.Log(
+                        $"[AttackHitDetector] Remote Player 발견: {obj.name}, ID: {remotePlayerGameObject.PlayerId}"
+                    );
                 return remotePlayerGameObject.PlayerId;
             }
 
             if (enableDebugLogs)
-                Debug.LogWarning($"[AttackHitDetector] PlayerGameObject 컴포넌트를 찾을 수 없음: {obj.name}");
+                Debug.LogWarning(
+                    $"[AttackHitDetector] PlayerGameObject 컴포넌트를 찾을 수 없음: {obj.name}"
+                );
 
             return -1;
         }
@@ -165,7 +187,8 @@ namespace Features.Mongdung.Components
         /// </summary>
         private void OnDrawGizmosSelected()
         {
-            if (!enableDebugVisualization) return;
+            if (!enableDebugVisualization)
+                return;
 
             // 공격 범위 구체 그리기 (반투명 빨간색)
             Gizmos.color = new Color(1f, 0f, 0f, 0.3f);
@@ -181,11 +204,13 @@ namespace Features.Mongdung.Components
             float halfAngle = attackAngle * 0.5f * Mathf.Deg2Rad;
 
             // 왼쪽 경계선
-            Vector3 leftBoundary = Quaternion.Euler(0, -attackAngle * 0.5f, 0) * transform.forward * attackRange;
+            Vector3 leftBoundary =
+                Quaternion.Euler(0, -attackAngle * 0.5f, 0) * transform.forward * attackRange;
             Gizmos.DrawRay(transform.position, leftBoundary);
 
             // 오른쪽 경계선
-            Vector3 rightBoundary = Quaternion.Euler(0, attackAngle * 0.5f, 0) * transform.forward * attackRange;
+            Vector3 rightBoundary =
+                Quaternion.Euler(0, attackAngle * 0.5f, 0) * transform.forward * attackRange;
             Gizmos.DrawRay(transform.position, rightBoundary);
         }
 
@@ -199,11 +224,15 @@ namespace Features.Mongdung.Components
             if (monggingLayer != -1)
             {
                 monggingLayerMask = 1 << monggingLayer;
-                Debug.Log($"[AttackHitDetector] Player_Mongging 레이어 자동 설정: {monggingLayerMask}");
+                Debug.Log(
+                    $"[AttackHitDetector] Player_Mongging 레이어 자동 설정: {monggingLayerMask}"
+                );
             }
             else
             {
-                Debug.LogWarning("[AttackHitDetector] Player_Mongging 레이어를 찾을 수 없습니다. 수동으로 설정해주세요.");
+                Debug.LogWarning(
+                    "[AttackHitDetector] Player_Mongging 레이어를 찾을 수 없습니다. 수동으로 설정해주세요."
+                );
             }
         }
     }

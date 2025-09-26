@@ -82,7 +82,13 @@ namespace DI
             builder.RegisterMessageBroker<MongdungActionCooldownMessage>(options);
             builder.RegisterMessageBroker<MongdungStateChangedMessage>(options);
             builder.RegisterMessageBroker<MongdungActionBroadcastMessage>(options);
+            builder.RegisterMessageBroker<MongdungActionNetworkResponseMessage>(options);
             builder.RegisterMessageBroker<MongdungMovementBlockedMessage>(options);
+            builder.RegisterMessageBroker<MongdungActionRequestMessage>(options);
+            builder.RegisterMessageBroker<MongdungAttackResponseMessage>(options);
+            builder.RegisterMessageBroker<MongdungSkillResponseMessage>(options);
+            builder.RegisterMessageBroker<MongdungAttackActionMessage>(options);
+            builder.RegisterMessageBroker<MongdungSkillActionMessage>(options);
 
             // Chest Messages
             builder.RegisterMessageBroker<ChestDetectedMessage>(options);

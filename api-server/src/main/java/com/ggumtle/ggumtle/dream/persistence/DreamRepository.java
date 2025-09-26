@@ -9,4 +9,8 @@ import java.util.Optional;
 @Repository
 public interface DreamRepository extends CrudRepository<Dream, Long> {
     Optional<Dream> findByRoomRequestId(String id);
+
+    Optional<Dream> findByRoomId(Long roomId);
+
+    void deleteByRoomRequestId(String id);
 }

@@ -14,6 +14,8 @@ import com.ggumtle.ggumtle.dream.persistence.DreamRepository;
 import com.ggumtle.ggumtle.dream.persistence.PartyParticipantRepository;
 import com.ggumtle.ggumtle.exception.GgumtleException;
 import com.ggumtle.ggumtle.exception.code.DreamErrorCode;
+import com.ggumtle.ggumtle.friend.application.MemberStateService;
+import com.ggumtle.ggumtle.member.application.MemberService;
 import com.ggumtle.ggumtle.messaging.RoomMessageManager;
 import com.ggumtle.ggumtle.messaging.event.CreatedRoomEvent;
 import com.ggumtle.ggumtle.messaging.event.EndDreamEvent;
@@ -28,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -51,6 +54,9 @@ public class DreamService {
     private final RoomMessageManager roomMessageManager;
     private final EnhanceStatRepository enhanceStatRepository;
     private final RedisTemplate<String, OptimalServer> optimalServerRedisTemplate;
+    private final MemberStateService  memberStateService;
+    private final MemberService memberService;
+    private final StringRedisTemplate stringRedisTemplate;
 
     /**
      * 드림을 시작한다
@@ -172,15 +178,27 @@ public class DreamService {
      */
     @EventListener
     public void handleEndDream(EndDreamEvent event) {
-        Dream dream = dreamRepository.findById(event.roomId())
+        Dream dream = dreamRepository.findByRoomId(event.roomId())
                 .orElseThrow(() -> new GgumtleException(DreamErrorCode.NOT_FOUND_DREAM));
 
-        applicationEventPublisher.publishEvent(new MemberDreamOutEvent(dream.getPlayerIds()));
+        List<Long> playerIds = dream.getPlayerIds();
+        applicationEventPublisher.publishEvent(new MemberDreamOutEvent(playerIds));
 
-        // TODO: 종료된 드림에 대한 처리
+        playerIds.forEach(memberStateService::setOnline);
 
+        try {
+            memberService.getRewardEndDream(event);
+            log.info("보상 획득 성공, roomId={}", event.roomId());
+        } catch (Exception e) {
+            log.error("드림 보상 획득 실패. roomId={}", event.roomId(), e);
+        }
 
-        dreamRepository.delete(dream);
+        String dreamId = dream.getRoomRequestId();
+        Long roomId = event.roomId();
+
+        dreamRepository.deleteByRoomRequestId(dreamId);
+        stringRedisTemplate.delete("dream:roomId:" + roomId);
+        stringRedisTemplate.opsForSet().remove("dream", dreamId);
     }
 
     /**

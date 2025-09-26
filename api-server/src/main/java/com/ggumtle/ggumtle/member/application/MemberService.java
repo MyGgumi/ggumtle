@@ -14,6 +14,7 @@ import com.ggumtle.ggumtle.member.application.result.GetCoinResult;
 import com.ggumtle.ggumtle.member.application.result.GetMyInfoResult;
 import com.ggumtle.ggumtle.member.domain.Member;
 import com.ggumtle.ggumtle.member.persistence.MemberRepository;
+import com.ggumtle.ggumtle.messaging.event.EndDreamEvent;
 import com.ggumtle.ggumtle.mission.domain.MemberMission;
 import com.ggumtle.ggumtle.mission.persistence.MemberMissionRepository;
 import com.ggumtle.ggumtle.mongging.domain.Mongging;
@@ -113,5 +114,18 @@ public class MemberService {
         }
 
         partyInvitationRepository.deleteAllByInviterId(memberId);
+    }
+
+    @Transactional
+    public void getRewardEndDream(EndDreamEvent event){
+        event.playerStates().forEach(playerState -> {
+            long memberId = playerState.id();
+            int reward = playerState.coin();
+
+            Member member = memberRepository.findById(memberId)
+                    .orElseThrow(()-> new GgumtleException(MemberErrorCode.NOT_FOUND));
+
+            member.increaseCoinCappedToMax(reward);
+        });
     }
 }

@@ -3,22 +3,22 @@ package com.ggumtle.ggumtle.navigation
 import kotlinx.serialization.Serializable
 
 @Serializable
-data object LoginRoute
+data object LoginDestination
 
 @Serializable
-data object StartUpRoute
+data object StartUpDestination
 
 @Serializable
-data object HomeRoute
+data class HomeDestination(val fromLogin: Boolean = true)
 
 @Serializable
-data object SocialRoute
+data object SocialDestination
 
 @Serializable
-data object GrowthRoute
+data object GrowthDestination
 
 @Serializable
-data object MissionRoute
+data object MissionDestination
 
 @Serializable
-data object InGameRoute
+data object InGameDestination

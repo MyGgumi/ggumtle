@@ -8,8 +8,8 @@ public class UnityToAndroidLoader : MonoBehaviour
     public bool enableAndroidCommunication = true;
     public string targetSceneName = "Lobby";
     [Header("로딩 시뮬레이션")]
-    public float minimumLoadingTime = 2f; // 최소 로딩 시간
-    public bool smoothProgress = true; // 부드러운 진행률 표시
+    public float minimumLoadingTime = 2f;
+    public bool smoothProgress = true;
     
     private AndroidJavaObject activity;
     private float currentProgress = 0f;
@@ -17,11 +17,14 @@ public class UnityToAndroidLoader : MonoBehaviour
     
     void Start()
     {
+        setSceenPortrait();
         InitializeAndroidCommunication();
         
         // 현재 씬과 다르면 로딩 시작
         if (SceneManager.GetActiveScene().name != targetSceneName)
         {
+            // 씬 전환 시 오브젝트가 파괴되지 않도록 설정
+            DontDestroyOnLoad(gameObject);
             StartCoroutine(LoadSceneWithProgress());
         }
         else
@@ -30,6 +33,15 @@ public class UnityToAndroidLoader : MonoBehaviour
             SendProgressToAndroid(100, "로딩 완료!");
             HideAndroidLoadingScreen();
         }
+    }
+
+    void setSceenPortrait()
+    {
+        Screen.orientation = ScreenOrientation.Portrait;
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = false;
+        Screen.autorotateToLandscapeRight = false;
     }
     
     void InitializeAndroidCommunication()
@@ -63,9 +75,8 @@ public class UnityToAndroidLoader : MonoBehaviour
         
         SendProgressToAndroid(20, "씬 로딩 시작...");
         
-        // AsyncOperation 시작 - allowSceneActivation을 false로 설정
         AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(targetSceneName);
-        asyncLoad.allowSceneActivation = false; // 90%에서 대기
+        asyncLoad.allowSceneActivation = false;
         
         float startTime = Time.time;
         bool sceneLoadingComplete = false;
@@ -73,36 +84,26 @@ public class UnityToAndroidLoader : MonoBehaviour
         while (!sceneLoadingComplete)
         {
             float elapsedTime = Time.time - startTime;
-            
-            // Unity의 실제 진행률 (0.9까지만)
             float unityProgress = asyncLoad.progress;
-            
-            // 시간 기반 진행률 계산
             float timeBasedProgress = Mathf.Clamp01(elapsedTime / minimumLoadingTime);
             
             if (smoothProgress)
             {
-                // 부드러운 진행률 업데이트
                 if (unityProgress < 0.9f)
                 {
-                    // 로딩 중일 때는 시간 기반과 Unity 진행률을 조합
                     targetProgress = Mathf.Lerp(20f, 80f, Mathf.Max(unityProgress / 0.9f, timeBasedProgress));
                 }
                 else
                 {
-                    // 로딩이 90%에 도달했을 때
                     targetProgress = Mathf.Lerp(80f, 90f, timeBasedProgress);
                 }
                 
-                // 현재 진행률을 부드럽게 목표치로 이동
                 currentProgress = Mathf.Lerp(currentProgress, targetProgress, Time.deltaTime * 2f);
-                
                 int displayProgress = Mathf.FloorToInt(currentProgress);
                 SendProgressToAndroid(displayProgress, GetLoadingMessage(displayProgress));
             }
             else
             {
-                // 일반적인 진행률 표시
                 int progress;
                 if (unityProgress < 0.9f)
                 {
@@ -116,7 +117,6 @@ public class UnityToAndroidLoader : MonoBehaviour
                 SendProgressToAndroid(progress, GetLoadingMessage(progress));
             }
             
-            // 최소 로딩 시간이 지나고 Unity 로딩이 완료되면 씬 활성화
             if (unityProgress >= 0.9f && elapsedTime >= minimumLoadingTime)
             {
                 SendProgressToAndroid(95, "씬 활성화 중...");
@@ -127,18 +127,23 @@ public class UnityToAndroidLoader : MonoBehaviour
             yield return null;
         }
         
-        // 씬 활성화 대기
+        // 씬 전환 완료까지 대기
         while (!asyncLoad.isDone)
         {
             SendProgressToAndroid(98, "마무리 중...");
             yield return null;
         }
         
+        // 씬이 완전히 로드된 후 완료 처리
         SendProgressToAndroid(100, "로딩 완료!");
         yield return new WaitForSeconds(0.5f);
         
         HideAndroidLoadingScreen();
+        
+        // 작업 완료 후 이 오브젝트 파괴
+        Destroy(gameObject);
     }
+    
     
     string GetLoadingMessage(int progress)
     {

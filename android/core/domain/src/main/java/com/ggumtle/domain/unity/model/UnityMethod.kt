@@ -2,8 +2,6 @@ package com.ggumtle.domain.unity.model
 
 enum class UnityMethod(val value: String) {
 
-    // ANDROID_UNITY_CONTROLLER
-
     // StartTransition() : 로그인 -> 대기방
     START_TRANSITION("StartTransition"),
 
@@ -19,9 +17,9 @@ enum class UnityMethod(val value: String) {
     // RemoveCharacterByNickname(String nickname) : 대기방에 닉네임에 해당하는 캐릭터 삭제
     REMOVE_CHARACTER_BY_NICKNAME("RemoveCharacterByNickname"),
 
-    // ChangeCharacterType(string nickname, string characterType) : 해당 닉네임의 캐릭터 타입을 해당 타입으로 변경
+    // ChangeCharacterType(string nickname, string characterType, int) : 해당 닉네임의 캐릭터 타입을 해당 타입으로 변경
     CHANGE_CHARACTER_TYPE("ChangeCharacterType"),
-
+    CHANGE_CHARACTER_NICKNAME("ChangeCharacterNickname"),
     // RotateCameraToEnhance() : 대기방 -> 강화
     ROTATE_CAMERA_TO_ENHANCE("RotateCameraToEnhance"),
 

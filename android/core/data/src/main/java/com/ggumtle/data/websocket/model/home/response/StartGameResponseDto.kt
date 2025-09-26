@@ -1,6 +1,6 @@
 package com.ggumtle.data.websocket.model.home.response
 
-import com.ggumtle.domain.websocket.model.Dream
+import com.ggumtle.domain.websocket.model.DreamServer
 import com.ggumtle.domain.websocket.model.DreamStatus
 import com.ggumtle.domain.websocket.model.WebSocketEvent
 import kotlinx.serialization.Serializable
@@ -8,18 +8,20 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class StartGameResponseDto(
     val status: DreamStatus,
-    val dream: DreamDto?
+    val roomId: Long?,
+    val dreamServer: DreamServerDto?
 )
 
 @Serializable
-data class DreamDto(
-    val roomId: Long,
-    val dreamServerId: String
+data class DreamServerDto(
+    val host: String,
+    val port: Int
 )
 
 fun StartGameResponseDto.toEvent(): WebSocketEvent.StartGameSuccess {
     return WebSocketEvent.StartGameSuccess(
         status = status,
-        dream = dream?.let { Dream(dream.roomId, it.dreamServerId) }
+        roomId = roomId,
+        dreamServer = dreamServer?.let { DreamServer(it.host, it.port) }
     )
 }

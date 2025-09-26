@@ -200,6 +200,7 @@ class SocialViewModel @Inject constructor(
             reduce {
                 state.copy(
                     friends = result.friends,
+//                    friends = FriendDummyData.getFriendsList(),
                     isLoading = false
                 )
             }
@@ -286,6 +287,7 @@ class SocialViewModel @Inject constructor(
             reduce {
                 state.copy(
                     receivedRequests = result.friendRequests,
+//                    receivedRequests = FriendDummyData.getReceivedFriendRequests(),
                     isLoading = false
                 )
             }
@@ -331,6 +333,7 @@ class SocialViewModel @Inject constructor(
             reduce {
                 state.copy(
                     sentRequests = result.sentFriendRequests,
+//                    sentRequests = FriendDummyData.getSentFriendRequests(),
                     isLoading = false
                 )
             }

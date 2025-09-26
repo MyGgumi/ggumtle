@@ -1,6 +1,8 @@
 package com.ggumtle.home.component
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,12 +17,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.ggumtle.designsystem.theme.GameColors
 import com.ggumtle.home.model.InviteRequest
+import com.ggumtle.core.designsystem.R
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -82,9 +86,9 @@ fun InviteRequestsDialog(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
-                            Icons.Default.Mail,
+                            painter = painterResource(id = R.drawable.btn_game_invite),
                             contentDescription = null,
-                            tint = GameColors.textSecondary,
+                            tint = Color.Unspecified,
                             modifier = Modifier.size(48.dp)
                         )
                         
@@ -104,8 +108,8 @@ fun InviteRequestsDialog(
                         items(inviteRequests) { request ->
                             InviteRequestItem(
                                 request = request,
-                                onAccept = { onAcceptInvite(request.id) },
-                                onDecline = { onDeclineInvite(request.id) }
+                                onAccept = { onAcceptInvite(request.partyId) },
+                                onDecline = { onDeclineInvite(request.partyId) }
                             )
                         }
                     }
@@ -173,17 +177,17 @@ private fun InviteRequestItem(
                             fontWeight = FontWeight.Medium
                         )
                         
-                        Text(
-                            text = "파티 (${request.partySize}/5)",
-                            color = GameColors.textSecondary,
-                            fontSize = 12.sp
-                        )
-                        
-                        Text(
-                            text = formatTime(request.timestamp),
-                            color = GameColors.textSecondary,
-                            fontSize = 10.sp
-                        )
+//                        Text(
+//                            text = "파티 (${request.partySize}/5)",
+//                            color = GameColors.textSecondary,
+//                            fontSize = 12.sp
+//                        )
+
+//                        Text(
+//                            text = formatTime(request.timestamp),
+//                            color = GameColors.textSecondary,
+//                            fontSize = 10.sp
+//                        )
                     }
                 }
                 
@@ -191,37 +195,21 @@ private fun InviteRequestItem(
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // 거절 버튼
-                    IconButton(
-                        onClick = onDecline,
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_cancel),
+                        contentDescription = "거절",
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(GameColors.warning.copy(alpha = 0.2f))
-                    ) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = "거절",
-                            tint = GameColors.warning,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    
-                    // 수락 버튼
-                    IconButton(
-                        onClick = onAccept,
+                            .size(32.dp)
+                            .clickable { onDecline() }
+                    )
+
+                    Image(
+                        painter = painterResource(id = R.drawable.btn_check),
+                        contentDescription = "수락",
                         modifier = Modifier
-                            .size(36.dp)
-                            .clip(CircleShape)
-                            .background(GameColors.success.copy(alpha = 0.2f))
-                    ) {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = "수락",
-                            tint = GameColors.success,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
+                            .size(32.dp)
+                            .clickable { onAccept() }
+                    )
                 }
             }
         }

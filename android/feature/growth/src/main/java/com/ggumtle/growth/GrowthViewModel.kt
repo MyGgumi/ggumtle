@@ -10,6 +10,7 @@ import com.ggumtle.domain.rest.usecase.growth.GetMonggingListUseCase
 import com.ggumtle.domain.rest.usecase.member.GetMemberCoinUseCase
 import com.ggumtle.domain.rest.usecase.mission.GetMissionListUseCase
 import com.ggumtle.domain.rest.usecase.mission.ClaimMissionRewardUseCase
+import com.ggumtle.growth.model.CharacterInfo
 import com.ggumtle.growth.model.toCharacterInfo
 import com.ggumtle.growth.model.toDailyMission
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,6 +55,7 @@ class GrowthViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
             }
         }
@@ -66,23 +68,25 @@ class GrowthViewModel @Inject constructor(
                 is Resource.Loading -> reduce {
                     state.copy(
                         isLoading = true,
-                        myCharacters = emptyList() // 기존 데이터 초기화
                     )
                 }
+
                 is Resource.Success -> {
+                    val newMyCharacters = emptyList<CharacterInfo>().toMutableList()
                     resource.data.monggings.forEach {
                         getMonggingDetailUseCase.invoke(it.id).collect { resource ->
                             when (resource) {
                                 is Resource.Loading -> reduce { state.copy(isLoading = true) }
                                 is Resource.Success -> {
                                     val monggingDetail = resource.data.toCharacterInfo()
-                                    reduce { state.copy(myCharacters = state.myCharacters + monggingDetail) }
+                                    newMyCharacters += monggingDetail
                                 }
 
                                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
                             }
                         }
                     }
+                    reduce { state.copy(myCharacters = newMyCharacters.sortedBy { it.monggingClass.ordinal }) }
                 }
 
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
@@ -132,7 +136,8 @@ class GrowthViewModel @Inject constructor(
                         when (resource.data.isSuccess) {
                             true -> {
                                 // 강화 전 캐릭터 정보 저장
-                                val previousInfo = state.myCharacters.getOrNull(state.selectedCharacterIndex)
+                                val previousInfo =
+                                    state.myCharacters.getOrNull(state.selectedCharacterIndex)
                                 val experience = resource.data.experience
 
                                 // Experience 데이터 저장 (다이얼로그용)
@@ -146,7 +151,7 @@ class GrowthViewModel @Inject constructor(
 
                                 // Unity 이펙트 재생
                                 unitySendManager.playEnhanceSuccessEffect()
-                                delay(6600) // 이펙트 재생 대기
+                                delay(4100) // 이펙트 재생 대기
 
                                 // 이펙트 끝난 후 다이얼로그 표시
                                 reduce { state.copy(isShowingEnhanceSuccess = true) }
@@ -214,6 +219,7 @@ class GrowthViewModel @Inject constructor(
                     loadCoin()
                     reduce { state.copy(isLoading = false) }
                 }
+
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
             }
         }

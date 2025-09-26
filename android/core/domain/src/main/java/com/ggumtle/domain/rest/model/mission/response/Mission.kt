@@ -7,5 +7,5 @@ data class Mission(
     val description: String,
     val requiredCount: Int,
     val doneCount: Int,
-    val state: String
+    val state: String,
 )

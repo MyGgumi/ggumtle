@@ -102,7 +102,7 @@ fun ImagePreviewDialog(
                             .build(),
                         contentDescription = "촬영된 사진",
                         modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Fit
+                        contentScale = ContentScale.Crop
                     )
                 }
 

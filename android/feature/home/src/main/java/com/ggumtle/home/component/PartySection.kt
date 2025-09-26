@@ -30,7 +30,7 @@ fun PartySection(
     partyMembers: List<PartyMember>,
     isPartyLeader: Boolean,
     canStartGame: Boolean,
-    isLoading: Boolean,
+    isGameStartLoading: Boolean,
     onInviteFriendsClick: () -> Unit,
     onToggleReady: () -> Unit,
     onStartGame: () -> Unit,
@@ -113,14 +113,14 @@ fun PartySection(
             } else if (isPartyLeader) {
                 Button(
                     onClick = onStartGame,
-                    enabled = canStartGame && !isLoading,
+                    enabled = canStartGame && !isGameStartLoading,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (canStartGame) GameColors.primary else GameColors.textSecondary
                     ),
                     shape = RoundedCornerShape(16.dp),
                     modifier = Modifier.padding(horizontal = 32.dp)
                 ) {
-                    if (isLoading) {
+                    if (isGameStartLoading) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
                             color = Color.White,
@@ -231,10 +231,10 @@ private fun PartyCompactCard(
                             .background(
                                 if (index < partyMembers.size) {
                                     val member = partyMembers[index]
-                                    when {
-                                        member.isLeader -> Color(0xFFFFD700) // 방장은 금색
-                                        member.isReady || member.isLeader -> GameColors.success // 레디 또는 방장
-                                        else -> GameColors.warning // 레디 안됨
+                                    if (member.isReady || member.isLeader) {
+                                        GameColors.success // 준비 완료 (청록색)
+                                    } else {
+                                        GameColors.warning // 준비 안됨 (노란색)
                                     }
                                 } else {
                                     GameColors.surface // 빈 슬롯
@@ -371,18 +371,20 @@ private fun PartyMemberItem(
                 }
             }
 
-            // 레디 상태 표시
-            if (!member.isLeader) {
-                Box(
-                    modifier = Modifier
-                        .size((size.value * 0.25f).dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (member.isReady) GameColors.success else GameColors.warning
-                        )
-                        .align(Alignment.BottomEnd)
-                )
-            }
+            // 레디 상태 표시 (모든 멤버에게 표시)
+            Box(
+                modifier = Modifier
+                    .size((size.value * 0.25f).dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (member.isReady || member.isLeader) {
+                            GameColors.success // 준비 완료 (청록색)
+                        } else {
+                            GameColors.warning // 준비 안됨 (노란색)
+                        }
+                    )
+                    .align(Alignment.BottomEnd)
+            )
         }
 
         Spacer(modifier = Modifier.height(4.dp))

@@ -5,6 +5,8 @@ import com.ggumtle.domain.websocket.model.UnityMonggingClass
 import com.ggumtle.domain.unity.model.UnityMessage
 import com.ggumtle.domain.unity.model.UnityMethod
 import com.ggumtle.domain.unity.model.UnityTarget
+import com.ggumtle.domain.websocket.model.PartyMember
+import com.unity3d.player.UnityPlayer
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -70,12 +72,24 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
 
     override fun changeTargetCharacterType(
         nickname: String,
-        characterType: UnityMonggingClass
+        characterType: UnityMonggingClass,
+        level: Int
     ) {
         sendToUnity(
             UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-            UnityMethod.ADD_CHARACTER_BY_NICKNAME.value,
-            listOf(nickname, characterType.type)
+            UnityMethod.CHANGE_CHARACTER_TYPE.value,
+            listOf(nickname, characterType.type, level)
+        )
+    }
+
+    override fun changeTargetCharacterNickname(
+        nickname: String,
+        newNickname: String,
+    ) {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.CHANGE_CHARACTER_NICKNAME.value,
+            listOf(nickname, newNickname)
         )
     }
 
@@ -115,10 +129,44 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
         )
     }
 
+
     override fun goToOutGame() {
     }
 
+    override fun enterNewPartyMember(nickname: String, type: UnityMonggingClass, level: Int) {
+        addOthersCharacter(nickname, level)
+        changeTargetCharacterType(nickname, type, level)
+    }
+
+    override fun updateParty(participants: List<PartyMember>, myId: Long?) {
+        if (myId == null) return
+        val myInfo = participants.find { it.id == myId }
+        if (myInfo == null) return
+
+        addMyCharacter(myInfo.nickname, myInfo.monggingLevel.toInt())
+        changeTargetCharacterType(
+            myInfo.nickname,
+            UnityMonggingClass.fromClassId(myInfo.monggingClassId),
+            myInfo.monggingLevel.toInt()
+        )
+
+        participants
+            .filter { it.id != myId }
+            .forEach {
+                enterNewPartyMember(
+                    it.nickname,
+                    UnityMonggingClass.fromClassId(it.monggingClassId),
+                    it.monggingLevel.toInt()
+                )
+            }
+
+    }
+
     override fun sendToUnity(target: String, methodName: String, params: List<Any>) {
-        _unityMessageFlow.tryEmit(UnityMessage(target, methodName, params))
+        UnityPlayer.UnitySendMessage(
+            target,
+            methodName,
+            params.joinToString(",")
+        )
     }
 }

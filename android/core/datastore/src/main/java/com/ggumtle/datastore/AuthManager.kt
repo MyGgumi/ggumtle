@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONObject
+import javax.annotation.meta.TypeQualifierNickname
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.text.isNullOrBlank
@@ -29,6 +30,8 @@ class AuthManager @Inject constructor(
     private var cachedMemberId: Long? = null
     @Volatile
     private var cachedAccessToken: String? = null
+    @Volatile
+    private var cachedNickname: String? = null
 //    @Volatile
 //    private var cachedRefreshToken: String? = null
 //    @Volatile
@@ -44,6 +47,7 @@ class AuthManager @Inject constructor(
         applicationScope.launch {
             launch { authDataStore.accessTokenFlow.collect { token -> cachedAccessToken = token } }
             launch { authDataStore.memberIdFlow.collect { memberId -> cachedMemberId = memberId?.toLong() } }
+            launch { authDataStore.nicknameFlow.collect { nickname -> cachedNickname = nickname } }
 //            launch { authDataStore.refreshTokenFlow.collect { token -> cachedRefreshToken = token } }
 //            launch { authDataStore.userEmailFlow.collect { email -> cachedUserEmail = email } }
         }
@@ -52,6 +56,7 @@ class AuthManager @Inject constructor(
     // 기존 메서드들
     fun getAccessToken(): String? = cachedAccessToken
     fun getMemberId() : Long? = cachedMemberId
+    fun getNickname(): String? = cachedNickname
 //    fun getRefreshToken(): String? = cachedRefreshToken
 //    fun getUserEmail(): String? = cachedUserEmail
 
@@ -68,11 +73,26 @@ class AuthManager @Inject constructor(
         }
     }
 
-    suspend fun signOutWithGoogle() {
-        try {
-            googleAuthManager.googleLogout()
-        } catch (e: Exception) {
-            Log.e("AuthManager", "Google 로그아웃 실패", e)
+    private fun signOutWithGoogle() {
+        // Google 로그아웃을 백그라운드에서 처리 (블로킹 방지)
+        applicationScope.launch(Dispatchers.IO) {
+            try {
+                googleAuthManager.googleLogout()
+            } catch (e: Exception) {
+                Log.e("AuthManager", "Google 로그아웃 실패", e)
+            }
+        }
+    }
+
+    fun saveNickname(nickname: String) {
+        cachedNickname = nickname
+
+        applicationScope.launch(Dispatchers.IO) {
+            try {
+                authDataStore.saveNickname(nickname)
+            } catch (e: Exception) {
+                Log.e("AuthManager", "닉네임 저장 실패", e)
+            }
         }
     }
 
@@ -99,19 +119,28 @@ class AuthManager @Inject constructor(
     fun logout(reason: LogoutReason) {
         cachedAccessToken = null
         cachedMemberId = null
+        cachedNickname = null
 //        cachedRefreshToken = null
 //        cachedUserEmail = null
 
         applicationScope.launch(Dispatchers.IO) {
             try {
+                // DataStore 삭제는 빠르게 처리
                 authDataStore.deleteAccessToken()
                 authDataStore.deleteMemberId()
+                authDataStore.deleteNickname()
 //                authDataStore.deleteRefreshToken()
 //                authDataStore.deleteUserEmail()
 
+                // 로그아웃 이벤트는 즉시 발생
                 _logoutEvent.emit(reason)
+
+                // Google 로그아웃은 백그라운드에서 처리 (이벤트 발생 후)
+                signOutWithGoogle()
             } catch (e: Exception) {
                 Log.e("AuthManager", "로그아웃 실패", e)
+                // 실패해도 로그아웃 이벤트는 발생시키기
+                _logoutEvent.emit(reason)
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.ggumtle.designsystem.component.button
 
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -11,13 +13,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun GameIconButton(
     onClick: () -> Unit,
-    icon: ImageVector,
+    icon: ImageVector? = null,
+    @DrawableRes iconRes: Int? = null,
     contentDescription: String,
     backgroundColor: Color,
     iconColor: Color = Color.White,
@@ -35,11 +40,21 @@ fun GameIconButton(
             .clickable { onClick() },
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = icon,
-            contentDescription = contentDescription,
-            tint = iconColor,
-            modifier = Modifier.size((size * 0.5).dp)
-        )
+        when {
+            icon != null -> {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = contentDescription,
+                    tint = iconColor,
+                )
+            }
+            iconRes != null -> {
+                Image(
+                    painter = painterResource(id = iconRes),
+                    contentDescription = contentDescription,
+                    colorFilter = ColorFilter.tint(iconColor)
+                )
+            }
+        }
     }
 }

@@ -94,7 +94,7 @@ fun HomeContent(
             partyMembers = state.partyMembers,
             isPartyLeader = state.isPartyLeader,
             canStartGame = state.canStartGame,
-            isLoading = state.isLoading,
+            isGameStartLoading = state.isGameStartLoading,
             onInviteFriendsClick = onInviteFriendsClick,
             onToggleReady = onToggleReady,
             onStartGame = onStartGame,
@@ -149,6 +149,11 @@ fun HomeContent(
                 onAcceptInvite = onAcceptInvite,
                 onDeclineInvite = onDeclineInvite
             )
+        }
+
+        // 게임 시작 다이얼로그
+        if (state.isGameStartingDialogVisible) {
+            GameStartingDialog()
         }
     }
 }

@@ -10213,7 +10213,8 @@ GameObject:
   - component: {fileID: 1609257566296013356}
   - component: {fileID: 7919259365994777527}
   - component: {fileID: -5976063238197779621}
-  - component: {fileID: 4602444833120336229}
+  - component: {fileID: 8506690207266432352}
+  - component: {fileID: -4485589142132799059}
   m_Layer: 3
   m_Name: Local_Mongging _Worker
   m_TagString: Player
@@ -10296,7 +10297,29 @@ MonoBehaviour:
   canMove: 1
   enableDebugLogs: 0
   _freeLookCamera: {fileID: 0}
---- !u!114 &4602444833120336229
+--- !u!95 &8506690207266432352
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2197908680002170458}
+  m_Enabled: 1
+  m_Avatar: {fileID: 0}
+  m_Controller: {fileID: 0}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage: 
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!114 &-4485589142132799059
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -10305,15 +10328,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 2197908680002170458}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c2c65b0e06d906b4b8c643836ef0ec6b, type: 3}
+  m_Script: {fileID: 11500000, guid: f2ec5c3f20d2d8342b2025d4de4e0d50, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHp: 100
-  _currentHp: 100
-  _healSpeed: 10
-  _workSpeed: 10
-  _currentStatus: 0
-  _enableDebugLogs: 0
+  playerType: 2
+  enableDebugLogs: 1
 --- !u!1 &2230277772371151514
 GameObject:
   m_ObjectHideFlags: 0

@@ -68,7 +68,7 @@ class AuthManager @Inject constructor(
         }
     }
 
-    suspend fun signOutWithGoogle() {
+    private suspend fun signOutWithGoogle() {
         try {
             googleAuthManager.googleLogout()
         } catch (e: Exception) {
@@ -106,6 +106,7 @@ class AuthManager @Inject constructor(
             try {
                 authDataStore.deleteAccessToken()
                 authDataStore.deleteMemberId()
+                signOutWithGoogle()
 //                authDataStore.deleteRefreshToken()
 //                authDataStore.deleteUserEmail()
 

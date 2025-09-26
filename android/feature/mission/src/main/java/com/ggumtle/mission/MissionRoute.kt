@@ -96,6 +96,11 @@ fun MissionRoute(
         },
         onImagePreviewClick = viewModel::showImageDialog,
         onHideImageDialog = viewModel::hideImageDialog,
+        onShowRemainMissionDialog = viewModel::showRemainMissionDialog,
+        onHideRemainMissionDialog = viewModel::hideRemainMissionDialog,
+        onShowEmoticonSelector = viewModel::showEmoticonSelector,
+        onHideEmoticonSelector = viewModel::hideEmoticonSelector,
+        onEmoticonSelected = viewModel::playEmoticonAnimation,
         // 먹이주기 관련
         onFoodDragStart = viewModel::startFoodDrag,
         onFoodDragEnd = viewModel::endFoodDrag,

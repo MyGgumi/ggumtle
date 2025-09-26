@@ -17,12 +17,6 @@ fun CameraControls(
     onCapturePhoto: () -> Unit,
     lastCapturedImageUri: String?,
     onImagePreviewClick: () -> Unit,
-    // 먹이주기 관련
-    isDraggingFood: Boolean,
-    foodPosition: Pair<Float, Float>?,
-    onFoodDragStart: () -> Unit,
-    onFoodDragEnd: () -> Unit,
-    onFoodDrag: (Offset) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier.fillMaxSize()) {
@@ -47,16 +41,5 @@ fun CameraControls(
             )
         }
 
-        // 먹이 아이콘 (오른쪽 하단)
-        FoodIcon(
-            isDragging = isDraggingFood,
-            position = foodPosition,
-            onDragStart = onFoodDragStart,
-            onDragEnd = onFoodDragEnd,
-            onDrag = onFoodDrag,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(end = 16.dp, bottom = 32.dp)
-        )
     }
 }

@@ -35,53 +35,38 @@ class FrameCallback(
     private var frameRate: FrameRate = FrameRate.Full
 
     override fun doFrame(frameTimeNanos: Long) {
-        if (!isActive) {
-            return
-        }
+        if (!isActive) return
 
         choreographer.postFrameCallback(this)
 
-        // 최대 FPS로 제한
+        // 프레임 레이트 제어
         val nanoTime = System.nanoTime()
         val tick = nanoTime / (TimeUnit.SECONDS.toNanos(1) / MAX_FRAMES_PER_SECOND)
-
-        if (lastTick / frameRate.factor == tick / frameRate.factor) {
-            return
-        }
+        if (lastTick / frameRate.factor == tick / frameRate.factor) return
+        lastTick = tick
 
         lastTick = tick
 
         try {
-            // 지터 가능성을 줄이기 위해 지난 틱의 프레임 사용 (레이턴시 증가)
-            if (// AR 프레임이 있을 때만 렌더링
-                arCore.timestamp != 0L &&
+            // 1. 먼저 ARCore 프레임 업데이트
+            val session = arCore.session ?: return
+            val frame = session.update()
+
+            // 2. 유효한 새 프레임인지 확인
+            if (frame.timestamp != 0L && frame.timestamp != arCore.timestamp) {
+                arCore.timestamp = frame.timestamp
+                arCore.update(frame, arCore.filament)
+                doFrame(frame)
+            }
+
+            // 3. 업데이트된 데이터로 렌더링
+            if (arCore.timestamp != 0L &&
                 arCore.filament.uiHelper.isReadyToRender &&
-                // 너무 빠르게 GPU에 프레임을 전송하고 있음을 의미
                 arCore.filament.renderer.beginFrame(arCore.filament.swapChain!!, frameTimeNanos)
             ) {
                 arCore.filament.timestamp = arCore.timestamp
                 arCore.filament.renderer.render(arCore.filament.view)
                 arCore.filament.renderer.endFrame()
-            }
-
-            // AR 세션이 유효한지 확인
-            val session = arCore.session
-            if (session == null) {
-                android.util.Log.w("FrameCallback", "AR session is null, stopping frame callback")
-                stop()
-                return
-            }
-
-            val frame = session.update()
-
-            // 시작 시 카메라 시스템이 즉시 실제 이미지를 생성하지 않을 수 있음
-            // 이러한 일반적인 경우 timestamp = 0인 프레임이 반환됨
-            if (frame.timestamp != 0L &&
-                frame.timestamp != arCore.timestamp
-            ) {
-                arCore.timestamp = frame.timestamp
-                arCore.update(frame, arCore.filament)
-                doFrame(frame)
             }
         } catch (e: Exception) {
             android.util.Log.e("FrameCallback", "Error in frame processing: ${e.message}", e)

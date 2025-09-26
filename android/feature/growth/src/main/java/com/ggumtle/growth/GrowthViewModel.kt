@@ -54,6 +54,7 @@ class GrowthViewModel @Inject constructor(
                         )
                     }
                 }
+
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
             }
         }
@@ -69,6 +70,7 @@ class GrowthViewModel @Inject constructor(
                         myCharacters = emptyList() // 기존 데이터 초기화
                     )
                 }
+
                 is Resource.Success -> {
                     resource.data.monggings.forEach {
                         getMonggingDetailUseCase.invoke(it.id).collect { resource ->
@@ -83,6 +85,7 @@ class GrowthViewModel @Inject constructor(
                             }
                         }
                     }
+                    reduce { state.copy(myCharacters = state.myCharacters.sortedBy { it.monggingClass.ordinal }) }
                 }
 
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
@@ -132,7 +135,8 @@ class GrowthViewModel @Inject constructor(
                         when (resource.data.isSuccess) {
                             true -> {
                                 // 강화 전 캐릭터 정보 저장
-                                val previousInfo = state.myCharacters.getOrNull(state.selectedCharacterIndex)
+                                val previousInfo =
+                                    state.myCharacters.getOrNull(state.selectedCharacterIndex)
                                 val experience = resource.data.experience
 
                                 // Experience 데이터 저장 (다이얼로그용)
@@ -214,6 +218,7 @@ class GrowthViewModel @Inject constructor(
                     loadCoin()
                     reduce { state.copy(isLoading = false) }
                 }
+
                 is Resource.Failure -> reduce { state.copy(isLoading = false) }
             }
         }

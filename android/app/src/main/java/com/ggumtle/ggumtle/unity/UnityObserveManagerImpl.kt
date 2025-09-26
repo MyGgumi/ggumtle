@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.unity
 
 import android.util.Log
-import com.ggumtle.domain.unity.UnityStartupObserveManager
+import com.ggumtle.domain.unity.UnityObserveManager
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -12,7 +12,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class UnityStartupObserveObserveManagerImpl @Inject constructor() : UnityStartupObserveManager {
+class UnityObserveManagerImpl @Inject constructor() : UnityObserveManager {
 
     private val _progressFlow = MutableStateFlow(0)
     override val progressFlow: StateFlow<Int> = _progressFlow.asStateFlow()
@@ -41,8 +41,14 @@ class UnityStartupObserveObserveManagerImpl @Inject constructor() : UnityStartup
     }
 
     override fun onCharacterTypeChanged(characterType: String) {
-        Log.d("unityStartUpObserveManager", "캐릭터 타입 변경: $characterType")
-        _characterTypeChangeFlow.tryEmit(characterType)
+        val getCharacterType = when(characterType){
+            "healmongging", "heal" -> "heal"
+            "hpmongging", "physical" -> "physical"
+            "workmongging", "work" -> "work"
+            else -> "UNKNOWN"
+        }
+        Log.d("unityStartUpObserveManager", "캐릭터 타입 변경: $getCharacterType")
+        _characterTypeChangeFlow.tryEmit(getCharacterType)
     }
 
     override fun goToInGame() {

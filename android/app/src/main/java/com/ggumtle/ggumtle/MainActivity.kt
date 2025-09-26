@@ -20,7 +20,7 @@ import com.ggumtle.designsystem.theme.AppTheme
 import com.ggumtle.domain.manager.GlobalInviteManager
 import com.ggumtle.domain.model.InviteNotification
 import com.ggumtle.domain.unity.UnitySendManager
-import com.ggumtle.domain.unity.UnityStartupObserveManager
+import com.ggumtle.domain.unity.UnityObserveManager
 import com.ggumtle.ggumtle.navigation.AppNavigation
 import com.ggumtle.ggumtle.unity.UnitySendManagerImpl
 import com.unity3d.player.UnityPlayer
@@ -41,7 +41,7 @@ class MainActivity : UnityPlayerGameActivity() {
     @Inject
     lateinit var unitySendManager: UnitySendManager
     @Inject
-    lateinit var unityStartupObserveManager: UnityStartupObserveManager
+    lateinit var unityObserveManager: UnityObserveManager
     @Inject
     lateinit var globalInviteManager: GlobalInviteManager
 
@@ -141,13 +141,13 @@ class MainActivity : UnityPlayerGameActivity() {
 
     fun updateLoadingProgress(progress: Int, message: String) {
         lifecycleScope.launch {
-            unityStartupObserveManager.updateProgress(progress, message)
+            unityObserveManager.updateProgress(progress, message)
         }
     }
 
     fun hideLoadingScreen() {
         lifecycleScope.launch {
-            unityStartupObserveManager.completeLoading()
+            unityObserveManager.completeLoading()
         }
     }
 
@@ -161,14 +161,14 @@ class MainActivity : UnityPlayerGameActivity() {
         Log.d("MainActivity", "onRefreshButtonClicked 호출됨, 파라미터: ${parameters.contentToString()}")
         val characterType = parameters.getOrNull(0) ?: ""
         lifecycleScope.launch {
-            unityStartupObserveManager.onCharacterTypeChanged(characterType)
+            unityObserveManager.onCharacterTypeChanged(characterType)
         }
     }
 
     fun onInGameLoadingStart(parameters: Array<String>) {
         Log.d("MainActivity", "onInGameLoadingStart 호출됨, 파라미터: ${parameters.contentToString()}")
         lifecycleScope.launch {
-            unityStartupObserveManager.goToInGame()
+            unityObserveManager.goToInGame()
         }
     }
 

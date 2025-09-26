@@ -47,8 +47,9 @@ object HomeContract {
         val isNavigating: Boolean = false,
         val coin: Int = 0,
 
-        // 몽깅이 관련
+        // 내 몽깅이 정보
         val monggings: List<Mongging> = emptyList(),
+        // 현재 선택된 인덱스
         val selectedCharacterIndex: Int = 0,
 
         val isLoading: Boolean = false,

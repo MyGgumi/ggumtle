@@ -14,7 +14,7 @@ interface UnitySendManager {
     fun addMyCharacter(nickname: String, level: Int)
     fun addOthersCharacter(nickname: String, level: Int)
     fun removeTargetCharacter(nickname: String)
-    fun changeTargetCharacterType(nickname: String, characterType: UnityMonggingClass)
+    fun changeTargetCharacterType(nickname: String, characterType: UnityMonggingClass, level: Int)
     // TODO: 내 캐릭터 레벨만 업데이트하는 메소드 추가 필요
     // fun updateMyCharacterLevel(level: Int)
     fun changeGrowthCharacterTypeNext()

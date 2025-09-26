@@ -9,3 +9,7 @@ data class PartyMember(
     val monggingLevel: Long,
     val profileImageUrl: String? = null,
 )
+// monggingClassId
+// 1. heal
+// 2. physical
+// 3. work

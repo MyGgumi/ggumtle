@@ -1,56 +1,35 @@
 package com.ggumtle.home
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.ggumtle.domain.rest.usecase.user.GetMemberInfoUseCase
-import com.ggumtle.domain.rest.usecase.member.DeleteAccountUseCase
-import com.ggumtle.domain.rest.usecase.member.EditNicknameUseCase
+import com.ggumtle.domain.rest.usecase.member.*
 import com.ggumtle.domain.rest.usecase.auth.LogoutUseCase
 import com.ggumtle.domain.rest.usecase.growth.GetMonggingListUseCase
 import com.ggumtle.datastore.AuthManager
 import com.ggumtle.domain.model.MemberConnectionState
-import com.ggumtle.domain.websocket.usecase.home.AcceptPartyInvitationUseCase
-import com.ggumtle.domain.websocket.usecase.home.CreatePartyUseCase
-import com.ggumtle.domain.websocket.usecase.home.InvitePartyUseCase
-import com.ggumtle.domain.websocket.usecase.home.LeavePartyUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveAcceptPartyInvitationUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveCreatePartyUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveInvitePartyUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveLeavePartyUseCase
-import com.ggumtle.domain.websocket.usecase.social.GetFriendsUseCase
-import com.ggumtle.domain.websocket.usecase.social.ObserveGetFriendsUseCase
+import com.ggumtle.domain.websocket.usecase.social.*
 import com.ggumtle.home.model.PartyInfo
 import com.ggumtle.domain.websocket.model.PartyMember
 import com.ggumtle.home.model.UserProfile
 import com.ggumtle.designsystem.dialog.DialogState
 import com.ggumtle.domain.unity.UnitySendManager
-import com.ggumtle.domain.websocket.usecase.home.GetPartyParticipantsUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveGetPartyParticipantsUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveReadyGameUseCase
-import com.ggumtle.domain.websocket.usecase.home.ReadyGameUseCase
-import com.ggumtle.domain.websocket.usecase.home.UnReadyGameUseCase
+import com.ggumtle.domain.websocket.usecase.home.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.ggumtle.datastore.LogoutReason
 import com.ggumtle.domain.rest.model.Resource
-import com.ggumtle.domain.unity.model.UnityMethod
-import com.ggumtle.domain.unity.model.UnityTarget
 import com.ggumtle.domain.websocket.model.DreamStatus
-import com.ggumtle.domain.websocket.usecase.home.MatchingCancelledUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveMatchingCancelledUseCase
-import com.ggumtle.domain.websocket.usecase.home.ObserveStartGameUseCase
-import com.ggumtle.domain.websocket.usecase.home.StartGameUseCase
-import com.ggumtle.domain.unity.UnityStartupObserveManager
+import com.ggumtle.domain.unity.UnityObserveManager
+import com.ggumtle.domain.websocket.model.toUnityMonggingClass
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
-import org.orbitmvi.orbit.Container
-import org.orbitmvi.orbit.ContainerHost
-import org.orbitmvi.orbit.syntax.simple.intent
-import org.orbitmvi.orbit.syntax.simple.postSideEffect
-import org.orbitmvi.orbit.syntax.simple.reduce
+import org.orbitmvi.orbit.*
+import org.orbitmvi.orbit.syntax.simple.*
 import org.orbitmvi.orbit.viewmodel.container
 import javax.inject.Inject
 
@@ -82,29 +61,120 @@ class HomeViewModel @Inject constructor(
     private val editNicknameUseCase: EditNicknameUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val getMonggingListUseCase: GetMonggingListUseCase,
-    private val unityStartupObserveManager: UnityStartupObserveManager
+    private val unityObserveManager: UnityObserveManager,
+    private val changeMonggingTypeUseCase: ChangeMonggingTypeUseCase,
+    private val observeChangeMonggingTypeUseCase: ObserveChangeMonggingTypeUseCase
 ) : ViewModel(), ContainerHost<HomeContract.State, HomeContract.SideEffect> {
 
     override val container: Container<HomeContract.State, HomeContract.SideEffect> =
         container(HomeContract.State())
 
+    companion object {
+        private const val TAG = "HomeViewModel"
+    }
+
     // 매칭 타이머 Job
     private var matchmakingTimerJob: Job? = null
 
     init {
+        // 정보 조회
         loadProfile()
+        loadMyMonggingList()
+        // 최초 파티 만들기
         createParty()
+        // 이벤트들 관찰
         observeHomeEvent()
         observeCharacterTypeChange()
-        observeGameLoadingStart()
+
+        observeInGameStart()
     }
 
-    private fun observeGameLoadingStart() = intent{
-        unityStartupObserveManager.goToInGameFlow
-            .onEach {
-                postSideEffect(HomeContract.SideEffect.NavigateToInGame)
-            }
+    private fun observeInGameStart() = intent {
+        unityObserveManager.goToInGameFlow
+            .onEach { postSideEffect(HomeContract.SideEffect.NavigateToInGame) }
             .launchIn(viewModelScope)
+    }
+
+    // 프로필 조회
+    private fun loadProfile() = intent {
+        getMemberInfoUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    val myId = authManager.getMemberId()
+                    if (myId != null) {
+                        val userProfile = UserProfile(myId, resource.data.nickname)
+                        reduce {
+                            state.copy(
+                                userProfile = userProfile,
+                                isLoading = false,
+                                coin = resource.data.coin
+                            )
+                        }
+                    }
+                }
+
+                is Resource.Failure -> {
+                    reduce { state.copy(isLoading = false) }
+                    Log.e(TAG, "loadProfile: ${resource.errorMessage}")
+                }
+            }
+        }
+    }
+
+    // 몽깅이 목록 조회
+    private fun loadMyMonggingList() = intent {
+        getMonggingListUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    reduce {
+                        state.copy(
+                            monggings = resource.data.monggings,
+                            isLoading = false
+                        )
+                    }
+                }
+
+                is Resource.Failure -> {
+                    reduce { state.copy(isLoading = false) }
+                    Log.e(TAG, "loadMonggingList: ${resource.errorMessage}")
+                }
+            }
+        }
+    }
+
+    // 파티 생성
+    fun createParty() = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            createPartyUseCase.invoke()
+            val result = observeCreatePartyUseCase.invoke().first()
+            val newPartyMember = PartyMember(
+                id = state.userProfile.id,
+                nickname = state.userProfile.nickname,
+                isLeader = true,
+                monggingClassId = 1,
+                monggingLevel = 1
+            )
+            enterMyCharacter(
+                newPartyMember.nickname,
+                newPartyMember.monggingLevel.toInt(),
+                newPartyMember.monggingClassId.toInt()
+            )
+            reduce {
+                state.copy(
+                    partyInfo = PartyInfo(partyId = result.partyId),
+                    partyMembers = listOf(newPartyMember),
+                    isPartyLeader = true,
+                    canStartGame = true,
+                    isReady = false,
+                    isLoading = false,
+                )
+            }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
     }
 
     private fun observeHomeEvent() {
@@ -116,17 +186,33 @@ class HomeViewModel @Inject constructor(
         observeGameStart()
     }
 
-    // 초대 수락 이벤트 확인
+    fun observeChangeMonggingTypeEvent() = intent{
+        observeChangeMonggingTypeUseCase.invoke()
+            .collect { result ->
+
+            }
+    }
+
+    // 초대 수락 이벤트 확인 옵저브
     fun observeAcceptPartyInvitationEvents(myId: Long?) = intent {
         observeAcceptPartyInvitationUseCase.invoke()
             .collect { result ->
                 if (result.joinedMemberId == myId) {
                     getPartyParticipantsUseCase.invoke()
-                    val result = observeGetPartyParticipantsUseCase.invoke().first()
-                    // TODO: 실제 내 레벨과 상대방 레벨 가져오기
-                    enterMyCharacter(state.userProfile.nickname, 1)
-                    result.participants.forEach { enterOtherCharacter(it.nickname, 1) }
-                    reduce { state.copy(partyMembers = result.participants) }
+                    val partyResult = observeGetPartyParticipantsUseCase.invoke().first()
+                    enterMyCharacter(
+                        state.userProfile.nickname,
+                        result.monggingLevel.toInt(),
+                        result.monggingClassId.toInt()
+                    )
+                    partyResult.participants.forEach {
+                        enterOtherCharacter(
+                            it.nickname,
+                            it.monggingLevel.toInt(),
+                            it.monggingClassId.toInt()
+                        )
+                    }
+                    reduce { state.copy(partyMembers = partyResult.participants) }
                 } else {
                     val newPartyMember = PartyMember(
                         id = result.joinedMemberId,
@@ -134,13 +220,17 @@ class HomeViewModel @Inject constructor(
                         monggingLevel = result.monggingLevel,
                         monggingClassId = result.monggingClassId
                     )
-                    // TODO: 실제 상대방 레벨 가져오기
-                    enterOtherCharacter(result.joinedMemberNickname, 1)
+                    enterOtherCharacter(
+                        result.joinedMemberNickname,
+                        result.monggingLevel.toInt(),
+                        result.monggingClassId.toInt()
+                    )
                     reduce { state.copy(partyMembers = state.partyMembers + newPartyMember) }
                 }
             }
     }
 
+    // 파티 나가기 옵저브
     fun observeLeavePartyEvents(myId: Long?) = intent {
         observeLeavePartyUseCase.invoke()
             .collect { result ->
@@ -167,32 +257,52 @@ class HomeViewModel @Inject constructor(
             }
     }
 
-    // 파티 생성
-    fun createParty() = intent {
-        reduce { state.copy(isLoading = true) }
-        try {
-            createPartyUseCase.invoke()
-            val result = observeCreatePartyUseCase.invoke().first()
-            val newPartyMember = PartyMember(
-                id = state.userProfile.id,
-                nickname = state.userProfile.nickname,
-                isLeader = true,
-                monggingClassId = 1,
-                monggingLevel = 1
-            )
-            enterMyCharacter(newPartyMember.nickname, 1)
-            reduce {
-                state.copy(
-                    partyInfo = PartyInfo(partyId = result.partyId),
-                    partyMembers = listOf(newPartyMember),
-                    isPartyLeader = true,
-                    canStartGame = true,
-                    isReady = false,
-                    isLoading = false,
+    // 게임 준비 확인 옵저브
+    fun observeReadyEvent(myId: Long?) = intent {
+        observeReadyGameUseCase.invoke()
+            .collect { result ->
+                val updatedMembers = state.partyMembers.map { member ->
+                    if (member.id == result.memberId) {
+                        member.copy(isReady = result.isReady)
+                    } else member
+                }
+                reduce { state.copy(partyMembers = updatedMembers) }
+                if (state.isReady) updateGameStartAvailability()
+                else if (myId == result.memberId) reduce { state.copy(isReady = result.isReady) }
+            }
+    }
+
+    fun observeGameStart() = intent {
+        // TODO: 게임 시작
+        observeStartGameUseCase.invoke().collect { result ->
+            when (result.status) {
+                DreamStatus.RECEIVED -> {}
+                DreamStatus.START_MATCH -> {
+                    startMatchmakingTimer()
+                }
+                DreamStatus.WAITING -> {}
+                DreamStatus.MATCHED -> {}
+                DreamStatus.CREATE_ROOM -> {}
+                DreamStatus.START_DREAM -> {}
+            }
+        }
+    }
+
+    // 캐릭터 타입 변경 관찰
+    private fun observeCharacterTypeChange() = intent {
+        unityObserveManager.characterTypeChangeFlow.collect { characterType ->
+            if (state.monggings.isNotEmpty()) {
+                val changedClass = state.monggings.find { it.monggingClass == characterType }
+                if(changedClass==null)return@collect
+                val monggingIndex = state.monggings.indexOf(changedClass)
+                reduce { state.copy(selectedCharacterIndex = monggingIndex) }
+                if(changedClass!=null) changeMonggingTypeUseCase.invoke(changedClass.id)
+                unitySendManager.changeTargetCharacterType(
+                    state.userProfile.nickname,
+                    changedClass.monggingClass.toUnityMonggingClass(),
+                    changedClass.level
                 )
             }
-        } catch (e: Exception) {
-            reduce { state.copy(isLoading = false) }
         }
     }
 
@@ -201,7 +311,6 @@ class HomeViewModel @Inject constructor(
         reduce { state.copy(isLoading = true) }
         try {
             invitePartyUseCase.invoke(friendId)
-            val result = observeInvitePartyUseCase.invoke().first()
             reduce {
                 state.copy(
                     isInviteFriendsDialogVisible = false,
@@ -213,27 +322,11 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 초대 가능 친구 목록 확인 다이얼 로그 열기
-    fun onInviteFriendsClick() = intent {
-        reduce { state.copy(isLoading = true) }
-        try {
-            getFriendsUseCase.invoke()
-            val result = observeGetFriendsUseCase.invoke().first()
-            reduce {
-                state.copy(
-                    friends = result.friends.filter { it.connectionState == MemberConnectionState.ONLINE },
-                    isLoading = false,
-                    isInviteFriendsDialogVisible = true
-                )
-            }
-        } catch (e: Exception) {
-            reduce { state.copy(isLoading = false) }
-        }
+    // 파티 초대 거절 ( API 호출은 없고 단순히 초대 목록에서 지우는 용도 )
+    fun onDeclineInvite(requestId: String) = intent {
+        val updatedRequests = state.inviteRequests.filter { it.id != requestId }
+        reduce { state.copy(inviteRequests = updatedRequests) }
     }
-
-    // 초대 가능 친구 목록 확인 다이얼 로그 닫기
-    fun onDismissInviteFriendsDialog() =
-        intent { reduce { state.copy(isInviteFriendsDialogVisible = false) } }
 
     // 파티 초대 수락
     fun onAcceptInvite(requestId: String) = intent {
@@ -250,12 +343,6 @@ class HomeViewModel @Inject constructor(
         } catch (e: Exception) {
             reduce { state.copy(isLoading = false) }
         }
-    }
-
-    // 파티 초대 거절 ( API 호출은 없고 단순히 초대 목록에서 지우는 용도)
-    fun onDeclineInvite(requestId: String) = intent {
-        val updatedRequests = state.inviteRequests.filter { it.id != requestId }
-        reduce { state.copy(inviteRequests = updatedRequests) }
     }
 
     // 파티 나가기
@@ -290,26 +377,10 @@ class HomeViewModel @Inject constructor(
         try {
             if (!state.isReady) readyGameUseCase.invoke()
             else unReadyGameUseCase.invoke()
-
             reduce { state.copy(isLoading = false) }
         } catch (e: Exception) {
             reduce { state.copy(isLoading = false) }
         }
-    }
-
-    // 준비 옵저브
-    fun observeReadyEvent(myId: Long?) = intent {
-        observeReadyGameUseCase.invoke()
-            .collect { result ->
-                val updatedMembers = state.partyMembers.map { member ->
-                    if (member.id == result.memberId) {
-                        member.copy(isReady = result.isReady)
-                    } else member
-                }
-                reduce { state.copy(partyMembers = updatedMembers) }
-                if (state.isReady) updateGameStartAvailability()
-                else if (myId == result.memberId) reduce { state.copy(isReady = result.isReady) }
-            }
     }
 
     // 게임 시작 가능 여부 업데이트
@@ -320,10 +391,8 @@ class HomeViewModel @Inject constructor(
 
     // 게임 시작
     fun onStartGame() = intent {
-        val token = authManager.getAccessToken()
-        if(token==null)return@intent
         unitySendManager.goToInGame(
-            token,
+            authManager.getAccessToken().toString(),
             -4,
             "p-ryan.iptime.org",
             8888
@@ -332,26 +401,10 @@ class HomeViewModel @Inject constructor(
 //        try {
 //            readyGameUseCase.invoke()
 //            startGameUseCase.invoke()
+//            reduce { state.copy(isSearchingGame = true) }
 //        } catch (e: Exception) {
 //            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
 //        }
-    }
-
-    // TODO: 게임 시작 observe
-    fun observeGameStart() = intent {
-        observeStartGameUseCase.invoke().collect { result ->
-            when (result.status) {
-                DreamStatus.RECEIVED -> {}
-                DreamStatus.START_MATCH -> {
-                    startMatchmakingTimer()
-                }
-
-                DreamStatus.WAITING -> {}
-                DreamStatus.MATCHED -> {}
-                DreamStatus.CREATE_ROOM -> {}
-                DreamStatus.START_DREAM -> {}
-            }
-        }
     }
 
     // 게임 검색 취소
@@ -388,93 +441,6 @@ class HomeViewModel @Inject constructor(
         matchmakingTimerJob = null
     }
 
-    // 프로필 조회
-    private fun loadProfile() = intent {
-        getMemberInfoUseCase.invoke().collect { resource ->
-            when (resource) {
-                is Resource.Loading -> reduce { state.copy(isLoading = true) }
-                is Resource.Success -> {
-                    val myId = authManager.getMemberId()
-                    if (myId != null) {
-                        val userProfile = UserProfile(myId, resource.data.nickname)
-                        reduce {
-                            state.copy(
-                                userProfile = userProfile,
-                                isLoading = false,
-                                coin = resource.data.coin
-                            )
-                        }
-                        loadMonggingList(userProfile.nickname)
-                    }
-                }
-
-                is Resource.Failure -> reduce { state.copy(isLoading = false) }
-            }
-        }
-    }
-
-    // 몽깅이 목록 조회
-    private fun loadMonggingList(nickname: String) = intent {
-        getMonggingListUseCase.invoke().collect { resource ->
-            when (resource) {
-                is Resource.Loading -> {}
-                is Resource.Success -> {
-                    reduce { state.copy(monggings = resource.data.monggings) }
-                    val currentLevel =
-                        getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex)
-                    enterMyCharacter(nickname, currentLevel)
-                }
-
-                is Resource.Failure -> {
-                    enterMyCharacter(nickname, 1)
-                }
-            }
-        }
-    }
-
-    // 현재 선택된 캐릭터의 레벨 가져오기
-    private fun getCurrentCharacterLevel(
-        monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>,
-        selectedIndex: Int
-    ): Int {
-        return if (monggings.isNotEmpty() && selectedIndex < monggings.size) {
-            monggings[selectedIndex].level
-        } else {
-            1
-        }
-    }
-
-    // 캐릭터 타입 변경 관찰
-    private fun observeCharacterTypeChange() = intent {
-        unityStartupObserveManager.characterTypeChangeFlow.collect { characterType ->
-            if (state.monggings.isNotEmpty()) {
-                val monggingIndex = findMonggingIndexByType(characterType, state.monggings)
-                if (monggingIndex != -1) {
-                    // TODO: 몽깅이 클래스 변경 웹소켓 API 호출 추가
-
-                    reduce { state.copy(selectedCharacterIndex = monggingIndex) }
-                    val newLevel = getCurrentCharacterLevel(state.monggings, monggingIndex)
-                    enterMyCharacter(state.userProfile.nickname, newLevel)
-                }
-            }
-        }
-    }
-
-    // 몽깅이 타입으로 인덱스 찾기
-    private fun findMonggingIndexByType(
-        characterType: String,
-        monggings: List<com.ggumtle.domain.rest.model.growth.response.Mongging>
-    ): Int {
-        return monggings.indexOfFirst { mongging ->
-            when (characterType.lowercase()) {
-                "healmongging", "heal" -> mongging.monggingClass.lowercase() == "heal"
-                "hpmongging", "physical" -> mongging.monggingClass.lowercase() == "physical"
-                "workmongging", "work" -> mongging.monggingClass.lowercase() == "work"
-                else -> false
-            }
-        }
-    }
-
     // 프로필 열기
     fun onProfileClick() = intent { reduce { state.copy(isProfileDialogVisible = true) } }
 
@@ -489,33 +455,19 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // 닉네임 변경 버튼 클릭
-    fun onEditNicknameClick() = intent {
-        reduce {
-            state.copy(
-                isNicknameEditMode = true,
-                tempNickname = state.userProfile.nickname
-            )
-        }
-    }
-
     // 닉네임 변경
     fun onChangeNickname() = intent {
         if (state.tempNickname.isNotBlank()) {
             reduce { state.copy(isLoading = true) }
             editNicknameUseCase.invoke(state.tempNickname).collect { resource ->
                 when (resource) {
-                    is Resource.Loading -> {}
+                    is Resource.Loading -> reduce { state.copy(isLoading = true) }
                     is Resource.Success -> {
                         val updatedMembers = state.partyMembers.map { member ->
                             if (member.id == state.userProfile.id)
                                 member.copy(nickname = state.tempNickname) else member
                         }
-                        // 유니티 캐릭터 닉네임도 업데이트
-                        enterMyCharacter(
-                            state.tempNickname,
-                            getCurrentCharacterLevel(state.monggings, state.selectedCharacterIndex)
-                        )
+                        //TODO: 유니티 네임테그 닉네임 변경 호출
                         reduce {
                             state.copy(
                                 userProfile = state.userProfile.copy(nickname = state.tempNickname),
@@ -530,7 +482,7 @@ class HomeViewModel @Inject constructor(
 
                     is Resource.Failure -> {
                         reduce { state.copy(isLoading = false) }
-                        postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
+                        Log.e(TAG, "onChangeNickname: ${resource.errorMessage}")
                     }
                 }
             }
@@ -541,87 +493,19 @@ class HomeViewModel @Inject constructor(
     fun onNicknameTextChange(nickname: String) =
         intent { reduce { state.copy(tempNickname = nickname) } }
 
+    // 닉네임 변경 버튼 클릭
+    fun onEditNicknameClick() = intent {
+        reduce {
+            state.copy(
+                isNicknameEditMode = true,
+                tempNickname = state.userProfile.nickname
+            )
+        }
+    }
+
     // 닉네임 변경 취소
-    fun onCancelNicknameEdit() = intent {
-        reduce {
-            state.copy(
-                isNicknameEditMode = false,
-                tempNickname = ""
-            )
-        }
-    }
-
-    // 메뉴 탭 열기 or 닫기
-    fun onMenuTabClick() = intent { reduce { state.copy(isMenuExpanded = !state.isMenuExpanded) } }
-
-    // 초대 목록 다이얼 로그 열기
-    fun onInviteListClick() = intent {
-        reduce {
-            state.copy(
-                isMenuExpanded = false,
-                isInviteRequestsDialogVisible = true
-            )
-        }
-    }
-
-    // 초대 목록 다이얼 로그 끄기
-    fun onDismissInviteRequestsDialog() =
-        intent { reduce { state.copy(isInviteRequestsDialogVisible = false) } }
-
-    // 설정 다이얼 로그 열기
-    fun onSettingsClick() = intent {
-        reduce {
-            state.copy(
-                isSettingsDialogVisible = true,
-                isMenuExpanded = false
-            )
-        }
-    }
-
-    // 설정 다이얼 로그 끄기
-    fun onDismissSettingsDialog() = intent {
-        reduce { state.copy(isSettingsDialogVisible = false) }
-    }
-
-    fun onLogout() = intent {
-        logoutUseCase.invoke().collect { resource ->
-            when (resource) {
-                is Resource.Loading -> reduce { state.copy(isLoading = true) }
-                is Resource.Success -> {
-
-                    authManager.signOutWithGoogle()
-                    authManager.logout(LogoutReason.UserLogout)
-                    reduce { state.copy(isLoading = false) }
-                }
-
-                is Resource.Failure -> {
-                    reduce { state.copy(isLoading = false) }
-                    postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
-                }
-            }
-        }
-    }
-
-    fun onDeleteAccount() = intent {
-        deleteAccountUseCase.invoke().collect { resource ->
-            when (resource) {
-                is Resource.Loading -> reduce { state.copy(isLoading = true) }
-                is Resource.Success -> {
-                    if (resource.data.success) {
-                        // 회원탈퇴 성공 시 구글 로그아웃 및 로컬 로그아웃 처리
-                        authManager.signOutWithGoogle()
-                        authManager.logout(LogoutReason.AccountDeleted)
-                    }
-                    reduce { state.copy(isLoading = false) }
-                }
-
-                is Resource.Failure -> {
-                    reduce { state.copy(isLoading = false) }
-                    postSideEffect(HomeContract.SideEffect.ShowToast(resource.errorMessage))
-                }
-            }
-        }
-    }
+    fun onCancelNicknameEdit() =
+        intent { reduce { state.copy(isNicknameEditMode = false, tempNickname = "") } }
 
     // 파티 나가기 확인 다이얼 로그 표시
     fun onShowLeavePartyDialog() = intent {
@@ -638,8 +522,49 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    //다이얼 로그 숨기기
-    fun hideDialog() = intent { reduce { state.copy(dialogState = DialogState.Hidden) } }
+    // 설정 다이얼 로그 열기
+    fun onSettingsClick() =
+        intent { reduce { state.copy(isSettingsDialogVisible = true, isMenuExpanded = false) } }
+
+    // 설정 다이얼 로그 끄기
+    fun onDismissSettingsDialog() =
+        intent { reduce { state.copy(isSettingsDialogVisible = false) } }
+
+    // 로그아웃
+    fun onLogout() = intent {
+        logoutUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    authManager.logout(LogoutReason.UserLogout)
+                    reduce { state.copy(isLoading = false) }
+                }
+
+                is Resource.Failure -> {
+                    reduce { state.copy(isLoading = false) }
+                    Log.e(TAG, "onLogout: ${resource.errorMessage}")
+                }
+            }
+        }
+    }
+
+    // 회원 탈퇴
+    fun onDeleteAccount() = intent {
+        deleteAccountUseCase.invoke().collect { resource ->
+            when (resource) {
+                is Resource.Loading -> reduce { state.copy(isLoading = true) }
+                is Resource.Success -> {
+                    if (resource.data.success) authManager.logout(LogoutReason.AccountDeleted)
+                    reduce { state.copy(isLoading = false) }
+                }
+
+                is Resource.Failure -> {
+                    reduce { state.copy(isLoading = false) }
+                    Log.e(TAG, "onDeleteAccount: ${resource.errorMessage}")
+                }
+            }
+        }
+    }
 
     // 소셜 화면 열기
     fun onSocialClick() = intent { postSideEffect(HomeContract.SideEffect.NavigateToSocial) }
@@ -647,20 +572,59 @@ class HomeViewModel @Inject constructor(
     // 성장 화면 열기
     fun onGrowthClick() = intent {
         reduce { state.copy(isNavigating = true) }
-        unitySendManager.sendToUnity(
-            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-            UnityMethod.ROTATE_CAMERA_TO_ENHANCE.value
-        )
+        unitySendManager.goToGrowthFromHome()
         delay(1100)
         postSideEffect(HomeContract.SideEffect.NavigateToGrowth)
     }
 
-    private fun enterMyCharacter(nickname: String, level: Int) =
-        unitySendManager.addMyCharacter(nickname, level)
-    //첫캐릭터만 불러옴
-    //TODO: 유니티 단에서 내 캐릭 레벨 업데이트 하는 메소드추가
+    // 초대 가능 친구 목록 확인 다이얼 로그 열기
+    fun onInviteFriendsClick() = intent {
+        reduce { state.copy(isLoading = true) }
+        try {
+            getFriendsUseCase.invoke()
+            val result = observeGetFriendsUseCase.invoke().first()
+            reduce {
+                state.copy(
+                    friends = result.friends.filter { it.connectionState == MemberConnectionState.ONLINE },
+                    isLoading = false,
+                    isInviteFriendsDialogVisible = true
+                )
+            }
+        } catch (e: Exception) {
+            reduce { state.copy(isLoading = false) }
+        }
+    }
 
-    private fun enterOtherCharacter(nickname: String, level: Int) =
+    // 초대 가능 친구 목록 확인 다이얼 로그 닫기
+    fun onDismissInviteFriendsDialog() =
+        intent { reduce { state.copy(isInviteFriendsDialogVisible = false) } }
+
+    // 초대 목록 다이얼 로그 열기
+    fun onInviteListClick() = intent {
+        reduce {
+            state.copy(
+                isMenuExpanded = false,
+                isInviteRequestsDialogVisible = true
+            )
+        }
+    }
+
+    // 초대 목록 다이얼 로그 끄기
+    fun onDismissInviteRequestsDialog() =
+        intent { reduce { state.copy(isInviteRequestsDialogVisible = false) } }
+
+    // 메뉴 탭 열기 or 닫기
+    fun onMenuTabClick() = intent { reduce { state.copy(isMenuExpanded = !state.isMenuExpanded) } }
+
+    //다이얼 로그 숨기기
+    fun hideDialog() = intent { reduce { state.copy(dialogState = DialogState.Hidden) } }
+
+    // 첫 내 캐릭터 설정 TODO: 타입 전달
+    private fun enterMyCharacter(nickname: String, level: Int, type: Int) =
+        unitySendManager.addMyCharacter(nickname, level)
+
+    // TODO 타입 전달
+    private fun enterOtherCharacter(nickname: String, level: Int, type: Int) =
         unitySendManager.addOthersCharacter(nickname, level)
 
     override fun onCleared() {

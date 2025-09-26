@@ -222,6 +222,30 @@ class MissionViewModel @Inject constructor(
         reduce { state.copy(showImageDialog = false) }
     }
 
+    fun showRemainMissionDialog() = intent {
+        reduce { state.copy(showRemainMissionDialog = true) }
+    }
+
+    fun hideRemainMissionDialog() = intent {
+        reduce { state.copy(showRemainMissionDialog = false) }
+    }
+
+    fun showEmoticonSelector() = intent {
+        reduce { state.copy(showEmoticonSelector = !state.showEmoticonSelector) }
+    }
+
+    fun hideEmoticonSelector() = intent {
+        reduce { state.copy(showEmoticonSelector = false) }
+    }
+
+    fun playEmoticonAnimation(animationIndex: Int) = intent {
+        if (arManager.hasActiveModels()) {
+            arManager.playAnimation(animationIndex)
+            Log.d(TAG, "이모티콘 애니메이션 실행: $animationIndex")
+        }
+        reduce { state.copy(showEmoticonSelector = false) }
+    }
+
     fun startFoodDrag() = intent {
         reduce {
             state.copy(

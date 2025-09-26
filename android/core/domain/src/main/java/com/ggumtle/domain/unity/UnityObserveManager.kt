@@ -3,7 +3,7 @@ package com.ggumtle.domain.unity
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
-interface UnityStartupObserveManager {
+interface UnityObserveManager {
     val progressFlow: StateFlow<Int>
     val messageFlow: StateFlow<String>
 

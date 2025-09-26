@@ -70,12 +70,13 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
 
     override fun changeTargetCharacterType(
         nickname: String,
-        characterType: UnityMonggingClass
+        characterType: UnityMonggingClass,
+        level: Int
     ) {
         sendToUnity(
             UnityTarget.ANDROID_UNITY_CONTROLLER.value,
             UnityMethod.ADD_CHARACTER_BY_NICKNAME.value,
-            listOf(nickname, characterType.type)
+            listOf(nickname, characterType.type, level)
         )
     }
 

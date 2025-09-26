@@ -23,7 +23,13 @@ object MissionContract {
         val feedingAnimationVisible: Boolean = false,
 
         // 미완료 미션
-        val beforeSuccessMissions: List<BeforeSuccessMission> = emptyList()
+        val beforeSuccessMissions: List<BeforeSuccessMission> = emptyList(),
+
+        // RemainMission 다이얼로그 관련
+        val showRemainMissionDialog: Boolean = false,
+
+        // 이모티콘 관련
+        val showEmoticonSelector: Boolean = false
     )
 
     sealed class SideEffect {

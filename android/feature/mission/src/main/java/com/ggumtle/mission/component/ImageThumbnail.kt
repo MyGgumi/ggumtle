@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -23,8 +24,9 @@ fun ImageThumbnail(
     Box(
         modifier = modifier
             .size(60.dp)
+            .clip(RoundedCornerShape(8.dp))
             .background(
-                color = Color.Gray,
+                color = Color.Transparent,
                 shape = RoundedCornerShape(8.dp)
             )
             .border(

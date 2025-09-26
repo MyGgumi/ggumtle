@@ -25,6 +25,7 @@ import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.res.painterResource
 import android.graphics.BlurMaskFilter
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
@@ -127,7 +128,7 @@ fun DailyMissionDialog(
                         ) {
                             drawLine(
                                 color = BrandColors.PurpleLight.copy(alpha = 0.3f),
-                                start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
+                                start = Offset(0f, size.height / 2),
                                 end = androidx.compose.ui.geometry.Offset(size.width, size.height / 2),
                                 strokeWidth = 4.dp.toPx()
                             )

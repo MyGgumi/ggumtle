@@ -1356,7 +1356,7 @@ public class DreamManager {
         List<BoxSpawn> boxSpawns;
         List<FieldItemSpawn> fieldItemSpawns;
 
-
+        // TEST
         if (this.room.id < 0) {
             ggumtleSpawns = new ArrayList<>();
             ggumtleSpawns.add(new GgumtleSpawn(0, 5000, 500, 1200));
@@ -1390,6 +1390,20 @@ public class DreamManager {
             ggumtles.put(i, new Ggumtle(i, Position.from(ggumtleSpawns.get(i))));
         }
         ggumtleIdGenerator.set(GGUMTLE_SPAWN_SIZE);
+
+        // TEST: 가짜 꿈틀이
+        if (this.room.id < 0) {
+            int id = ggumtleIdGenerator.addAndGet(1);
+            Position fakePosition = new Position(
+                    (int) (52.38745 * 100),
+                    (int) (4.613199 * 100),
+                    (int) (14.37919 * 100),
+                    0);
+            FakeGgumtle fakeGgumtle = new FakeGgumtle(id, fakePosition);
+            ggumtles.put(id, fakeGgumtle);
+            ggumtleIdGenerator.set(GGUMTLE_SPAWN_SIZE + 1);
+        }
+
 
         // 상자 위치 초기화
         for (int i = 0; i < BOX_SPAWN_SIZE; i++) {

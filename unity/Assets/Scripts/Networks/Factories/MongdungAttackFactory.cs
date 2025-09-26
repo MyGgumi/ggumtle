@@ -1,7 +1,7 @@
 using DotNetty.Buffers;
 using Networks.Attributes;
-using Networks.Players;
 using Networks.Packets;
+using Networks.Players;
 
 namespace Networks.Factories
 {
@@ -13,9 +13,10 @@ namespace Networks.Factories
             var buffer = Unpooled.WrappedBuffer(bytes);
 
             var result = buffer.ReadInt();
+            var targetId = buffer.ReadLong();
             var leftHp = buffer.ReadInt();
 
-            return new MongdungAttackCommand(result, leftHp);
+            return new MongdungAttackCommand(result, targetId, leftHp);
         }
     }
 

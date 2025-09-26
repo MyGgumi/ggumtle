@@ -184,7 +184,7 @@ namespace Features.Mongdung.NetworkSources
                 if (_enableDebugLogs)
                 {
                     Debug.Log(
-                        $"[MongdungNetworkEventHandler] 몽둥이 공격 응답: Result={command.Result}, LeftHp={command.leftHp}, Success={command.Success}"
+                        $"[MongdungNetworkEventHandler] 몽둥이 공격 응답: Result={command.Result}, TargetId={command.targetId}, LeftHp={command.leftHp}, Success={command.Success}"
                     );
                 }
 

@@ -185,10 +185,12 @@ namespace Features.Map.Services
                     var playerGameObject = playerObject.GetComponent<PlayerGameObject>();
                     if (playerGameObject != null)
                     {
+                        // 플레이어 ID 설정
+                        playerGameObject.SetPlayerId(player.Id);
                         // 서버 속도를 Unity 속도로 변환
                         playerGameObject.SetServerSpeed(player.MoveSpeed);
                         if (_enableDebugLogs)
-                            Debug.Log($"[PlayerSpawnService] 로컬 PlayerGameObject 초기화: 속도={playerGameObject.MoveSpeed}");
+                            Debug.Log($"[PlayerSpawnService] 로컬 PlayerGameObject 초기화: ID={player.Id}, 속도={playerGameObject.MoveSpeed}");
                     }
                 }
                 else
@@ -199,9 +201,12 @@ namespace Features.Map.Services
                     {
                         remotePlayerGameObject.InitializeFromPacket(player);
                         if (_enableDebugLogs)
-                            Debug.Log($"[PlayerSpawnService] 원격 PlayerGameObject 초기화 완료");
+                            Debug.Log($"[PlayerSpawnService] 원격 PlayerGameObject 초기화 완료: ID={player.Id}");
                     }
                 }
+
+                // 레이어 설정 (몽깅이/몽둥이 구분)
+                SetPlayerLayer(playerObject, player.IsMongging);
 
                 // GameObject 이름 설정
                 string playerType = GetPlayerTypeString(player);
@@ -276,6 +281,52 @@ namespace Features.Map.Services
             }
 
             return result;
+        }
+
+        /// <summary>
+        /// 플레이어 레이어 설정 (몽깅이/몽둥이 구분)
+        /// </summary>
+        private void SetPlayerLayer(GameObject playerObject, bool isMongging)
+        {
+            try
+            {
+                // 레이어 이름 결정
+                string layerName = isMongging ? "Player_Mongging" : "Player_Mongdung";
+                int layerIndex = LayerMask.NameToLayer(layerName);
+
+                if (layerIndex == -1)
+                {
+                    Debug.LogWarning($"[PlayerSpawnService] 레이어 '{layerName}'를 찾을 수 없음. 기본 Player 레이어 사용");
+                    layerIndex = LayerMask.NameToLayer("Player");
+                }
+
+                // 해당 GameObject와 모든 자식에 레이어 적용
+                SetLayerRecursively(playerObject, layerIndex);
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerSpawnService] 레이어 설정 완료: {playerObject.name} → {layerName} (Index: {layerIndex})");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[PlayerSpawnService] 레이어 설정 실패: {playerObject.name}, {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// GameObject와 모든 자식에 레이어를 재귀적으로 설정
+        /// </summary>
+        private void SetLayerRecursively(GameObject obj, int layer)
+        {
+            if (obj == null) return;
+
+            obj.layer = layer;
+
+            foreach (Transform child in obj.transform)
+            {
+                SetLayerRecursively(child.gameObject, layer);
+            }
         }
 
         private Transform GetOrCreateParent(string parentName)

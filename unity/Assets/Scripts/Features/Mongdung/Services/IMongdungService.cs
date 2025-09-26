@@ -17,8 +17,9 @@ namespace Features.Mongdung.Services
         /// <param name="actionType">액션 타입</param>
         /// <param name="position">실행 위치</param>
         /// <param name="direction">실행 방향</param>
+        /// <param name="targetId">타겟 플레이어 ID (Attack 전용, 미적중 시 -1)</param>
         /// <returns>실행 성공 여부</returns>
-        UniTask<bool> ExecuteActionAsync(long playerId, MongdungActionType actionType, Vector3 position, Vector3 direction);
+        UniTask<bool> ExecuteActionAsync(long playerId, MongdungActionType actionType, Vector3 position, Vector3 direction, long targetId = -1);
 
         /// <summary>
         /// 몽둥이 액션 취소

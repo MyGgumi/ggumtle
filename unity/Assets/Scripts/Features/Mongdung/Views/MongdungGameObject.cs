@@ -1,4 +1,5 @@
 using System;
+using Features.Mongdung.Components;
 using Features.Mongdung.Models;
 using Features.Mongdung.Services;
 using Features.Mongdung.ViewModels;
@@ -37,6 +38,7 @@ namespace Features.Mongdung.Views
 
         // 컴포넌트
         private Animator _animator;
+        private AttackHitDetector _attackHitDetector;
         private CompositeDisposable _disposables = new CompositeDisposable();
 
         // 플레이어 정보
@@ -71,11 +73,12 @@ namespace Features.Mongdung.Views
         {
             InitializeComponents();
             InitializeAnimatorParameters();
+            InitializePlayerIdFromPlayerGameObject();
             SubscribeToViewModel();
 
             if (enableDebugLogs)
             {
-                Debug.Log($"[MongdungGameObject] 초기화 완료: {gameObject.name}");
+                Debug.Log($"[MongdungGameObject] 초기화 완료: {gameObject.name}, PlayerId: {PlayerId}");
             }
         }
 
@@ -152,6 +155,24 @@ namespace Features.Mongdung.Views
                     Debug.Log($"[MongdungGameObject] Controller가 있는 Animator 발견: {_animator.gameObject.name} (Controller: {_animator.runtimeAnimatorController.name})");
                 }
             }
+
+            // AttackHitDetector 컴포넌트 찾기 또는 추가
+            _attackHitDetector = GetComponent<AttackHitDetector>();
+            if (_attackHitDetector == null)
+            {
+                _attackHitDetector = gameObject.AddComponent<AttackHitDetector>();
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungGameObject] AttackHitDetector 컴포넌트 추가: {gameObject.name}");
+                }
+            }
+            else
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungGameObject] AttackHitDetector 컴포넌트 발견: {gameObject.name}");
+                }
+            }
         }
 
         private void InitializeAnimatorParameters()
@@ -165,6 +186,42 @@ namespace Features.Mongdung.Views
                 if (enableDebugLogs)
                 {
                     Debug.Log($"[MongdungGameObject] 애니메이터 파라미터 초기화 완료");
+                }
+            }
+        }
+
+        /// <summary>
+        /// PlayerGameObject에서 PlayerId를 가져와서 초기화
+        /// </summary>
+        private void InitializePlayerIdFromPlayerGameObject()
+        {
+            // 같은 GameObject에서 PlayerGameObject 컴포넌트 찾기
+            var playerGameObject = GetComponent<Features.Player.Views.PlayerGameObject>();
+            if (playerGameObject != null && playerGameObject.PlayerId != -1)
+            {
+                PlayerId = playerGameObject.PlayerId;
+                PlayerName = $"Player_{PlayerId}";
+
+                // 몽둥이 데이터 업데이트
+                mongdungData.playerId = PlayerId;
+                mongdungData.playerName = PlayerName;
+
+                // ViewModel 초기화
+                if (_viewModel != null)
+                {
+                    _viewModel.Initialize(PlayerId, PlayerName);
+                }
+
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungGameObject] PlayerGameObject에서 PlayerId 설정: {PlayerId}");
+                }
+            }
+            else
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.LogWarning($"[MongdungGameObject] PlayerGameObject를 찾을 수 없거나 PlayerId가 -1입니다: {gameObject.name}");
                 }
             }
         }
@@ -228,6 +285,22 @@ namespace Features.Mongdung.Views
         /// </summary>
         public async void TryExecuteAction(MongdungActionType actionType)
         {
+            // PlayerId가 설정되지 않았다면 PlayerGameObject에서 다시 가져오기 시도
+            if (PlayerId <= 0)
+            {
+                var playerGameObject = GetComponent<Features.Player.Views.PlayerGameObject>();
+                if (playerGameObject != null && playerGameObject.PlayerId > 0)
+                {
+                    PlayerId = playerGameObject.PlayerId;
+                    PlayerName = $"Player_{PlayerId}";
+
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"[MongdungGameObject] 지연된 PlayerId 설정: {PlayerId}");
+                    }
+                }
+            }
+
             if (!_viewModel.CanExecuteAction(actionType))
             {
                 if (enableDebugLogs)
@@ -239,13 +312,32 @@ namespace Features.Mongdung.Views
 
             Vector3 position = transform.position;
             Vector3 direction = transform.forward;
+            long targetId = -1; // 기본값: 미적중
+
+            // Attack 액션의 경우 적중 판정 수행
+            if (actionType == MongdungActionType.Attack && _attackHitDetector != null)
+            {
+                targetId = _attackHitDetector.DetectHitTarget(direction);
+
+                if (enableDebugLogs)
+                {
+                    if (targetId != -1)
+                    {
+                        Debug.Log($"🎯 [MongdungGameObject] 공격 적중 감지: TargetId={targetId}");
+                    }
+                    else
+                    {
+                        Debug.Log($"❌ [MongdungGameObject] 공격 미적중");
+                    }
+                }
+            }
 
             if (enableDebugLogs)
             {
-                Debug.Log($"[MongdungGameObject] 액션 실행 시도: {actionType} at {position}");
+                Debug.Log($"[MongdungGameObject] 액션 실행 시도: PlayerId={PlayerId}, {actionType} at {position}, TargetId={targetId}");
             }
 
-            bool success = await _mongdungService.ExecuteActionAsync(PlayerId, actionType, position, direction);
+            bool success = await _mongdungService.ExecuteActionAsync(PlayerId, actionType, position, direction, targetId);
 
             if (!success && enableDebugLogs)
             {

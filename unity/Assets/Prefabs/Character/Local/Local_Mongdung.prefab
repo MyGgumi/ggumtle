@@ -9,7 +9,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3636008230052827289}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -41,7 +41,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 299076873766222714}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigTail5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -75,7 +75,7 @@ GameObject:
   - component: {fileID: 4493293674540692383}
   - component: {fileID: 8949984819563535771}
   - component: {fileID: 1476062923300650626}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FX Glow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4906,7 +4906,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4819551470730338184}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigTail6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4938,7 +4938,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1517430508638300903}
   - component: {fileID: 2051063856374934698}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Elder Wisp
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -5055,7 +5055,7 @@ GameObject:
   - component: {fileID: 2220773998442471709}
   - component: {fileID: 2220773998428371413}
   - component: {fileID: 2220773998426386109}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BloodDripping
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -9838,7 +9838,7 @@ GameObject:
   - component: {fileID: 2220773998442552955}
   - component: {fileID: 2220773998428304677}
   - component: {fileID: 2220773998426347349}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: BloodPoolGrowing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14721,7 +14721,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8240724974243414280}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigLArmPalm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14752,7 +14752,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2505182686220659272}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigLArm2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14784,7 +14784,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2427474321506187004}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair6
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14816,7 +14816,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3703055800058355351}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigTail3
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14848,7 +14848,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3839847306329648675}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigTail2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -14883,7 +14883,7 @@ GameObject:
   - component: {fileID: 4698318455122376958}
   - component: {fileID: 4698318455120874340}
   - component: {fileID: 8106570306112294175}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: trap_setting_effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -19817,7 +19817,7 @@ GameObject:
   - component: {fileID: 4693438477634267736}
   - component: {fileID: 4896492704835562718}
   - component: {fileID: 4895756300382797580}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: MagicDust
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24678,7 +24678,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3656129367464890943}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigEyeR
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24709,7 +24709,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8034636792389715263}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigCrown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24740,7 +24740,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7865901479648458355}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigRArm2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24772,7 +24772,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6199700384674361916}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24804,7 +24804,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6331152076186128202}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Rig
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24835,7 +24835,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7758477117045155332}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigEyeL
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24867,7 +24867,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4657681304945029975}
   - component: {fileID: 6549382069355049624}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Mace 2 Obj
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -24997,7 +24997,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8576016218273192962}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigPelvis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25030,7 +25030,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3216551701124919354}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigRArm1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25062,7 +25062,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2662787838772524845}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair5
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25098,7 +25098,7 @@ GameObject:
   - component: {fileID: -5379348639785867065}
   - component: {fileID: -5891174126477286623}
   - component: {fileID: -8645828247727511174}
-  m_Layer: 3
+  m_Layer: 8
   m_Name: Local_Mongdung
   m_TagString: Player
   m_Icon: {fileID: 0}
@@ -25249,7 +25249,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 521822776218974990}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigTail1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25281,7 +25281,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7764770068599023233}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25313,7 +25313,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8128362450156536969}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigRibcage
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25348,7 +25348,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 174076952496239869}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigLArm1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25380,7 +25380,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6470026380184787325}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHead
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25415,7 +25415,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1796802601623361579}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigNeck
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25447,7 +25447,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7396491408128001859}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigRArmPalm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25478,7 +25478,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4831848567555543946}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25512,7 +25512,7 @@ GameObject:
   - component: {fileID: 7515686095830270305}
   - component: {fileID: 4516328105277889307}
   - component: {fileID: 3008337712774011681}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Elder Wisp With Root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25584,7 +25584,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3798441671236777118}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigHair7
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25615,7 +25615,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2529266727501439661}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigSpine1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -25650,7 +25650,7 @@ GameObject:
   - component: {fileID: 7954599542961913656}
   - component: {fileID: 7954599542960505190}
   - component: {fileID: 3754378022867704664}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: frighten_effect
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -30532,7 +30532,7 @@ GameObject:
   - component: {fileID: 7954599542976140548}
   - component: {fileID: 7954599542961920856}
   - component: {fileID: 7954599542961896504}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: VerticalGlow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -35314,7 +35314,7 @@ GameObject:
   - component: {fileID: 7954599542976111570}
   - component: {fileID: 7954599542961937756}
   - component: {fileID: 7954599542960499520}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: MagicSparkles
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -40132,7 +40132,7 @@ GameObject:
   - component: {fileID: 7954599542976144918}
   - component: {fileID: 7954599542961960570}
   - component: {fileID: 7954599542961867540}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: FloorRing
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44912,7 +44912,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2016710907489399418}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigTail4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -44947,7 +44947,7 @@ GameObject:
   - component: {fileID: 7829933559342415676}
   - component: {fileID: 3806832637829347939}
   - component: {fileID: 1390165076965310945}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: Mace_2 Obj
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -45054,7 +45054,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4520262043044625005}
-  m_Layer: 0
+  m_Layer: 8
   m_Name: RigSpine2
   m_TagString: Untagged
   m_Icon: {fileID: 0}

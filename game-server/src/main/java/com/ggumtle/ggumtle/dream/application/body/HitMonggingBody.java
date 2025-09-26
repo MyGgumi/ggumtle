@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 
 public record HitMonggingBody(
         Result result,
+        long targetMonggingId,
         int leftHp
 ) implements Body {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,8 +23,9 @@ public record HitMonggingBody(
     @Override
     public byte[] toBytes(Charset charsets) {
         return ByteBuffer
-                .allocate(8)
+                .allocate(16)
                 .putInt(result.value)
+                .putLong(targetMonggingId)
                 .putInt(leftHp)
                 .array();
     }

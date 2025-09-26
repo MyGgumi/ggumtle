@@ -226,7 +226,7 @@ public class DreamService {
         dreamManager.stopFeeding(session);
     }
 
-    @PacketCommandHandler(type = ReceivePacketType.STOP_FEED)
+    @PacketCommandHandler(type = ReceivePacketType.ESCAPE)
     public void handleEscape(EscapeCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 

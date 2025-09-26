@@ -4,6 +4,7 @@ import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.common.event.DreamEndEvent;
 import com.ggumtle.ggumtle.dream.application.body.CloseBoxBody;
 import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
+import com.ggumtle.ggumtle.dream.application.body.LeftJellyCountBody;
 import com.ggumtle.ggumtle.dream.application.command.AttackWithItemCommand;
 import com.ggumtle.ggumtle.dream.application.command.HitMonggingCommand;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
@@ -1020,6 +1021,11 @@ public class DreamManager {
         Runnable task = () -> {
             final int left = targetGgumtle.feed();
             mongging.popItem(ItemDictionary.LIGHT_JELLY.boxableItem);
+            int leftLightJellyCount = mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem);
+
+            Body body = new LeftJellyCountBody(leftLightJellyCount);
+            Packet packet = Packet.of(SendPacketType.LEFT_JELLY_COUNT, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
 
             // 성불시키면 종료
             if (left <= 0) {
@@ -1032,8 +1038,8 @@ public class DreamManager {
                     }
                 }
 
-                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
-                Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
+                body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
+                packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
                 body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.DONE);
@@ -1047,10 +1053,9 @@ public class DreamManager {
             }
 
             // 남은 아이템이 없으면 종료
-            int leftLightJellyCount = mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem);
             if (leftLightJellyCount == 0) {
-                Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
-                Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
+                body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
+                packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
                 WorkingThread removedThread = workingThreads.remove(session.getMemberId());

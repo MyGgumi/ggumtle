@@ -390,8 +390,8 @@ namespace Features.Mongdung.Services
                 long targetId = message.TargetId;
                 if (message.ActionType == MongdungActionType.Attack)
                 {
-                    // AttackHitDetector 로직 추가 예정 (현재는 -1로 기본값)
-                    targetId = -1;
+                    // MongdungGameObject의 AttackHitDetector를 통해 실제 targetId 계산
+                    targetId = GetAttackTargetId(message.PlayerId, message.Direction);
                 }
 
                 // ExecuteActionAsync 호출
@@ -624,6 +624,49 @@ namespace Features.Mongdung.Services
             catch (System.Exception e)
             {
                 Debug.LogError($"[MongdungServiceImpl] 스킬 응답 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 공격 대상 ID 계산 (AttackHitDetector 활용)
+        /// </summary>
+        private long GetAttackTargetId(long playerId, Vector3 direction)
+        {
+            try
+            {
+                // Scene에서 해당 PlayerId를 가진 MongdungGameObject 찾기
+                var mongdungGameObjects = UnityEngine.Object.FindObjectsOfType<Features.Mongdung.Views.MongdungGameObject>();
+
+                foreach (var mongdungObj in mongdungGameObjects)
+                {
+                    if (mongdungObj.PlayerId == playerId)
+                    {
+                        var attackDetector = mongdungObj.GetComponent<Features.Mongdung.Components.AttackHitDetector>();
+                        if (attackDetector != null)
+                        {
+                            long targetId = attackDetector.DetectHitTarget(direction);
+
+                            if (_enableDebugLogs)
+                            {
+                                Debug.Log($"[MongdungServiceImpl] AttackHitDetector 결과: PlayerId={playerId}, TargetId={targetId}");
+                            }
+
+                            return targetId;
+                        }
+                    }
+                }
+
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning($"[MongdungServiceImpl] PlayerId={playerId}에 해당하는 MongdungGameObject 또는 AttackHitDetector를 찾을 수 없음");
+                }
+
+                return -1;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] AttackHitDetector 호출 실패: {e.Message}");
+                return -1;
             }
         }
 

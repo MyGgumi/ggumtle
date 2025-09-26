@@ -159,15 +159,11 @@ namespace Features.Mongdung.Views
                 }
             }
 
-            // AttackHitDetector 컴포넌트 찾기 또는 추가
+            // AttackHitDetector 컴포넌트 찾기 (프리팹에 미리 설정되어 있어야 함)
             _attackHitDetector = GetComponent<AttackHitDetector>();
             if (_attackHitDetector == null)
             {
-                _attackHitDetector = gameObject.AddComponent<AttackHitDetector>();
-                if (enableDebugLogs)
-                {
-                    Debug.Log($"[MongdungGameObject] AttackHitDetector 컴포넌트 추가: {gameObject.name}");
-                }
+                Debug.LogError($"[MongdungGameObject] AttackHitDetector 컴포넌트가 없습니다! 프리팹에 미리 추가해주세요: {gameObject.name}");
             }
             else
             {

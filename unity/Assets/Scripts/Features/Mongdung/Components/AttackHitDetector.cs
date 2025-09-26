@@ -11,10 +11,10 @@ namespace Features.Mongdung.Components
     {
         [Header("공격 범위 설정")]
         [SerializeField]
-        private float attackRange = 3f;
+        private float attackRange = 1.5f;
 
         [SerializeField]
-        private float attackAngle = 60f; // 공격 각도 (도)
+        private float attackAngle = 360f; // 공격 각도 (도) - 전방향
 
         [SerializeField]
         private bool enableDebugVisualization = true;

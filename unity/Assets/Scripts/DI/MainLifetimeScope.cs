@@ -19,6 +19,9 @@ using Features.Mongdung.NetworkSources;
 using Features.Mongdung.Services;
 using Features.Mongdung.ViewModels;
 using Features.Mongdung.Views;
+using Features.Mongging.Messages;
+using Features.Mongging.Services;
+using Features.Mongging.ViewModels;
 using Features.Inventory.Messages;
 using Features.Inventory.NetworkSources;
 using Features.Inventory.Services;
@@ -89,6 +92,23 @@ namespace DI
             builder.RegisterMessageBroker<MongdungSkillResponseMessage>(options);
             builder.RegisterMessageBroker<MongdungAttackActionMessage>(options);
             builder.RegisterMessageBroker<MongdungSkillActionMessage>(options);
+
+            // Mongging Messages
+            builder.RegisterMessageBroker<MonggingPlayerStateChangedMessage>(options);
+            builder.RegisterMessageBroker<MonggingPlayerHitMessage>(options);
+            builder.RegisterMessageBroker<MonggingPlayerHealMessage>(options);
+            builder.RegisterMessageBroker<MonggingPlayerStatusEffectMessage>(options);
+            builder.RegisterMessageBroker<MonggingPlayerRevivedMessage>(options);
+            builder.RegisterMessageBroker<MonggingPlayerEscapedMessage>(options);
+            builder.RegisterMessageBroker<MonggingPlayerAnimationMessage>(options);
+            builder.RegisterMessageBroker<MonggingTeamSyncMessage>(options);
+            builder.RegisterMessageBroker<MonggingTeamPlayerUpdatedMessage>(options);
+            builder.RegisterMessageBroker<MonggingStateBroadcastMessage>(options);
+            builder.RegisterMessageBroker<MonggingTeamInitializedMessage>(options);
+            builder.RegisterMessageBroker<MonggingTeamGameOverMessage>(options);
+            builder.RegisterMessageBroker<MonggingItemUseMessage>(options);
+            builder.RegisterMessageBroker<MonggingRevivalActionMessage>(options);
+            builder.RegisterMessageBroker<MonggingInteractionMessage>(options);
 
             // Chest Messages
             builder.RegisterMessageBroker<ChestDetectedMessage>(options);
@@ -258,6 +278,7 @@ namespace DI
                 Lifetime.Scoped
             );
             builder.Register<MongdungNetworkEventHandler>(Lifetime.Scoped);
+            // MonggingNetworkEventHandler는 static 클래스이므로 DI 등록하지 않음
 
             // Main 씬 전용 Services 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<PlayerMovementService>(Lifetime.Scoped);
@@ -284,6 +305,11 @@ namespace DI
             builder.Register<IMongdungService, MongdungServiceImpl>(Lifetime.Scoped);
             builder.Register<IUIAssetService, UIAssetServiceImpl>(Lifetime.Scoped);
 
+            // Mongging Services
+            builder.Register<IMonggingPlayerService, MonggingPlayerServiceImpl>(Lifetime.Scoped);
+            builder.Register<IMonggingTeamService, MonggingTeamServiceImpl>(Lifetime.Scoped);
+            builder.Register<IMonggingActionService, MonggingActionServiceImpl>(Lifetime.Scoped);
+
             // PlayerManagerService 등록 (새로 추가)
             builder.Register<PlayerManagerService>(Lifetime.Scoped);
 
@@ -302,6 +328,10 @@ namespace DI
             builder.Register<ChatViewModel>(Lifetime.Scoped);
             builder.Register<PlayerHealthViewModel>(Lifetime.Scoped);
 
+            // Mongging ViewModels
+            builder.Register<MonggingPlayerViewModel>(Lifetime.Scoped);
+            builder.Register<MonggingTeamViewModel>(Lifetime.Scoped);
+
             // Entry Points 등록 (씬 시작 시 자동 실행)
             UnityEngine.Debug.Log("[MainLifetimeScope] MobileInputService EntryPoint 등록 시도");
             builder.RegisterEntryPoint<MobileInputService>();
@@ -309,6 +339,10 @@ namespace DI
             builder.RegisterEntryPoint<MainSceneInitializer>();
             builder.RegisterEntryPoint<MainGameServiceImpl>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MainGameService EntryPoint 등록 완료");
+
+            // Mongging EntryPoint 등록
+            builder.RegisterEntryPoint<MonggingTeamServiceImpl>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] MonggingTeamService EntryPoint 등록 완료");
 
             // MainGameNetworkEventHandler에 MainGameService 주입
             builder.RegisterBuildCallback(container =>

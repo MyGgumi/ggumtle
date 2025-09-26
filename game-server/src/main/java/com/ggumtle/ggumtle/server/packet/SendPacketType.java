@@ -44,6 +44,7 @@ public enum SendPacketType {
     START_FEED((short) 111),
     STOP_FEED((short) 113),
     GGUMTLE_STATUS((short) 120),
+    LEFT_JELLY_COUNT((short) 121),
 
     // 탈출
     OPEN_EXIT((short) 130),

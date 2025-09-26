@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using Features.Player.NetworkSources;
+using Features.Mongdung.Messages;
+using Features.Mongdung.Models;
 using Networks.Rooms.Domains;
+using MessagePipe;
+using R3;
 using UnityEngine;
 using VContainer;
 
@@ -52,7 +56,7 @@ namespace Features.Player.Views
         public LayerMask GroundLayers;
 
         [Header("Debug Settings")]
-        public bool enableDebugLogs = true;
+        public bool enableDebugLogs = false;
 
         // 플레이어 정보
         [Header("Player Info")]
@@ -110,9 +114,25 @@ namespace Features.Player.Views
         private Queue<NetworkSnapshot> _networkHistory = new Queue<NetworkSnapshot>();
         private const int MAX_HISTORY_SIZE = 5;
 
+        // MessagePipe 구독 관련
+        private CompositeDisposable _disposables = new CompositeDisposable();
+        private ISubscriber<MongdungActionCompletedMessage> _actionCompletedSubscriber;
+
+        [Inject]
+        public void ConstructMessagePipe(ISubscriber<MongdungActionCompletedMessage> actionCompletedSubscriber)
+        {
+            _actionCompletedSubscriber = actionCompletedSubscriber;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[RemotePlayerGameObject] MessagePipe 의존성 주입 완료: {gameObject.name}");
+            }
+        }
+
         private void Start()
         {
-            _hasAnimator = TryGetComponent(out _animator);
+            // 하위 오브젝트에서 Controller가 있는 Animator 찾기 (PlayerGameObject와 동일한 로직)
+            InitializeAnimator();
             _controller = GetComponent<CharacterController>();
 
             AssignAnimationIDs();
@@ -120,9 +140,145 @@ namespace Features.Player.Views
             // 보간 시스템 초기화
             InitializeInterpolationSystem();
 
+            // MessagePipe 구독 설정
+            SetupMessagePipeSubscriptions();
+
             if (enableDebugLogs)
             {
                 Debug.Log($"[RemotePlayerGameObject] 원격 플레이어 초기화 완료: ID={PlayerId}");
+            }
+        }
+
+        /// <summary>
+        /// 하위 오브젝트에서 Controller가 있는 Animator 찾기 (PlayerGameObject와 동일한 로직)
+        /// </summary>
+        private void InitializeAnimator()
+        {
+            // 하위 오브젝트들에서 Controller가 있는 Animator 찾기
+            var animators = GetComponentsInChildren<Animator>();
+
+            foreach (var animator in animators)
+            {
+                if (animator.runtimeAnimatorController != null)
+                {
+                    _animator = animator;
+                    break;
+                }
+            }
+
+            if (_animator == null)
+            {
+                Debug.LogError($"[RemotePlayerGameObject] Controller가 할당된 Animator를 찾을 수 없습니다: {gameObject.name}");
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[RemotePlayerGameObject] 발견된 Animator 목록:");
+                    for (int i = 0; i < animators.Length; i++)
+                    {
+                        Debug.Log($"  [{i}] {animators[i].gameObject.name} - Controller: {animators[i].runtimeAnimatorController?.name ?? "None"}");
+                    }
+                }
+                _hasAnimator = false;
+                return;
+            }
+
+            _hasAnimator = true;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[RemotePlayerGameObject] Controller가 있는 Animator 발견: {_animator.gameObject.name} (Controller: {_animator.runtimeAnimatorController.name})");
+            }
+        }
+
+        /// <summary>
+        /// MessagePipe 구독 설정
+        /// </summary>
+        private void SetupMessagePipeSubscriptions()
+        {
+            if (_actionCompletedSubscriber == null)
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.LogWarning($"[RemotePlayerGameObject] ActionCompletedSubscriber가 null - MessagePipe 구독 불가: {gameObject.name}");
+                }
+                return;
+            }
+
+            // MongdungActionCompletedMessage 구독
+            _actionCompletedSubscriber
+                .Subscribe(OnMongdungActionCompleted)
+                .AddTo(_disposables);
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[RemotePlayerGameObject] MessagePipe 구독 완료: {gameObject.name}");
+            }
+        }
+
+        /// <summary>
+        /// 몽둥이 액션 완료 메시지 처리 (Remote 애니메이션 트리거)
+        /// </summary>
+        private void OnMongdungActionCompleted(MongdungActionCompletedMessage message)
+        {
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[RemotePlayerGameObject] MongdungActionCompleted 메시지 수신: PlayerId={message.PlayerId}, ActionType={message.ActionType}, Success={message.Success}, GameObject={gameObject.name}");
+            }
+
+            // Remote 플레이어는 모든 성공한 액션에 대해 애니메이션 트리거
+            if (!message.Success)
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[RemotePlayerGameObject] 액션 실패로 인한 스킵: {message.ActionType}");
+                }
+                return;
+            }
+
+            var mongdungComponent = GetComponent<Features.Mongdung.Views.MongdungGameObject>();
+            if (mongdungComponent == null)
+            {
+                // 몽깅이 플레이어는 MongdungGameObject가 없는 것이 정상 - TODO: 나중에 몽깅이용 액션 처리 구현
+                if (enableDebugLogs && gameObject.name.Contains("Mongdung"))
+                {
+                    Debug.LogWarning($"[RemotePlayerGameObject] 몽둥이인데 MongdungGameObject 컴포넌트를 찾을 수 없음: {gameObject.name}");
+                }
+                else if (enableDebugLogs)
+                {
+                    Debug.Log($"[RemotePlayerGameObject] 몽깅이 플레이어 - TODO: 몽깅이용 액션 처리 구현 필요: {gameObject.name}");
+                }
+                return;
+            }
+
+            // 액션 타입에 따른 애니메이션 트리거
+            string animationTrigger = message.ActionType switch
+            {
+                MongdungActionType.Attack => "Attack",
+                MongdungActionType.TrapSetting => "TrapSetting",
+                MongdungActionType.Frighten => "Frighten",
+                _ => ""
+            };
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[RemotePlayerGameObject] 애니메이션 트리거 매핑: {message.ActionType} -> {animationTrigger}");
+            }
+
+            if (!string.IsNullOrEmpty(animationTrigger))
+            {
+                // RemotePlayerGameObject의 TriggerAnimation 메서드 사용
+                TriggerAnimation(animationTrigger);
+
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[RemotePlayerGameObject] Remote 몽둥이 액션 애니메이션 트리거 완료: {message.ActionType} -> {animationTrigger}");
+                }
+            }
+            else
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.LogWarning($"[RemotePlayerGameObject] 알 수 없는 액션 타입: {message.ActionType}");
+                }
             }
         }
 
@@ -153,8 +309,6 @@ namespace Features.Player.Views
             // GameObject가 파괴되었는지 체크
             if (this == null || gameObject == null)
                 return;
-
-            _hasAnimator = TryGetComponent(out _animator);
 
             GroundedCheck();
             ProcessNetworkMovement();
@@ -422,7 +576,7 @@ namespace Features.Player.Views
         {
             _networkIsJumping = isJumping;
 
-            if (isJumping && Grounded && _hasAnimator)
+            if (isJumping && Grounded && _hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDJump))
             {
                 _animator.SetBool(_animIDJump, true);
                 if (enableDebugLogs)
@@ -451,13 +605,6 @@ namespace Features.Player.Views
 
             bool wasGrounded = Grounded;
 
-            if (enableDebugLogs && Time.frameCount % 120 == 0) // 2초마다 로그
-            {
-                Debug.Log(
-                    $"[RemotePlayerGameObject] GroundCheck - Position: {transform.position}, SpherePos: {spherePosition}, GroundLayers: {GroundLayers.value}"
-                );
-            }
-
             if (GroundLayers.value == 0)
             {
                 Grounded = Physics.CheckSphere(
@@ -466,13 +613,6 @@ namespace Features.Player.Views
                     ~0,
                     QueryTriggerInteraction.Ignore
                 );
-
-                if (enableDebugLogs && Time.frameCount % 120 == 0)
-                {
-                    Debug.Log(
-                        $"[RemotePlayerGameObject] Using all layers (~0), Grounded: {Grounded}"
-                    );
-                }
             }
             else
             {
@@ -482,23 +622,10 @@ namespace Features.Player.Views
                     GroundLayers,
                     QueryTriggerInteraction.Ignore
                 );
-
-                if (enableDebugLogs && Time.frameCount % 120 == 0)
-                {
-                    Debug.Log(
-                        $"[RemotePlayerGameObject] Using GroundLayers: {GroundLayers.value}, Grounded: {Grounded}"
-                    );
-                }
             }
 
-            if (wasGrounded != Grounded && enableDebugLogs)
-            {
-                Debug.Log(
-                    $"[RemotePlayerGameObject] Grounded 상태 변화: {wasGrounded} → {Grounded}"
-                );
-            }
 
-            if (_hasAnimator)
+            if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDGrounded))
             {
                 _animator.SetBool(_animIDGrounded, Grounded);
             }
@@ -666,7 +793,7 @@ namespace Features.Player.Views
         /// </summary>
         private void UpdateAnimatorParameters()
         {
-            if (!_hasAnimator)
+            if (!_hasAnimator || _animator == null || _animator.runtimeAnimatorController == null)
                 return;
 
             // 간단한 이동 상태 기반 애니메이션
@@ -678,18 +805,56 @@ namespace Features.Player.Views
                 Time.deltaTime * SpeedChangeRate
             );
 
-            _animator.SetFloat(_animIDSpeed, _animationBlend);
-            _animator.SetFloat(_animIDMotionSpeed, _networkIsMoving ? 1f : 0f);
+            // 파라미터 존재 확인 후 설정
+            if (HasAnimatorParameter(_animIDSpeed))
+                _animator.SetFloat(_animIDSpeed, _animationBlend);
+
+            if (HasAnimatorParameter(_animIDMotionSpeed))
+                _animator.SetFloat(_animIDMotionSpeed, _networkIsMoving ? 1f : 0f);
+        }
+
+        /// <summary>
+        /// 애니메이터 파라미터 존재 확인
+        /// </summary>
+        private bool HasAnimatorParameter(int parameterHash)
+        {
+            if (!_hasAnimator || _animator == null || _animator.runtimeAnimatorController == null)
+                return false;
+
+            foreach (var parameter in _animator.parameters)
+            {
+                if (parameter.nameHash == parameterHash)
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 애니메이터 트리거 파라미터 존재 확인 (이름으로)
+        /// </summary>
+        private bool HasAnimatorTrigger(string triggerName)
+        {
+            if (!_hasAnimator || _animator == null || _animator.runtimeAnimatorController == null)
+                return false;
+
+            foreach (var parameter in _animator.parameters)
+            {
+                if (parameter.name == triggerName && parameter.type == AnimatorControllerParameterType.Trigger)
+                    return true;
+            }
+            return false;
         }
 
         private void ApplyGravity()
         {
             if (Grounded)
             {
-                if (_hasAnimator)
+                if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null)
                 {
-                    _animator.SetBool(_animIDJump, false);
-                    _animator.SetBool(_animIDFreeFall, false);
+                    if (HasAnimatorParameter(_animIDJump))
+                        _animator.SetBool(_animIDJump, false);
+                    if (HasAnimatorParameter(_animIDFreeFall))
+                        _animator.SetBool(_animIDFreeFall, false);
                 }
 
                 if (_verticalVelocity < 0.0f)
@@ -701,7 +866,7 @@ namespace Features.Player.Views
                 if (_networkIsJumping)
                 {
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-                    if (_hasAnimator)
+                    if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDJump))
                     {
                         _animator.SetBool(_animIDJump, true);
                     }
@@ -709,7 +874,7 @@ namespace Features.Player.Views
             }
             else
             {
-                if (_hasAnimator)
+                if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDFreeFall))
                 {
                     _animator.SetBool(_animIDFreeFall, _verticalVelocity < -0.1f);
                 }
@@ -770,13 +935,58 @@ namespace Features.Player.Views
         /// </summary>
         public void TriggerAnimation(string triggerName)
         {
-            if (_hasAnimator && !string.IsNullOrEmpty(triggerName))
+            if (enableDebugLogs)
             {
-                _animator.SetTrigger(triggerName);
-                if (enableDebugLogs)
+                Debug.Log($"[RemotePlayerGameObject] TriggerAnimation 호출: triggerName={triggerName}, _hasAnimator={_hasAnimator}, _animator={_animator != null}, controller={_animator?.runtimeAnimatorController != null}");
+            }
+
+            if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && !string.IsNullOrEmpty(triggerName))
+            {
+                if (HasAnimatorTrigger(triggerName))
                 {
-                    Debug.Log($"[RemotePlayerGameObject] 애니메이션 트리거: {triggerName}");
+                    _animator.SetTrigger(triggerName);
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"[RemotePlayerGameObject] 애니메이션 트리거 성공: {triggerName}, Controller={_animator.runtimeAnimatorController.name}, GameObject={gameObject.name}");
+                    }
+
+                    // 추가 디버깅: 현재 애니메이터 상태 정보
+                    if (enableDebugLogs && _animator.layerCount > 0)
+                    {
+                        var currentState = _animator.GetCurrentAnimatorStateInfo(0);
+                        Debug.Log($"[RemotePlayerGameObject] 현재 애니메이터 상태: {currentState.fullPathHash}, IsName={currentState.IsName(triggerName)}");
+                    }
                 }
+                else
+                {
+                    if (enableDebugLogs)
+                    {
+                        Debug.LogWarning($"[RemotePlayerGameObject] 애니메이션 트리거 '{triggerName}' 파라미터가 존재하지 않음: {gameObject.name}");
+
+                        // 사용 가능한 파라미터 목록 출력
+                        if (_animator != null && _animator.parameters != null)
+                        {
+                            var triggerParams = "";
+                            foreach (var param in _animator.parameters)
+                            {
+                                if (param.type == AnimatorControllerParameterType.Trigger)
+                                    triggerParams += param.name + ", ";
+                            }
+                            Debug.Log($"[RemotePlayerGameObject] 사용 가능한 트리거: {triggerParams}");
+                        }
+                    }
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            // MessagePipe 구독 해제
+            _disposables?.Dispose();
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[RemotePlayerGameObject] 리소스 정리 완료: {gameObject.name}");
             }
         }
 

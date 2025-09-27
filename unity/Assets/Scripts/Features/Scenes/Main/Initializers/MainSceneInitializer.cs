@@ -4,6 +4,7 @@ using Features.MainGame.Services;
 using Features.MainGame.NetworkSources;
 using Features.Map.Services;
 using Features.Map.Utils;
+using Features.Player.Services;
 using Features.Room.Services;
 using MessagePipe;
 using Networks;
@@ -24,6 +25,7 @@ namespace Features.Scenes.Main.Initializers
         private readonly IMapSpawnService _mapSpawnService;
         private readonly IPlayerSpawnService _playerSpawnService;
         private readonly IMainGameNetworkSource _mainGameNetworkSource;
+        private readonly PlayerManagerService _playerManagerService;
         private readonly IPublisher<GgumtleDetectedMessage> _ggumtleDetectedPublisher;
         private readonly IPublisher<GgumtleLeftMessage> _ggumtleLeftPublisher;
         private readonly IPublisher<ChestDetectedMessage> _chestDetectedPublisher;
@@ -35,6 +37,7 @@ namespace Features.Scenes.Main.Initializers
             IMapSpawnService mapSpawnService,
             IPlayerSpawnService playerSpawnService,
             IMainGameNetworkSource mainGameNetworkSource,
+            PlayerManagerService playerManagerService,
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
             IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
@@ -44,6 +47,7 @@ namespace Features.Scenes.Main.Initializers
             _mapSpawnService = mapSpawnService;
             _playerSpawnService = playerSpawnService;
             _mainGameNetworkSource = mainGameNetworkSource;
+            _playerManagerService = playerManagerService;
             _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
             _chestDetectedPublisher = chestDetectedPublisher;
@@ -259,6 +263,7 @@ namespace Features.Scenes.Main.Initializers
                         constructMethod.Invoke(
                             detector,
                             new object[] {
+                                _playerManagerService,
                                 _ggumtleDetectedPublisher,
                                 _ggumtleLeftPublisher,
                                 _chestDetectedPublisher,

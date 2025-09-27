@@ -46,12 +46,13 @@ namespace Features.Mongdung.ViewModels
             ISubscriber<MongdungStateChangedMessage> stateChangedSubscriber,
             ISubscriber<MongdungActionStartedMessage> actionStartedSubscriber,
             ISubscriber<MongdungActionCompletedMessage> actionCompletedSubscriber,
+            ISubscriber<MongdungActionCooldownMessage> actionCooldownSubscriber,
             ISubscriber<MongdungMovementBlockedMessage> movementBlockedSubscriber)
         {
             _mongdungService = mongdungService ?? throw new ArgumentNullException(nameof(mongdungService));
 
             InitializeActionStates();
-            SubscribeToMessages(stateChangedSubscriber, actionStartedSubscriber, actionCompletedSubscriber, movementBlockedSubscriber);
+            SubscribeToMessages(stateChangedSubscriber, actionStartedSubscriber, actionCompletedSubscriber, actionCooldownSubscriber, movementBlockedSubscriber);
 
             if (_enableDebugLogs)
             {
@@ -92,6 +93,7 @@ namespace Features.Mongdung.ViewModels
             ISubscriber<MongdungStateChangedMessage> stateChangedSubscriber,
             ISubscriber<MongdungActionStartedMessage> actionStartedSubscriber,
             ISubscriber<MongdungActionCompletedMessage> actionCompletedSubscriber,
+            ISubscriber<MongdungActionCooldownMessage> actionCooldownSubscriber,
             ISubscriber<MongdungMovementBlockedMessage> movementBlockedSubscriber)
         {
             // 상태 변경 구독
@@ -107,6 +109,11 @@ namespace Features.Mongdung.ViewModels
             // 액션 완료 구독
             actionCompletedSubscriber
                 .Subscribe(OnActionCompleted)
+                .AddTo(_disposables);
+
+            // 액션 쿨다운 구독
+            actionCooldownSubscriber
+                .Subscribe(OnActionCooldown)
                 .AddTo(_disposables);
 
             // 이동 제한 구독
@@ -159,13 +166,35 @@ namespace Features.Mongdung.ViewModels
                 float cooldownDuration = GetCooldownDuration(message.ActionType);
                 _actionRemainingTimes[message.ActionType].Value = cooldownDuration;
 
-                // 쿨다운 카운트다운 시작
-                StartCooldownTimer(message.ActionType, cooldownDuration).AddTo(_disposables);
+                // MongdungServiceImpl에서 이미 쿨다운 타이머를 시작하므로 여기서는 제거
+                // StartCooldownTimer(message.ActionType, cooldownDuration).AddTo(_disposables);
             }
 
             if (_enableDebugLogs)
             {
                 Debug.Log($"[MongdungViewModel] 액션 완료: PlayerId={PlayerId}, ActionType={message.ActionType}, Success={message.Success}");
+            }
+        }
+
+        private void OnActionCooldown(MongdungActionCooldownMessage message)
+        {
+            if (message.PlayerId != PlayerId) return;
+
+            // 쿨타임 완료 (RemainingTime = 0)
+            if (message.RemainingTime <= 0f)
+            {
+                _actionCooldownStates[message.ActionType].Value = false;
+                _actionRemainingTimes[message.ActionType].Value = 0f;
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungViewModel] 쿨다운 완료: PlayerId={PlayerId}, ActionType={message.ActionType}");
+                }
+            }
+            else
+            {
+                // 쿨타임 진행 중
+                _actionRemainingTimes[message.ActionType].Value = message.RemainingTime;
             }
         }
 

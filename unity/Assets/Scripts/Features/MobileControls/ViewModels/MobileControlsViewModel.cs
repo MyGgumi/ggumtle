@@ -3,6 +3,8 @@ using Features.MobileControls.Messages;
 using Features.MobileControls.Models;
 using Features.Ggumtle.Messages;
 using Features.Chest.Messages;
+using Features.Player.Services;
+using Features.PlayerList.Models;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -48,6 +50,7 @@ namespace Features.MobileControls.ViewModels
         #region Dependencies
 
         private readonly MobileControlsData _data;
+        private readonly PlayerManagerService _playerManagerService;
 
         // MessagePipe Publishers
         private readonly IPublisher<JoystickInputMessage> _joystickInputPublisher;
@@ -85,6 +88,7 @@ namespace Features.MobileControls.ViewModels
 
         [Inject]
         public MobileControlsViewModel(
+            PlayerManagerService playerManagerService,
             IPublisher<JoystickInputMessage> joystickInputPublisher,
             IPublisher<JoystickEndMessage> joystickEndPublisher,
             IPublisher<MobileButtonPressedMessage> buttonPressedPublisher,
@@ -101,6 +105,7 @@ namespace Features.MobileControls.ViewModels
         )
         {
             _data = new MobileControlsData();
+            _playerManagerService = playerManagerService;
 
             _joystickInputPublisher = joystickInputPublisher;
             _joystickEndPublisher = joystickEndPublisher;
@@ -467,11 +472,16 @@ namespace Features.MobileControls.ViewModels
         }
 
         /// <summary>
-        /// 상호작용 버튼 가시성 업데이트
+        /// 상호작용 버튼 가시성 업데이트 - 로컬 몽깅이 플레이어만 표시
         /// </summary>
         private void UpdateInteractButtonVisibility()
         {
-            bool shouldShow = _isGgumtleNearby || _isChestNearby;
+            // 로컬 플레이어 역할 확인
+            var localPlayerRole = _playerManagerService.GetLocalPlayerRole();
+            bool isLocalMongging = localPlayerRole == PlayerRole.Mongging;
+
+            // 로컬 몽깅이이고 상호작용 객체가 근처에 있을 때만 표시
+            bool shouldShow = isLocalMongging && (_isGgumtleNearby || _isChestNearby);
 
             var interactData = _data.GetButtonData(MobileButtonType.Interact);
             if (interactData != null)
@@ -480,7 +490,7 @@ namespace Features.MobileControls.ViewModels
                 UpdateButtonProperties(MobileButtonType.Interact, interactData);
             }
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby})");
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (로컬몽깅이: {isLocalMongging}, 꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby})");
         }
 
         #endregion

@@ -8,6 +8,8 @@ using Features.Ggumtle.Views;
 using Features.Chest.Messages;
 using Features.Chest.Models;
 using Features.Chest.Views;
+using Features.Player.Services;
+using Features.PlayerList.Models;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -42,14 +44,19 @@ namespace Interaction
         private IPublisher<Features.Chest.Messages.ChestDetectedMessage> _chestDetectedPublisher;
         private IPublisher<Features.Chest.Messages.ChestLeftMessage> _chestLeftPublisher;
 
+        // 플레이어 관리 서비스
+        private PlayerManagerService _playerManagerService;
+
         [Inject]
         public void Construct(
+            PlayerManagerService playerManagerService,
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
             IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
             IPublisher<ChestLeftMessage> chestLeftPublisher
         )
         {
+            _playerManagerService = playerManagerService;
             _ggumtleDetectedPublisher = ggumtleDetectedPublisher;
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
             _chestDetectedPublisher = chestDetectedPublisher;
@@ -219,6 +226,12 @@ namespace Interaction
 
         void OnTriggerEnter(Collider other)
         {
+            // 로컬 몽깅이 플레이어만 상호작용 감지 활성화
+            if (!IsLocalMonggingPlayer())
+            {
+                return;
+            }
+
             // 레이어 마스크 체크 (상호작용 객체는 Layer 7, 다른 것들은 다른 레이어이므로 필터링)
             if (!IsInLayerMask(other.gameObject.layer, interactionLayerMask))
             {
@@ -306,6 +319,12 @@ namespace Interaction
 
         void OnTriggerExit(Collider other)
         {
+            // 로컬 몽깅이 플레이어만 상호작용 감지 활성화
+            if (!IsLocalMonggingPlayer())
+            {
+                return;
+            }
+
             // 레이어 마스크 체크
             if (!IsInLayerMask(other.gameObject.layer, interactionLayerMask))
                 return;
@@ -643,6 +662,27 @@ namespace Interaction
         private bool IsInLayerMask(int layer, LayerMask layerMask)
         {
             return (layerMask.value & (1 << layer)) != 0;
+        }
+
+        /// <summary>
+        /// 로컬 몽깅이 플레이어인지 확인
+        /// </summary>
+        private bool IsLocalMonggingPlayer()
+        {
+            if (_playerManagerService == null)
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning("[InteractionTriggerDetector] PlayerManagerService가 주입되지 않았습니다");
+                return true; // 기본값으로 활성화 (기존 동작 유지)
+            }
+
+            var localPlayerRole = _playerManagerService.GetLocalPlayerRole();
+            bool isLocalMongging = localPlayerRole == PlayerRole.Mongging;
+
+            if (enableDebugLogs && !isLocalMongging)
+                Debug.Log($"[InteractionTriggerDetector] 몽둥이 플레이어이므로 상호작용 감지 비활성화");
+
+            return isLocalMongging;
         }
 
         /// <summary>

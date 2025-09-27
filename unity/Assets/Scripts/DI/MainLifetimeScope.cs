@@ -239,6 +239,7 @@ namespace DI
             builder.RegisterComponentInHierarchy<Features.Inventory.Views.InventoryUIView>();
             builder.RegisterComponentInHierarchy<Features.Chest.Views.ChestUIView>();
             builder.RegisterComponentInHierarchy<Features.Feeding.Views.FeedingUIView>();
+            builder.RegisterComponentInHierarchy<Features.Mongdung.Views.MongdungUIView>();
 
             // 모든 컴포넌트들은 Addressable 동적 생성 방식으로 처리
 

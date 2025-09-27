@@ -1,5 +1,6 @@
 package com.ggumtle.ggumtle.dream.domain.player;
 
+import com.ggumtle.ggumtle.dream.application.result.GetHitResult;
 import com.ggumtle.ggumtle.dream.domain.item.Boxable;
 import com.ggumtle.ggumtle.dream.domain.item.ItemDictionary;
 import com.ggumtle.ggumtle.dream.vo.Position;
@@ -56,16 +57,16 @@ public class Mongging extends Player {
         this.inventoryLock = new Object();
     }
 
-    public int getHit(int damage) {
+    public GetHitResult getHit(int damage) {
         synchronized (statusLock) {
             synchronized (inventoryLock) {
                 if (this.status != Status.ALIVE) {
-                    return -1;
+                    return new GetHitResult(GetHitResult.Result.NOT_ALIVE, -1);
                 }
 
                 if (this.hp > damage) {
                     this.hp -= damage;
-                    return this.hp;
+                    return new GetHitResult(GetHitResult.Result.ALIVE, this.hp);
                 }
 
                 this.hp = 0;
@@ -84,11 +85,11 @@ public class Mongging extends Player {
 
                 if (this.knockOutCount > MAX_KNOCKOUT_COUNT) {
                     this.status = Status.DEAD;
+                    return new GetHitResult(GetHitResult.Result.DEAD, this.hp);
                 } else {
                     this.status = Status.KNOCKOUT;
+                    return new GetHitResult(GetHitResult.Result.KNOCK_OUT, this.hp);
                 }
-
-                return this.hp;
             }
         }
     }

@@ -32,6 +32,7 @@ import com.ggumtle.ggumtle.dream.application.body.StopFeedingBody;
 import com.ggumtle.ggumtle.dream.application.body.UseFieldItemBody;
 import com.ggumtle.ggumtle.dream.application.body.UseMonggingItemBody;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
+import com.ggumtle.ggumtle.dream.application.result.GetHitResult;
 import com.ggumtle.ggumtle.dream.domain.item.Attackable;
 import com.ggumtle.ggumtle.dream.domain.item.Box;
 import com.ggumtle.ggumtle.dream.domain.exit.Exit;
@@ -231,24 +232,24 @@ public class DreamManager {
             return;
         }
 
-        int leftHp = targetMongging.getHit(mongdung.damage);
+        GetHitResult result = targetMongging.getHit(mongdung.damage);
 
-        if (leftHp == -1) {
-            Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_ALIVE, targetMongging.getId(), leftHp);
+        if (result.result() == GetHitResult.Result.ALIVE) {
+            Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_ALIVE, targetMongging.getId(), -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
             this.room.broadcast(packet);
             log.info("[{} - {}] 몽둥이의 타격 실패: {}번 몽깅이가 살아 있지 않음", session.getChannel().id(), room.id, command.targetId());
             return;
         }
 
-        Body body = new HitMonggingBody(HitMonggingBody.Result.SUCCESS, targetMongging.getId(), leftHp);
+        Body body = new HitMonggingBody(HitMonggingBody.Result.SUCCESS, targetMongging.getId(), result.leftHp());
         Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
         this.room.broadcast(packet);
 
-        log.info("[{} - {}] 몽둥이의 타격 성공: {}번 몽깅이 타격, 대미지: {}, 남은 HP: {}", session.getChannel().id(), room.id, command.targetId(), mongdung.damage, leftHp);
+        log.info("[{} - {}] 몽둥이의 타격 성공: {}번 몽깅이 타격, 대미지: {}, 남은 HP: {}", session.getChannel().id(), room.id, command.targetId(), mongdung.damage, result.leftHp());
 
         // 몽깅이 기절
-        if (targetMongging.isKnockout()) {
+        if (result.result() == GetHitResult.Result.KNOCK_OUT) {
             WorkingThread removedThread = workingThreads.remove(session.getMemberId());
             if (removedThread != null) {
                 removedThread.scheduledFuture.cancel(true);
@@ -264,7 +265,7 @@ public class DreamManager {
         }
 
         // 몽깅이 사망
-        if (targetMongging.isDead()) {
+        if (result.result() == GetHitResult.Result.DEAD) {
             WorkingThread removedThread = workingThreads.remove(session.getMemberId());
             if (removedThread != null) {
                 removedThread.scheduledFuture.cancel(true);

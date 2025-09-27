@@ -19,10 +19,7 @@ namespace Features.PlayerList.Services
         public ReadOnlyReactiveProperty<int> TotalPlayerCount => _totalPlayerCount;
         public ReadOnlyReactiveProperty<int> OnlinePlayerCount => _onlinePlayerCount;
         public ReadOnlyReactiveProperty<Dictionary<int, PlayerListData>> AllPlayers => _allPlayers;
-        public ReadOnlyReactiveProperty<Sprite> DefaultIcon => _defaultIcon;
-        public ReadOnlyReactiveProperty<Sprite> FaintIcon => _faintIcon;
-        public ReadOnlyReactiveProperty<Sprite> DeadIcon => _deadIcon;
-        public ReadOnlyReactiveProperty<Sprite> EscapeIcon => _escapeIcon;
+        // 스프라이트는 UI에서 직접 관리하므로 제거
 
         #endregion
 
@@ -31,10 +28,7 @@ namespace Features.PlayerList.Services
         private readonly ReactiveProperty<int> _totalPlayerCount = new(0);
         private readonly ReactiveProperty<int> _onlinePlayerCount = new(0);
         private readonly ReactiveProperty<Dictionary<int, PlayerListData>> _allPlayers = new(new());
-        private readonly ReactiveProperty<Sprite> _defaultIcon = new();
-        private readonly ReactiveProperty<Sprite> _faintIcon = new();
-        private readonly ReactiveProperty<Sprite> _deadIcon = new();
-        private readonly ReactiveProperty<Sprite> _escapeIcon = new();
+        // 스프라이트 관련 ReactiveProperty 제거
 
         private readonly PlayerListModel _playerListModel = new();
         private readonly CompositeDisposable _disposables = new();
@@ -50,9 +44,12 @@ namespace Features.PlayerList.Services
         private readonly IPublisher<PlayerConnectionChangedMessage> _connectionChangedPublisher;
         private readonly IPublisher<PlayerHighlightedMessage> _highlightedPublisher;
         private readonly IPublisher<AllPlayersClearedMessage> _allClearedPublisher;
-        private readonly IPublisher<PlayerSpritesUpdatedMessage> _spritesUpdatedPublisher;
+        // 스프라이트 관련 Publisher 제거
         private readonly IPublisher<PlayerListSyncMessage> _syncPublisher;
         private readonly IPublisher<PlayerHostChangedMessage> _roleChangedPublisher;
+
+        // 몽깅이 상태 변경 구독
+        private readonly ISubscriber<PlayerListMonggingStateUpdateMessage> _monggingStateSubscriber;
 
         #endregion
 
@@ -65,9 +62,9 @@ namespace Features.PlayerList.Services
             IPublisher<PlayerConnectionChangedMessage> connectionChangedPublisher,
             IPublisher<PlayerHighlightedMessage> highlightedPublisher,
             IPublisher<AllPlayersClearedMessage> allClearedPublisher,
-            IPublisher<PlayerSpritesUpdatedMessage> spritesUpdatedPublisher,
             IPublisher<PlayerListSyncMessage> syncPublisher,
-            IPublisher<PlayerHostChangedMessage> roleChangedPublisher
+            IPublisher<PlayerHostChangedMessage> roleChangedPublisher,
+            ISubscriber<PlayerListMonggingStateUpdateMessage> monggingStateSubscriber
         )
         {
             _playerUpdatedPublisher = playerUpdatedPublisher;
@@ -75,9 +72,9 @@ namespace Features.PlayerList.Services
             _connectionChangedPublisher = connectionChangedPublisher;
             _highlightedPublisher = highlightedPublisher;
             _allClearedPublisher = allClearedPublisher;
-            _spritesUpdatedPublisher = spritesUpdatedPublisher;
             _syncPublisher = syncPublisher;
             _roleChangedPublisher = roleChangedPublisher;
+            _monggingStateSubscriber = monggingStateSubscriber;
 
             Initialize();
         }
@@ -90,6 +87,9 @@ namespace Features.PlayerList.Services
         {
             // 기본 플레이어 설정
             SetupDefaultPlayers();
+
+            // 몽깅이 상태 변경 구독
+            _monggingStateSubscriber.Subscribe(OnMonggingPlayerStateChanged).AddTo(_disposables);
 
             if (_enableDebugLogs)
             {
@@ -112,7 +112,7 @@ namespace Features.PlayerList.Services
                 nickname = nickname,
                 colorTheme = colorTheme,
                 status = status,
-                avatarSprite = _playerListModel.GetStatusSprite(status),
+                avatarSprite = null, // UI에서 상태에 따라 직접 설정
                 isOnline = isOnline,
                 isHost = isHost,
             };
@@ -138,15 +138,25 @@ namespace Features.PlayerList.Services
             if (playerData != null)
             {
                 string oldStatus = playerData.status;
-                playerData.status = status;
-                playerData.avatarSprite = _playerListModel.GetStatusSprite(status);
 
-                _playerListModel.UpdatePlayer(playerData);
+                // 새로운 객체 생성해서 R3가 변경을 감지할 수 있도록 함
+                var updatedPlayerData = new PlayerListData
+                {
+                    playerId = playerData.playerId,
+                    nickname = playerData.nickname,
+                    status = status, // 새로운 상태
+                    colorTheme = playerData.colorTheme,
+                    avatarSprite = null, // UI에서 상태에 따라 직접 설정
+                    isOnline = playerData.isOnline,
+                    isHost = playerData.isHost
+                };
+
+                _playerListModel.UpdatePlayer(updatedPlayerData);
                 UpdateObservables();
 
                 if (oldStatus != status)
                 {
-                    _playerUpdatedPublisher.Publish(new PlayerUpdatedMessage(playerId, playerData));
+                    _playerUpdatedPublisher.Publish(new PlayerUpdatedMessage(playerId, updatedPlayerData));
                     _statusChangedPublisher.Publish(new PlayerStatusChangedMessage(playerId, status, playerData.nickname));
 
                     DebugLog($"플레이어 {playerId} 상태 변경: {oldStatus} → {status}");
@@ -230,25 +240,7 @@ namespace Features.PlayerList.Services
             DebugLog("모든 플레이어 데이터 초기화");
         }
 
-        public void SetSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
-        {
-            _playerListModel.SetSprites(defaultIcon, faintIcon, deadIcon, escapeIcon);
-
-            _defaultIcon.Value = defaultIcon;
-            _faintIcon.Value = faintIcon;
-            _deadIcon.Value = deadIcon;
-            _escapeIcon.Value = escapeIcon;
-
-            _spritesUpdatedPublisher.Publish(new PlayerSpritesUpdatedMessage(defaultIcon, faintIcon, deadIcon, escapeIcon));
-
-            // 모든 플레이어의 스프라이트 업데이트 메시지 발송
-            foreach (var kvp in _playerListModel.players)
-            {
-                _playerUpdatedPublisher.Publish(new PlayerUpdatedMessage(kvp.Key, kvp.Value));
-            }
-
-            DebugLog("플레이어 스프라이트 업데이트 완료");
-        }
+        // SetSprites 메서드 제거 - UI에서 직접 관리
 
         public PlayerListData GetPlayer(int playerId)
         {
@@ -289,6 +281,39 @@ namespace Features.PlayerList.Services
 
         #region Private Methods
 
+
+        /// <summary>
+        /// 몽깅이 플레이어 상태 변경 처리
+        /// </summary>
+        private void OnMonggingPlayerStateChanged(PlayerListMonggingStateUpdateMessage message)
+        {
+            try
+            {
+                // playerId가 1-4 범위에 있는지 확인 (PlayerList는 1-4만 지원)
+                int playerListId = (int)message.playerId;
+                if (playerListId < 1 || playerListId > 4)
+                {
+                    if (_enableDebugLogs)
+                    {
+                        DebugLog($"PlayerList 범위 외 플레이어 ID: {message.playerId}");
+                    }
+                    return;
+                }
+
+                // 플레이어 상태 업데이트
+                SetPlayerStatus(playerListId, message.newStatus);
+
+                if (_enableDebugLogs)
+                {
+                    DebugLog($"몽깅이 상태 업데이트: Player{playerListId} → {message.newStatus} ({message.playerName})");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[PlayerListServiceImpl] 몽깅이 상태 변경 처리 실패: {e.Message}");
+            }
+        }
+
         private void UpdateObservables()
         {
             _totalPlayerCount.Value = _playerListModel.TotalPlayerCount;
@@ -314,10 +339,6 @@ namespace Features.PlayerList.Services
             _totalPlayerCount?.Dispose();
             _onlinePlayerCount?.Dispose();
             _allPlayers?.Dispose();
-            _defaultIcon?.Dispose();
-            _faintIcon?.Dispose();
-            _deadIcon?.Dispose();
-            _escapeIcon?.Dispose();
 
             DebugLog("Dispose 완료");
         }

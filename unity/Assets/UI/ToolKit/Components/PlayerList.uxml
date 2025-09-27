@@ -5,22 +5,22 @@
     <ui:VisualElement name="topRightIcons" class="player-list-container">
         <!-- 플레이어 1 -->
         <ui:VisualElement name="player1Area" class="player-area">
-            <ui:VisualElement name="icon1" class="player-icon" />
+            <ui:VisualElement name="icon1" class="player-icon" style="width: 100px; height: 100px; background-size: cover; display: flex;" />
             <ui:Label name="player1Name" text="플레이어1" class="player-name" />
         </ui:VisualElement>
         <!-- 플레이어 2 -->
         <ui:VisualElement name="player2Area" class="player-area">
-            <ui:VisualElement name="icon2" class="player-icon" />
+            <ui:VisualElement name="icon2" class="player-icon" style="width: 100px; height: 100px; background-size: cover; display: flex;" />
             <ui:Label name="player2Name" text="플레이어2" class="player-name" />
         </ui:VisualElement>
         <!-- 플레이어 3 -->
         <ui:VisualElement name="player3Area" class="player-area">
-            <ui:VisualElement name="icon3" class="player-icon" />
+            <ui:VisualElement name="icon3" class="player-icon" style="width: 100px; height: 100px; background-size: cover; display: flex;" />
             <ui:Label name="player3Name" text="플레이어3" class="player-name" />
         </ui:VisualElement>
         <!-- 플레이어 4 -->
         <ui:VisualElement name="player4Area" class="player-area">
-            <ui:VisualElement name="icon4" class="player-icon" />
+            <ui:VisualElement name="icon4" class="player-icon" style="width: 100px; height: 100px; background-size: cover; display: flex;" />
             <ui:Label name="player4Name" text="플레이어4" class="player-name" />
         </ui:VisualElement>
     </ui:VisualElement>

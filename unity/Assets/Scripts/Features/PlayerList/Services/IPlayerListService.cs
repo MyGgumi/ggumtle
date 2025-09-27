@@ -25,13 +25,7 @@ namespace Features.PlayerList.Services
         /// </summary>
         ReadOnlyReactiveProperty<Dictionary<int, PlayerListData>> AllPlayers { get; }
 
-        /// <summary>
-        /// 스프라이트 리소스 (Observable)
-        /// </summary>
-        ReadOnlyReactiveProperty<Sprite> DefaultIcon { get; }
-        ReadOnlyReactiveProperty<Sprite> FaintIcon { get; }
-        ReadOnlyReactiveProperty<Sprite> DeadIcon { get; }
-        ReadOnlyReactiveProperty<Sprite> EscapeIcon { get; }
+        // 스프라이트는 UI에서 직접 관리하므로 인터페이스에서 제거
 
         /// <summary>
         /// 플레이어 업데이트
@@ -68,10 +62,7 @@ namespace Features.PlayerList.Services
         /// </summary>
         void ClearAllPlayers();
 
-        /// <summary>
-        /// 스프라이트 설정
-        /// </summary>
-        void SetSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon);
+        // SetSprites 메서드 제거 - UI에서 직접 관리
 
         /// <summary>
         /// 특정 플레이어 데이터 가져오기

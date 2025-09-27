@@ -132,7 +132,12 @@ namespace Features.PlayerList.Views
                 .AddTo(_disposables);
 
             viewModel.Player2
-                .Subscribe(playerData => UpdatePlayerUI(2, playerData))
+                .Subscribe(playerData =>
+                {
+                    if (enableDebugLogs)
+                        Debug.Log($"[PlayerListUIView] Player2 Observable 수신: {playerData?.nickname} ({playerData?.status})");
+                    UpdatePlayerUI(2, playerData);
+                })
                 .AddTo(_disposables);
 
             viewModel.Player3
@@ -148,15 +153,7 @@ namespace Features.PlayerList.Views
                 .Subscribe(allPlayers => UpdateAllPlayersUI())
                 .AddTo(_disposables);
 
-            // 스프라이트 변경 구독
-            viewModel.DefaultIcon.CombineLatest(
-                viewModel.FaintIcon,
-                viewModel.DeadIcon,
-                viewModel.EscapeIcon,
-                (defaultIcon, faintIcon, deadIcon, escapeIcon) => new { defaultIcon, faintIcon, deadIcon, escapeIcon }
-            )
-            .Subscribe(sprites => OnSpritesUpdated())
-            .AddTo(_disposables);
+            // 스프라이트는 Inspector에서 직접 관리하므로 구독 불필요
 
             if (enableDebugLogs)
                 Debug.Log("[PlayerListUIView] ViewModel 구독 완료");
@@ -166,8 +163,15 @@ namespace Features.PlayerList.Views
 
         private void UpdatePlayerUI(int playerId, PlayerListData playerData)
         {
+            if (enableDebugLogs)
+                Debug.Log($"[PlayerListUIView] UpdatePlayerUI 호출: Player{playerId}, Data={playerData?.nickname} ({playerData?.status})");
+
             if (playerId < 1 || playerId > 4 || playerData == null)
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning($"[PlayerListUIView] UpdatePlayerUI 중단: Player{playerId}, PlayerData={playerData != null}");
                 return;
+            }
 
             int index = playerId - 1;
 
@@ -187,15 +191,32 @@ namespace Features.PlayerList.Views
                 _playerIcons[index].style.backgroundColor = StyleKeyword.None;
                 _playerIcons[index].ClearClassList();
 
-                // 새 스프라이트 설정 (상태 기반 또는 기본 아바타)
-                Sprite spriteToUse = playerData.avatarSprite ?? GetPlayerStateSprite(playerData.status);
+                // Inspector에서 설정한 스프라이트를 상태에 따라 사용
+                Sprite spriteToUse = GetPlayerStateSprite(playerData.status);
+
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[PlayerListUIView] Player{playerId} 아이콘 설정: " +
+                        $"Status={playerData.status}, " +
+                        $"Sprite={spriteToUse != null}");
+                }
+
                 if (spriteToUse != null)
                 {
+                    // 레거시 코드처럼 완전히 초기화하고 새로 설정
                     _playerIcons[index].style.backgroundImage = new StyleBackground(spriteToUse);
                     _playerIcons[index].style.backgroundSize = new BackgroundSize(BackgroundSizeType.Cover);
                     _playerIcons[index].style.backgroundRepeat = new BackgroundRepeat(Repeat.NoRepeat, Repeat.NoRepeat);
                     _playerIcons[index].style.backgroundPositionX = new BackgroundPosition(BackgroundPositionKeyword.Center);
                     _playerIcons[index].style.backgroundPositionY = new BackgroundPosition(BackgroundPositionKeyword.Center);
+                    _playerIcons[index].style.display = DisplayStyle.Flex;
+                    _playerIcons[index].style.width = 100;
+                    _playerIcons[index].style.height = 100;
+                }
+                else
+                {
+                    if (enableDebugLogs)
+                        Debug.LogWarning($"[PlayerListUIView] Player{playerId} Inspector에서 {playerData.status} 스프라이트가 설정되지 않았습니다!");
                 }
 
                 // 색상 적용
@@ -203,8 +224,6 @@ namespace Features.PlayerList.Views
 
                 // 온라인/오프라인 상태 클래스 적용
                 ApplyPlayerStateClasses(_playerIcons[index], playerData);
-
-                _playerIcons[index].style.display = DisplayStyle.Flex;
             }
 
             // 플레이어 영역 표시
@@ -324,9 +343,9 @@ namespace Features.PlayerList.Views
                 if (_playerNames[i] != null)
                     _playerNames[i].text = $"플레이어{i + 1}";
 
-                if (_playerIcons[i] != null && viewModel?.DefaultIcon.CurrentValue != null)
+                if (_playerIcons[i] != null && iconMongingDefault != null)
                 {
-                    _playerIcons[i].style.backgroundImage = new StyleBackground(viewModel.DefaultIcon.CurrentValue);
+                    _playerIcons[i].style.backgroundImage = new StyleBackground(iconMongingDefault);
                     _playerIcons[i].ClearClassList();
                     _playerIcons[i].AddToClassList("player-online");
                 }
@@ -336,12 +355,6 @@ namespace Features.PlayerList.Views
                 Debug.Log("[PlayerListUIView] 모든 플레이어 UI 초기화");
         }
 
-        private void OnSpritesUpdated()
-        {
-            UpdateAllPlayersUI();
-            if (enableDebugLogs)
-                Debug.Log("[PlayerListUIView] 스프라이트 업데이트 반영");
-        }
 
         #endregion
 
@@ -410,16 +423,6 @@ namespace Features.PlayerList.Views
                 Debug.Log("[PlayerListUIView] 플레이어 상태 스프라이트 준비 완료");
         }
 
-        public void SetPlayerStateSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
-        {
-            iconMongingDefault = defaultIcon;
-            iconMongingFaint = faintIcon;
-            iconMongingDead = deadIcon;
-            iconMongingEscape = escapeIcon;
-
-            if (enableDebugLogs)
-                Debug.Log("[PlayerListUIView] 플레이어 상태 스프라이트 설정 완료");
-        }
 
         private Sprite GetPlayerStateSprite(string status)
         {

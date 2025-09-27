@@ -22,7 +22,11 @@
 .player-icon {
     width: 100px;
     height: 100px;
+    display: flex;
     background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+    flex-shrink: 0;
 }
 
 .player-name {
@@ -53,4 +57,9 @@
 .player-offline {
     opacity: 0.5;
     border-color: rgba(128, 128, 128, 0.5);
+}
+
+.player-highlighted {
+    border: 3px solid rgba(255, 255, 0, 0.8);
+    opacity: 1.0;
 }

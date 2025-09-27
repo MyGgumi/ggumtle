@@ -448,6 +448,21 @@ namespace Features.PlayerHealth.Services
 
         private void UpdateObservables()
         {
+            // 핵심 체력 데이터가 실제로 변경되었는지 체크
+            bool hasHealthChanged = _currentHp.Value != _healthData.currentHp ||
+                                   _maxHp.Value != _healthData.maxHp;
+
+            if (hasHealthChanged && _enableDebugLogs)
+            {
+                DebugLog($"체력 변경 감지: {_currentHp.Value}→{_healthData.currentHp}/{_maxHp.Value}→{_healthData.maxHp}");
+            }
+            else if (!hasHealthChanged && _enableDebugLogs)
+            {
+                DebugLog($"체력 변경 없음 - UpdateObservables 중복 호출 방지: {_healthData.currentHp}/{_healthData.maxHp}");
+                return; // 중복 호출 방지
+            }
+
+            // 실제 변경이 있을 때만 업데이트
             _currentHp.Value = _healthData.currentHp;
             _maxHp.Value = _healthData.maxHp;
             _healthPercentage.Value = _healthData.HealthPercentage;

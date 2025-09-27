@@ -12,6 +12,7 @@ namespace Networks.Players
         PlayerNotFound = 2, // 플레이어 조회 실패
         NotMongdung = 3, // 요청자가 몽둥이가 아님
         TargetNotFound = 4, // 타겟을 찾을 수 없음
+        NotAlive = 10, // 기절 또는 사망 상태 공격 실패
     }
 
     public enum MongdungSkillResult : byte

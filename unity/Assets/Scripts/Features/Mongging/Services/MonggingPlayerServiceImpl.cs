@@ -117,6 +117,13 @@ namespace Features.Mongging.Services
             _playerData.TakeDamage(damage);
             UpdateObservables();
 
+            // 피격 애니메이션 먼저 트리거 (매번 실행)
+            _animationPublisher.Publish(new MonggingPlayerAnimationMessage(
+                _playerData.playerId,
+                "TakeDamage",
+                0.5f
+            ));
+
             // 피격 메시지 발행
             _hitPublisher.Publish(new MonggingPlayerHitMessage(
                 _playerData.playerId,
@@ -138,22 +145,15 @@ namespace Features.Mongging.Services
                     _playerData.faintCount
                 ));
 
-                // 애니메이션 트리거
+                // 기절 애니메이션 (상태가 Fainted로 변경된 경우만)
                 if (_playerData.currentState == MonggingPlayerState.Fainted)
                 {
                     _animationPublisher.Publish(new MonggingPlayerAnimationMessage(
                         _playerData.playerId,
-                        "Faint"
+                        "Down"
                     ));
                 }
             }
-
-            // 피격 애니메이션
-            _animationPublisher.Publish(new MonggingPlayerAnimationMessage(
-                _playerData.playerId,
-                "Hit",
-                0.5f
-            ));
 
             if (_enableDebugLogs)
             {

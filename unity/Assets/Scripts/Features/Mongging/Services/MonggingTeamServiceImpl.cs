@@ -4,6 +4,7 @@ using System.Linq;
 using Features.Mongging.Messages;
 using Features.Mongging.Models;
 using Features.Mongdung.Messages;
+using Features.PlayerHealth.Services;
 using MessagePipe;
 using Networks.Players;
 using R3;
@@ -62,6 +63,9 @@ namespace Features.Mongging.Services
         private readonly IPublisher<MonggingPlayerEscapedMessage> _escapedPublisher;
         private readonly IPublisher<MonggingPlayerAnimationMessage> _animationPublisher;
 
+        // PlayerHealth 연동
+        private readonly IPlayerHealthService _playerHealthService;
+
         // 몽둥이 액션 구독
         private readonly ISubscriber<MongdungAttackActionMessage> _attackActionSubscriber;
         private readonly ISubscriber<MongdungSkillActionMessage> _skillActionSubscriber;
@@ -87,6 +91,7 @@ namespace Features.Mongging.Services
             IPublisher<MonggingPlayerRevivedMessage> revivedPublisher,
             IPublisher<MonggingPlayerEscapedMessage> escapedPublisher,
             IPublisher<MonggingPlayerAnimationMessage> animationPublisher,
+            IPlayerHealthService playerHealthService,
             ISubscriber<MongdungAttackActionMessage> attackActionSubscriber,
             ISubscriber<MongdungSkillActionMessage> skillActionSubscriber,
             ISubscriber<MonggingStateBroadcastMessage> stateBroadcastSubscriber,
@@ -103,6 +108,7 @@ namespace Features.Mongging.Services
             _revivedPublisher = revivedPublisher;
             _escapedPublisher = escapedPublisher;
             _animationPublisher = animationPublisher;
+            _playerHealthService = playerHealthService;
             _attackActionSubscriber = attackActionSubscriber;
             _skillActionSubscriber = skillActionSubscriber;
             _stateBroadcastSubscriber = stateBroadcastSubscriber;
@@ -298,43 +304,74 @@ namespace Features.Mongging.Services
                 // targetId가 유효한 몽깅이인지 확인
                 if (message.TargetId > 0 && _playerServices.TryGetValue(message.TargetId, out var targetPlayerService))
                 {
-                    // 즉시 피격 애니메이션 (빠른 피드백) - TODO: 실제 Publisher 주입 필요
-                    // GlobalMessagePipe 대신 실제 Publisher 사용 예정
-
                     // 피격 처리 (Local/Remote 모두)
                     var targetData = targetPlayerService.GetPlayerData();
-                    if (message.Result == MongdungAttackResult.HitSuccess)
+
+                    // 공격 결과에 따른 처리
+                    switch (message.Result)
                     {
-                        if (targetData.isLocal)
-                        {
-                            // Local 플레이어: 실제 데미지 처리
-                            targetPlayerService.TakeDamage(40); // 기본 공격 데미지
-                            UpdateObservables();
+                        case MongdungAttackResult.HitSuccess:
+                            if (targetData.isLocal)
+                            {
+                                // Local 플레이어: 서버에서 받은 leftHP로 PlayerHealth 동기화
+                                if (message.LeftHp >= 0 && _playerHealthService != null)
+                                {
+                                    _playerHealthService.SetHealth(message.LeftHp);
 
+                                    if (_enableDebugLogs)
+                                    {
+                                        Debug.Log($"[MonggingTeamServiceImpl] PlayerHealth 동기화: TargetId={message.TargetId}, LeftHP={message.LeftHp}");
+                                    }
+                                }
+
+                                // Mongging 시스템의 데미지 처리 (애니메이션용)
+                                targetPlayerService.TakeDamage(40); // 기본 공격 데미지
+                                UpdateObservables();
+
+                                if (_enableDebugLogs)
+                                {
+                                    Debug.Log($"[MonggingTeamServiceImpl] 로컬 몽깅이 피격 처리: TargetId={message.TargetId}, Damage=40, ServerLeftHP={message.LeftHp}");
+                                }
+                            }
+                            else
+                            {
+                                // Remote 플레이어: 시각적 피격 애니메이션만
+                                var hitMessage = new MonggingPlayerHitMessage(
+                                    message.TargetId,
+                                    40, // 데미지 (시각적 목적)
+                                    targetData.currentHp, // 이전 HP
+                                    targetData.currentHp, // 현재 HP (Remote는 변경하지 않음)
+                                    targetData.currentState, // 현재 상태
+                                    Vector3.zero // 피격 위치 (추후 구현)
+                                );
+
+                                _hitPublisher.Publish(hitMessage);
+
+                                if (_enableDebugLogs)
+                                {
+                                    Debug.Log($"[MonggingTeamServiceImpl] 원격 몽깅이 피격 애니메이션: TargetId={message.TargetId}");
+                                }
+                            }
+                            break;
+
+                        case MongdungAttackResult.NotAlive:
+                            // 타겟이 기절/사망 상태여서 공격 실패
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] 로컬 몽깅이 피격 처리: TargetId={message.TargetId}, Damage=40");
+                                Debug.Log($"[MonggingTeamServiceImpl] 공격 실패 - 타겟이 기절/사망 상태: TargetId={message.TargetId}");
                             }
-                        }
-                        else
-                        {
-                            // Remote 플레이어: 시각적 피격 애니메이션만
-                            var hitMessage = new MonggingPlayerHitMessage(
-                                message.TargetId,
-                                40, // 데미지 (시각적 목적)
-                                targetData.currentHp, // 이전 HP
-                                targetData.currentHp, // 현재 HP (Remote는 변경하지 않음)
-                                targetData.currentState, // 현재 상태
-                                Vector3.zero // 피격 위치 (추후 구현)
-                            );
+                            break;
 
-                            _hitPublisher.Publish(hitMessage);
-
+                        case MongdungAttackResult.HitFail:
+                        case MongdungAttackResult.PlayerNotFound:
+                        case MongdungAttackResult.NotMongdung:
+                        case MongdungAttackResult.TargetNotFound:
+                            // 기타 실패 케이스들
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] 원격 몽깅이 피격 애니메이션: TargetId={message.TargetId}");
+                                Debug.Log($"[MonggingTeamServiceImpl] 공격 실패 - {message.Result}: TargetId={message.TargetId}");
                             }
-                        }
+                            break;
                     }
                 }
             }

@@ -57,3 +57,53 @@
     top: 50%;
     translate: 0 -50%;
 }
+
+/* 크리티컬 상태 스타일링 */
+.critical-state {
+    animation-name: critical-pulse;
+    animation-duration: 1s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+    animation-direction: alternate;
+}
+
+.critical-state .health-fill {
+    background-color: rgba(220, 20, 20, 0.9) !important;
+    box-shadow: 0 0 8px rgba(220, 20, 20, 0.6);
+}
+
+.critical-state {
+    border-color: rgba(220, 20, 20, 0.8) !important;
+    box-shadow: 0 0 12px rgba(220, 20, 20, 0.4);
+}
+
+/* 크리티컬 상태 펄스 애니메이션 */
+@keyframes critical-pulse {
+    0% {
+        opacity: 0.8;
+        transform: scale(1.0);
+    }
+    100% {
+        opacity: 1.0;
+        transform: scale(1.02);
+    }
+}
+
+/* 체력바 부드러운 변화 애니메이션 */
+.health-fill {
+    transition: width 0.3s ease-out, background-color 0.2s ease-out;
+}
+
+.health-segment {
+    transition: border-color 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+/* 낮은 체력 상태 (30% 이하) */
+.low-health .health-fill {
+    background-color: rgba(255, 200, 100, 0.6);
+}
+
+/* 매우 낮은 체력 상태 (10% 이하) */
+.very-low-health .health-fill {
+    background-color: rgba(255, 120, 80, 0.7);
+}

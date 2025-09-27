@@ -233,6 +233,14 @@ public class DreamManager {
 
         int leftHp = targetMongging.getHit(mongdung.damage);
 
+        if (leftHp == -1) {
+            Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_ALIVE, targetMongging.getId(), leftHp);
+            Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
+            log.info("[{} - {}] 몽둥이의 타격 실패: {}번 몽깅이가 살아 있지 않음", session.getChannel().id(), room.id, command.targetId());
+            return;
+        }
+
         Body body = new HitMonggingBody(HitMonggingBody.Result.SUCCESS, targetMongging.getId(), leftHp);
         Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
         this.room.broadcast(packet);

@@ -59,6 +59,10 @@ public class Mongging extends Player {
     public int getHit(int damage) {
         synchronized (statusLock) {
             synchronized (inventoryLock) {
+                if (this.status != Status.ALIVE) {
+                    return -1;
+                }
+
                 if (this.hp > damage) {
                     this.hp -= damage;
                     return this.hp;

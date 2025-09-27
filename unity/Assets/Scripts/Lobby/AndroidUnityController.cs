@@ -93,7 +93,7 @@ public class AndroidUnityController : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.J)) PlayEnhanceFailEffect();
 
         // 테스트용 파티클 정지 (K키)
-        if (Input.GetKeyDown(KeyCode.K)) StopAllParticles();
+        if (Input.GetKeyDown(KeyCode.K)) ChangeCharacterNickname("Player1,NewPlayer1");
         
         if (Input.GetKeyDown(KeyCode.Alpha7)) ChangeCharacterType("Player5,HealMongging,4");
     }
@@ -232,6 +232,22 @@ public class AndroidUnityController : MonoBehaviour
         string characterType = parts[1];
         
         characterController?.ChangeCharacterTypeByNickname(nickname, characterType, level);
+    }
+
+    public void ChangeCharacterNickname(string paramsString)
+    {
+        var parts = paramsString.Split(',');
+        
+        if (parts.Length < 2)
+        {
+            Debug.LogError($"Invalid parameters: {paramsString}");
+            return;
+        }
+        
+        string oldNickname = parts[0];
+        string newNickname = parts[1];
+        
+        characterController?.ChangeCharacterNickname(oldNickname, newNickname);
     }
 
 

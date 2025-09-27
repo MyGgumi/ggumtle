@@ -24,4 +24,5 @@ interface UnitySendManager {
     fun goToInGame(accessToken: String, roomId: Int, host: String, port: Int)
     fun goToOutGame()
 
+    fun changeTargetCharacterNickname(nickname: String, newNickname: String)
 }

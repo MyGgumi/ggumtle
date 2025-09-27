@@ -21,6 +21,7 @@ import com.ggumtle.datastore.LogoutReason
 import com.ggumtle.domain.rest.model.Resource
 import com.ggumtle.domain.websocket.model.DreamStatus
 import com.ggumtle.domain.unity.UnityObserveManager
+import com.ggumtle.domain.websocket.model.UnityMonggingClass
 import com.ggumtle.domain.websocket.model.toUnityMonggingClass
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -79,20 +80,35 @@ class HomeViewModel @Inject constructor(
     init {
         // 정보 조회
         loadProfile()
-        loadMyMonggingList()
-        // 최초 파티 만들기
-        createParty()
-        // 이벤트들 관찰
+
+        // 이벤트 관찰
         observeHomeEvent()
+
+        // 캐릭터 타입 변경 버튼 토글 관찰
         observeCharacterTypeChange()
 
+        // 인게임 시작 네비게이션 관찰
         observeInGameStart()
     }
 
+    // 인게임 시작 네비게이션 관찰
     private fun observeInGameStart() = intent {
         unityObserveManager.goToInGameFlow
             .onEach { postSideEffect(HomeContract.SideEffect.NavigateToInGame) }
             .launchIn(viewModelScope)
+    }
+
+    // 캐릭터 타입 변경 관찰
+    private fun observeCharacterTypeChange() = intent {
+        unityObserveManager.characterTypeChangeFlow.collect { characterType ->
+            if (state.monggings.isNotEmpty()) {
+                val changedClass = state.monggings.find { it.monggingClass == characterType }
+                if (changedClass == null) return@collect
+                val monggingIndex = state.monggings.indexOf(changedClass)
+                reduce { state.copy(selectedCharacterIndex = monggingIndex) }
+                changeMonggingTypeUseCase.invoke(changedClass.id)
+            }
+        }
     }
 
     // 프로필 조회
@@ -111,6 +127,7 @@ class HomeViewModel @Inject constructor(
                                 coin = resource.data.coin
                             )
                         }
+                        loadMyMonggingList()
                     }
                 }
 
@@ -128,12 +145,14 @@ class HomeViewModel @Inject constructor(
             when (resource) {
                 is Resource.Loading -> reduce { state.copy(isLoading = true) }
                 is Resource.Success -> {
+                    Log.d(TAG, "loadMyMonggingList: ${resource.data.monggings}")
                     reduce {
                         state.copy(
                             monggings = resource.data.monggings,
                             isLoading = false
                         )
                     }
+                    createParty()
                 }
 
                 is Resource.Failure -> {
@@ -154,13 +173,13 @@ class HomeViewModel @Inject constructor(
                 id = state.userProfile.id,
                 nickname = state.userProfile.nickname,
                 isLeader = true,
-                monggingClassId = 1,
-                monggingLevel = 1
+                monggingClassId = state.monggings[0].id,
+                monggingLevel = state.monggings[0].level.toLong()
             )
+            Log.d(TAG, "createParty: $newPartyMember")
             enterMyCharacter(
                 newPartyMember.nickname,
-                newPartyMember.monggingLevel.toInt(),
-                newPartyMember.monggingClassId.toInt()
+                newPartyMember.monggingLevel.toInt()
             )
             reduce {
                 state.copy(
@@ -183,13 +202,21 @@ class HomeViewModel @Inject constructor(
         observeAcceptPartyInvitationEvents(myId)
         observeLeavePartyEvents(myId)
         observeReadyEvent(myId)
+        observeChangeMonggingTypeEvent()
         observeGameStart()
     }
 
-    fun observeChangeMonggingTypeEvent() = intent{
+    // 몽깅이 타입 변경 관찰
+    fun observeChangeMonggingTypeEvent() = intent {
         observeChangeMonggingTypeUseCase.invoke()
             .collect { result ->
-
+                val changeMember = state.partyMembers.find { it.id == result.memberId }
+                if (changeMember == null) return@collect
+                changeCharacterType(
+                    changeMember.nickname,
+                    UnityMonggingClass.fromClassId(result.classId),
+                    result.level.toInt()
+                )
             }
     }
 
@@ -202,14 +229,12 @@ class HomeViewModel @Inject constructor(
                     val partyResult = observeGetPartyParticipantsUseCase.invoke().first()
                     enterMyCharacter(
                         state.userProfile.nickname,
-                        result.monggingLevel.toInt(),
-                        result.monggingClassId.toInt()
+                        result.monggingLevel.toInt()
                     )
                     partyResult.participants.forEach {
                         enterOtherCharacter(
                             it.nickname,
-                            it.monggingLevel.toInt(),
-                            it.monggingClassId.toInt()
+                            it.monggingLevel.toInt()
                         )
                     }
                     reduce { state.copy(partyMembers = partyResult.participants) }
@@ -222,8 +247,7 @@ class HomeViewModel @Inject constructor(
                     )
                     enterOtherCharacter(
                         result.joinedMemberNickname,
-                        result.monggingLevel.toInt(),
-                        result.monggingClassId.toInt()
+                        result.monggingLevel.toInt()
                     )
                     reduce { state.copy(partyMembers = state.partyMembers + newPartyMember) }
                 }
@@ -280,30 +304,38 @@ class HomeViewModel @Inject constructor(
                 DreamStatus.START_MATCH -> {
                     startMatchmakingTimer()
                 }
+
                 DreamStatus.WAITING -> {}
                 DreamStatus.MATCHED -> {}
                 DreamStatus.CREATE_ROOM -> {}
-                DreamStatus.START_DREAM -> {}
+                DreamStatus.START_DREAM -> {
+                    unitySendManager.goToInGame(
+                        authManager.getAccessToken().toString(),
+                        -4,
+                        "p-ryan.iptime.org",
+                        8888
+                    )
+                }
             }
         }
     }
 
-    // 캐릭터 타입 변경 관찰
-    private fun observeCharacterTypeChange() = intent {
-        unityObserveManager.characterTypeChangeFlow.collect { characterType ->
-            if (state.monggings.isNotEmpty()) {
-                val changedClass = state.monggings.find { it.monggingClass == characterType }
-                if(changedClass==null)return@collect
-                val monggingIndex = state.monggings.indexOf(changedClass)
-                reduce { state.copy(selectedCharacterIndex = monggingIndex) }
-                if(changedClass!=null) changeMonggingTypeUseCase.invoke(changedClass.id)
-                unitySendManager.changeTargetCharacterType(
-                    state.userProfile.nickname,
-                    changedClass.monggingClass.toUnityMonggingClass(),
-                    changedClass.level
-                )
-            }
-        }
+    // 게임 시작
+    fun onStartGame() = intent {
+        unitySendManager.goToInGame(
+            authManager.getAccessToken().toString(),
+            -4,
+            "p-ryan.iptime.org",
+            8888
+        )
+//        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
+//        try {
+//            readyGameUseCase.invoke()
+//            startGameUseCase.invoke()
+//            reduce { state.copy(isSearchingGame = true) }
+//        } catch (e: Exception) {
+//            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
+//        }
     }
 
     // 파티 초대
@@ -389,24 +421,6 @@ class HomeViewModel @Inject constructor(
         reduce { state.copy(canStartGame = allReady && state.partyMembers.isNotEmpty()) }
     }
 
-    // 게임 시작
-    fun onStartGame() = intent {
-        unitySendManager.goToInGame(
-            authManager.getAccessToken().toString(),
-            -4,
-            "p-ryan.iptime.org",
-            8888
-        )
-//        if (!state.isPartyLeader || !state.canStartGame || state.isSearchingGame) return@intent
-//        try {
-//            readyGameUseCase.invoke()
-//            startGameUseCase.invoke()
-//            reduce { state.copy(isSearchingGame = true) }
-//        } catch (e: Exception) {
-//            reduce { state.copy(isSearchingGame = false, matchmakingTimeSeconds = 0) }
-//        }
-    }
-
     // 게임 검색 취소
     fun onCancelGameSearch() = intent {
         if (!state.isSearchingGame) return@intent
@@ -467,7 +481,10 @@ class HomeViewModel @Inject constructor(
                             if (member.id == state.userProfile.id)
                                 member.copy(nickname = state.tempNickname) else member
                         }
-                        //TODO: 유니티 네임테그 닉네임 변경 호출
+                        unitySendManager.changeTargetCharacterNickname(
+                            state.userProfile.nickname,
+                            state.tempNickname
+                        )
                         reduce {
                             state.copy(
                                 userProfile = state.userProfile.copy(nickname = state.tempNickname),
@@ -619,13 +636,18 @@ class HomeViewModel @Inject constructor(
     //다이얼 로그 숨기기
     fun hideDialog() = intent { reduce { state.copy(dialogState = DialogState.Hidden) } }
 
-    // 첫 내 캐릭터 설정 TODO: 타입 전달
-    private fun enterMyCharacter(nickname: String, level: Int, type: Int) =
+    private fun enterMyCharacter(nickname: String, level: Int) =
         unitySendManager.addMyCharacter(nickname, level)
 
-    // TODO 타입 전달
-    private fun enterOtherCharacter(nickname: String, level: Int, type: Int) =
+    private fun enterOtherCharacter(nickname: String, level: Int) =
         unitySendManager.addOthersCharacter(nickname, level)
+
+    private fun changeCharacterType(
+        nickname: String,
+        characterType: UnityMonggingClass,
+        level: Int
+    ) =
+        unitySendManager.changeTargetCharacterType(nickname, characterType, level)
 
     override fun onCleared() {
         super.onCleared()

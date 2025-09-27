@@ -133,7 +133,7 @@ public class DreamController {
 
         InvitePartyResult result = dreamPartyService.inviteParty(new InvitePartyCommand(requesterId, request.inviteeId()));
 
-        SendSocketEvent event = new SendSocketEvent(SocketType.INVITE_PARTY, List.of(requesterId, request.inviteeId()), new InvitePartyResponse(result.invitationId(), result.inviteeNickname()));
+        SendSocketEvent event = new SendSocketEvent(SocketType.INVITE_PARTY, List.of(requesterId, request.inviteeId()), new InvitePartyResponse(result.invitationId(), result.inviterNickname()));
         applicationEventPublisher.publishEvent(event);
     }
 

@@ -5,6 +5,6 @@ import java.util.List;
 public record InvitePartyResult(
         Long inviteeId,
         String invitationId,
-        String inviteeNickname
+        String inviterNickname
 ) {
 }

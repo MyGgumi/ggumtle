@@ -186,6 +186,7 @@ public class DreamPartyService {
 
         String partyId = inviter.getPartyId();
         Long inviteeId = command.inviteeId();
+        Long inviterId = inviter.getMemberId();
 
         boolean alreadyInvited = partyInvitationRepository.existsByPartyIdAndInviteeId(partyId, inviteeId);
         if (alreadyInvited) {
@@ -200,18 +201,18 @@ public class DreamPartyService {
                 .build();
         partyInvitationRepository.save(partyInvitation);
 
-        Optional<Member> invitee = memberRepository.findById(inviteeId);
+        Optional<Member> inviterMember = memberRepository.findById(inviterId);
 
-        if (invitee.get().getIsDeleted() == Boolean.TRUE){
+        if (inviterMember.get().getIsDeleted() == Boolean.TRUE){
             throw new GgumtleException(MemberErrorCode.WITHDRAW_MEMBER);
         }
 
-        if (inviter.getMemberId().equals(invitee.get().getId())){
+        if (inviteeId.equals(inviterMember.get().getId())){
             throw new GgumtleException(DreamErrorCode.CANNOT_INVITE_SELF);
         }
 
-        String inviteeNickname = invitee.get().getNickname();
-        return new InvitePartyResult(inviteeId, partyInvitation.getId(), inviteeNickname);
+        String inviterNickname = inviterMember.get().getNickname();
+        return new InvitePartyResult(inviterId, partyInvitation.getId(), inviterNickname);
     }
 
     public GetInvitationsResult getInvitations(GetInvitationsCommand command) {

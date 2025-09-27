@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Cysharp.Threading.Tasks;
 using Features.Chest.Models;
 using Features.Chest.Messages;
@@ -14,40 +15,68 @@ namespace Features.Chest.Services
     /// 상자 비즈니스 로직 구현
     /// R3 Observable과 MessagePipe를 사용한 리액티브 아키텍처
     /// </summary>
-    public class ChestServiceImpl : IChestService
+    public class ChestServiceImpl : IChestService, System.IDisposable
     {
         private readonly ChestModel _chestModel;
         private readonly IChestNetworkSource _networkSource;
         private readonly IPublisher<ChestOpenedMessage> _chestOpenedPublisher;
         private readonly IPublisher<ChestClosedMessage> _chestClosedPublisher;
+        private readonly CompositeDisposable _messageDisposables = new();
 
         // R3 Reactive Properties
         private readonly ReactiveProperty<ChestState> _currentChestState = new(ChestState.Closed);
         private readonly ReactiveProperty<bool> _isUIVisible = new(false);
 
         // Debug Settings
-        private bool _enableDebugLogs = false;
+        private bool _enableDebugLogs = true;
 
         [Inject]
         public ChestServiceImpl(
             IChestNetworkSource networkSource,
             IPublisher<ChestOpenedMessage> chestOpenedPublisher,
-            IPublisher<ChestClosedMessage> chestClosedPublisher)
+            IPublisher<ChestClosedMessage> chestClosedPublisher,
+            ISubscriber<ChestServerDataSyncMessage> serverDataSyncSubscriber)
         {
             _chestModel = new ChestModel();
             _networkSource = networkSource;
             _chestOpenedPublisher = chestOpenedPublisher;
             _chestClosedPublisher = chestClosedPublisher;
 
-            DebugLog("VContainer 의존성 주입 완료");
+            // 서버 데이터 동기화 메시지 구독
+            serverDataSyncSubscriber.Subscribe(OnServerDataSync).AddTo(_messageDisposables);
         }
 
         #region 상자 등록/관리
 
+        /// <summary>
+        /// 서버에서 받은 상자 정보를 일괄 등록
+        /// </summary>
+        public void RegisterChestsFromServer(Networks.Rooms.Domains.ChestPacket[] serverChests)
+        {
+            if (serverChests == null || serverChests.Length == 0)
+            {
+                return;
+            }
+
+            foreach (var serverChest in serverChests)
+            {
+                var unityPosition = new UnityEngine.Vector3(serverChest.Position.X, serverChest.Position.Y, serverChest.Position.Z);
+                var chestName = $"ServerChest_{serverChest.Id}";
+
+                _chestModel.RegisterChest(serverChest.Id, chestName, unityPosition, null);
+            }
+
+            Debug.Log($"서버 상자 등록 완료: {serverChests.Length}개");
+        }
+
         public void RegisterChest(int chestId, string chestName, Vector3 position, GameObject chestObject = null)
         {
             _chestModel.RegisterChest(chestId, chestName, position, chestObject);
-            DebugLog($"상자 등록: {chestId} - {chestName}");
+        }
+
+        public void UpdateChestGameObject(int chestId, GameObject chestObject)
+        {
+            _chestModel.UpdateChestGameObject(chestId, chestObject);
         }
 
         public void UnregisterChest(int chestId)
@@ -60,8 +89,6 @@ namespace Features.Chest.Services
                 _currentChestState.Value = ChestState.Closed;
                 _isUIVisible.Value = false;
             }
-
-            DebugLog($"상자 해제: {chestId}");
         }
 
         public ChestData GetChest(int chestId)
@@ -85,23 +112,21 @@ namespace Features.Chest.Services
 
         public bool OpenChest(int chestId)
         {
-            DebugLog($"OpenChest 호출: {chestId}");
-
             if (!_chestModel.HasChest(chestId))
             {
-                DebugLogError($"상자가 등록되지 않음: {chestId}");
+                DebugLogError($"상자 열기 실패: 상자 ID {chestId}가 등록되지 않음");
                 return false;
             }
 
             var chest = _chestModel.GetChest(chestId);
             if (chest.isLocked)
             {
-                DebugLogWarning($"상자가 잠겨있음: {chestId}");
+                DebugLogWarning($"상자 열기 실패: 상자가 잠겨있음 (ID: {chestId})");
                 return false;
             }
 
-            // 다른 상자가 열려있다면 먼저 닫기
-            if (_chestModel.HasCurrentChest && _chestModel.currentChestId != chestId)
+            // 현재 열린 상자가 있다면 먼저 닫기 (같은 상자도 포함)
+            if (_chestModel.HasCurrentChest)
             {
                 CloseCurrentChest();
             }
@@ -112,16 +137,18 @@ namespace Features.Chest.Services
                 _currentChestState.Value = ChestState.Open;
                 _isUIVisible.Value = true;
 
+                Debug.Log($"[상자열기요청] ID:{chestId}");
+
                 // 네트워크 호출 (비동기, Fire-and-forget)
                 OpenChestNetworkAsync(chestId).Forget();
 
                 // MessagePipe로 상자 열림 이벤트 발행
                 _chestOpenedPublisher.Publish(new ChestOpenedMessage(chestId, chest.chestName));
 
-                DebugLog($"상자 열기 성공: {chestId}");
                 return true;
             }
 
+            DebugLogError($"로컬 상자 열기 실패: {chestId}");
             return false;
         }
 
@@ -133,7 +160,6 @@ namespace Features.Chest.Services
             try
             {
                 var result = await _networkSource.OpenChestAsync(chestId);
-                DebugLog($"네트워크 상자 열기 결과: {result.Success} - {result.Result}");
             }
             catch (System.Exception e)
             {
@@ -148,6 +174,8 @@ namespace Features.Chest.Services
 
             int chestId = _chestModel.currentChestId;
 
+            Debug.Log($"[상자닫기요청] ID:{chestId}");
+
             // 로컬 상태 업데이트
             _chestModel.CloseCurrentChest();
             _currentChestState.Value = ChestState.Closed;
@@ -158,8 +186,6 @@ namespace Features.Chest.Services
 
             // MessagePipe로 상자 닫힘 이벤트 발행
             _chestClosedPublisher.Publish(new ChestClosedMessage(chestId));
-
-            DebugLog($"상자 닫기 완료: {chestId}");
         }
 
         /// <summary>
@@ -170,11 +196,18 @@ namespace Features.Chest.Services
             try
             {
                 var result = await _networkSource.CloseChestAsync(chestId);
-                DebugLog($"네트워크 상자 닫기 결과: {result.Success} - {result.Result}");
             }
             catch (System.Exception e)
             {
-                DebugLogError($"네트워크 상자 닫기 실패: {e.Message}");
+                // 상자 닫기는 중요하지 않은 작업이므로 Warning 레벨로 처리
+                if (e.Message.Contains("canceled"))
+                {
+                    Debug.LogWarning($"[ChestService] 상자 닫기 요청 취소됨 (타임아웃): ID={chestId}");
+                }
+                else
+                {
+                    DebugLogError($"네트워크 상자 닫기 실패: {e.Message}");
+                }
             }
         }
 
@@ -183,14 +216,7 @@ namespace Features.Chest.Services
             if (!_chestModel.HasCurrentChest)
                 return false;
 
-            bool result = _chestModel.TakeItemFromCurrentChest(slotIndex, amount);
-
-            if (result)
-            {
-                DebugLog($"아이템 제거 성공: 슬롯 {slotIndex}, 수량 {amount}");
-            }
-
-            return result;
+            return _chestModel.TakeItemFromCurrentChest(slotIndex, amount);
         }
 
         public void UpdateCurrentChestSlot(int slotIndex, string itemId, int count)
@@ -198,7 +224,6 @@ namespace Features.Chest.Services
             if (_chestModel.HasCurrentChest)
             {
                 _chestModel.UpdateCurrentChestSlot(slotIndex, itemId, count);
-                DebugLog($"슬롯 업데이트: {slotIndex} - {itemId} x{count}");
             }
         }
 
@@ -209,13 +234,11 @@ namespace Features.Chest.Services
         public void SyncChestData(int chestId, ChestSlot[] serverSlots)
         {
             _chestModel.SyncChestData(chestId, serverSlots);
-            DebugLog($"상자 데이터 동기화: {chestId}, {serverSlots.Length}개 슬롯");
         }
 
         public void SyncChestSlot(int chestId, int slotIndex, string itemId, int count)
         {
             _chestModel.SyncChestSlot(chestId, slotIndex, itemId, count);
-            DebugLog($"슬롯 동기화: {chestId}[{slotIndex}] - {itemId} x{count}");
         }
 
         #endregion
@@ -242,12 +265,10 @@ namespace Features.Chest.Services
             _currentChestState.Value = ChestState.Closed;
             _isUIVisible.Value = false;
 
-            if (currentChestId != 0)
+            if (currentChestId >= 0)
             {
                 _chestClosedPublisher.Publish(new ChestClosedMessage(currentChestId));
             }
-
-            DebugLog("서비스 초기화 완료");
         }
 
         public List<ChestData> GetChestsWithItems()
@@ -263,6 +284,62 @@ namespace Features.Chest.Services
         public int GetTotalItemsInAllChests()
         {
             return _chestModel.GetTotalItemsInAllChests();
+        }
+
+        #endregion
+
+        #region 서버 메시지 처리
+
+        /// <summary>
+        /// 서버로부터 받은 상자 데이터 동기화 처리
+        /// </summary>
+        private void OnServerDataSync(ChestServerDataSyncMessage message)
+        {
+            if (message.Items == null) return;
+
+            var chestSlots = new ChestSlot[9]; // 9개 슬롯 고정
+
+            for (int i = 0; i < chestSlots.Length; i++)
+            {
+                if (i < message.Items.Count)
+                {
+                    int itemId = message.Items[i];
+                    if (itemId > 0) // 유효한 아이템
+                    {
+                        chestSlots[i] = new ChestSlot(itemId.ToString(), 1);
+                    }
+                    else // -1 또는 0이면 빈 슬롯
+                    {
+                        chestSlots[i] = new ChestSlot();
+                    }
+                }
+                else
+                {
+                    chestSlots[i] = new ChestSlot(); // 빈 슬롯
+                }
+            }
+
+            SyncChestData(message.ChestId, chestSlots);
+
+            // 3x3 그리드로 아이템 표시
+            string grid = "\n┌─────┬─────┬─────┐\n";
+            for (int row = 0; row < 3; row++)
+            {
+                grid += "│";
+                for (int col = 0; col < 3; col++)
+                {
+                    int index = row * 3 + col;
+                    int itemId = index < message.Items.Count ? message.Items[index] : -1;
+                    string cell = itemId > 0 ? $"  {itemId}  " : "  -  ";
+                    grid += cell + "│";
+                }
+                grid += "\n" + (row < 2 ? "├─────┼─────┼─────┤\n" : "└─────┴─────┴─────┘");
+            }
+
+            Debug.Log($"[ChestService] 상자 ID {message.ChestId} 동기화 완료:{grid}");
+
+            // 서버 데이터 동기화 후 UI 강제 업데이트를 위한 이벤트 발행
+            _chestOpenedPublisher.Publish(new ChestOpenedMessage(message.ChestId, $"Chest_{message.ChestId}"));
         }
 
         #endregion
@@ -289,6 +366,17 @@ namespace Features.Chest.Services
         public void SetDebugLogging(bool enabled)
         {
             _enableDebugLogs = enabled;
+        }
+
+        #endregion
+
+        #region Dispose
+
+        public void Dispose()
+        {
+            _messageDisposables?.Dispose();
+            _currentChestState?.Dispose();
+            _isUIVisible?.Dispose();
         }
 
         #endregion

@@ -167,53 +167,20 @@ namespace Networks
             }
         }
 
-        public async Task<JellyQuitCommand> JellyQuit()
+        public void JellyQuit()
         {
             try
             {
                 Debug.Log("[NetworkApi] 젤리 종료 시작");
 
-                if (client == null || !client.IsConnected)
-                {
-                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
-                    throw new Exception("Client가 연결되지 않았습니다.");
-                }
-
-                var tcs = new TaskCompletionSource<object>();
-                _pendingRequests[PacketType.JellyQuitResponse] = tcs;
-
                 var jellyQuitRequest = new JellyQuitSend();
                 client.Send(jellyQuitRequest);
 
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-                cts.Token.Register(() =>
-                {
-                    Debug.LogError("[NetworkApi] 젤리 종료 요청 타임아웃");
-                    tcs.TrySetCanceled();
-                });
-
-                var response = await tcs.Task;
-
-                if (response is JellyQuitCommand command)
-                {
-                    return command;
-                }
-
-                throw new InvalidOperationException("JellyQuit에서 예상치 못한 응답 타입입니다.");
-            }
-            catch (TimeoutException)
-            {
-                Debug.LogError("[NetworkApi] 젤리 종료 요청 타임아웃");
-                throw;
             }
             catch (Exception e)
             {
                 Debug.LogError($"[NetworkApi] 젤리 종료 패킷 전송 실패: {e.Message}");
                 throw;
-            }
-            finally
-            {
-                _pendingRequests.TryRemove(PacketType.JellyQuitResponse, out _);
             }
         }
 
@@ -493,6 +460,10 @@ namespace Networks
                 Debug.LogError($"[NetworkApi] 상자 열기 실패: {e.Message}");
                 throw;
             }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.ChestOpenResponse, out _);
+            }
         }
 
         public async Task<ChestCloseCommand> ChestClose(int chestId)
@@ -520,10 +491,10 @@ namespace Networks
 
                 throw new InvalidOperationException("상자 닫기에 실패했습니다.");
             }
-            catch (TimeoutException)
+            catch (OperationCanceledException)
             {
-                Debug.LogError("[NetworkApi] 상자 닫기 요청 타임아웃");
-                throw;
+                Debug.LogWarning($"[NetworkApi] 상자 닫기 요청 타임아웃 (ID: {chestId})");
+                return new ChestCloseCommand(0); // 기본 실패 응답 반환 (Fail = 0)
             }
             catch (Exception e)
             {
@@ -576,7 +547,6 @@ namespace Networks
                 var getItemRequest = new GetItemSend(chestId, index);
                 client.Send(getItemRequest);
 
-                Debug.Log($"[NetworkApi] 아이템 획득 요청 전송: ChestId={chestId}, Index={index}");
             }
             catch (Exception e)
             {
@@ -890,14 +860,10 @@ namespace Networks
 
         public void HandleResponse(Command command)
         {
-            Debug.Log($"[NetworkApi] 응답 처리 시작: {command.Type}");
-            Debug.Log($"[NetworkApi] 대기 중인 요청 수: {_pendingRequests.Count}");
-
             if (_pendingRequests.TryGetValue(command.Type, out var tcs))
             {
-                Debug.Log($"[NetworkApi] 응답 대기 객체 발견: {command.Type}");
+                Debug.Log($"[NetworkApi] 응답 처리: {command.Type} (대기중: {_pendingRequests.Count}개)");
                 tcs.SetResult(command);
-                Debug.Log($"[NetworkApi] 응답 처리 완료: {command.Type}");
             }
             else
             {

@@ -410,11 +410,14 @@ namespace Interaction
                 return;
             }
 
+            // 꿈틀이의 현재 상태를 가져옴
+            var currentState = ggumtle.GetCurrentState();
+
             var message = new GgumtleDetectedMessage(
                 ggumtle.GgumtleId.ToString(),
                 collider.transform,
                 distance,
-                GgumtleState.Buried // ViewModel이 실제 상태를 관리하므로 기본값 전달
+                currentState // 실제 꿈틀이 상태 전달
             );
 
             _ggumtleDetectedPublisher.Publish(message);

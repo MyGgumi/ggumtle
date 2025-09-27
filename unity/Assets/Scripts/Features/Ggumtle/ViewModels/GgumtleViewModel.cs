@@ -76,6 +76,7 @@ namespace Features.Ggumtle.ViewModels
             ISubscriber<GgumtleHoldProgressMessage> holdProgressSubscriber,
             ISubscriber<GgumtleFoodAddedMessage> foodAddedSubscriber,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
+            ISubscriber<GgumtleJellyEatenMessage> jellyEatenSubscriber,
             IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher,
             IPublisher<InteractButtonVisibilityMessage> interactButtonVisibilityPublisher,
             ISubscriber<InteractHoldStartMessage> interactHoldStartSubscriber,
@@ -93,6 +94,7 @@ namespace Features.Ggumtle.ViewModels
                 holdProgressSubscriber,
                 foodAddedSubscriber,
                 diggingDoneSubscriber,
+                jellyEatenSubscriber,
                 interactHoldStartSubscriber,
                 interactHoldEndSubscriber
             );
@@ -105,6 +107,7 @@ namespace Features.Ggumtle.ViewModels
             ISubscriber<GgumtleHoldProgressMessage> holdProgressSubscriber,
             ISubscriber<GgumtleFoodAddedMessage> foodAddedSubscriber,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
+            ISubscriber<GgumtleJellyEatenMessage> jellyEatenSubscriber,
             ISubscriber<InteractHoldStartMessage> interactHoldStartSubscriber,
             ISubscriber<InteractHoldEndMessage> interactHoldEndSubscriber
         )
@@ -137,6 +140,15 @@ namespace Features.Ggumtle.ViewModels
                 })
                 .AddTo(_disposables);
             diggingDoneSubscriber.Subscribe(OnDiggingDoneReceived).AddTo(_disposables);
+
+            // 꿈틀이별 먹은 젤리 개수 업데이트 구독
+            jellyEatenSubscriber
+                .Subscribe(msg =>
+                {
+                    if (IsCurrentGgumtleById(msg.GgumtleId))
+                        OnJellyEatenUpdated(msg);
+                })
+                .AddTo(_disposables);
 
             // 모바일 상호작용 이벤트
             interactHoldStartSubscriber
@@ -247,7 +259,15 @@ namespace Features.Ggumtle.ViewModels
         {
             State.Value = msg.NewState;
             UpdateFromService();
+            UpdateCurrentFood(CurrentGgumtleId.Value); // 서버 동기화된 젤리 개수로 업데이트
             Debug.Log($"[GgumtleViewModel] 상태 변경: {msg.PreviousState} → {msg.NewState}");
+
+            // Fake 또는 Emerging 상태일 때 홀드 프로그레스바만 숨기기
+            if (msg.NewState == GgumtleState.Fake || msg.NewState == GgumtleState.Emerging)
+            {
+                HoldProgress.Value = 0f;
+                // FoodProgress는 UI에서 상태에 따라 표시/숨김 처리하도록 함
+            }
         }
 
         private void OnHoldProgressUpdated(GgumtleHoldProgressMessage msg)
@@ -285,6 +305,14 @@ namespace Features.Ggumtle.ViewModels
             }
         }
 
+        private void OnJellyEatenUpdated(GgumtleJellyEatenMessage msg)
+        {
+            // 현재 접근 중인 꿈틀이의 먹은 젤리 개수가 업데이트되면 즉시 UI 반영
+            UpdateCurrentFood(CurrentGgumtleId.Value);
+
+            Debug.Log($"[GgumtleViewModel] 꿈틀이 {msg.GgumtleId} 젤리 개수 실시간 업데이트: {msg.EatenCount}");
+        }
+
         private async void OnMobileInteractHoldStart()
         {
             if (IsValidForHold())
@@ -296,10 +324,16 @@ namespace Features.Ggumtle.ViewModels
 
         private void OnMobileInteractHoldEnd()
         {
+            Debug.Log($"[GgumtleViewModel] OnMobileInteractHoldEnd 호출됨 - IsHolding: {IsHolding.Value}, CurrentGgumtleId: {CurrentGgumtleId.Value}");
+
             if (IsHolding.Value)
             {
-                Debug.Log("[GgumtleViewModel] 모바일 홀드 종료");
+                Debug.Log("[GgumtleViewModel] 모바일 홀드 종료 - CancelHold() 호출");
                 CancelHold();
+            }
+            else
+            {
+                Debug.Log("[GgumtleViewModel] IsHolding이 false라서 CancelHold() 호출하지 않음");
             }
         }
 
@@ -438,36 +472,55 @@ namespace Features.Ggumtle.ViewModels
                 // 파기 완료 - Semi-optimistic 패턴
                 Debug.Log("[GgumtleViewModel] 파기 홀드 완료 - Emerging 상태로 변경");
                 await StartEmerging();
+                // 홀드 상태 리셋
+                IsHolding.Value = false;
+                HoldProgress.Value = 0f;
+            }
+            else if (data.currentState == GgumtleState.Feeding || data.currentState == GgumtleState.Emerged)
+            {
+                // 먹이주기는 홀드 완료되어도 중단 가능하도록 IsHolding 유지
+                Debug.Log("[GgumtleViewModel] 먹이주기 홀드 완료 - 중단 가능하도록 IsHolding 유지");
+                // IsHolding.Value는 true로 유지하여 사용자가 버튼을 뗄 때 중단 가능
+                // HoldProgress는 리셋하지 않음
+                return;
             }
             else
             {
                 // 일반 홀드 완료
                 _ggumtleService.CompleteHold(CurrentGgumtleId.Value);
+                // 홀드 상태 리셋
+                IsHolding.Value = false;
+                HoldProgress.Value = 0f;
             }
         }
 
         private async UniTask HandleHoldCancellation()
         {
-            Debug.Log("[GgumtleViewModel] 홀드 취소 처리");
+            Debug.Log($"[GgumtleViewModel] 홀드 취소 처리 - CurrentGgumtleId: {CurrentGgumtleId.Value}");
 
             var data = _ggumtleService.GetGgumtleData(CurrentGgumtleId.Value);
             if (data != null)
             {
+                Debug.Log($"[GgumtleViewModel] GgumtleData 찾음 - 상태: {data.currentState}");
                 await HandleNetworkCancellation(data);
+            }
+            else
+            {
+                Debug.LogError($"[GgumtleViewModel] GgumtleData를 찾을 수 없음: {CurrentGgumtleId.Value}");
             }
 
             _ggumtleService.CancelHold(CurrentGgumtleId.Value);
+
+            // 홀드 상태 리셋
+            IsHolding.Value = false;
+            HoldProgress.Value = 0f;
+
             Debug.Log("[GgumtleViewModel] 홀드 취소 완료");
         }
 
         private async UniTask HandleNetworkCancellation(GgumtleData data)
         {
-            // Emerging 상태면 서버 응답 대기 중이므로 중단 요청 안함
-            if (data.currentState == GgumtleState.Emerging)
-            {
-                Debug.Log("[GgumtleViewModel] Emerging 상태 - 중단 요청 건너뜀");
-                return;
-            }
+            Debug.Log($"[GgumtleViewModel] HandleNetworkCancellation 호출됨 - 상태: {data.currentState}");
 
             // 파기 중단
             if (
@@ -491,11 +544,20 @@ namespace Features.Ggumtle.ViewModels
                     IsQuitRequested.Value = false;
                 }
             }
-            // 먹이주기 중단
-            else if (data.currentState == GgumtleState.Feeding)
+            // 먹이주기 중단 (Emerging, Emerged, Feeding 상태)
+            else if (data.currentState == GgumtleState.Emerging || data.currentState == GgumtleState.Emerged || data.currentState == GgumtleState.Feeding)
             {
-                var success = await _ggumtleService.StopNetworkFeedingAsync();
-                Debug.Log($"[GgumtleViewModel] 먹이주기 중단 결과: {success}");
+                Debug.Log($"[GgumtleViewModel] 먹이주기 중단 시도, 현재 상태: {data.currentState}, GgumtleId: {CurrentGgumtleId.Value}");
+                Debug.Log($"[GgumtleViewModel] 먹이주기 중단 전 - IsHolding: {IsHolding.Value}, IsCancelRequested: {IsCancelRequested.Value}");
+                try
+                {
+                    var success = _ggumtleService.StopNetworkFeeding();
+                    Debug.Log($"[GgumtleViewModel] 먹이주기 중단 결과: {success}, 상태: {data.currentState}");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogWarning($"[GgumtleViewModel] 먹이주기 중단 예외: {ex.Message}");
+                }
             }
         }
 
@@ -601,6 +663,7 @@ namespace Features.Ggumtle.ViewModels
             Distance.Value = distance;
             State.Value = state;
             UpdateFromService();
+            UpdateCurrentFood(id);
             UpdateInteractionText();
         }
 
@@ -633,7 +696,7 @@ namespace Features.Ggumtle.ViewModels
             return data.currentState switch
             {
                 GgumtleState.Buried or GgumtleState.Digging => data.diggingHoldTime,
-                GgumtleState.Feeding => 0.5f,
+                GgumtleState.Feeding => float.MaxValue, // 먹이주기는 사용자가 뗄 때까지 무한히 유지
                 _ => 3f,
             };
         }
@@ -665,10 +728,31 @@ namespace Features.Ggumtle.ViewModels
                 GgumtleState.Buried => "파내기 (홀드)",
                 GgumtleState.Digging => "파내는 중...",
                 GgumtleState.Emerging => "나오는 중...",
+                GgumtleState.Emerged => $"빛젤리 먹이기 ({CurrentFood.Value}/{MaxFood.Value})",
                 GgumtleState.Feeding => $"빛젤리 먹이기 ({CurrentFood.Value}/{MaxFood.Value})",
                 GgumtleState.Purified => "정화 완료!",
+                GgumtleState.Fake => string.Empty,  // 짭꿈틀이는 텍스트 표시 안함
                 _ => string.Empty,
             };
+        }
+
+        /// <summary>
+        /// 현재 꿈틀이의 먹은 젤리 개수 업데이트
+        /// </summary>
+        private void UpdateCurrentFood(string ggumtleId)
+        {
+            if (int.TryParse(ggumtleId, out int id))
+            {
+                int eatenCount = _ggumtleService.GetGgumtleJellyEaten(id);
+                CurrentFood.Value = eatenCount;
+            }
+            else
+            {
+                CurrentFood.Value = 0;
+            }
+
+            // 텍스트도 함께 업데이트
+            UpdateInteractionText();
         }
 
         #endregion

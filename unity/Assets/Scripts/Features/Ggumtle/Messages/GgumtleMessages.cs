@@ -164,4 +164,19 @@ namespace Features.Ggumtle.Messages
             Status = status;
         }
     }
+
+    /// <summary>
+    /// 꿈틀이별 먹은 젤리 개수 업데이트 메시지
+    /// </summary>
+    public readonly struct GgumtleJellyEatenMessage
+    {
+        public readonly int GgumtleId;
+        public readonly int EatenCount;
+
+        public GgumtleJellyEatenMessage(int ggumtleId, int eatenCount)
+        {
+            GgumtleId = ggumtleId;
+            EatenCount = eatenCount;
+        }
+    }
 }

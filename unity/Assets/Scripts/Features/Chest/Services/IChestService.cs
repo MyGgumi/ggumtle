@@ -14,9 +14,19 @@ namespace Features.Chest.Services
         #region 상자 등록/관리
 
         /// <summary>
+        /// 서버 상자 정보를 일괄 등록 (MapSpawnService용)
+        /// </summary>
+        void RegisterChestsFromServer(Networks.Rooms.Domains.ChestPacket[] serverChests);
+
+        /// <summary>
         /// 상자를 서비스에 등록
         /// </summary>
         void RegisterChest(int chestId, string chestName, Vector3 position, GameObject chestObject = null);
+
+        /// <summary>
+        /// 기존 등록된 상자에 GameObject 연결
+        /// </summary>
+        void UpdateChestGameObject(int chestId, GameObject chestObject);
 
         /// <summary>
         /// 상자를 서비스에서 해제

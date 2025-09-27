@@ -4,70 +4,125 @@ using UnityEngine;
 
 namespace Features.Item.Services
 {
-    public static class ItemDefinitionService
+    [CreateAssetMenu(fileName = "ItemDefinitionService", menuName = "Game/Item Definition Service")]
+    public class ItemDefinitionService : ScriptableObject
     {
-        private static readonly Dictionary<int, ItemDefinition> _itemDefinitions = new();
-
-        static ItemDefinitionService()
+        [System.Serializable]
+        public class ItemEntry
         {
-            InitializeItemDefinitions();
+            [Header("기본 정보")]
+            public int ItemId;
+            public string ItemName;
+            public Sprite ItemIcon;
+
+            [Header("상세 설정")]
+            [TextArea(2, 3)]
+            public string Description;
+            public int MaxStack = 1;
+            public float CooldownTime = 0f;
+
+            public ItemDefinition ToItemDefinition()
+            {
+                return new ItemDefinition(ItemId, ItemName, Description, MaxStack, CooldownTime)
+                {
+                    ItemIcon = ItemIcon
+                };
+            }
         }
 
-        private static void InitializeItemDefinitions()
+        [Header("아이템 목록")]
+        public ItemEntry[] itemEntries = new ItemEntry[]
         {
-            _itemDefinitions.Clear();
+            new ItemEntry
+            {
+                ItemId = 3,
+                ItemName = "테이저건",
+                Description = "전기 충격으로 적을 기절시킵니다.",
+                MaxStack = 1,
+                CooldownTime = 5f
+            },
+            new ItemEntry
+            {
+                ItemId = 2,
+                ItemName = "섬광탄",
+                Description = "강한 빛으로 적의 시야를 차단합니다.",
+                MaxStack = 3,
+                CooldownTime = 3f
+            },
+            new ItemEntry
+            {
+                ItemId = 4,
+                ItemName = "자가제세동기",
+                Description = "기절한 상태에서 자동으로 소생시킵니다.",
+                MaxStack = 1,
+                CooldownTime = 10f
+            },
+            new ItemEntry
+            {
+                ItemId = 1,
+                ItemName = "빛 젤리",
+                Description = "꿈틀이에게 먹이를 줄 수 있는 특별한 아이템입니다.",
+                MaxStack = 999,
+                CooldownTime = 0f
+            }
+        };
 
-            // 테이저건 (ID: 1)
-            _itemDefinitions[1] = new ItemDefinition(
-                itemId: 1,
-                itemName: "테이저건",
-                description: "전기 충격으로 적을 기절시킵니다.",
-                maxStack: 1,
-                cooldownTime: 5f
-            );
+        private static ItemDefinitionService _instance;
+        private Dictionary<int, ItemDefinition> _itemDefinitions;
 
-            // 섬광탄 (ID: 2)
-            _itemDefinitions[2] = new ItemDefinition(
-                itemId: 2,
-                itemName: "섬광탄",
-                description: "강한 빛으로 적의 시야를 차단합니다.",
-                maxStack: 3,
-                cooldownTime: 3f
-            );
+        public static ItemDefinitionService Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = Resources.Load<ItemDefinitionService>("ItemDefinitionService");
+                    if (_instance == null)
+                    {
+                        Debug.LogError("ItemDefinitionService를 Resources 폴더에서 찾을 수 없습니다! Assets/Resources/ItemDefinitionService.asset을 생성하세요.");
+                    }
+                    else
+                    {
+                        _instance.BuildDictionary();
+                    }
+                }
+                return _instance;
+            }
+        }
 
-            // 자가제세동기 (ID: 3)
-            _itemDefinitions[3] = new ItemDefinition(
-                itemId: 3,
-                itemName: "자가제세동기",
-                description: "기절한 상태에서 자동으로 소생시킵니다.",
-                maxStack: 1,
-                cooldownTime: 10f
-            );
+        private void OnEnable()
+        {
+            // OnEnable에서는 BuildDictionary를 호출하지 않음 (Instance에서만 호출)
+        }
 
-            // 빛 젤리 (ID: 4) - 꿈틀이 먹이용
-            _itemDefinitions[4] = new ItemDefinition(
-                itemId: 4,
-                itemName: "빛 젤리",
-                description: "꿈틀이에게 먹이를 줄 수 있는 특별한 아이템입니다.",
-                maxStack: 999,
-                cooldownTime: 0f
-            );
+        private void BuildDictionary()
+        {
+            if (_itemDefinitions != null) return; // 이미 빌드되었으면 스킵
+
+            _itemDefinitions = new Dictionary<int, ItemDefinition>();
+            foreach (var entry in itemEntries)
+            {
+                _itemDefinitions[entry.ItemId] = entry.ToItemDefinition();
+            }
         }
 
         public static ItemDefinition GetItemById(int itemId)
         {
-            _itemDefinitions.TryGetValue(itemId, out var item);
+            if (Instance == null || Instance._itemDefinitions == null) return null;
+            Instance._itemDefinitions.TryGetValue(itemId, out var item);
             return item;
         }
 
         public static bool IsValidItemId(int itemId)
         {
-            return _itemDefinitions.ContainsKey(itemId);
+            if (Instance == null || Instance._itemDefinitions == null) return false;
+            return Instance._itemDefinitions.ContainsKey(itemId);
         }
 
         public static IReadOnlyDictionary<int, ItemDefinition> GetAllItems()
         {
-            return _itemDefinitions;
+            if (Instance == null || Instance._itemDefinitions == null) return new Dictionary<int, ItemDefinition>();
+            return Instance._itemDefinitions;
         }
 
         public static string GetItemName(int itemId)

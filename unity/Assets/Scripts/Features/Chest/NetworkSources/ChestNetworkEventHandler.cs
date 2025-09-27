@@ -25,9 +25,26 @@ namespace Features.Chest.NetworkSources
         {
             try
             {
-                if (_enableDebugLogs)
+                if (command != null)
                 {
-                    Debug.Log($"[ChestNetworkEventHandler] 상자 열림 이벤트: Success={command.Success}, Result={command.Result}");
+                    string itemsInfo = command.Items != null && command.Items.Count > 0
+                        ? $"[{string.Join(", ", command.Items)}]"
+                        : "없음";
+
+                    Debug.Log($"[상자열기응답] ID:{command.ChestId} | 성공:{command.Success} | 아이템:{itemsInfo}");
+
+                    if (command.Success)
+                    {
+                        // 성공한 경우 MessagePipeBridge를 통해 데이터 동기화 메시지 발행
+                        var syncMessage = new Features.Chest.Messages.ChestServerDataSyncMessage(command.ChestId, command.Items);
+                        Networks.MessagePipeBridge.Instance?.PublishMessage(syncMessage);
+                    }
+                    else
+                    {
+                        // 실패한 경우 상자 닫기 메시지 발행
+                        var closeMessage = new Features.Chest.Messages.ChestClosedMessage(command.ChestId);
+                        Networks.MessagePipeBridge.Instance?.PublishMessage(closeMessage);
+                    }
                 }
 
                 // NetworkApi.HandleResponse를 통해 대기 중인 요청에 응답 전달
@@ -43,7 +60,15 @@ namespace Features.Chest.NetworkSources
             }
             catch (Exception e)
             {
-                Debug.LogError($"[ChestNetworkEventHandler] 상자 열림 이벤트 처리 실패: {e.Message}");
+                Debug.LogError($"[ChestNetworkEventHandler] 상자 열림 이벤트 처리 실패");
+                Debug.LogError($"[ChestNetworkEventHandler] 예외 타입: {e.GetType().Name}");
+                Debug.LogError($"[ChestNetworkEventHandler] 예외 메시지: {e.Message}");
+                Debug.LogError($"[ChestNetworkEventHandler] 스택 트레이스: {e.StackTrace}");
+                Debug.LogError($"[ChestNetworkEventHandler] Command 정보: Success={command?.Success}, ChestId={command?.ChestId}, ItemSize={command?.ItemSize}");
+                if (e.InnerException != null)
+                {
+                    Debug.LogError($"[ChestNetworkEventHandler] 내부 예외: {e.InnerException.Message}");
+                }
             }
         }
 
@@ -55,9 +80,9 @@ namespace Features.Chest.NetworkSources
         {
             try
             {
-                if (_enableDebugLogs)
+                if (command != null)
                 {
-                    Debug.Log($"[ChestNetworkEventHandler] 상자 닫힘 이벤트: Success={command.Success}, Result={command.Result}");
+                    Debug.Log($"[상자닫기응답] 성공:{command.Success}");
                 }
 
                 // NetworkApi.HandleResponse를 통해 대기 중인 요청에 응답 전달
@@ -76,6 +101,7 @@ namespace Features.Chest.NetworkSources
                 Debug.LogError($"[ChestNetworkEventHandler] 상자 닫힘 이벤트 처리 실패: {e.Message}");
             }
         }
+
 
     }
 }

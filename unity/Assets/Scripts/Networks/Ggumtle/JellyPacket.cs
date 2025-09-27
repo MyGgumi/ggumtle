@@ -91,7 +91,7 @@ namespace Networks.Ggumtle
     public class JellyForceQuitCommand : Command
     {
         public override PacketType Type => PacketType.JellyForceQuitResponse;
-        
+
         public int GgumtleId { get; set; }
         public int LeftJellyCount { get; set; }
 
@@ -99,6 +99,34 @@ namespace Networks.Ggumtle
         {
             GgumtleId = ggumtleId;
             LeftJellyCount = leftJellyCount;
+        }
+    }
+
+    public class JellyCountCommand : Command
+    {
+        public override PacketType Type => PacketType.JellyCount;
+
+        public int JellyCount { get; set; }
+
+        public JellyCountCommand(int jellyCount)
+        {
+            JellyCount = jellyCount;
+        }
+    }
+
+    /// <summary>
+    /// 꿈틀이별 먹은 젤리 개수 업데이트 (서버 → 클라이언트)
+    /// </summary>
+    public class GgumtleJellyEatenCommand : Command
+    {
+        public override PacketType Type => PacketType.GgumtleJellyEaten;
+        public int GgumtleId { get; set; }
+        public int EatenCount { get; set; }
+
+        public GgumtleJellyEatenCommand(int ggumtleId, int eatenCount)
+        {
+            GgumtleId = ggumtleId;
+            EatenCount = eatenCount;
         }
     }
 }

@@ -21,8 +21,8 @@ namespace Features.Chest.ViewModels
     {
         #region Observable Properties
 
-        // 현재 범위 내 상자 정보
-        public readonly ReactiveProperty<int> CurrentChestId = new(0);
+        // 현재 범위 내 상자 정보 (-1: 유효하지 않은 ID, 0부터: 유효한 서버 ID)
+        public readonly ReactiveProperty<int> CurrentChestId = new(-1);
         public readonly ReactiveProperty<string> CurrentChestName = new(string.Empty);
         public readonly ReactiveProperty<bool> IsInRange = new(false);
         public readonly ReactiveProperty<float> Distance = new(float.MaxValue);
@@ -65,6 +65,7 @@ namespace Features.Chest.ViewModels
             ISubscriber<ChestOpenedMessage> openedSubscriber,
             ISubscriber<ChestClosedMessage> closedSubscriber,
             ISubscriber<MobileButtonPressedMessage> buttonPressedSubscriber,
+            ISubscriber<ChestServerDataSyncMessage> serverDataSyncSubscriber,
             IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher
         )
         {
@@ -72,7 +73,7 @@ namespace Features.Chest.ViewModels
             _inventoryService = inventoryService;
             _notificationPublisher = notificationPublisher;
 
-            Initialize(detectedSubscriber, leftSubscriber, openedSubscriber, closedSubscriber, buttonPressedSubscriber);
+            Initialize(detectedSubscriber, leftSubscriber, openedSubscriber, closedSubscriber, buttonPressedSubscriber, serverDataSyncSubscriber);
         }
 
         private void Initialize(
@@ -80,7 +81,8 @@ namespace Features.Chest.ViewModels
             ISubscriber<ChestLeftMessage> leftSubscriber,
             ISubscriber<ChestOpenedMessage> openedSubscriber,
             ISubscriber<ChestClosedMessage> closedSubscriber,
-            ISubscriber<MobileButtonPressedMessage> buttonPressedSubscriber
+            ISubscriber<MobileButtonPressedMessage> buttonPressedSubscriber,
+            ISubscriber<ChestServerDataSyncMessage> serverDataSyncSubscriber
         )
         {
             if (_isInitialized)
@@ -95,6 +97,7 @@ namespace Features.Chest.ViewModels
             openedSubscriber.Subscribe(OnChestOpened).AddTo(_disposables);
             closedSubscriber.Subscribe(OnChestClosed).AddTo(_disposables);
             buttonPressedSubscriber.Subscribe(OnMobileButtonPressed).AddTo(_disposables);
+            serverDataSyncSubscriber.Subscribe(OnChestServerDataSync).AddTo(_disposables);
 
             // 서비스 상태 구독
             _chestService
@@ -161,7 +164,10 @@ namespace Features.Chest.ViewModels
 
             DebugLog($"상자 닫기: {CurrentChestId.Value}");
             _chestService.CloseCurrentChest();
-            ClearCurrentChest();
+
+            // 상자를 닫지만 CurrentChestId는 유지 (근처에 있으면 다시 열 수 있도록)
+            IsChestOpen.Value = false;
+            ClearChestSlots();
         }
 
         /// <summary>
@@ -178,39 +184,20 @@ namespace Features.Chest.ViewModels
 
             DebugLog($"아이템 가져오기 시도: 슬롯 {slotIndex}, 아이템 {slot.itemId} x{slot.count}");
 
-            // 아이템 타입에 따른 처리
-            if (slot.itemId == "4") // 빛젤리
-            {
-                var addedAmount = _inventoryService.AddFeeding(slot.count);
-                if (addedAmount > 0)
-                {
-                    _chestService.TakeItemFromCurrentChest(slotIndex);
-                    ShowNotification($"빛젤리 {addedAmount}개 획득!");
-                    UpdateChestSlotsFromService();
-                    return true;
-                }
-                else
-                {
-                    ShowNotification("더 이상 빛젤리를 가져올 수 없습니다.");
-                    return false;
-                }
-            }
-            else
-            {
-                // 일반 아이템을 인벤토리에 추가
-                if (_inventoryService.AddItem(slot.itemId, slot.count))
-                {
-                    _chestService.TakeItemFromCurrentChest(slotIndex);
-                    ShowNotification($"아이템 획득!");
-                    UpdateChestSlotsFromService();
-                    return true;
-                }
-                else
-                {
-                    ShowNotification("인벤토리가 가득 찼습니다.");
-                    return false;
-                }
-            }
+            // 클라이언트 체크 제거 - 서버에서 모든 제한사항 체크
+            // if (!CanAddItemToInventory(slot.itemId, slot.count))
+            // {
+            //     ShowNotification("인벤토리가 가득 찼습니다.");
+            //     return false;
+            // }
+
+            // 인벤토리에 추가 가능한 경우에만 서버에 직접 요청
+            _inventoryService.RequestItemFromChest(CurrentChestId.Value, slotIndex);
+
+            // 서버 응답을 기다리고, InventoryNetworkEventHandler에서 처리하도록 함
+            // 성공/실패 여부는 서버 응답으로 결정되며, 상자 UI 업데이트도 서버 동기화로 처리
+            DebugLog($"서버에 아이템 가져오기 요청 전송 완료: 상자ID={CurrentChestId.Value}, 슬롯={slotIndex}");
+            return true;
         }
 
         /// <summary>
@@ -257,9 +244,11 @@ namespace Features.Chest.ViewModels
 
         private void OnChestLeft(ChestLeftMessage msg)
         {
+            DebugLog($"[DEBUG] OnChestLeft 호출됨: 현재 CurrentChestId={CurrentChestId.Value}, 메시지 ChestId={msg.ChestId}");
+
             if (CurrentChestId.Value == msg.ChestId)
             {
-                DebugLog($"상자 범위 벗어남: {msg.ChestId}");
+                DebugLog($"상자 범위 벗어남: {msg.ChestId} - IsInRange={IsInRange.Value}, CanInteract={CanInteract.Value}");
 
                 // 열린 상자라면 닫기
                 if (IsChestOpen.Value)
@@ -268,6 +257,11 @@ namespace Features.Chest.ViewModels
                 }
 
                 ClearCurrentChest();
+                DebugLog($"[DEBUG] ClearCurrentChest 완료: CurrentChestId={CurrentChestId.Value}, IsInRange={IsInRange.Value}, CanInteract={CanInteract.Value}");
+            }
+            else
+            {
+                DebugLog($"[DEBUG] ChestId 불일치로 무시됨: 현재={CurrentChestId.Value}, 메시지={msg.ChestId}");
             }
         }
 
@@ -296,7 +290,7 @@ namespace Features.Chest.ViewModels
         {
             // 상호작용 버튼이 눌렸고, 상자가 범위 내에 있다면 열기/닫기 토글
             if (msg.ButtonType == Features.MobileControls.Models.MobileButtonType.Interact &&
-                IsInRange.Value && CanInteract.Value && CurrentChestId.Value != 0)
+                IsInRange.Value && CanInteract.Value && CurrentChestId.Value >= 0)
             {
                 if (IsChestOpen.Value)
                 {
@@ -311,9 +305,87 @@ namespace Features.Chest.ViewModels
             }
         }
 
+        private void OnChestServerDataSync(ChestServerDataSyncMessage msg)
+        {
+            // 현재 열려있는 상자의 서버 데이터 동기화인지 확인
+            if (IsChestOpen.Value && CurrentChestId.Value == msg.ChestId)
+            {
+                DebugLog($"서버 데이터 동기화: 상자ID={msg.ChestId}");
+                // ChestService에서 이미 데이터를 처리했으므로, UI만 업데이트
+                UpdateChestSlotsFromService();
+
+                // ReactiveProperty 강제 알림 (혹시 모를 경우 대비)
+                CurrentChestSlots.ForceNotify();
+            }
+        }
+
         #endregion
 
         #region Private Methods
+
+        /// <summary>
+        /// 인벤토리에 아이템 추가 가능 여부 체크 (MaxStack 초과 시 불가)
+        /// </summary>
+        private bool CanAddItemToInventory(string itemId, int count)
+        {
+            DebugLog($"[DEBUG] CanAddItemToInventory 호출: itemId={itemId}, count={count}");
+
+            // int로 변환
+            if (!int.TryParse(itemId, out int numericItemId))
+            {
+                DebugLog($"[DEBUG] itemId 파싱 실패: {itemId}");
+                return false;
+            }
+
+            // 아이템 정의 확인
+            var itemDef = Features.Item.Services.ItemDefinitionService.GetItemById(numericItemId);
+            if (itemDef == null)
+            {
+                DebugLog($"[DEBUG] 아이템 정의 없음: {numericItemId}");
+                return false;
+            }
+            DebugLog($"[DEBUG] 아이템 정의: {itemDef.ItemName}, MaxStack={itemDef.MaxStack}");
+
+            // 현재 인벤토리 상태 가져오기
+            var inventoryData = _inventoryService.CurrentInventory.CurrentValue;
+            if (inventoryData?.PlayerSlots == null)
+            {
+                DebugLog($"[DEBUG] 인벤토리 데이터 없음");
+                return false;
+            }
+
+            var currentSlots = inventoryData.PlayerSlots;
+            DebugLog($"[DEBUG] 현재 슬롯 개수: {currentSlots.Count}");
+
+            // 1. 같은 아이템이 있는 슬롯 찾기
+            for (int i = 0; i < currentSlots.Count; i++)
+            {
+                var slot = currentSlots[i];
+                if (!slot.IsEmpty && slot.ItemId == numericItemId)
+                {
+                    DebugLog($"[DEBUG] 같은 아이템 발견 슬롯 {i}: Count={slot.Count}, 추가 후={slot.Count + count}, MaxStack={itemDef.MaxStack}");
+                    bool canAdd = slot.Count + count <= itemDef.MaxStack;
+                    DebugLog($"[DEBUG] MaxStack 체크 결과: {canAdd}");
+                    return canAdd;
+                }
+            }
+
+            // 2. 같은 아이템이 없으면 빈 슬롯 찾기
+            for (int i = 0; i < currentSlots.Count; i++)
+            {
+                var slot = currentSlots[i];
+                if (slot.IsEmpty)
+                {
+                    DebugLog($"[DEBUG] 빈 슬롯 발견 {i}: count={count}, MaxStack={itemDef.MaxStack}");
+                    bool canAdd = count <= itemDef.MaxStack;
+                    DebugLog($"[DEBUG] 빈 슬롯 MaxStack 체크 결과: {canAdd}");
+                    return canAdd;
+                }
+            }
+
+            DebugLog($"[DEBUG] 빈 슬롯도 없음 - 추가 불가");
+            return false;
+        }
 
         private void SetCurrentChest(int chestId)
         {
@@ -329,7 +401,7 @@ namespace Features.Chest.ViewModels
 
         private void ClearCurrentChest()
         {
-            CurrentChestId.Value = 0;
+            CurrentChestId.Value = -1;
             CurrentChestName.Value = string.Empty;
             IsInRange.Value = false;
             Distance.Value = float.MaxValue;
@@ -351,7 +423,15 @@ namespace Features.Chest.ViewModels
             var currentChest = _chestService.CurrentChest;
             if (currentChest != null)
             {
-                CurrentChestSlots.Value = currentChest.slots;
+                // 새로운 배열 인스턴스를 생성해서 ReactiveProperty 변경 감지 보장
+                var newSlots = new ChestSlot[currentChest.slots.Length];
+                for (int i = 0; i < currentChest.slots.Length; i++)
+                {
+                    newSlots[i] = currentChest.slots[i];
+                }
+                CurrentChestSlots.Value = newSlots;
+
+                DebugLog($"상자 슬롯 업데이트: {newSlots.Length}개 슬롯");
             }
         }
 

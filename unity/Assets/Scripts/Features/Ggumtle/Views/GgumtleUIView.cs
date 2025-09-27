@@ -127,8 +127,28 @@ namespace Features.Ggumtle.Views
                 .AddTo(_disposables);
             viewModel
                 .HoldProgress.Subscribe(progress => {
-                    Debug.Log($"[GgumtleUIView] HoldProgress 변경됨: {progress:F2}");
-                    UpdateProgressBar(progress);
+                    // Debug.Log($"[GgumtleUIView] HoldProgress 변경됨: {progress:F2}");
+                    UpdateProgressBarBasedOnState(progress, isHoldProgress: true);
+                })
+                .AddTo(_disposables);
+
+            // FoodProgress 구독 추가
+            viewModel
+                .FoodProgress.Subscribe(progress => {
+                    // Debug.Log($"[GgumtleUIView] FoodProgress 변경됨: {progress:F2}");
+                    UpdateProgressBarBasedOnState(progress, isHoldProgress: false);
+                })
+                .AddTo(_disposables);
+
+            // State 변경 시 프로그레스바 업데이트
+            viewModel
+                .State.Subscribe(state => {
+                    if (enableDebugLogs)
+                        Debug.Log($"[GgumtleUIView] State 변경됨: {state}, 프로그레스바 업데이트");
+
+                    // 현재 상태에 맞는 프로그레스바만 표시하도록 강제 업데이트
+                    UpdateProgressBarBasedOnState(viewModel.HoldProgress.Value, isHoldProgress: true);
+                    UpdateProgressBarBasedOnState(viewModel.FoodProgress.Value, isHoldProgress: false);
                 })
                 .AddTo(_disposables);
 
@@ -199,6 +219,58 @@ namespace Features.Ggumtle.Views
 
                 if (enableDebugLogs)
                     Debug.Log($"[GgumtleUIView] 진행바 업데이트: {progress:P1}");
+            }
+        }
+
+        private void UpdateProgressBarBasedOnState(float progress, bool isHoldProgress)
+        {
+            if (viewModel == null) return;
+
+            var currentState = viewModel.State.Value;
+
+            // 상태에 따라 어떤 프로그레스를 사용할지 결정
+            bool shouldUseThisProgress = false;
+
+            if (isHoldProgress)
+            {
+                // HoldProgress는 파기, 일반 홀드 상태에서만 사용 (Emerged/Feeding 상태에서는 제외)
+                shouldUseThisProgress = (currentState == Features.Ggumtle.Models.GgumtleState.Buried ||
+                                        currentState == Features.Ggumtle.Models.GgumtleState.Digging) &&
+                                       viewModel.IsHolding.Value;
+            }
+            else
+            {
+                // FoodProgress는 먹이주기 관련 상태에서 사용
+                shouldUseThisProgress = currentState == Features.Ggumtle.Models.GgumtleState.Feeding ||
+                                       currentState == Features.Ggumtle.Models.GgumtleState.Emerged ||
+                                       currentState == Features.Ggumtle.Models.GgumtleState.Emerging;
+            }
+
+            // Fake, Purified 상태에서는 프로그레스바 숨기기
+            bool shouldHideProgressBar = currentState == Features.Ggumtle.Models.GgumtleState.Fake ||
+                                        currentState == Features.Ggumtle.Models.GgumtleState.Purified;
+
+            if (shouldHideProgressBar)
+            {
+                // 프로그레스바 숨기기
+                if (_progressBar != null)
+                {
+                    _progressBar.style.display = DisplayStyle.None;
+                }
+                return;
+            }
+
+            if (shouldUseThisProgress)
+            {
+                // 프로그레스바 보이기
+                if (_progressBar != null)
+                {
+                    _progressBar.style.display = DisplayStyle.Flex;
+                }
+                UpdateProgressBar(progress);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[GgumtleUIView] {(isHoldProgress ? "Hold" : "Food")} 프로그레스 업데이트: {progress:P1}, 상태: {currentState}");
             }
         }
 

@@ -46,7 +46,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   chestName: "\uC0C1\uC790"
-  chestId: 
+  chestId: -1
   chestAnimator: {fileID: 0}
   openEffect: {fileID: 0}
   closeEffect: {fileID: 0}

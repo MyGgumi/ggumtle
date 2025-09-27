@@ -293,7 +293,7 @@ namespace Features.Inventory.ViewModels
 
             try
             {
-                // TODO: 방향 계산 로직 추가
+                // TODO: 멀티플레이어에서 내 플레이어의 시야 방향 계산 필요
                 var direction = Vector3.forward;
                 var success = await _inventoryService.RequestUseItemAsync(
                     slot.ItemId,
@@ -357,24 +357,8 @@ namespace Features.Inventory.ViewModels
             }
         }
 
-        /// <summary>
-        /// 빛젤리 추가
-        /// </summary>
-        public int AddFeeding(int amount)
-        {
-            if (amount <= 0) return 0;
-
-            var oldCount = FeedingCount.Value;
-            _inventoryService.AddItem("feeding", amount);
-            var added = FeedingCount.Value - oldCount;
-
-            if (added > 0)
-            {
-                ShowNotification($"빛젤리 +{added}개");
-            }
-
-            return added;
-        }
+        // AddFeeding 메서드 제거 - 빛젤리는 서버 동기화를 통해서만 업데이트됨
+        // 서버에서 JellyCount 패킷이 오면 자동으로 UI가 업데이트됨
 
         /// <summary>
         /// 인벤토리 UI 토글
@@ -394,13 +378,21 @@ namespace Features.Inventory.ViewModels
         private void OnInventoryUpdated(InventoryData inventory)
         {
             CurrentInventory.Value = inventory;
-            PlayerSlots.Value = inventory.PlayerSlots.ToArray();
+
+            // 새로운 배열 생성해서 ReactiveProperty 변경 감지 보장
+            var newSlots = new InventorySlot[inventory.PlayerSlots.Count];
+            for (int i = 0; i < inventory.PlayerSlots.Count; i++)
+            {
+                newSlots[i] = inventory.PlayerSlots[i].Clone();
+            }
+            PlayerSlots.Value = newSlots;
+
             FeedingCount.Value = inventory.FeedingCount;
 
             UpdateStatusText();
 
             if (_enableDebugLogs)
-                Debug.Log("[InventoryViewModel] 인벤토리 업데이트됨");
+                Debug.Log($"[InventoryViewModel] 인벤토리 업데이트됨: {newSlots.Length}개 슬롯");
         }
 
         private void OnSlotChanged(SlotChangedMessage msg)

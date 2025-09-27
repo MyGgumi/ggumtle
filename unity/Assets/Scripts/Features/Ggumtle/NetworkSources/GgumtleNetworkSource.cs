@@ -112,7 +112,7 @@ namespace Features.Ggumtle.NetworkSources
             }
         }
 
-        public async UniTask<JellyQuitCommand> QuitJellyFeedingAsync()
+        public void QuitJellyFeeding()
         {
             try
             {
@@ -121,16 +121,12 @@ namespace Features.Ggumtle.NetworkSources
                     Debug.Log("[GgumtleNetworkSource] 빛젤리 먹이기 중단 요청");
                 }
 
-                var result = await _networkApi.JellyQuit();
+                _networkApi.JellyQuit();
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log(
-                        $"[GgumtleNetworkSource] 빛젤리 먹이기 중단 응답: Success={result.Success}, Result={result.Result}, LeftJellyCount={result.LeftJellyCount}"
-                    );
+                    Debug.Log("[GgumtleNetworkSource] 빛젤리 먹이기 중단 요청 전송 완료");
                 }
-
-                return result;
             }
             catch (Exception e)
             {

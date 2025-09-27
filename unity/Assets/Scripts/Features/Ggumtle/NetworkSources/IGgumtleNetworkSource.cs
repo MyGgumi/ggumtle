@@ -30,9 +30,8 @@ namespace Features.Ggumtle.NetworkSources
         UniTask<JellyStartCommand> StartJellyFeedingAsync(int ggumtleId);
 
         /// <summary>
-        /// 빛젤리 먹이기 중단
+        /// 빛젤리 먹이기 중단 (Fire-and-forget)
         /// </summary>
-        /// <returns>먹이기 중단 결과</returns>
-        UniTask<JellyQuitCommand> QuitJellyFeedingAsync();
+        void QuitJellyFeeding();
     }
 }

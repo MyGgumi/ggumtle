@@ -28,12 +28,14 @@ namespace Features.Ggumtle.Services
         private readonly ISubscriber<GgumtleDiggingDoneMessage> _diggingDoneSubscriber;
         private readonly ISubscriber<GgumtleJellyForceQuitMessage> _jellyForceQuitSubscriber;
         private readonly ISubscriber<GgumtleSpawnMessage> _spawnSubscriber;
+        private readonly ISubscriber<GgumtleJellyEatenMessage> _jellyEatenSubscriber;
 
         #endregion
 
         #region Private Fields
 
         private readonly Dictionary<int, GgumtleData> _ggumtleDataMap = new();
+        private readonly Dictionary<int, int> _ggumtleJellyEatenMap = new(); // 꿈틀이별 먹은 젤리 개수 저장
         private readonly bool _enableDebugLogs = true;
         private readonly List<IDisposable> _disposables = new();
 
@@ -50,7 +52,8 @@ namespace Features.Ggumtle.Services
             IGgumtleNetworkSource networkSource,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
             ISubscriber<GgumtleJellyForceQuitMessage> jellyForceQuitSubscriber,
-            ISubscriber<GgumtleSpawnMessage> spawnSubscriber
+            ISubscriber<GgumtleSpawnMessage> spawnSubscriber,
+            ISubscriber<GgumtleJellyEatenMessage> jellyEatenSubscriber
         )
         {
             _stateChangePublisher = stateChangePublisher;
@@ -61,13 +64,57 @@ namespace Features.Ggumtle.Services
             _diggingDoneSubscriber = diggingDoneSubscriber;
             _jellyForceQuitSubscriber = jellyForceQuitSubscriber;
             _spawnSubscriber = spawnSubscriber;
+            _jellyEatenSubscriber = jellyEatenSubscriber;
 
             // 네트워크 이벤트 구독
             _disposables.Add(_diggingDoneSubscriber.Subscribe(OnDiggingDoneReceived));
             _disposables.Add(_jellyForceQuitSubscriber.Subscribe(OnJellyForceQuitReceived));
             _disposables.Add(_spawnSubscriber.Subscribe(OnSpawnReceived));
+            _disposables.Add(_jellyEatenSubscriber.Subscribe(OnJellyEatenReceived));
+
+            // 기본 꿈틀이 3개 초기화 (ID: 0, 1, 2)
+            InitializeDefaultGgumtles();
 
             DebugLog("[GgumtleServiceImpl] 서비스 초기화 완료");
+        }
+
+        #endregion
+
+        #region Initialization
+
+        /// <summary>
+        /// 기본 꿈틀이 3개 초기화 (ID: 0, 1, 2)
+        /// </summary>
+        private void InitializeDefaultGgumtles()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                _ggumtleJellyEatenMap[i] = 0; // 초기 먹은 젤리 개수는 0
+                DebugLog($"[GgumtleServiceImpl] 꿈틀이 {i} 젤리 개수 초기화: 0");
+            }
+        }
+
+        #endregion
+
+        #region Jelly Management
+
+        /// <summary>
+        /// 특정 꿈틀이가 먹은 젤리 개수 조회
+        /// </summary>
+        public int GetGgumtleJellyEaten(int ggumtleId)
+        {
+            return _ggumtleJellyEatenMap.TryGetValue(ggumtleId, out int eatenCount) ? eatenCount : 0;
+        }
+
+        /// <summary>
+        /// 특정 꿈틀이의 젤리 개수 업데이트 (서버에서 받은 데이터)
+        /// </summary>
+        private void UpdateGgumtleJellyEaten(int ggumtleId, int eatenCount)
+        {
+            int previousCount = GetGgumtleJellyEaten(ggumtleId);
+            _ggumtleJellyEatenMap[ggumtleId] = eatenCount;
+
+            DebugLog($"[GgumtleServiceImpl] 꿈틀이 {ggumtleId} 젤리 개수 업데이트: {previousCount} → {eatenCount}");
         }
 
         #endregion
@@ -508,33 +555,14 @@ namespace Features.Ggumtle.Services
         /// <summary>
         /// 네트워크를 통해 빛젤리 먹이기 중단
         /// </summary>
-        public async UniTask<bool> StopNetworkFeedingAsync()
+        public bool StopNetworkFeeding()
         {
+            DebugLog("[GgumtleServiceImpl] StopNetworkFeeding 시작");
             try
             {
-                var result = await _networkSource.QuitJellyFeedingAsync();
-
-                if (result.Success)
-                {
-                    DebugLog(
-                        $"[GgumtleServiceImpl] 네트워크 먹이기 중단 성공, 남은 젤리: {result.LeftJellyCount}"
-                    );
-                    // 현재 먹이기 중인 꿈틀이 찾아서 홀드 취소
-                    foreach (var kvp in _ggumtleDataMap)
-                    {
-                        if (kvp.Value.currentState == GgumtleState.Feeding)
-                        {
-                            CancelHold(kvp.Key.ToString());
-                            break;
-                        }
-                    }
-                    return true;
-                }
-                else
-                {
-                    DebugLog($"[GgumtleServiceImpl] 네트워크 먹이기 중단 실패: {result.Result}");
-                    return false;
-                }
+                _networkSource.QuitJellyFeeding();
+                DebugLog("[GgumtleServiceImpl] 네트워크 먹이기 중단 요청 전송 완료");
+                return true;
             }
             catch (Exception e)
             {
@@ -720,6 +748,20 @@ namespace Features.Ggumtle.Services
             }
         }
 
+        private void OnJellyEatenReceived(GgumtleJellyEatenMessage message)
+        {
+            try
+            {
+                DebugLog(
+                    $"[GgumtleServiceImpl] 꿈틀이 먹은 젤리 개수 업데이트 수신: GgumtleId={message.GgumtleId}, EatenCount={message.EatenCount}"
+                );
+                UpdateGgumtleJellyEaten(message.GgumtleId, message.EatenCount);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[GgumtleServiceImpl] 꿈틀이 먹은 젤리 개수 업데이트 처리 실패: {e.Message}");
+            }
+        }
 
         #endregion
 

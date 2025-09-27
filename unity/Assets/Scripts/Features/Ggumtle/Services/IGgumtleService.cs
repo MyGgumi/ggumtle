@@ -74,6 +74,15 @@ namespace Features.Ggumtle.Services
 
         #endregion
 
+        #region Jelly Management
+
+        /// <summary>
+        /// 특정 꿈틀이가 먹은 젤리 개수 조회
+        /// </summary>
+        int GetGgumtleJellyEaten(int ggumtleId);
+
+        #endregion
+
         #region Feeding System
 
         /// <summary>
@@ -111,9 +120,9 @@ namespace Features.Ggumtle.Services
         UniTask<bool> StartNetworkFeedingAsync(string ggumtleId);
 
         /// <summary>
-        /// 네트워크를 통해 빛젤리 먹이기 중단
+        /// 네트워크를 통해 빛젤리 먹이기 중단 (Fire-and-forget)
         /// </summary>
-        UniTask<bool> StopNetworkFeedingAsync();
+        bool StopNetworkFeeding();
 
         /// <summary>
         /// 서버에서 파기 완료 이벤트 처리

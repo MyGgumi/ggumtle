@@ -15,6 +15,8 @@
         DiggingQuit = 102,
         JellyStart = 110,
         JellyQuit = 112,
+        JellyCount = 121,
+        GgumtleJellyEaten = 122,
         MongdungAttack = 60,
         MonggingRevivalStart = 62,
         MonggingRevivalStop = 65,

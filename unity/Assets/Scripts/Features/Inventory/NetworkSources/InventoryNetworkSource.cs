@@ -38,10 +38,6 @@ namespace Features.Inventory.NetworkSources
 
                 _networkApi.GetItem(chestId, slotIndex);
 
-                if (_enableDebugLogs)
-                {
-                    Debug.Log("[InventoryNetworkSource] 아이템 획득 요청 전송 완료");
-                }
             }
             catch (Exception e)
             {
@@ -77,21 +73,21 @@ namespace Features.Inventory.NetworkSources
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[InventoryNetworkSource] 아이템 사용 요청: ItemId={itemId}, Direction={direction}");
+                    Debug.Log($"[InventoryNetworkSource] 인벤토리 아이템 사용 요청: ItemId={itemId}, Direction={direction}");
                 }
 
                 var result = await _networkApi.MonggingItemUse(direction, itemId);
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[InventoryNetworkSource] 아이템 사용 응답: Success={result.Success}, Result={result.Result}");
+                    Debug.Log($"[InventoryNetworkSource] 인벤토리 아이템 사용 응답: Success={result.Success}, Result={result.Result}");
                 }
 
                 return result.Success;
             }
             catch (Exception e)
             {
-                Debug.LogError($"[InventoryNetworkSource] 아이템 사용 실패: {e.Message}");
+                Debug.LogError($"[InventoryNetworkSource] 인벤토리 아이템 사용 실패: {e.Message}");
                 return false;
             }
         }

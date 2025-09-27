@@ -378,6 +378,13 @@ namespace Features.Ggumtle.Views
             if (ggumtleState.HasValue)
             {
                 _viewModel.State.Value = ggumtleState.Value;
+
+                // Fake 상태일 때 프로그레스바 숨기기
+                if (ggumtleState.Value == GgumtleState.Fake)
+                {
+                    _viewModel.HoldProgress.Value = 0f;
+                    _viewModel.FoodProgress.Value = 0f;
+                }
             }
         }
 
@@ -403,12 +410,14 @@ namespace Features.Ggumtle.Views
                     childAnimator.SetBool("IsFeeding", false);
                     break;
 
-                case 10: // 나와 있음
+                case 10: // 나와 있음 (PullUp)
                     childAnimator.SetTrigger("Emerge");
+                    childAnimator.SetBool("IsFeeding", false);  // Feeding 중단
                     break;
 
                 case 11: // 짭꿈틀
                     childAnimator.SetBool("IsFake", true);
+                    
                     break;
 
                 case 20: // 먹는 중
@@ -492,10 +501,20 @@ namespace Features.Ggumtle.Views
         private void OnStateDigging()
         {
             // 파내는 중 상태
+            if (enableDebugLogs)
+                Debug.Log($"[GgumtleGameObject] OnStateDigging 호출됨 - Animator: {ggumtleAnimator != null}, Trigger: '{diggingAnimationTrigger}'");
+
             if (ggumtleAnimator != null && !string.IsNullOrEmpty(diggingAnimationTrigger))
             {
                 ggumtleAnimator.SetTrigger(diggingAnimationTrigger);
                 ggumtleAnimator.SetBool("IsDigging", true);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[GgumtleGameObject] 파기 애니메이션 실행: {diggingAnimationTrigger}");
+            }
+            else
+            {
+                Debug.LogWarning($"[GgumtleGameObject] 파기 애니메이션 실행 실패 - Animator: {ggumtleAnimator != null}, Trigger: '{diggingAnimationTrigger}'");
             }
 
             if (diggingEffect != null)
@@ -679,6 +698,22 @@ namespace Features.Ggumtle.Views
 
 
         [ContextMenu("Log Current State")]
+        /// <summary>
+        /// 현재 꿈틀이 상태 반환
+        /// </summary>
+        public GgumtleState GetCurrentState()
+        {
+            // GgumtleService에서 현재 상태 가져오기
+            var data = _ggumtleService?.GetGgumtleData(GgumtleId.ToString());
+            if (data != null)
+            {
+                return data.currentState;
+            }
+
+            // 기본값 반환
+            return GgumtleState.Buried;
+        }
+
         public void LogCurrentState()
         {
             if (_viewModel == null)

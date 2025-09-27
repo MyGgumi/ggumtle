@@ -64,6 +64,7 @@ namespace Features.MobileControls.ViewModels
         private readonly ISubscriber<GgumtleLeftMessage> _ggumtleLeftSubscriber;
         private readonly ISubscriber<ChestDetectedMessage> _chestDetectedSubscriber;
         private readonly ISubscriber<ChestLeftMessage> _chestLeftSubscriber;
+        private readonly ISubscriber<ChestClosedMessage> _chestClosedSubscriber;
 
         #endregion
 
@@ -76,7 +77,7 @@ namespace Features.MobileControls.ViewModels
         private bool _isGgumtleNearby = false;
         private bool _isChestNearby = false;
         private string _currentGgumtleId = null;
-        private int _currentChestId = 0;
+        private int _currentChestId = -1;
 
         #endregion
 
@@ -95,7 +96,8 @@ namespace Features.MobileControls.ViewModels
             ISubscriber<GgumtleDetectedMessage> ggumtleDetectedSubscriber,
             ISubscriber<GgumtleLeftMessage> ggumtleLeftSubscriber,
             ISubscriber<ChestDetectedMessage> chestDetectedSubscriber,
-            ISubscriber<ChestLeftMessage> chestLeftSubscriber
+            ISubscriber<ChestLeftMessage> chestLeftSubscriber,
+            ISubscriber<ChestClosedMessage> chestClosedSubscriber
         )
         {
             _data = new MobileControlsData();
@@ -112,6 +114,7 @@ namespace Features.MobileControls.ViewModels
             _ggumtleLeftSubscriber = ggumtleLeftSubscriber;
             _chestDetectedSubscriber = chestDetectedSubscriber;
             _chestLeftSubscriber = chestLeftSubscriber;
+            _chestClosedSubscriber = chestClosedSubscriber;
 
             UnityEngine.Debug.Log($"[MobileControlsViewModel] VContainer 의존성 주입 완료 - JoystickPublisher: {joystickInputPublisher != null}");
 
@@ -144,6 +147,10 @@ namespace Features.MobileControls.ViewModels
 
             _chestLeftSubscriber
                 .Subscribe(OnChestLeft)
+                .AddTo(_disposables);
+
+            _chestClosedSubscriber
+                .Subscribe(OnChestClosed)
                 .AddTo(_disposables);
 
             // 데이터 상태를 ReactiveProperty와 동기화
@@ -439,11 +446,23 @@ namespace Features.MobileControls.ViewModels
             if (_currentChestId == message.ChestId)
             {
                 _isChestNearby = false;
-                _currentChestId = 0;
+                _currentChestId = -1;
 
                 UpdateInteractButtonVisibility();
 
                 UnityEngine.Debug.Log($"[MobileControlsViewModel] 상자 벗어남: {message.ChestId}");
+            }
+        }
+
+        /// <summary>
+        /// 상자 닫힘 메시지 처리
+        /// </summary>
+        private void OnChestClosed(ChestClosedMessage message)
+        {
+            if (_currentChestId == message.ChestId)
+            {
+                // 상자가 닫혔지만 아직 근처에 있을 수 있으므로 상태만 초기화
+                UnityEngine.Debug.Log($"[MobileControlsViewModel] 상자 닫힘 처리: {message.ChestId} (현재 근처: {_isChestNearby})");
             }
         }
 

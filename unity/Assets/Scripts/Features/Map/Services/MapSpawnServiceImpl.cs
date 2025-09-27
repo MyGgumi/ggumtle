@@ -24,6 +24,7 @@ namespace Features.Map.Services
     {
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IGgumtleService _ggumtleService;
+        private readonly Features.Chest.Services.IChestService _chestService;
         private readonly bool _enableDebugLogs = false;
 
         // 설정할 데이터
@@ -46,10 +47,14 @@ namespace Features.Map.Services
         public event Action OnAllObjectsSpawned;
 
         [Inject]
-        public MapSpawnServiceImpl(IAddressableLoadService addressableLoadService, IGgumtleService ggumtleService)
+        public MapSpawnServiceImpl(
+            IAddressableLoadService addressableLoadService,
+            IGgumtleService ggumtleService,
+            Features.Chest.Services.IChestService chestService)
         {
             _addressableLoadService = addressableLoadService ?? throw new ArgumentNullException(nameof(addressableLoadService));
             _ggumtleService = ggumtleService ?? throw new ArgumentNullException(nameof(ggumtleService));
+            _chestService = chestService ?? throw new ArgumentNullException(nameof(chestService));
 
             if (_enableDebugLogs)
                 Debug.Log("[MapSpawnService] 초기화 완료");
@@ -136,11 +141,20 @@ namespace Features.Map.Services
                 if (_enableDebugLogs)
                     Debug.Log($"[MapSpawnService] 상자 동적 생성 시작: {chests.Count}개");
 
+                // 1. 먼저 서버 상자 데이터를 ChestService에 일괄 등록
+                var serverChests = chests.Select(c => new Networks.Rooms.Domains.ChestPacket(c.Id,
+                    (int)(c.Position.X * Networks.Rooms.Domains.ChestPacket.Unit),
+                    (int)(c.Position.Y * Networks.Rooms.Domains.ChestPacket.Unit),
+                    (int)(c.Position.Z * Networks.Rooms.Domains.ChestPacket.Unit))).ToArray();
+
+                _chestService.RegisterChestsFromServer(serverChests);
+
+                // 2. GameObject들 생성
                 var positions = chests.Select(c => c.ToVector3()).ToList();
                 var spawnedChests = await _addressableLoadService.SpawnMultipleAsync<Features.Chest.Views.ChestGameObject>(
                     CHEST_PREFAB_KEY, positions, parent);
 
-                // ID 설정 및 등록
+                // 3. GameObject들과 서버 데이터 연결
                 for (int i = 0; i < spawnedChests.Count && i < chests.Count; i++)
                 {
                     var chestData = chests[i];
@@ -149,6 +163,9 @@ namespace Features.Map.Services
                     // ID 설정
                     SetChestId(chestObject, chestData.Id);
 
+                    // ChestService에 GameObject 연결
+                    _chestService.UpdateChestGameObject(chestData.Id, chestObject.gameObject);
+
                     // 관리 리스트에 추가
                     _spawnedChests.Add(chestObject);
 
@@ -156,7 +173,7 @@ namespace Features.Map.Services
                     OnObjectSpawned?.Invoke("Chest", chestObject.gameObject);
 
                     if (_enableDebugLogs)
-                        Debug.Log($"[MapSpawnService] 상자 생성 완료: ID={chestData.Id}, Position={chestData.ToVector3()}");
+                        Debug.Log($"[MapSpawnService] 상자 생성 및 연결 완료: ID={chestData.Id}, Position={chestData.ToVector3()}");
                 }
 
                 if (_enableDebugLogs)

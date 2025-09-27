@@ -171,12 +171,23 @@ namespace Features.Chest.Views
             viewModel.IsChestOpen
                 .Subscribe(isOpen =>
                 {
-                    if (enableDebugLogs)
-                        Debug.Log($"[ChestUIView] 상자 {(isOpen ? "열림" : "닫힘")}");
                     if (isOpen)
+                    {
                         ShowChestUI();
+                        // UI Toolkit 렌더링 지연 해결: 다음 프레임에서 업데이트
+                        _root.schedule.Execute(() => {
+                            UpdateAllSlots();
+                        }).ExecuteLater(16); // 1프레임 후 (16ms)
+
+                        if (enableDebugLogs)
+                            Debug.Log("[ChestUIView] 상자 열림 → UI 표시 → 슬롯 업데이트 스케줄링");
+                    }
                     else
+                    {
                         HideChestUI();
+                        if (enableDebugLogs)
+                            Debug.Log("[ChestUIView] 상자 닫힘 → UI 숨김");
+                    }
                 })
                 .AddTo(_disposables);
 
@@ -191,13 +202,14 @@ namespace Features.Chest.Views
                 })
                 .AddTo(_disposables);
 
-            // 슬롯 데이터 변경
+            // 슬롯 데이터 변경 (1프레임 지연으로 렌더링 지연 해결)
             viewModel.CurrentChestSlots
                 .Subscribe(slots =>
                 {
-                    if (enableDebugLogs)
-                        Debug.Log($"[ChestUIView] 슬롯 업데이트: {slots?.Length ?? 0}개");
-                    UpdateSlots(slots);
+                    // UI Toolkit 렌더링 지연 해결: 다음 프레임에서 업데이트
+                    _root.schedule.Execute(() => {
+                        UpdateChestSlots(slots);
+                    }).ExecuteLater(16); // 1프레임 후 (16ms)
                 })
                 .AddTo(_disposables);
 
@@ -232,9 +244,6 @@ namespace Features.Chest.Views
                 _chestContainer.style.display = DisplayStyle.Flex;
                 _chestContainer.RemoveFromClassList("fade-out");
                 _chestContainer.AddToClassList("fade-in");
-
-                if (enableDebugLogs)
-                    Debug.Log("[ChestUIView] 상자 UI 표시");
             }
         }
 
@@ -245,25 +254,36 @@ namespace Features.Chest.Views
                 _chestContainer.style.display = DisplayStyle.None;
                 _chestContainer.RemoveFromClassList("fade-in");
                 _chestContainer.AddToClassList("fade-out");
-
-                if (enableDebugLogs)
-                    Debug.Log("[ChestUIView] 상자 UI 숨김");
             }
         }
 
-        private void UpdateSlots(object[] slots)
+        private void UpdateChestSlots(Features.Chest.Models.ChestSlot[] slots)
         {
             if (slots == null) return;
 
-            for (int i = 0; i < slots.Length && i < _slotElements.Count; i++)
+            for (int i = 0; i < _slotElements.Count && i < slots.Length; i++)
             {
-                // TODO: 서버 슬롯 데이터 파싱
-                // 임시로 빈 슬롯으로 처리
-                UpdateSlotUI(i, "", 0);
+                var slot = slots[i];
+                if (!slot.isEmpty && int.TryParse(slot.itemId, out int itemId) && itemId > 0)
+                {
+                    var itemDef = Features.Item.Services.ItemDefinitionService.GetItemById(itemId);
+                    if (itemDef != null)
+                    {
+                        UpdateSlotUI(i, slot.itemId, slot.count, itemDef.ItemName, itemDef.ItemIcon);
+                    }
+                    else
+                    {
+                        UpdateSlotUI(i, slot.itemId, slot.count, $"Unknown Item ({itemId})", null);
+                    }
+                }
+                else
+                {
+                    UpdateSlotUI(i, "", 0);
+                }
             }
         }
 
-        private void UpdateSlotUI(int index, string itemId, int count)
+        private void UpdateSlotUI(int index, string itemId, int count, string itemName = null, Sprite itemIcon = null)
         {
             if (index >= _slotElements.Count) return;
 
@@ -280,8 +300,19 @@ namespace Features.Chest.Views
                 icon.style.display = isEmpty ? DisplayStyle.None : DisplayStyle.Flex;
                 if (!isEmpty)
                 {
-                    SetItemIcon(icon, itemId);
-                    icon.tooltip = $"{itemId} x{count}";
+                    // 직접 전달된 아이콘이 있으면 사용, 없으면 ItemDefinitionService에서 조회
+                    if (itemIcon != null)
+                    {
+                        icon.style.backgroundImage = new StyleBackground(itemIcon);
+                    }
+                    else
+                    {
+                        SetItemIcon(icon, itemId);
+                    }
+
+                    // 툴팁에 아이템 이름 표시
+                    string displayName = itemName ?? itemId;
+                    icon.tooltip = count > 1 ? $"{displayName} x{count}" : displayName;
                 }
                 else
                 {
@@ -299,7 +330,7 @@ namespace Features.Chest.Views
         {
             if (viewModel?.CurrentChestSlots?.Value != null)
             {
-                UpdateSlots(viewModel.CurrentChestSlots.Value);
+                UpdateChestSlots(viewModel.CurrentChestSlots.Value);
             }
         }
 
@@ -357,11 +388,17 @@ namespace Features.Chest.Views
             if (enableDebugLogs)
                 Debug.Log($"[ChestUIView] 슬롯 {slotIndex} 클릭됨");
 
-            // 인벤토리 서비스를 통해 아이템 전송
-            if (_inventoryService != null && viewModel != null)
+            // ViewModel을 통해 클라이언트 체크와 함께 처리
+            if (viewModel != null)
             {
-                var chestId = viewModel.CurrentChestId.Value;
-                _inventoryService.RequestItemFromChest(chestId, slotIndex);
+                if (enableDebugLogs)
+                    Debug.Log($"[ChestUIView] ViewModel을 통해 아이템 가져오기 시도: 슬롯={slotIndex}");
+                viewModel.TakeItemFromChest(slotIndex);
+            }
+            else
+            {
+                if (enableDebugLogs)
+                    Debug.LogError($"[ChestUIView] ViewModel이 없어서 아이템 가져오기 불가");
             }
         }
 

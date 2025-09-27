@@ -3,7 +3,6 @@
 .inventory-slot {
     position: absolute;
     background-size: contain;
-    picking-mode: position;
 }
 
 .item-image {
@@ -24,6 +23,18 @@
     height: 100px;
 }
 
+/* 큰 슬롯의 아이템 이미지 스타일 */
+.slot-large .item-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
 .slot-small {
     width: 50px;
     height: 50px;
@@ -39,6 +50,18 @@
     top: 80px;
 }
 
+/* 작은 슬롯의 아이템 이미지 스타일 - 슬롯보다 작게 */
+.slot-small .item-image {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    right: 2px;
+    bottom: 2px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
 /* 인벤토리 아이템 개수 표시 */
 .item-counter {
     position: absolute;
@@ -48,7 +71,8 @@
     height: 28px;
     background-color: rgba(255, 255, 255, 0.9);
     border-radius: 50%;
-    border: 2px solid rgba(0, 0, 0, 0.3);
+    border-width: 2px;
+    border-color: rgba(0, 0, 0, 0.3);
     justify-content: center;
     align-items: center;
 }
@@ -60,4 +84,16 @@
     -unity-text-align: middle-center;
     margin: 0;
     padding: 0;
+}
+
+/* 작은 슬롯의 카운터 크기 조정 */
+.slot-small .item-counter {
+    width: 20px;
+    height: 20px;
+    right: 1px;
+    bottom: 1px;
+}
+
+.slot-small .item-count-text {
+    font-size: 12px;
 }

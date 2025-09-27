@@ -25,6 +25,8 @@ namespace Networks.Factories
             }
             var itemId = buffer.ReadInt();
 
+            UnityEngine.Debug.Log($"[GetItemFactory] 서버 응답 - Result: {result}, PlayerId: {playerId}, ChestId: {chestId}, ItemId: {itemId}, ItemCount: {itemSize}, Items: [{string.Join(", ", items)}]");
+
             return new GetItemCommand(result, playerId, chestId, itemId, items);
         }
     }

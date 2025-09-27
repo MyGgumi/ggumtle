@@ -39,7 +39,11 @@ namespace Networks.Pipelines
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogError($"패킷 처리 중 오류 발생: {ex.Message}");
+                    Debug.LogError($"패킷 처리 중 오류 발생: {ex.Message}\n스택 트레이스: {ex.StackTrace}");
+                    if (ex.InnerException != null)
+                    {
+                        Debug.LogError($"내부 예외: {ex.InnerException.Message}\n내부 스택 트레이스: {ex.InnerException.StackTrace}");
+                    }
                 }
             });
         }

@@ -94,12 +94,36 @@ namespace Features.Inventory.Services
 
         private void OnItemAdded(ItemAddedMessage msg)
         {
-            if (!msg.Success) return;
+            try
+            {
+                if (_enableDebugLogs)
+                    Debug.Log($"[디버그] ItemAddedMessage 수신: 아이템ID={msg.ItemId}, 성공={msg.Success}, 개수={msg.Count}");
 
-            if (_enableDebugLogs)
-                Debug.Log($"[InventoryService] 아이템 추가: {msg.ItemId} x{msg.Count}");
+                if (!msg.Success)
+                {
+                    if (_enableDebugLogs)
+                        Debug.Log($"[InventoryService] 아이템 추가 실패 무시: {msg.ItemId}");
+                    return;
+                }
 
-            AddItem(msg.ItemId, msg.Count, msg.SlotIndex);
+                if (_enableDebugLogs)
+                    Debug.Log($"[InventoryService] 아이템 추가 시도: {msg.ItemId} x{msg.Count}");
+
+                bool result = AddItem(msg.ItemId, msg.Count, msg.SlotIndex);
+
+                if (_enableDebugLogs)
+                    Debug.Log($"[InventoryService] 아이템 추가 결과: {result}");
+
+                if (!result)
+                {
+                    if (_enableDebugLogs)
+                        Debug.LogWarning($"[InventoryService] 아이템 추가 실패: {msg.ItemId} - 인벤토리가 가득참");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[InventoryService] OnItemAdded 처리 중 예외 발생: {e.Message}\n{e.StackTrace}");
+            }
 
             // 전송 완료 메시지 발행
             _itemTransferredPublisher.Publish(new ItemTransferredMessage
@@ -155,9 +179,39 @@ namespace Features.Inventory.Services
                 return false;
             }
 
+            // 빛젤리(ID: 1)는 Feeding으로 처리
+            if (numericItemId == 1)
+            {
+                int addedAmount = AddFeeding(count);
+                if (_enableDebugLogs)
+                    Debug.Log($"[InventoryService] 빛젤리 추가: {addedAmount}/{count}");
+                return addedAmount > 0;
+            }
+
+            // MaxStack 제한 확인
+            var itemDef = Features.Item.Services.ItemDefinitionService.GetItemById(numericItemId);
+            if (itemDef == null)
+            {
+                if (_enableDebugLogs)
+                    Debug.LogError($"[InventoryServiceImpl] 아이템 정의를 찾을 수 없음: {numericItemId}");
+                return false;
+            }
+
             // 특정 슬롯 지정
             if (slotIndex >= 0)
             {
+                var slot = inventory.PlayerSlots[slotIndex];
+                if (!slot.IsEmpty && slot.ItemId == numericItemId)
+                {
+                    // 현재 개수 + 추가할 개수가 MaxStack을 초과하는지 확인
+                    if (slot.Count + count > itemDef.MaxStack)
+                    {
+                        if (_enableDebugLogs)
+                            Debug.Log($"[InventoryService] MaxStack 초과로 획득 실패: {slot.Count + count}/{itemDef.MaxStack}");
+                        return false;
+                    }
+                }
+
                 if (inventory.AddToSlot(slotIndex, numericItemId, count))
                 {
                     _currentInventory.ForceNotify();
@@ -167,29 +221,46 @@ namespace Features.Inventory.Services
                 return false;
             }
 
-            // 빈 슬롯 찾기
-            var emptySlot = GetEmptySlotIndex();
-            if (emptySlot >= 0)
-            {
-                if (inventory.AddToSlot(emptySlot, numericItemId, count))
-                {
-                    _currentInventory.ForceNotify();
-                    PublishSlotChanged(emptySlot);
-                    return true;
-                }
-            }
-
-            // 같은 아이템이 있는 슬롯에 추가
+            // 같은 아이템이 있는 슬롯에 먼저 추가 시도
             for (int i = 0; i < inventory.PlayerSlots.Count; i++)
             {
-                if (inventory.PlayerSlots[i].ItemId == numericItemId)
+                var slot = inventory.PlayerSlots[i];
+                if (slot.ItemId == numericItemId)
                 {
+                    // MaxStack 확인
+                    if (slot.Count + count > itemDef.MaxStack)
+                    {
+                        if (_enableDebugLogs)
+                            Debug.Log($"[InventoryService] MaxStack 초과로 획득 실패: {slot.Count + count}/{itemDef.MaxStack}");
+                        return false;
+                    }
+
                     if (inventory.AddToSlot(i, numericItemId, count))
                     {
                         _currentInventory.ForceNotify();
                         PublishSlotChanged(i);
                         return true;
                     }
+                }
+            }
+
+            // 같은 아이템이 없거나 스택이 가득 찬 경우, 빈 슬롯 찾기
+            var emptySlot = GetEmptySlotIndex();
+            if (emptySlot >= 0)
+            {
+                // 새로운 슬롯에서도 MaxStack 확인
+                if (count > itemDef.MaxStack)
+                {
+                    if (_enableDebugLogs)
+                        Debug.Log($"[InventoryService] MaxStack 초과로 획득 실패: {count}/{itemDef.MaxStack}");
+                    return false;
+                }
+
+                if (inventory.AddToSlot(emptySlot, numericItemId, count))
+                {
+                    _currentInventory.ForceNotify();
+                    PublishSlotChanged(emptySlot);
+                    return true;
                 }
             }
 
@@ -323,11 +394,15 @@ namespace Features.Inventory.Services
         {
             var inventory = _currentInventory.Value;
             var oldCount = inventory.FeedingCount;
-            inventory.FeedingCount += amount;
+
+            // 서버에서 받은 최신 값(_feedingCount.Value)을 기준으로 더함
+            // 이렇게 하면 로컬 값에 누적되지 않고 서버 기준값에서 더함
+            _feedingCount.Value += amount;
+            inventory.FeedingCount = _feedingCount.Value;
             _currentInventory.ForceNotify();
 
             if (_enableDebugLogs)
-                Debug.Log($"[InventoryServiceImpl] Feeding 추가: {oldCount} → {inventory.FeedingCount} (+{amount})");
+                Debug.Log($"[InventoryServiceImpl] Feeding 추가 (서버 기준값 사용): {oldCount} → {inventory.FeedingCount} (+{amount}, 서버 기준값: {_feedingCount.Value})");
 
             return amount;
         }

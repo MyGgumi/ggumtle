@@ -1,5 +1,6 @@
 using System;
 using Features.Feeding.Models;
+using Features.Feeding.Messages;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -14,12 +15,25 @@ namespace Features.Feeding.Services
     {
         private readonly ReactiveProperty<FeedingData> _currentFeeding = new(new FeedingData());
         private readonly CompositeDisposable _disposables = new();
-
-        // MessagePipe 구독
-        [Inject] private readonly ISubscriber<object> _subscriber;
-        [Inject] private readonly IPublisher<object> _publisher;
+        private Features.Inventory.Services.IInventoryService _inventoryService;
 
         private bool enableDebugLogs = true;
+
+        [Inject]
+        public void Construct(
+            ISubscriber<JellyCountUpdateMessage> jellyCountSubscriber,
+            Features.Inventory.Services.IInventoryService inventoryService)
+        {
+            _inventoryService = inventoryService;
+
+            // 젤리 개수 업데이트 메시지 구독
+            jellyCountSubscriber
+                .Subscribe(OnJellyCountUpdate)
+                .AddTo(_disposables);
+
+            if (enableDebugLogs)
+                Debug.Log("[FeedingService] JellyCountUpdateMessage 구독 완료");
+        }
 
         #region IFeedingService Implementation
 
@@ -79,8 +93,14 @@ namespace Features.Feeding.Services
             {
                 _currentFeeding.OnNext(currentData);
 
+                // InventoryService도 함께 동기화 (중요!)
+                if (_inventoryService != null)
+                {
+                    _inventoryService.SyncFeedingCount(count);
+                }
+
                 if (enableDebugLogs)
-                    Debug.Log($"[FeedingService] 먹이 개수 설정: {oldCount} → {currentData.FeedingCount}");
+                    Debug.Log($"[FeedingService] 먹이 개수 설정 및 InventoryService 동기화: {oldCount} → {currentData.FeedingCount}");
 
                 // 먹이 개수 변경 이벤트 발송
                 // _publisher.Publish(new FeedingCountChangedMessage(currentData.FeedingCount));
@@ -129,6 +149,29 @@ namespace Features.Feeding.Services
 
             if (enableDebugLogs)
                 Debug.Log("[FeedingService] 먹이 데이터 초기화");
+        }
+
+        #endregion
+
+        #region Message Handlers
+
+        /// <summary>
+        /// 서버에서 젤리 개수 업데이트 메시지 처리
+        /// </summary>
+        private void OnJellyCountUpdate(JellyCountUpdateMessage message)
+        {
+            try
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[FeedingService] 서버에서 젤리 개수 업데이트 수신: {message.JellyCount}");
+
+                // 서버에서 받은 젤리 개수로 동기화
+                SetFeedingCount(message.JellyCount);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[FeedingService] 젤리 개수 업데이트 처리 중 오류: {e.Message}");
+            }
         }
 
         #endregion

@@ -12,7 +12,7 @@
     min-height: 340px;
     background-image: url('project://database/Assets/UI/Images/chest_panel_bg.png');
     /* fallback 배경색 추가 */
-    background-color: rgba(40, 45, 50, 0.95);
+    
     -unity-background-scale-mode: stretch-to-fill;
     -unity-slice-left: 12;
     -unity-slice-top: 0;
@@ -22,9 +22,7 @@
     justify-content: center;
     align-items: center;
     padding: 20px 0px 8px 0px;
-    border-width: 2px;
-    border-color: rgba(18, 79, 107, 1);
-    border-radius: 8px;
+    
     /* display 명시적 설정 */
     display: flex;
 }
@@ -48,7 +46,7 @@
     width: 90px;
     height: 90px;
     margin: 3px;
-    background-color: rgba(30, 35, 40, 0.9);
+    background-color: rgba(30, 35, 40, 0.4);
     border-width: 2px;
     border-color: rgba(18, 79, 107, 1);
     border-radius: 4px;

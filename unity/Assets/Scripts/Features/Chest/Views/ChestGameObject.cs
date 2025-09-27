@@ -21,7 +21,7 @@ namespace Features.Chest.Views
         private string chestName = "상자";
 
         [SerializeField]
-        private int chestId; // 고유 ID (Inspector에서 설정 또는 자동 생성)
+        private int chestId = -1; // 고유 ID (Inspector에서 설정 또는 자동 생성)
 
         // InteractionTriggerDetector에서 접근하기 위한 public property
         public int ChestId => chestId;
@@ -72,6 +72,27 @@ namespace Features.Chest.Views
             if (enableDebugLogs)
             {
                 Debug.Log($"[ChestGameObject] VContainer 의존성 주입 완료: {gameObject.name}");
+            }
+        }
+
+        /// <summary>
+        /// 동적 생성 시 ID를 설정하고 서비스에 등록하는 메서드
+        /// MapSpawnService에서 호출
+        /// </summary>
+        public void SetChestIdAndRegister(int id)
+        {
+            chestId = id;
+            if (enableDebugLogs)
+                Debug.Log($"[ChestGameObject] SetChestIdAndRegister - ID 설정: {id}");
+
+            // 이미 초기화되었다면 재등록
+            if (_isInitialized && _chestService != null)
+            {
+                // 기존 등록 해제 후 재등록
+                _chestService.UnregisterChest(chestId);
+                RegisterToService();
+                if (enableDebugLogs)
+                    Debug.Log($"[ChestGameObject] 재등록 완료 - ID: {id}");
             }
         }
 
@@ -166,30 +187,11 @@ namespace Features.Chest.Views
         private void InitializeBasicComponents()
         {
             // ID 자동 생성 (Inspector에서 설정하지 않고, MapSpawnService에서도 설정하지 않은 경우만)
+            // 동적 생성된 상자는 MapSpawnService에서 SetChestId()를 통해 서버 ID를 설정받음
+            // 따라서 chestId == 0인 경우 랜덤 ID 생성하지 않음
             if (chestId == 0)
             {
-                // GameObject 이름에서 ID 추출 (예: "Chest_123" -> 123)
-                if (gameObject.name.StartsWith("Chest_"))
-                {
-                    string idString = gameObject.name.Substring(6); // "Chest_" 다음 부분
-                    if (int.TryParse(idString, out int parsedId) && parsedId > 0)
-                    {
-                        chestId = parsedId;
-                        if (enableDebugLogs) Debug.Log($"[ChestGameObject] GameObject 이름에서 추출된 chestId: {chestId}");
-                    }
-                    else
-                    {
-                        // 파싱 실패 시 양수 ID 생성 (InstanceID의 절댓값 사용)
-                        chestId = Mathf.Abs(GetInstanceID());
-                        if (enableDebugLogs) Debug.Log($"[ChestGameObject] 이름 파싱 실패, 절댓값 InstanceID 사용: {chestId}");
-                    }
-                }
-                else
-                {
-                    // 백업: InstanceID의 절댓값 사용 (양수 보장)
-                    chestId = Mathf.Abs(GetInstanceID());
-                    if (enableDebugLogs) Debug.Log($"[ChestGameObject] 자동 생성된 chestId (절댓값): {chestId}");
-                }
+                if (enableDebugLogs) Debug.Log($"[ChestGameObject] chestId가 0임 - MapSpawnService에서 서버 ID 설정 대기");
             }
             else
             {
@@ -248,6 +250,7 @@ namespace Features.Chest.Views
 
         /// <summary>
         /// ChestService에 자신을 등록
+        /// 동적 생성된 상자는 MapSpawnService에서 이미 등록하므로 건너뜀
         /// </summary>
         private void RegisterToService()
         {
@@ -259,6 +262,16 @@ namespace Features.Chest.Views
                 return;
             }
 
+            // ID가 0이면 동적 생성 상자이므로 MapSpawnService에서 이미 등록함
+            if (chestId == 0)
+            {
+                if (enableDebugLogs) Debug.Log(
+                    $"[ChestGameObject] ID가 0이므로 등록 건너뜀 (MapSpawnService에서 처리됨): {gameObject.name}"
+                );
+                return;
+            }
+
+            // Inspector에서 ID가 설정된 상자만 여기서 등록 (씬에 미리 배치된 상자용)
             try
             {
                 _chestService.RegisterChest(chestId, chestName, transform.position, gameObject);

@@ -114,17 +114,25 @@ namespace Features.Chest.Models
         public ChestData currentChest;
         public Dictionary<int, ChestData> chests = new Dictionary<int, ChestData>();
         public bool isChestUIOpen = false;
-        public int currentChestId = 0;
+        public int currentChestId = -1;
 
         public bool HasCurrentChest => currentChest != null;
         public bool IsChestOpen => isChestUIOpen && currentChest != null;
 
         public void RegisterChest(int chestId, string chestName, Vector3 position, GameObject chestObject = null)
         {
-            if (chestId <= 0) return;
+            if (chestId < 0) return;
 
             var chestData = new ChestData(chestId, chestName, position, chestObject);
             chests[chestId] = chestData;
+        }
+
+        public void UpdateChestGameObject(int chestId, GameObject chestObject)
+        {
+            if (chests.ContainsKey(chestId))
+            {
+                chests[chestId].chestObject = chestObject;
+            }
         }
 
         public void UnregisterChest(int chestId)
@@ -156,10 +164,15 @@ namespace Features.Chest.Models
             var chest = chests[chestId];
             if (chest.isLocked) return false;
 
+            // 상자 상태를 강제로 초기화
+            chest.isOpen = false;  // 닫혀있는 상태로 설정
+
             currentChest = chest;
             currentChestId = chestId;
             chest.Open();
             isChestUIOpen = true;
+
+            UnityEngine.Debug.Log($"[ChestModel] 상자 열기 성공: ID={chestId}, isOpen={chest.isOpen}");
             return true;
         }
 
@@ -171,7 +184,7 @@ namespace Features.Chest.Models
             }
 
             currentChest = null;
-            currentChestId = 0;
+            currentChestId = -1;
             isChestUIOpen = false;
         }
 

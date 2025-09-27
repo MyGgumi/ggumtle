@@ -12,16 +12,24 @@ namespace Networks.Factories
         public static ChestOpenCommand Create(byte[] bytes)
         {
             var buffer = Unpooled.WrappedBuffer(bytes);
-            
-            var result = buffer.ReadInt();
+
+            var result = buffer.ReadBoolean();
             var inventoryId = buffer.ReadInt();
             var itemSize = buffer.ReadInt();
 
+            UnityEngine.Debug.Log($"[ChestOpenFactory] Packet parsing - success: {result}, id: {inventoryId}, itemSize: {itemSize}");
+
             List<int> items = new();
-            for (var i = 0; i < itemSize; i++)
+            if (itemSize > 0 && itemSize <= 20) // 방어적 체크
             {
-                var item = buffer.ReadInt();
-                items.Add(item);
+                for (var i = 0; i < itemSize; i++)
+                {
+                    if (buffer.IsReadable(4))
+                    {
+                        var item = buffer.ReadInt();
+                        items.Add(item);
+                    }
+                }
             }
             return new ChestOpenCommand(result, inventoryId, itemSize, items);
         }

@@ -127,11 +127,23 @@ namespace Features.Inventory.Views
 
                     // 클릭 이벤트 등록 (인덱스는 0부터 시작)
                     int slotIndex = i - 1; // UXML은 1부터, 로직은 0부터
-                    slot.RegisterCallback<ClickEvent>(evt => OnSlotClicked(slotIndex));
+
+                    if (i == 1) // slot1 = 큰 슬롯 = 아이템 사용
+                    {
+                        slot.RegisterCallback<ClickEvent>(evt => OnSlotUseClicked(slotIndex));
+                    }
+                    else // slot2, slot3 = 작은 슬롯들 = 순환 기능
+                    {
+                        slot.RegisterCallback<ClickEvent>(evt => OnSlotRotateClicked(slotIndex));
+                    }
 
                     if (enableDebugLogs)
                         Debug.Log(
-                            $"[InventoryUIView] 슬롯 {i} 캐싱: Slot={slot != null}, Label={label != null}, Icon={icon != null}, Counter={counter != null}"
+                            $"[InventoryUIView] 슬롯 {i} 캐싱 상세: " +
+                            $"Slot={slot != null}, " +
+                            $"Label={label != null} (찾은 이름: {label?.name}), " +
+                            $"Icon={icon != null} (찾은 이름: {icon?.name}), " +
+                            $"Counter={counter != null} (찾은 이름: {counter?.name})"
                         );
                 }
                 else
@@ -224,55 +236,57 @@ namespace Features.Inventory.Views
             if (index >= _slotElements.Count)
                 return;
 
-            var slotElement = _slotElements[index];
-            var label = _slotLabels[index];
-            var icon = _slotIcons[index];
-            var counter = index < _slotCounters.Count ? _slotCounters[index] : null;
+            // UI Toolkit 렌더링 지연 해결: 다음 프레임에서 업데이트
+            _root.schedule.Execute(() => {
+                var slotElement = _slotElements[index];
+                var label = _slotLabels[index];
+                var icon = _slotIcons[index];
+                var counter = index < _slotCounters.Count ? _slotCounters[index] : null;
 
-            // 슬롯은 항상 표시됨 (배경 스프라이트 보임)
-            if (slotElement != null)
-            {
-                slotElement.style.display = DisplayStyle.Flex;
-            }
-
-            if (slot == null || slot.IsEmpty)
-            {
-                // 빈 슬롯: 배경만 보이고 아이콘/카운터는 숨김
-                if (label != null)
-                    label.text = "";
-                if (icon != null)
-                    icon.style.display = DisplayStyle.None;
-                if (counter != null)
-                    counter.style.display = DisplayStyle.None;
-                slotElement?.RemoveFromClassList("filled");
-                slotElement?.AddToClassList("empty");
-
-                if (enableDebugLogs)
-                    Debug.Log(
-                        $"[InventoryUIView] 슬롯 {index + 1} UI 업데이트: 빈 슬롯 (배경만 표시)"
-                    );
-            }
-            else
-            {
-                // 채워진 슬롯: 아이콘 + 카운트 표시
-                if (label != null)
-                    label.text = slot.Count.ToString();
-                if (icon != null)
+                // 슬롯은 항상 표시됨 (배경 스프라이트 보임)
+                if (slotElement != null)
                 {
-                    icon.style.display = DisplayStyle.Flex;
-                    // TODO: 아이템 ID에 따라 아이콘 이미지 설정
-                    // icon.style.backgroundImage = GetItemIcon(slot.ItemId);
+                    slotElement.style.display = DisplayStyle.Flex;
                 }
-                if (counter != null)
-                    counter.style.display = DisplayStyle.Flex;
-                slotElement?.RemoveFromClassList("empty");
-                slotElement?.AddToClassList("filled");
 
-                if (enableDebugLogs)
-                    Debug.Log(
-                        $"[InventoryUIView] 슬롯 {index + 1} UI 업데이트: 아이템 {slot.ItemId} x{slot.Count}"
-                    );
-            }
+                if (slot == null || slot.IsEmpty)
+                {
+                    // 빈 슬롯: 배경만 보이고 아이콘/카운터는 숨김
+                    if (label != null)
+                        label.text = "";
+                    if (icon != null)
+                        icon.style.display = DisplayStyle.None;
+                    if (counter != null)
+                        counter.style.display = DisplayStyle.None;
+                    slotElement?.RemoveFromClassList("filled");
+                    slotElement?.AddToClassList("empty");
+
+                    if (enableDebugLogs)
+                        Debug.Log(
+                            $"[InventoryUIView] 슬롯 {index + 1} UI 업데이트: 빈 슬롯 (배경만 표시)"
+                        );
+                }
+                else
+                {
+                    // 채워진 슬롯: 아이콘 + 카운트 표시
+                    if (label != null)
+                        label.text = slot.Count.ToString();
+                    if (icon != null)
+                    {
+                        icon.style.display = DisplayStyle.Flex;
+                        SetItemIcon(icon, slot.ItemId);
+                    }
+                    if (counter != null)
+                        counter.style.display = DisplayStyle.Flex;
+                    slotElement?.RemoveFromClassList("empty");
+                    slotElement?.AddToClassList("filled");
+
+                    if (enableDebugLogs)
+                        Debug.Log(
+                            $"[InventoryUIView] 슬롯 {index + 1} UI 업데이트: 아이템 {slot.ItemId} x{slot.Count}, Icon={icon != null}, Display={icon?.style.display}"
+                        );
+                }
+            });
         }
 
         private void UpdateAllSlots()
@@ -305,13 +319,28 @@ namespace Features.Inventory.Views
 
         #region Event Handlers
 
-        private void OnSlotClicked(int slotIndex)
+        /// <summary>
+        /// 큰 슬롯 클릭 시 아이템 사용
+        /// </summary>
+        private void OnSlotUseClicked(int slotIndex)
         {
             if (enableDebugLogs)
-                Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 클릭됨");
+                Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 사용 클릭됨");
 
             // 슬롯 클릭 시 아이템 사용
             UseSlotItem(slotIndex);
+        }
+
+        /// <summary>
+        /// 오른쪽 작은 슬롯 클릭 시 아이템 순환
+        /// </summary>
+        private void OnSlotRotateClicked(int slotIndex)
+        {
+            if (enableDebugLogs)
+                Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 순환 클릭됨");
+
+            // 슬롯 아이템들을 순환시킴 (1→2→3→1)
+            RotateSlotItems();
         }
 
         #endregion
@@ -448,19 +477,19 @@ namespace Features.Inventory.Views
         }
 
         /// <summary>
-        /// 테스트용 초기화
+        /// 테스트용 초기화 - 3개 슬롯에 서로 다른 아이템 배치
         /// </summary>
         public void InitializeForTesting()
         {
             if (viewModel != null)
             {
-                // 테스트 아이템 추가
-                viewModel.AddItemToSlot(1, 1, 2); // 테이저건 2개
-                viewModel.AddItemToSlot(2, 2, 1); // 섬광탄 1개
-                viewModel.AddItemToSlot(3, 3, 1); // 자가제세동기 1개
+                // 테스트 아이템 추가 (ItemDefinitionService에 정의된 ID 사용)
+                viewModel.AddItemToSlot(1, 3, 1); // 슬롯1: 테이저건 1개 (ID: 3)
+                viewModel.AddItemToSlot(2, 2, 2); // 슬롯2: 섬광탄 2개 (ID: 2)
+                viewModel.AddItemToSlot(3, 4, 1); // 슬롯3: 자가제세동기 1개 (ID: 4)
 
                 if (enableDebugLogs)
-                    Debug.Log("[InventoryUIView] 테스트 초기화 완료");
+                    Debug.Log("[InventoryUIView] 테스트 초기화 완료: 테이저건(3), 섬광탄(2), 자가제세동기(4)");
             }
         }
 
@@ -511,6 +540,86 @@ namespace Features.Inventory.Views
                 if (enableDebugLogs)
                     Debug.Log("[InventoryUIView] 테스트: 인벤토리 비움");
             }
+        }
+
+        [ContextMenu("Test Rotate Items")]
+        private void TestRotateItems()
+        {
+            if (enableDebugLogs)
+                Debug.Log("[InventoryUIView] 테스트: 슬롯 순환 실행");
+            RotateSlotItems();
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// 아이템 ID에 따라 아이콘 설정
+        /// </summary>
+        private void SetItemIcon(VisualElement iconElement, int itemId)
+        {
+            var itemDef = Features.Item.Services.ItemDefinitionService.GetItemById(itemId);
+            if (itemDef?.ItemIcon != null)
+            {
+                iconElement.style.backgroundImage = new StyleBackground(itemDef.ItemIcon);
+                iconElement.tooltip = itemDef.ItemName;
+            }
+            else
+            {
+                iconElement.style.backgroundImage = null;
+                iconElement.tooltip = $"Unknown Item ({itemId})";
+            }
+        }
+
+        /// <summary>
+        /// 3개 슬롯의 아이템들을 순환시킴 (1→2→3→1)
+        /// </summary>
+        private void RotateSlotItems()
+        {
+            if (viewModel == null)
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning("[InventoryUIView] ViewModel이 null입니다. 순환 불가");
+                return;
+            }
+
+            // 현재 슬롯들의 상태를 가져옴
+            var currentSlots = viewModel.PlayerSlots.Value;
+            if (currentSlots == null || currentSlots.Length < 3)
+            {
+                if (enableDebugLogs)
+                    Debug.LogWarning("[InventoryUIView] 슬롯 데이터가 충분하지 않습니다. 순환 불가");
+                return;
+            }
+
+            // 순환 전 상태 로그
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[InventoryUIView] 순환 전: Slot0={currentSlots[0]}, Slot1={currentSlots[1]}, Slot2={currentSlots[2]}");
+            }
+
+            // 1→2→3→1로 순환: 직접 데이터 교환
+            // slot0 → slot1 → slot2 → slot0
+            var temp0 = currentSlots[0].Clone();
+            var temp1 = currentSlots[1].Clone();
+            var temp2 = currentSlots[2].Clone();
+
+            // 직접 슬롯 데이터 설정
+            currentSlots[0].ItemId = temp2.ItemId;
+            currentSlots[0].Count = temp2.Count;
+
+            currentSlots[1].ItemId = temp0.ItemId;
+            currentSlots[1].Count = temp0.Count;
+
+            currentSlots[2].ItemId = temp1.ItemId;
+            currentSlots[2].Count = temp1.Count;
+
+            // 강제 업데이트 알림
+            viewModel.PlayerSlots.ForceNotify();
+
+            if (enableDebugLogs)
+                Debug.Log("[InventoryUIView] 슬롯 순환 완료: 1→2→3→1");
         }
 
         #endregion

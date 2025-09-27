@@ -70,11 +70,7 @@ namespace Features.UI.Services
                 _inventoryUIView?.SetSlotBackgroundSprite(sprite);
         }
 
-        public void SetPlayerStateSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
-        {
-            if (defaultIcon != null && faintIcon != null && deadIcon != null && escapeIcon != null)
-                _playerListUIView?.SetPlayerStateSprites(defaultIcon, faintIcon, deadIcon, escapeIcon);
-        }
+        // SetPlayerStateSprites 메서드 제거 - PlayerListUIView에서 Inspector로 직접 관리
 
         private void DebugLog(string message)
         {

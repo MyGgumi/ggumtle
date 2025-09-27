@@ -128,4 +128,21 @@ namespace Features.PlayerList.Messages
             this.cleared = cleared;
         }
     }
+
+    /// <summary>
+    /// 몽깅이 플레이어 상태 변경 메시지 (MonggingTeam → PlayerList)
+    /// </summary>
+    public readonly struct PlayerListMonggingStateUpdateMessage
+    {
+        public readonly long playerId;
+        public readonly string newStatus; // "default", "faint", "dead", "escape"
+        public readonly string playerName;
+
+        public PlayerListMonggingStateUpdateMessage(long playerId, string newStatus, string playerName)
+        {
+            this.playerId = playerId;
+            this.newStatus = newStatus;
+            this.playerName = playerName;
+        }
+    }
 }

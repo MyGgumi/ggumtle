@@ -23,11 +23,7 @@ namespace Features.PlayerList.ViewModels
         public readonly ReadOnlyReactiveProperty<int> TotalPlayerCount;
         public readonly ReadOnlyReactiveProperty<int> OnlinePlayerCount;
 
-        // 스프라이트 리소스
-        public readonly ReadOnlyReactiveProperty<Sprite> DefaultIcon;
-        public readonly ReadOnlyReactiveProperty<Sprite> FaintIcon;
-        public readonly ReadOnlyReactiveProperty<Sprite> DeadIcon;
-        public readonly ReadOnlyReactiveProperty<Sprite> EscapeIcon;
+        // 스프라이트는 UI에서 직접 관리하므로 ViewModel에서 제거
 
         // 특정 플레이어 데이터 (Observable)
         public readonly ReadOnlyReactiveProperty<PlayerListData> Player1;
@@ -60,9 +56,9 @@ namespace Features.PlayerList.ViewModels
             ISubscriber<PlayerConnectionChangedMessage> connectionChangedSubscriber,
             ISubscriber<PlayerHighlightedMessage> highlightedSubscriber,
             ISubscriber<AllPlayersClearedMessage> allClearedSubscriber,
-            ISubscriber<PlayerSpritesUpdatedMessage> spritesUpdatedSubscriber,
             ISubscriber<PlayerListSyncMessage> syncSubscriber,
-            ISubscriber<PlayerHostChangedMessage> roleChangedSubscriber
+            ISubscriber<PlayerHostChangedMessage> roleChangedSubscriber,
+            ISubscriber<PlayerListMonggingStateUpdateMessage> monggingStateSubscriber
         )
         {
             _playerListService = playerListService;
@@ -71,10 +67,6 @@ namespace Features.PlayerList.ViewModels
             AllPlayers = _playerListService.AllPlayers;
             TotalPlayerCount = _playerListService.TotalPlayerCount;
             OnlinePlayerCount = _playerListService.OnlinePlayerCount;
-            DefaultIcon = _playerListService.DefaultIcon;
-            FaintIcon = _playerListService.FaintIcon;
-            DeadIcon = _playerListService.DeadIcon;
-            EscapeIcon = _playerListService.EscapeIcon;
 
             // 개별 플레이어 데이터 Observable 생성
             Player1 = AllPlayers
@@ -103,9 +95,9 @@ namespace Features.PlayerList.ViewModels
             connectionChangedSubscriber.Subscribe(OnPlayerConnectionChanged).AddTo(_disposables);
             highlightedSubscriber.Subscribe(OnPlayerHighlighted).AddTo(_disposables);
             allClearedSubscriber.Subscribe(OnAllPlayersCleared).AddTo(_disposables);
-            spritesUpdatedSubscriber.Subscribe(OnSpritesUpdated).AddTo(_disposables);
             syncSubscriber.Subscribe(OnPlayerListSync).AddTo(_disposables);
             roleChangedSubscriber.Subscribe(OnPlayerRoleChanged).AddTo(_disposables);
+            monggingStateSubscriber.Subscribe(OnMonggingPlayerStateChanged).AddTo(_disposables);
 
             DebugLog("초기화 완료");
         }
@@ -170,13 +162,7 @@ namespace Features.PlayerList.ViewModels
             _playerListService.ClearAllPlayers();
         }
 
-        /// <summary>
-        /// 스프라이트 설정
-        /// </summary>
-        public void SetSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon)
-        {
-            _playerListService.SetSprites(defaultIcon, faintIcon, deadIcon, escapeIcon);
-        }
+        // SetSprites 메서드 제거 - UI에서 직접 관리
 
         /// <summary>
         /// 특정 플레이어 데이터 가져오기
@@ -247,10 +233,6 @@ namespace Features.PlayerList.ViewModels
             DebugLog("모든 플레이어 초기화");
         }
 
-        private void OnSpritesUpdated(PlayerSpritesUpdatedMessage message)
-        {
-            DebugLog("플레이어 스프라이트 업데이트");
-        }
 
         private void OnPlayerListSync(PlayerListSyncMessage message)
         {
@@ -260,6 +242,11 @@ namespace Features.PlayerList.ViewModels
         private void OnPlayerRoleChanged(PlayerHostChangedMessage message)
         {
             DebugLog($"플레이어 역할 변경: {message.playerId} - 호스트: {message.isHost}");
+        }
+
+        private void OnMonggingPlayerStateChanged(PlayerListMonggingStateUpdateMessage message)
+        {
+            DebugLog($"몽깅이 상태 변경: Player{message.playerId} → {message.newStatus} ({message.playerName})");
         }
 
         #endregion

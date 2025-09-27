@@ -10,6 +10,6 @@ namespace Features.UI.Services
         void SetQuickChatIconSprite(Sprite sprite);
         void SetHpIconSprite(Sprite sprite);
         void SetItemSlotBackgroundSprite(Sprite sprite);
-        void SetPlayerStateSprites(Sprite defaultIcon, Sprite faintIcon, Sprite deadIcon, Sprite escapeIcon);
+        // SetPlayerStateSprites 제거 - PlayerListUIView에서 Inspector로 직접 관리
     }
 }

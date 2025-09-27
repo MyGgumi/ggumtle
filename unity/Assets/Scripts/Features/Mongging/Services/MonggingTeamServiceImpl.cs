@@ -5,6 +5,7 @@ using Features.Mongging.Messages;
 using Features.Mongging.Models;
 using Features.Mongdung.Messages;
 using Features.PlayerHealth.Services;
+using Features.PlayerList.Messages;
 using MessagePipe;
 using Networks.Players;
 using R3;
@@ -66,6 +67,9 @@ namespace Features.Mongging.Services
         // PlayerHealth 연동
         private readonly IPlayerHealthService _playerHealthService;
 
+        // PlayerList 연동
+        private readonly IPublisher<PlayerListMonggingStateUpdateMessage> _playerListStatePublisher;
+
         // 몽둥이 액션 구독
         private readonly ISubscriber<MongdungAttackActionMessage> _attackActionSubscriber;
         private readonly ISubscriber<MongdungSkillActionMessage> _skillActionSubscriber;
@@ -92,6 +96,7 @@ namespace Features.Mongging.Services
             IPublisher<MonggingPlayerEscapedMessage> escapedPublisher,
             IPublisher<MonggingPlayerAnimationMessage> animationPublisher,
             IPlayerHealthService playerHealthService,
+            IPublisher<PlayerListMonggingStateUpdateMessage> playerListStatePublisher,
             ISubscriber<MongdungAttackActionMessage> attackActionSubscriber,
             ISubscriber<MongdungSkillActionMessage> skillActionSubscriber,
             ISubscriber<MonggingStateBroadcastMessage> stateBroadcastSubscriber,
@@ -109,6 +114,7 @@ namespace Features.Mongging.Services
             _escapedPublisher = escapedPublisher;
             _animationPublisher = animationPublisher;
             _playerHealthService = playerHealthService;
+            _playerListStatePublisher = playerListStatePublisher;
             _attackActionSubscriber = attackActionSubscriber;
             _skillActionSubscriber = skillActionSubscriber;
             _stateBroadcastSubscriber = stateBroadcastSubscriber;
@@ -519,6 +525,51 @@ namespace Features.Mongging.Services
             };
         }
 
+        /// <summary>
+        /// PlayerList에게 플레이어 상태 변경 알림
+        /// </summary>
+        private void NotifyPlayerListStateChange(long playerId, MonggingPlayerState newState)
+        {
+            try
+            {
+                // MonggingPlayerState를 PlayerList 상태 문자열로 변환
+                string statusString = newState switch
+                {
+                    MonggingPlayerState.Normal => "default",
+                    MonggingPlayerState.Fainted => "faint",
+                    MonggingPlayerState.Dead => "dead",
+                    MonggingPlayerState.Escaped => "escape",
+                    MonggingPlayerState.Stunned => "default", // 스턴은 기본 아이콘 유지
+                    MonggingPlayerState.Frightened => "default", // 공포도 기본 아이콘 유지
+                    _ => "default"
+                };
+
+                // 플레이어 이름 가져오기
+                string playerName = "Unknown";
+                if (_playerServices.TryGetValue(playerId, out var playerService))
+                {
+                    var playerData = playerService.GetPlayerData();
+                    playerName = playerData.playerName;
+                }
+
+                // PlayerList에게 상태 변경 알림
+                _playerListStatePublisher.Publish(new PlayerListMonggingStateUpdateMessage(
+                    playerId,
+                    statusString,
+                    playerName
+                ));
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MonggingTeamServiceImpl] PlayerList 상태 알림: Player{playerId} → {statusString} ({playerName})");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MonggingTeamServiceImpl] PlayerList 상태 알림 실패: {e.Message}");
+            }
+        }
+
         private void UpdateObservables()
         {
             // 각 플레이어 서비스에서 최신 데이터 수집
@@ -650,35 +701,15 @@ namespace Features.Mongging.Services
                         return;
                     }
 
+                    // 서버 상태를 즉시 PlayerList에 알림 (상태 변경 전에 먼저 전파)
+                    NotifyPlayerListStateChange(message.PlayerId, message.NewState);
+
                     // 서버 상태에 따라 로컬 상태 업데이트
                     switch (message.NewState)
                     {
                         case MonggingPlayerState.Fainted:
-                            // 기절 상태로 변경 (HP는 0으로 설정)
-                            try
-                            {
-                                if (_enableDebugLogs)
-                                {
-                                    Debug.Log($"[MonggingTeamServiceImpl] Fainted 처리 시작 - faintCount 접근 시도");
-                                }
-                                int currentFaintCount = playerData.faintCount;
-                                int newFaintCount = currentFaintCount + 1;
-                                if (_enableDebugLogs)
-                                {
-                                    Debug.Log($"[MonggingTeamServiceImpl] FaintCount: {currentFaintCount} → {newFaintCount}");
-                                    Debug.Log($"[MonggingTeamServiceImpl] SyncFromServer 호출 시도");
-                                }
-                                playerService.SyncFromServer(0, message.NewState, newFaintCount);
-                                if (_enableDebugLogs)
-                                {
-                                    Debug.Log($"[MonggingTeamServiceImpl] SyncFromServer 호출 완료");
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                Debug.LogError($"[MonggingTeamServiceImpl] Fainted 처리 실패: {ex.Message}");
-                                Debug.LogError($"[MonggingTeamServiceImpl] Stack trace: {ex.StackTrace}");
-                            }
+                            // 기절 상태로 변경 - 서버 상태 그대로 동기화
+                            playerService.SyncFromServer(0, message.NewState, playerData.faintCount);
                             break;
 
                         case MonggingPlayerState.Dead:

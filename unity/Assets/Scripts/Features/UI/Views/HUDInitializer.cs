@@ -172,20 +172,8 @@ namespace Features.UI.Views
                 }
             }
 
-            if (
-                iconMongingDefault != null
-                && iconMongingFaint != null
-                && iconMongingDead != null
-                && iconMongingEscape != null
-            )
-            {
-                _uiAssetService?.SetPlayerStateSprites(
-                    iconMongingDefault,
-                    iconMongingFaint,
-                    iconMongingDead,
-                    iconMongingEscape
-                );
-            }
+            // 플레이어 상태 스프라이트는 PlayerListUIView에서 Inspector로 직접 관리
+            // HUDInitializer에서 설정할 필요 없음
 
             UnityEngine.Debug.Log("[HUDInitializer] 스프라이트 초기화 완료");
         }

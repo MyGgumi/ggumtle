@@ -3,6 +3,7 @@ using Features.MobileControls.Messages;
 using Features.MobileControls.Models;
 using Features.Ggumtle.Messages;
 using Features.Chest.Messages;
+using Features.Revival.Messages;
 using Features.Player.Services;
 using Features.PlayerList.Models;
 using MessagePipe;
@@ -68,6 +69,8 @@ namespace Features.MobileControls.ViewModels
         private readonly ISubscriber<ChestDetectedMessage> _chestDetectedSubscriber;
         private readonly ISubscriber<ChestLeftMessage> _chestLeftSubscriber;
         private readonly ISubscriber<ChestClosedMessage> _chestClosedSubscriber;
+        private readonly ISubscriber<FaintedMonggingDetectedMessage> _faintedMonggingDetectedSubscriber;
+        private readonly ISubscriber<FaintedMonggingLeftMessage> _faintedMonggingLeftSubscriber;
 
         #endregion
 
@@ -79,8 +82,10 @@ namespace Features.MobileControls.ViewModels
         // 상호작용 상태 추적
         private bool _isGgumtleNearby = false;
         private bool _isChestNearby = false;
+        private bool _isFaintedMonggingNearby = false;
         private string _currentGgumtleId = null;
         private int _currentChestId = -1;
+        private long _currentFaintedMonggingId = -1;
 
         #endregion
 
@@ -101,7 +106,9 @@ namespace Features.MobileControls.ViewModels
             ISubscriber<GgumtleLeftMessage> ggumtleLeftSubscriber,
             ISubscriber<ChestDetectedMessage> chestDetectedSubscriber,
             ISubscriber<ChestLeftMessage> chestLeftSubscriber,
-            ISubscriber<ChestClosedMessage> chestClosedSubscriber
+            ISubscriber<ChestClosedMessage> chestClosedSubscriber,
+            ISubscriber<FaintedMonggingDetectedMessage> faintedMonggingDetectedSubscriber,
+            ISubscriber<FaintedMonggingLeftMessage> faintedMonggingLeftSubscriber
         )
         {
             _data = new MobileControlsData();
@@ -120,6 +127,8 @@ namespace Features.MobileControls.ViewModels
             _chestDetectedSubscriber = chestDetectedSubscriber;
             _chestLeftSubscriber = chestLeftSubscriber;
             _chestClosedSubscriber = chestClosedSubscriber;
+            _faintedMonggingDetectedSubscriber = faintedMonggingDetectedSubscriber;
+            _faintedMonggingLeftSubscriber = faintedMonggingLeftSubscriber;
 
             UnityEngine.Debug.Log($"[MobileControlsViewModel] VContainer 의존성 주입 완료 - JoystickPublisher: {joystickInputPublisher != null}");
 
@@ -156,6 +165,15 @@ namespace Features.MobileControls.ViewModels
 
             _chestClosedSubscriber
                 .Subscribe(OnChestClosed)
+                .AddTo(_disposables);
+
+            // 기절한 몽깅이 관련 메시지 구독
+            _faintedMonggingDetectedSubscriber
+                .Subscribe(OnFaintedMonggingDetected)
+                .AddTo(_disposables);
+
+            _faintedMonggingLeftSubscriber
+                .Subscribe(OnFaintedMonggingLeft)
                 .AddTo(_disposables);
 
             // 데이터 상태를 ReactiveProperty와 동기화
@@ -472,6 +490,35 @@ namespace Features.MobileControls.ViewModels
         }
 
         /// <summary>
+        /// 기절한 몽깅이 감지 메시지 처리
+        /// </summary>
+        private void OnFaintedMonggingDetected(FaintedMonggingDetectedMessage message)
+        {
+            _isFaintedMonggingNearby = true;
+            _currentFaintedMonggingId = message.PlayerId;
+
+            UpdateInteractButtonVisibility();
+
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 기절한 몽깅이 감지: {message.PlayerId} ({message.PlayerName}), 상호작용 버튼 표시");
+        }
+
+        /// <summary>
+        /// 기절한 몽깅이 벗어남 메시지 처리
+        /// </summary>
+        private void OnFaintedMonggingLeft(FaintedMonggingLeftMessage message)
+        {
+            if (_currentFaintedMonggingId == message.PlayerId)
+            {
+                _isFaintedMonggingNearby = false;
+                _currentFaintedMonggingId = -1;
+
+                UpdateInteractButtonVisibility();
+
+                UnityEngine.Debug.Log($"[MobileControlsViewModel] 기절한 몽깅이 벗어남: {message.PlayerId}");
+            }
+        }
+
+        /// <summary>
         /// 상호작용 버튼 가시성 업데이트 - 로컬 몽깅이 플레이어만 표시
         /// </summary>
         private void UpdateInteractButtonVisibility()
@@ -481,7 +528,7 @@ namespace Features.MobileControls.ViewModels
             bool isLocalMongging = localPlayerRole == PlayerRole.Mongging;
 
             // 로컬 몽깅이이고 상호작용 객체가 근처에 있을 때만 표시
-            bool shouldShow = isLocalMongging && (_isGgumtleNearby || _isChestNearby);
+            bool shouldShow = isLocalMongging && (_isGgumtleNearby || _isChestNearby || _isFaintedMonggingNearby);
 
             var interactData = _data.GetButtonData(MobileButtonType.Interact);
             if (interactData != null)
@@ -490,7 +537,7 @@ namespace Features.MobileControls.ViewModels
                 UpdateButtonProperties(MobileButtonType.Interact, interactData);
             }
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (로컬몽깅이: {isLocalMongging}, 꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby})");
+            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (로컬몽깅이: {isLocalMongging}, 꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby}, 기절몽깅이: {_isFaintedMonggingNearby})");
         }
 
         #endregion

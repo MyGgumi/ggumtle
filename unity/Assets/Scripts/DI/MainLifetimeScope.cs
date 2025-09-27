@@ -49,6 +49,13 @@ using Features.PlayerHealth.ViewModels;
 using Features.PlayerList.Messages;
 using Features.PlayerList.Services;
 using Features.PlayerList.ViewModels;
+using Features.Revival.Messages;
+using Features.Revival.Services;
+using Features.Revival.ViewModels;
+using Features.Revival.Views;
+using Features.Revival.Handlers;
+using Features.ItemUsage.Messages;
+using Features.ItemUsage.Services;
 using Features.Scenes.Main.Initializers;
 using Features.UI.Services;
 using Features.Game.Services;
@@ -119,6 +126,10 @@ namespace DI
                 options
             );
 
+            // Revival Messages
+            builder.RegisterMessageBroker<FaintedMonggingDetectedMessage>(options);
+            builder.RegisterMessageBroker<FaintedMonggingLeftMessage>(options);
+
             // Inventory Messages
             builder.RegisterMessageBroker<ItemAddedMessage>(options);
             builder.RegisterMessageBroker<ItemRemovedMessage>(options);
@@ -129,6 +140,21 @@ namespace DI
             builder.RegisterMessageBroker<ItemTransferredMessage>(options);
             builder.RegisterMessageBroker<InventorySlotClickedMessage>(options);
             builder.RegisterMessageBroker<InventoryToggleMessage>(options);
+
+            // ItemUsage Messages
+            builder.RegisterMessageBroker<Features.ItemUsage.Messages.SelfDefibrillatorUsedMessage>(options);
+            builder.RegisterMessageBroker<Features.ItemUsage.Messages.TaserGunUsedMessage>(options);
+            builder.RegisterMessageBroker<Features.ItemUsage.Messages.FlashBangUsedMessage>(options);
+
+            // Revival Messages
+            builder.RegisterMessageBroker<RevivalProgressMessage>(options);
+            builder.RegisterMessageBroker<RevivalCompletedMessage>(options);
+            builder.RegisterMessageBroker<DirectRevivalStartRequestMessage>(options);
+            builder.RegisterMessageBroker<DirectRevivalCancelRequestMessage>(options);
+            builder.RegisterMessageBroker<SelfDefibRevivalStartMessage>(options);
+            builder.RegisterMessageBroker<SelfDefibRevivalProgressMessage>(options);
+            builder.RegisterMessageBroker<RevivalInteractionStateMessage>(options);
+            builder.RegisterMessageBroker<MonggingInteractableStateMessage>(options);
 
             // 네트워크 이벤트 메시지 타입들 등록
             builder.RegisterMessageBroker<GgumtleDiggingDoneMessage>(options);
@@ -239,6 +265,7 @@ namespace DI
             builder.RegisterComponentInHierarchy<Features.Inventory.Views.InventoryUIView>();
             builder.RegisterComponentInHierarchy<Features.Chest.Views.ChestUIView>();
             builder.RegisterComponentInHierarchy<Features.Feeding.Views.FeedingUIView>();
+            builder.RegisterComponentInHierarchy<Features.Revival.Views.RevivalUIView>();
             builder.RegisterComponentInHierarchy<Features.Mongdung.Views.MongdungUIView>();
 
             // 모든 컴포넌트들은 Addressable 동적 생성 방식으로 처리
@@ -273,6 +300,16 @@ namespace DI
             builder.Register<IPlayerNetworkSource, PlayerNetworkSource>(Lifetime.Scoped);
             builder.Register<IMongdungNetworkSource, MongdungNetworkSource>(Lifetime.Scoped);
 
+            // ItemUsage & Revival NetworkSources 등록
+            builder.Register<
+                Features.ItemUsage.NetworkSources.IItemUsageNetworkSource,
+                Features.ItemUsage.NetworkSources.ItemUsageNetworkSource
+            >(Lifetime.Scoped);
+            builder.Register<
+                Features.Revival.NetworkSources.IRevivalNetworkSource,
+                Features.Revival.NetworkSources.RevivalNetworkSource
+            >(Lifetime.Scoped);
+
             // Main 씬 전용 NetworkEventHandlers 등록
             builder.Register<GgumtleNetworkEventHandler>(Lifetime.Scoped);
             builder.Register<Features.Chest.NetworkSources.ChestNetworkEventHandler>(
@@ -306,6 +343,19 @@ namespace DI
             builder.Register<IMongdungService, MongdungServiceImpl>(Lifetime.Scoped);
             builder.Register<IUIAssetService, UIAssetServiceImpl>(Lifetime.Scoped);
 
+            // ItemUsage & Revival Services 등록
+            builder.Register<
+                Features.ItemUsage.Services.IItemUsageService,
+                Features.ItemUsage.Services.ItemUsageServiceImpl
+            >(Lifetime.Scoped);
+            builder.Register<
+                Features.Revival.Services.IRevivalService,
+                Features.Revival.Services.RevivalServiceImpl
+            >(Lifetime.Scoped);
+
+            // Revival Handlers 등록
+            builder.Register<Features.Revival.Handlers.MonggingInteractableHandler>(Lifetime.Scoped);
+
             // Mongging Services
             builder.Register<IMonggingPlayerService, MonggingPlayerServiceImpl>(Lifetime.Scoped);
             builder.Register<IMonggingTeamService, MonggingTeamServiceImpl>(Lifetime.Scoped);
@@ -329,6 +379,9 @@ namespace DI
             builder.Register<ChatViewModel>(Lifetime.Scoped);
             builder.Register<PlayerHealthViewModel>(Lifetime.Scoped);
 
+            // Revival ViewModel 등록
+            builder.Register<Features.Revival.ViewModels.RevivalViewModel>(Lifetime.Scoped);
+
             // Mongging ViewModels
             builder.Register<MonggingPlayerViewModel>(Lifetime.Scoped);
             builder.Register<MonggingTeamViewModel>(Lifetime.Scoped);
@@ -344,6 +397,10 @@ namespace DI
             // Mongging EntryPoint 등록
             builder.RegisterEntryPoint<MonggingTeamServiceImpl>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MonggingTeamService EntryPoint 등록 완료");
+
+            // Revival Handlers EntryPoint 등록 (자동 활성화)
+            builder.RegisterEntryPoint<Features.Revival.Handlers.MonggingInteractableHandler>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] MonggingInteractableHandler EntryPoint 등록 완료");
 
             // MainGameNetworkEventHandler에 MainGameService 주입
             builder.RegisterBuildCallback(container =>

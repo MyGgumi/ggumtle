@@ -8,6 +8,8 @@ using Features.Ggumtle.Views;
 using Features.Chest.Messages;
 using Features.Chest.Models;
 using Features.Chest.Views;
+using Features.Revival.Messages;
+using Features.Revival.Views;
 using Features.Player.Services;
 using Features.PlayerList.Models;
 using MessagePipe;
@@ -43,6 +45,8 @@ namespace Interaction
         private IPublisher<Features.Ggumtle.Messages.GgumtleLeftMessage> _ggumtleLeftPublisher;
         private IPublisher<Features.Chest.Messages.ChestDetectedMessage> _chestDetectedPublisher;
         private IPublisher<Features.Chest.Messages.ChestLeftMessage> _chestLeftPublisher;
+        private IPublisher<Features.Revival.Messages.FaintedMonggingDetectedMessage> _faintedMonggingDetectedPublisher;
+        private IPublisher<Features.Revival.Messages.FaintedMonggingLeftMessage> _faintedMonggingLeftPublisher;
 
         // 플레이어 관리 서비스
         private PlayerManagerService _playerManagerService;
@@ -53,7 +57,9 @@ namespace Interaction
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
             IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
-            IPublisher<ChestLeftMessage> chestLeftPublisher
+            IPublisher<ChestLeftMessage> chestLeftPublisher,
+            IPublisher<FaintedMonggingDetectedMessage> faintedMonggingDetectedPublisher,
+            IPublisher<FaintedMonggingLeftMessage> faintedMonggingLeftPublisher
         )
         {
             _playerManagerService = playerManagerService;
@@ -61,6 +67,8 @@ namespace Interaction
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
             _chestDetectedPublisher = chestDetectedPublisher;
             _chestLeftPublisher = chestLeftPublisher;
+            _faintedMonggingDetectedPublisher = faintedMonggingDetectedPublisher;
+            _faintedMonggingLeftPublisher = faintedMonggingLeftPublisher;
             Debug.Log($"[InteractionTriggerDetector] VContainer 의존성 주입 완료 - {gameObject.name}");
         }
 
@@ -77,6 +85,10 @@ namespace Interaction
         // 현재 감지된 상자들을 거리순으로 관리
         private readonly List<(ChestGameObject chest, Collider collider, float distance)> _detectedChests = new();
         private ChestGameObject _currentClosestChest = null;
+
+        // 현재 감지된 기절한 몽깅이들을 거리순으로 관리
+        private readonly List<(FaintedMonggingInteractable faintedMongging, Collider collider, float distance)> _detectedFaintedMonggings = new();
+        private FaintedMonggingInteractable _currentClosestFaintedMongging = null;
 
         void Awake()
         {
@@ -263,6 +275,16 @@ namespace Interaction
                 return;
             }
 
+            // 기절한 몽깅이인지 확인하고 MessagePipe로 처리
+            var faintedMonggingInteractable = other.GetComponent<FaintedMonggingInteractable>();
+            if (faintedMonggingInteractable != null && faintedMonggingInteractable.enabled)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 감지: {other.gameObject.name}");
+                AddFaintedMonggingToDetectionList(faintedMonggingInteractable, other);
+                return;
+            }
+
             if (enableDebugLogs)
             {
                 // 어떤 컴포넌트들이 있는지 확인
@@ -350,6 +372,18 @@ namespace Interaction
                         $"[InteractionTriggerDetector] 상자 벗어남: {other.gameObject.name}"
                     );
                 RemoveChestFromDetectionList(chestGameObject);
+                return;
+            }
+
+            // 기절한 몽깅이인지 확인하고 MessagePipe로 처리
+            var faintedMonggingInteractable = other.GetComponent<FaintedMonggingInteractable>();
+            if (faintedMonggingInteractable != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log(
+                        $"[InteractionTriggerDetector] 기절한 몽깅이 벗어남: {other.gameObject.name}"
+                    );
+                RemoveFaintedMonggingFromDetectionList(faintedMonggingInteractable);
                 return;
             }
 
@@ -585,7 +619,7 @@ namespace Interaction
         }
 
         /// <summary>
-        /// 감지된 꿈틀이들과 상자들의 거리를 주기적으로 업데이트
+        /// 감지된 꿈틀이들, 상자들, 기절한 몽깅이들의 거리를 주기적으로 업데이트
         /// </summary>
         private void UpdateDetectedGgumtleDistances()
         {
@@ -655,6 +689,40 @@ namespace Interaction
                 if (distanceChanged)
                 {
                     UpdateClosestChest();
+                }
+            }
+
+            // 기절한 몽깅이들의 거리 업데이트
+            distanceChanged = false;
+            if (_detectedFaintedMonggings.Count > 0)
+            {
+                for (int i = 0; i < _detectedFaintedMonggings.Count; i++)
+                {
+                    var (faintedMongging, collider, oldDistance) = _detectedFaintedMonggings[i];
+
+                    if (faintedMongging == null || collider == null)
+                    {
+                        // 무효한 참조는 제거
+                        _detectedFaintedMonggings.RemoveAt(i);
+                        i--;
+                        distanceChanged = true;
+                        continue;
+                    }
+
+                    var newDistance = Vector3.Distance(transform.position, collider.transform.position);
+
+                    // 거리 변화가 0.1f 이상일 때만 업데이트 (노이즈 방지)
+                    if (Mathf.Abs(newDistance - oldDistance) > 0.1f)
+                    {
+                        _detectedFaintedMonggings[i] = (faintedMongging, collider, newDistance);
+                        distanceChanged = true;
+                    }
+                }
+
+                // 거리가 변경되었다면 가장 가까운 기절한 몽깅이 재평가
+                if (distanceChanged)
+                {
+                    UpdateClosestFaintedMongging();
                 }
             }
         }
@@ -740,6 +808,127 @@ namespace Interaction
             }
 
             return interactables.ToArray();
+        }
+
+        /// <summary>
+        /// 기절한 몽깅이를 감지 리스트에 추가하고 가장 가까운 기절한 몽깅이 업데이트
+        /// </summary>
+        private void AddFaintedMonggingToDetectionList(FaintedMonggingInteractable faintedMongging, Collider other)
+        {
+            var distance = Vector3.Distance(transform.position, other.transform.position);
+
+            // 이미 리스트에 있는지 확인
+            var existingIndex = _detectedFaintedMonggings.FindIndex(f => f.faintedMongging == faintedMongging);
+            if (existingIndex >= 0)
+            {
+                // 거리만 업데이트
+                _detectedFaintedMonggings[existingIndex] = (faintedMongging, other, distance);
+            }
+            else
+            {
+                // 새로 추가
+                _detectedFaintedMonggings.Add((faintedMongging, other, distance));
+            }
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 감지 리스트에 추가: {faintedMongging.PlayerId}, 거리: {distance:F2}");
+
+            UpdateClosestFaintedMongging();
+        }
+
+        /// <summary>
+        /// 기절한 몽깅이를 감지 리스트에서 제거하고 가장 가까운 기절한 몽깅이 업데이트
+        /// </summary>
+        private void RemoveFaintedMonggingFromDetectionList(FaintedMonggingInteractable faintedMongging)
+        {
+            var removed = _detectedFaintedMonggings.RemoveAll(f => f.faintedMongging == faintedMongging);
+
+            if (removed > 0)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 감지 리스트에서 제거: {faintedMongging.PlayerId}");
+
+                UpdateClosestFaintedMongging();
+            }
+        }
+
+        /// <summary>
+        /// 가장 가까운 기절한 몽깅이 업데이트 및 메시지 발행
+        /// </summary>
+        private void UpdateClosestFaintedMongging()
+        {
+            FaintedMonggingInteractable newClosest = null;
+
+            if (_detectedFaintedMonggings.Count > 0)
+            {
+                // 거리순으로 정렬하여 가장 가까운 기절한 몽깅이 찾기
+                var closest = _detectedFaintedMonggings.OrderBy(f => f.distance).First();
+                newClosest = closest.faintedMongging;
+
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 기절한 몽깅이: {newClosest.PlayerId}, 거리: {closest.distance:F2}");
+            }
+
+            // 가장 가까운 기절한 몽깅이가 변경되었는지 확인
+            if (_currentClosestFaintedMongging != newClosest)
+            {
+                // 이전 기절한 몽깅이가 있었다면 Left 메시지 발행
+                if (_currentClosestFaintedMongging != null)
+                {
+                    PublishFaintedMonggingLeftMessage(_currentClosestFaintedMongging);
+                }
+
+                // 새로운 기절한 몽깅이가 있다면 Detected 메시지 발행
+                if (newClosest != null)
+                {
+                    var closestInfo = _detectedFaintedMonggings.First(f => f.faintedMongging == newClosest);
+                    PublishFaintedMonggingDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
+                }
+
+                _currentClosestFaintedMongging = newClosest;
+            }
+        }
+
+        /// <summary>
+        /// 기절한 몽깅이 감지 메시지 발행
+        /// </summary>
+        private void PublishFaintedMonggingDetectedMessage(FaintedMonggingInteractable faintedMongging, Collider collider, float distance)
+        {
+            if (_faintedMonggingDetectedPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] FaintedMonggingDetectedPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
+            var message = new FaintedMonggingDetectedMessage(
+                faintedMongging.PlayerId,
+                collider.transform,
+                distance,
+                faintedMongging.PlayerName ?? "Unknown"
+            );
+
+            _faintedMonggingDetectedPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 감지 메시지 발행: {faintedMongging.PlayerId}");
+        }
+
+        /// <summary>
+        /// 기절한 몽깅이 벗어남 메시지 발행
+        /// </summary>
+        private void PublishFaintedMonggingLeftMessage(FaintedMonggingInteractable faintedMongging)
+        {
+            if (_faintedMonggingLeftPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] FaintedMonggingLeftPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
+            var message = new FaintedMonggingLeftMessage(faintedMongging.PlayerId);
+            _faintedMonggingLeftPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 벗어남 메시지 발행: {faintedMongging.PlayerId}");
         }
 
         void OnDrawGizmosSelected()

@@ -6,6 +6,7 @@ using Features.Mongging.Models;
 using Features.Mongdung.Messages;
 using Features.PlayerHealth.Services;
 using Features.PlayerList.Messages;
+using Features.Revival.Messages;
 using MessagePipe;
 using Networks.Players;
 using R3;
@@ -79,6 +80,15 @@ namespace Features.Mongging.Services
         private readonly ISubscriber<MonggingPlayerRevivedMessage> _playerRevivedSubscriber;
         private readonly ISubscriber<MonggingPlayerServerStateMessage> _serverStateSubscriber;
 
+        // Revival 시스템 구독
+        private readonly ISubscriber<RevivalCompletedMessage> _revivalCompletedSubscriber;
+
+        // 상호작용 상태 발행
+        private readonly IPublisher<Features.Revival.Messages.MonggingInteractableStateMessage> _interactableStatePublisher;
+
+        // 체력바 시스템 메시지 발행
+        private readonly IPublisher<Features.PlayerHealth.Messages.HealReceivedMessage> _healReceivedPublisher;
+
         #endregion
 
         #region Constructor
@@ -101,7 +111,10 @@ namespace Features.Mongging.Services
             ISubscriber<MongdungSkillActionMessage> skillActionSubscriber,
             ISubscriber<MonggingStateBroadcastMessage> stateBroadcastSubscriber,
             ISubscriber<MonggingPlayerRevivedMessage> playerRevivedSubscriber,
-            ISubscriber<MonggingPlayerServerStateMessage> serverStateSubscriber)
+            ISubscriber<MonggingPlayerServerStateMessage> serverStateSubscriber,
+            ISubscriber<RevivalCompletedMessage> revivalCompletedSubscriber,
+            IPublisher<Features.Revival.Messages.MonggingInteractableStateMessage> interactableStatePublisher,
+            IPublisher<Features.PlayerHealth.Messages.HealReceivedMessage> healReceivedPublisher)
         {
             _teamSyncPublisher = teamSyncPublisher;
             _playerUpdatedPublisher = playerUpdatedPublisher;
@@ -120,6 +133,9 @@ namespace Features.Mongging.Services
             _stateBroadcastSubscriber = stateBroadcastSubscriber;
             _playerRevivedSubscriber = playerRevivedSubscriber;
             _serverStateSubscriber = serverStateSubscriber;
+            _revivalCompletedSubscriber = revivalCompletedSubscriber;
+            _interactableStatePublisher = interactableStatePublisher;
+            _healReceivedPublisher = healReceivedPublisher;
 
             if (_enableDebugLogs)
             {
@@ -287,6 +303,11 @@ namespace Features.Mongging.Services
             // 서버 상태 구독
             _serverStateSubscriber
                 .Subscribe(OnServerStateReceived)
+                .AddTo(_disposables);
+
+            // Revival 완료 구독
+            _revivalCompletedSubscriber
+                .Subscribe(OnRevivalCompleted)
                 .AddTo(_disposables);
 
             if (_enableDebugLogs)
@@ -707,9 +728,56 @@ namespace Features.Mongging.Services
                     // 서버 상태에 따라 로컬 상태 업데이트
                     switch (message.NewState)
                     {
+                        case MonggingPlayerState.Normal:
+                            // 정상 상태로 변경 - Revival 시스템에서 이미 처리되지 않은 경우만 처리
+                            if (playerData.currentState == MonggingPlayerState.Fainted)
+                            {
+                                // 기절에서 정상으로 변경된 경우 (다른 플레이어가 직접 부활시켜줌)
+                                // Revival 시스템에서 처리되지 않은 경우이므로 기본 체력으로 설정
+                                var localPlayer = GetLocalPlayer();
+                                if (localPlayer != null && localPlayer.playerId == message.PlayerId)
+                                {
+                                    // 체력바 시스템에 회복 메시지 전송
+                                    _healReceivedPublisher.Publish(new Features.PlayerHealth.Messages.HealReceivedMessage(
+                                        50, // healAmount
+                                        0,  // previousHp
+                                        50, // currentHp
+                                        Features.PlayerHealth.Models.PlayerState.Normal // newState
+                                    ));
+
+                                    if (_enableDebugLogs)
+                                    {
+                                        Debug.Log($"[MonggingTeamServiceImpl] 체력바 시스템에 직접 부활 회복 메시지 전송: PlayerId={message.PlayerId}, HP=0→50");
+                                    }
+                                }
+                                else if (_enableDebugLogs)
+                                {
+                                    Debug.Log($"[MonggingTeamServiceImpl] 체력바 시스템 부활 처리 건너뜀: LocalPlayer={localPlayer?.playerId}, TargetPlayer={message.PlayerId}");
+                                }
+
+                                // 몽깅이 시스템도 부활 체력으로 동기화
+                                playerService.SyncFromServer(50, message.NewState, playerData.faintCount);
+
+                                if (_enableDebugLogs)
+                                {
+                                    Debug.Log($"[MonggingTeamServiceImpl] 서버 상태 변경으로 직접 부활 처리: PlayerId={message.PlayerId}, HP=50, State=Normal");
+                                }
+                            }
+                            else
+                            {
+                                // 이미 정상 상태이거나 다른 상태에서 정상으로 변경된 경우
+                                playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            }
+
+                            // 상호작용 불가능 상태로 변경 (정상 상태이므로)
+                            PublishInteractableState(message.PlayerId, false, playerData.playerName);
+                            break;
+
                         case MonggingPlayerState.Fainted:
                             // 기절 상태로 변경 - 서버 상태 그대로 동기화
                             playerService.SyncFromServer(0, message.NewState, playerData.faintCount);
+                            // 상호작용 가능 상태로 변경
+                            PublishInteractableState(message.PlayerId, true, playerData.playerName);
                             break;
 
                         case MonggingPlayerState.Dead:
@@ -725,6 +793,11 @@ namespace Features.Mongging.Services
                         case MonggingPlayerState.Stunned:
                             // 스턴 상태로 변경
                             playerService.ApplyStun(2f);
+                            break;
+
+                        case MonggingPlayerState.Frightened:
+                            // 공포 상태로 변경 - 서버 상태 그대로 동기화
+                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
                             break;
 
                         default:
@@ -755,6 +828,124 @@ namespace Features.Mongging.Services
                 Debug.LogError($"[MonggingTeamServiceImpl] 서버 상태 처리 실패: {e.Message}");
                 Debug.LogError($"[MonggingTeamServiceImpl] Stack trace: {e.StackTrace}");
                 Debug.LogError($"[MonggingTeamServiceImpl] Exception type: {e.GetType()}");
+            }
+        }
+
+        /// <summary>
+        /// Revival 시스템에서 부활 완료 메시지 처리
+        /// </summary>
+        private void OnRevivalCompleted(RevivalCompletedMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MonggingTeamServiceImpl] Revival 부활 완료 수신: RevivedId={message.revivedPlayerId}, FromSelfDefib={message.isFromSelfDefib}");
+                }
+
+                if (_playerServices.TryGetValue(message.revivedPlayerId, out var playerService))
+                {
+                    // 체력바 시스템 업데이트 먼저 (로컬 플레이어만)
+                    var localPlayer = GetLocalPlayer();
+                    if (_playerHealthService != null && localPlayer != null && localPlayer.playerId == message.revivedPlayerId)
+                    {
+                        _playerHealthService.RevivePlayer(message.reviveHp);
+                        if (_enableDebugLogs)
+                        {
+                            Debug.Log($"[MonggingTeamServiceImpl] 로컬 플레이어 체력바 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp}");
+                        }
+                    }
+                    else if (_enableDebugLogs && localPlayer != null && localPlayer.playerId != message.revivedPlayerId)
+                    {
+                        Debug.Log($"[MonggingTeamServiceImpl] 원격 플레이어 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp} (체력바 업데이트 없음)");
+                    }
+
+                    // 몽깅이 부활 처리
+                    playerService.Revive(message.reviveHp);
+                    UpdateObservables();
+
+                    // HP 동기화 확인 로그
+                    if (_enableDebugLogs)
+                    {
+                        var playerData = playerService.GetPlayerData();
+                        Debug.Log($"[MonggingTeamServiceImpl] 몽깅이 부활 후 HP 확인: PlayerId={message.revivedPlayerId}, 설정HP={message.reviveHp}, 실제HP={playerData.currentHp}, 상태={playerData.currentState}");
+                    }
+
+                    // PlayerList에 상태 변경 알림
+                    NotifyPlayerListStateChange(message.revivedPlayerId, MonggingPlayerState.Normal);
+
+                    // 애니메이션 상태 변경 (기절 → 정상)
+                    try
+                    {
+                        var animationMessage = new MonggingPlayerAnimationMessage(
+                            message.revivedPlayerId,
+                            "Revive", // 부활 애니메이션 트리거
+                            1.0f // 애니메이션 지속시간
+                        );
+                        _animationPublisher.Publish(animationMessage);
+
+                        if (_enableDebugLogs)
+                        {
+                            Debug.Log($"[MonggingTeamServiceImpl] 부활 애니메이션 메시지 발행: PlayerId={message.revivedPlayerId}");
+                        }
+                    }
+                    catch (Exception animEx)
+                    {
+                        Debug.LogError($"[MonggingTeamServiceImpl] 애니메이션 메시지 발행 실패: {animEx.Message}");
+                    }
+
+                    // 상호작용 불가 상태로 변경
+                    if (_playerServices.TryGetValue(message.revivedPlayerId, out var revivedPlayerService))
+                    {
+                        var revivedPlayerData = revivedPlayerService.GetPlayerData();
+                        PublishInteractableState(message.revivedPlayerId, false, revivedPlayerData.playerName);
+                    }
+
+                    if (_enableDebugLogs)
+                    {
+                        string revivalType = message.isFromSelfDefib ? "자가제세동기" : "직접 부활";
+                        Debug.Log($"[MonggingTeamServiceImpl] {revivalType} 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp}");
+                    }
+                }
+                else
+                {
+                    if (_enableDebugLogs)
+                    {
+                        Debug.LogWarning($"[MonggingTeamServiceImpl] 부활할 플레이어 서비스를 찾을 수 없음: PlayerId={message.revivedPlayerId}");
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MonggingTeamServiceImpl] Revival 부활 완료 처리 실패: {e.Message}");
+                Debug.LogError($"[MonggingTeamServiceImpl] Stack trace: {e.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// 상호작용 상태 변경 메시지 발행
+        /// </summary>
+        private void PublishInteractableState(long playerId, bool isInteractable, string playerName)
+        {
+            try
+            {
+                var message = new Features.Revival.Messages.MonggingInteractableStateMessage(
+                    playerId,
+                    isInteractable,
+                    playerName ?? "Unknown"
+                );
+
+                _interactableStatePublisher.Publish(message);
+
+                if (_enableDebugLogs)
+                {
+                    string action = isInteractable ? "활성화" : "비활성화";
+                    Debug.Log($"[MonggingTeamServiceImpl] 상호작용 상태 {action} 메시지 발행: PlayerId={playerId}, Name={playerName}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MonggingTeamServiceImpl] 상호작용 상태 메시지 발행 실패: {e.Message}");
             }
         }
 

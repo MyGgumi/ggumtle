@@ -5,7 +5,10 @@ using Cysharp.Threading.Tasks;
 using Features.Inventory.Messages;
 using Features.Inventory.Models;
 using Features.Inventory.NetworkSources;
+using Features.ItemUsage.Services;
+using Features.Player.Services;
 using MessagePipe;
+using Networks.Players;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -23,6 +26,8 @@ namespace Features.Inventory.Services
         private readonly IInventoryNetworkSource _networkSource;
         private readonly IPublisher<SlotChangedMessage> _slotChangedPublisher;
         private readonly IPublisher<ItemTransferredMessage> _itemTransferredPublisher;
+        private readonly IItemUsageService _itemUsageService;
+        private readonly PlayerManagerService _playerManagerService;
 
         #endregion
 
@@ -50,11 +55,15 @@ namespace Features.Inventory.Services
             ISubscriber<ItemRemovedMessage> itemRemovedSubscriber,
             ISubscriber<InventorySyncMessage> inventorySyncSubscriber,
             IPublisher<SlotChangedMessage> slotChangedPublisher,
-            IPublisher<ItemTransferredMessage> itemTransferredPublisher)
+            IPublisher<ItemTransferredMessage> itemTransferredPublisher,
+            IItemUsageService itemUsageService,
+            PlayerManagerService playerManagerService)
         {
             _networkSource = networkSource;
             _slotChangedPublisher = slotChangedPublisher;
             _itemTransferredPublisher = itemTransferredPublisher;
+            _itemUsageService = itemUsageService;
+            _playerManagerService = playerManagerService;
 
             _currentInventory = new ReactiveProperty<InventoryData>(new InventoryData());
             _feedingCount = new ReactiveProperty<int>(0);
@@ -315,9 +324,77 @@ namespace Features.Inventory.Services
             if (slot == null || slot.IsEmpty)
                 return false;
 
-            // TODO: 아이템 사용 로직 구현
-            RemoveFromSlot(slotIndex, 1);
+            if (_enableDebugLogs)
+                Debug.Log($"[InventoryServiceImpl] 아이템 사용 시도: SlotIndex={slotIndex}, ItemId={slot.ItemId}");
+
+            // 아이템 사용 처리
+            UseItemAsync(slotIndex, slot.ItemId).Forget();
             return true;
+        }
+
+        /// <summary>
+        /// 비동기 아이템 사용 처리
+        /// </summary>
+        private async UniTaskVoid UseItemAsync(int slotIndex, int itemId)
+        {
+            try
+            {
+                if (_itemUsageService == null)
+                {
+                    Debug.LogError("[InventoryServiceImpl] ItemUsageService가 주입되지 않았습니다!");
+                    return;
+                }
+
+                var localPlayerId = _playerManagerService?.GetLocalPlayer()?.Id ?? -1;
+                if (localPlayerId <= 0)
+                {
+                    Debug.LogError("[InventoryServiceImpl] 로컬 플레이어 ID를 찾을 수 없습니다!");
+                    return;
+                }
+
+                bool success = false;
+                Vector3 direction = Vector3.forward; // 기본 방향 (추후 플레이어 방향으로 수정 가능)
+
+                // 아이템 ID에 따른 사용 처리
+                switch (itemId)
+                {
+                    case 2: // 섬광탄
+                        success = await _itemUsageService.UseFlashBangAsync(localPlayerId, direction);
+                        break;
+
+                    case 3: // 테이저건
+                        // TODO: 타겟 ID 처리 필요 (현재는 -1로 처리)
+                        success = await _itemUsageService.UseTaserGunAsync(localPlayerId, -1, direction);
+                        break;
+
+                    case 4: // 자가제세동기
+                        success = await _itemUsageService.UseSelfDefibrillatorAsync(localPlayerId);
+                        break;
+
+                    default:
+                        if (_enableDebugLogs)
+                            Debug.LogWarning($"[InventoryServiceImpl] 알 수 없는 아이템 ID: {itemId}");
+                        return;
+                }
+
+                if (success)
+                {
+                    // 사용 성공시 아이템 제거
+                    RemoveFromSlot(slotIndex, 1);
+
+                    if (_enableDebugLogs)
+                        Debug.Log($"[InventoryServiceImpl] 아이템 사용 성공: ItemId={itemId}");
+                }
+                else
+                {
+                    if (_enableDebugLogs)
+                        Debug.LogWarning($"[InventoryServiceImpl] 아이템 사용 실패: ItemId={itemId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[InventoryServiceImpl] 아이템 사용 중 예외 발생: {e.Message}");
+            }
         }
 
         public bool TransferToChest(int slotIndex, int chestId)

@@ -1,7 +1,7 @@
 using DotNetty.Buffers;
 using Networks.Attributes;
-using Networks.Players;
 using Networks.Packets;
+using Networks.Players;
 
 namespace Networks.Factories
 {
@@ -41,6 +41,20 @@ namespace Networks.Factories
             var result = buffer.ReadByte();
 
             return new MonggingRevivalStopCommand(result);
+        }
+    }
+
+    [CommandFactory(PacketType.UseDefibrillatorResponse)]
+    public class UseDefibrillatorFactory
+    {
+        public static UseDefibrillatorCommand Create(byte[] bytes)
+        {
+            var buffer = Unpooled.WrappedBuffer(bytes);
+
+            var result = buffer.ReadByte();
+            var hp = buffer.ReadInt();
+
+            return new UseDefibrillatorCommand(result, hp);
         }
     }
 }

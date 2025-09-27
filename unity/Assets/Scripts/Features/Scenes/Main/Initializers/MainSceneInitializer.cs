@@ -1,5 +1,6 @@
 using Features.Chest.Messages;
 using Features.Ggumtle.Messages;
+using Features.Revival.Messages;
 using Features.MainGame.Services;
 using Features.MainGame.NetworkSources;
 using Features.Map.Services;
@@ -30,6 +31,8 @@ namespace Features.Scenes.Main.Initializers
         private readonly IPublisher<GgumtleLeftMessage> _ggumtleLeftPublisher;
         private readonly IPublisher<ChestDetectedMessage> _chestDetectedPublisher;
         private readonly IPublisher<ChestLeftMessage> _chestLeftPublisher;
+        private readonly IPublisher<FaintedMonggingDetectedMessage> _faintedMonggingDetectedPublisher;
+        private readonly IPublisher<FaintedMonggingLeftMessage> _faintedMonggingLeftPublisher;
         private readonly bool _enableDebugLogs = false; // 디버그 로그 비활성화
 
         [Inject]
@@ -41,7 +44,9 @@ namespace Features.Scenes.Main.Initializers
             IPublisher<GgumtleDetectedMessage> ggumtleDetectedPublisher,
             IPublisher<GgumtleLeftMessage> ggumtleLeftPublisher,
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
-            IPublisher<ChestLeftMessage> chestLeftPublisher
+            IPublisher<ChestLeftMessage> chestLeftPublisher,
+            IPublisher<FaintedMonggingDetectedMessage> faintedMonggingDetectedPublisher,
+            IPublisher<FaintedMonggingLeftMessage> faintedMonggingLeftPublisher
         )
         {
             _mapSpawnService = mapSpawnService;
@@ -52,6 +57,8 @@ namespace Features.Scenes.Main.Initializers
             _ggumtleLeftPublisher = ggumtleLeftPublisher;
             _chestDetectedPublisher = chestDetectedPublisher;
             _chestLeftPublisher = chestLeftPublisher;
+            _faintedMonggingDetectedPublisher = faintedMonggingDetectedPublisher;
+            _faintedMonggingLeftPublisher = faintedMonggingLeftPublisher;
 
             if (_enableDebugLogs)
                 Debug.Log("[MainSceneInitializer] 의존성 주입 완료");
@@ -267,7 +274,9 @@ namespace Features.Scenes.Main.Initializers
                                 _ggumtleDetectedPublisher,
                                 _ggumtleLeftPublisher,
                                 _chestDetectedPublisher,
-                                _chestLeftPublisher
+                                _chestLeftPublisher,
+                                _faintedMonggingDetectedPublisher,
+                                _faintedMonggingLeftPublisher
                             }
                         );
                         Debug.Log(

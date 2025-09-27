@@ -234,7 +234,7 @@ public class DreamManager {
 
         GetHitResult result = targetMongging.getHit(mongdung.damage);
 
-        if (result.result() == GetHitResult.Result.ALIVE) {
+        if (result.result() == GetHitResult.Result.NOT_ALIVE) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_ALIVE, targetMongging.getId(), -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
             this.room.broadcast(packet);

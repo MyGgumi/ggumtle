@@ -58,17 +58,7 @@ namespace Features.PlayerHealth.ViewModels
 
         [Inject]
         public PlayerHealthViewModel(
-            IPlayerHealthService playerHealthService,
-            ISubscriber<HealthChangedMessage> healthChangedSubscriber,
-            ISubscriber<DamageReceivedMessage> damageReceivedSubscriber,
-            ISubscriber<HealReceivedMessage> healReceivedSubscriber,
-            ISubscriber<PlayerFaintedMessage> playerFaintedSubscriber,
-            ISubscriber<PlayerRevivedMessage> playerRevivedSubscriber,
-            ISubscriber<PlayerDiedMessage> playerDiedSubscriber,
-            ISubscriber<FaintTimeUpdatedMessage> faintTimeUpdatedSubscriber,
-            ISubscriber<HealthBarUpdatedMessage> healthBarUpdatedSubscriber,
-            ISubscriber<HealthStateChangedMessage> healthStateChangedSubscriber,
-            ISubscriber<HealthSettingsChangedMessage> healthSettingsChangedSubscriber
+            IPlayerHealthService playerHealthService
         )
         {
             _playerHealthService = playerHealthService;
@@ -131,16 +121,7 @@ namespace Features.PlayerHealth.ViewModels
                 .ToReadOnlyReactiveProperty()
                 .AddTo(_disposables);
 
-            healthChangedSubscriber.Subscribe(OnHealthChanged).AddTo(_disposables);
-            damageReceivedSubscriber.Subscribe(OnDamageReceived).AddTo(_disposables);
-            healReceivedSubscriber.Subscribe(OnHealReceived).AddTo(_disposables);
-            playerFaintedSubscriber.Subscribe(OnPlayerFainted).AddTo(_disposables);
-            playerRevivedSubscriber.Subscribe(OnPlayerRevived).AddTo(_disposables);
-            playerDiedSubscriber.Subscribe(OnPlayerDied).AddTo(_disposables);
-            faintTimeUpdatedSubscriber.Subscribe(OnFaintTimeUpdated).AddTo(_disposables);
-            healthBarUpdatedSubscriber.Subscribe(OnHealthBarUpdated).AddTo(_disposables);
-            healthStateChangedSubscriber.Subscribe(OnHealthStateChanged).AddTo(_disposables);
-            healthSettingsChangedSubscriber.Subscribe(OnHealthSettingsChanged).AddTo(_disposables);
+            // 불필요한 메시지 구독 제거 - Service의 Observable로 충분함
 
             DebugLog("초기화 완료");
         }
@@ -216,62 +197,10 @@ namespace Features.PlayerHealth.ViewModels
 
         #endregion
 
-        #region Message Handlers
+        #region Message Handlers - 제거됨
 
-        private void OnHealthChanged(HealthChangedMessage message)
-        {
-            string changeType = message.isDamage ? "감소" : "증가";
-            DebugLog($"체력 변화: {message.currentHp}/{message.maxHp} ({message.healthPercentage:P1}) - {changeType}, 상태: {message.state}");
-        }
-
-        private void OnDamageReceived(DamageReceivedMessage message)
-        {
-            DebugLog($"피해: {message.damage} (체력: {message.currentHp} -> {message.remainingHp}, 상태: {message.newState})");
-        }
-
-        private void OnHealReceived(HealReceivedMessage message)
-        {
-            DebugLog($"치료: +{message.healAmount} (체력: {message.previousHp} -> {message.currentHp}, 상태: {message.newState})");
-        }
-
-        private void OnPlayerFainted(PlayerFaintedMessage message)
-        {
-            DebugLog($"플레이어 기절 - 이전 상태: {message.previousState}, 기절 시간: {message.faintDuration}초");
-        }
-
-        private void OnPlayerRevived(PlayerRevivedMessage message)
-        {
-            DebugLog($"플레이어 부활 - 체력: {message.reviveHp}, 새 상태: {message.newState}");
-        }
-
-        private void OnPlayerDied(PlayerDiedMessage message)
-        {
-            string deathCause = message.wasFromFaint ? "기절 시간 만료" : "체력 소진";
-            DebugLog($"플레이어 사망 - 이전 상태: {message.previousState}, 사망 원인: {deathCause}");
-        }
-
-        private void OnFaintTimeUpdated(FaintTimeUpdatedMessage message)
-        {
-            if (message.shouldDie)
-            {
-                DebugLog($"기절 시간 만료 - 사망 처리됨");
-            }
-        }
-
-        private void OnHealthBarUpdated(HealthBarUpdatedMessage message)
-        {
-            DebugLog($"체력바 업데이트 - Bar1: {message.bar1.currentPercent:F1}%, Bar2: {message.bar2.currentPercent:F1}%, Bar3: {message.bar3.currentPercent:F1}%");
-        }
-
-        private void OnHealthStateChanged(HealthStateChangedMessage message)
-        {
-            DebugLog($"상태 변화: {message.previousState} -> {message.currentState} (체력: {message.currentHp}, {message.healthPercentage:P1})");
-        }
-
-        private void OnHealthSettingsChanged(HealthSettingsChangedMessage message)
-        {
-            DebugLog($"설정 변경 - MaxHP: {message.maxHp}, 기절시간: {message.faintReviveTime}초, 기절시스템: {message.enableFaintSystem}");
-        }
+        // 불필요한 메시지 핸들러들 제거 - Service의 Observable Property로 충분히 처리 가능
+        // ViewModel은 단순히 Service의 데이터를 View에게 전달하는 역할만 수행
 
         #endregion
 

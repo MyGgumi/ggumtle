@@ -25098,6 +25098,7 @@ GameObject:
   - component: {fileID: -7938411020700505055}
   - component: {fileID: 3733715737769871850}
   - component: {fileID: 88767854155525091}
+  - component: {fileID: -2741963027979413665}
   m_Layer: 8
   m_Name: Remote_Mongdung
   m_TagString: Player
@@ -25233,6 +25234,25 @@ MonoBehaviour:
   attackKey: 113
   trapKey: 101
   frightenKey: 114
+  enableDebugLogs: 1
+--- !u!114 &-2741963027979413665
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6083004312846073984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8f22776aef165b544a25bdd29ce29df3, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  attackRange: 1.5
+  attackAngle: 360
+  enableDebugVisualization: 1
+  monggingLayerMask:
+    serializedVersion: 2
+    m_Bits: 8
   enableDebugLogs: 1
 --- !u!1 &6246423556193479333
 GameObject:

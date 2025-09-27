@@ -23,6 +23,15 @@ namespace Features.Scenes.Lobby.Managers
         private string testAccessToken =
             "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzU4MDczOTQ4LCJleHAiOjE3NTkyODM1NDh9.cfillJjXl1d92Cw8-dPPSYbZQ90lKhcj2_B8TM-QK9c";
 
+        // 미리 설정된 토큰들 (7, 8, 9, 0키용)
+        private readonly string[] presetTokens = new string[]
+        {
+            "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzU4MDczOTQ4LCJleHAiOjE3NTkyODM1NDh9.cfillJjXl1d92Cw8-dPPSYbZQ90lKhcj2_B8TM-QK9c", // 0키용 (기본값)
+            "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIyIiwiaWF0IjoxNzU4MDczODg1LCJleHAiOjE3NTkyODM0ODV9.fsICo-1bwGxPVN7KvuXH9TfOnpud0hFlZCSffXKBGc8", // 7키용
+            "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwiaWF0IjoxNzU4MDc0MDA2LCJleHAiOjE3NTkyODM2MDZ9.YDQcsyMUwJBX2HfNlJKTMC6SUYUIeAWWY3QGjtKuXIM", // 8키용
+            "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiI0IiwiaWF0IjoxNzU4MDc0MDU3LCJleHAiOjE3NTkyODM2NTd9.A_bI7-lCgjCTPOrk95OFVIRQynhTF0DXZIWW7UYhtEY", // 9키용
+        };
+
         [SerializeField]
         private string testHost = "p-ryan.iptime.org";
 
@@ -54,7 +63,8 @@ namespace Features.Scenes.Lobby.Managers
         private readonly CompositeDisposable _disposables = new();
         private readonly System.Collections.Generic.List<System.IDisposable> _messageDisposables =
             new();
-        private System.Threading.CancellationTokenSource _cancellationTokenSource;
+
+        private bool _isUIInitialized = false;
 
         [Inject]
         public void Construct(
@@ -85,11 +95,12 @@ namespace Features.Scenes.Lobby.Managers
         {
             Debug.Log("[LobbySceneManager] 로비 씬 시작");
 
-            // CancellationTokenSource 초기화
-            _cancellationTokenSource = new System.Threading.CancellationTokenSource();
-
-            // UI 초기화
-            InitializeUI();
+            // UI 초기화 (한 번만)
+            if (!_isUIInitialized)
+            {
+                InitializeUI();
+                _isUIInitialized = true;
+            }
 
             // ViewModel 이벤트 구독
             SubscribeToViewModel();
@@ -105,18 +116,44 @@ namespace Features.Scenes.Lobby.Managers
         {
             if (Input.GetKeyDown(KeyCode.A))
             {
-                string testParams = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzU4MDczOTQ4LCJleHAiOjE3NTkyODM1NDh9.cfillJjXl1d92Cw8-dPPSYbZQ90lKhcj2_B8TM-QK9c,-4,p-ryan.iptime.org,8888";
-                Debug.Log($"[LobbySceneManager] T키 테스트: {testParams}");
+                string testParams =
+                    "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIiwiaWF0IjoxNzU4MDczOTQ4LCJleHAiOjE3NTkyODM1NDh9.cfillJjXl1d92Cw8-dPPSYbZQ90lKhcj2_B8TM-QK9c,-4,p-ryan.iptime.org,8888";
+                Debug.Log($"[LobbySceneManager] A키 테스트: {testParams}");
                 StartGameCommandFromAndroid(testParams);
+            }
+
+            // 숫자 키로 프리셋 토큰 입력
+            if (tokenInputField != null)
+            {
+                if (Input.GetKeyDown(KeyCode.Alpha7))
+                {
+                    tokenInputField.text = presetTokens[1];
+                    Debug.Log("[LobbySceneManager] 7키로 프리셋 토큰 1 입력됨");
+                    PublishUIState(LobbyUIStateMessage.Ready("프리셋 토큰 2번 (USER2) 적용됨"));
+                }
+                else if (Input.GetKeyDown(KeyCode.Alpha8))
+                {
+                    tokenInputField.text = presetTokens[2];
+                    Debug.Log("[LobbySceneManager] 8키로 프리셋 토큰 2 입력됨");
+                    PublishUIState(LobbyUIStateMessage.Ready("프리셋 토큰 3번 (USER3) 적용됨"));
+                }
+                else if (Input.GetKeyDown(KeyCode.Alpha9))
+                {
+                    tokenInputField.text = presetTokens[3];
+                    Debug.Log("[LobbySceneManager] 9키로 프리셋 토큰 3 입력됨");
+                    PublishUIState(LobbyUIStateMessage.Ready("프리셋 토큰 4번 (USER4) 적용됨"));
+                }
+                else if (Input.GetKeyDown(KeyCode.Alpha0))
+                {
+                    tokenInputField.text = presetTokens[0];
+                    Debug.Log("[LobbySceneManager] 0키로 기본 토큰 입력됨");
+                    PublishUIState(LobbyUIStateMessage.Ready("기본 토큰 (USER1) 적용됨"));
+                }
             }
         }
 
         void OnDestroy()
         {
-            // 비동기 작업 취소
-            _cancellationTokenSource?.Cancel();
-            _cancellationTokenSource?.Dispose();
-
             // R3 구독 해제
             _disposables.Dispose();
 
@@ -126,8 +163,6 @@ namespace Features.Scenes.Lobby.Managers
                 disposable.Dispose();
             }
             _messageDisposables.Clear();
-
-            Debug.Log("[LobbySceneManager] 정리 완료 - 모든 비동기 작업이 취소되었습니다.");
         }
 
         /// <summary>
@@ -142,21 +177,40 @@ namespace Features.Scenes.Lobby.Managers
             // 토큰 입력 필드 초기화
             if (tokenInputField != null)
             {
-                tokenInputField.text = testAccessToken; // 기본값으로 테스트 토큰 설정
-                tokenInputField.placeholder.GetComponent<Text>().text = "액세스 토큰을 입력하세요";
+                // 입력 필드가 비어있을 때만 기본 토큰으로 설정
+                if (string.IsNullOrEmpty(tokenInputField.text))
+                {
+                    tokenInputField.text = testAccessToken;
+                }
+                tokenInputField.placeholder.GetComponent<Text>().text =
+                    "액세스 토큰 (7,8,9,0키로 프리셋 변경)";
             }
 
             // 방 번호 입력 필드 초기화
             if (roomIdInputField != null)
             {
-                roomIdInputField.text = testRoomId.ToString(); // 기본값으로 테스트 방 번호 설정
-                roomIdInputField.placeholder.GetComponent<Text>().text = "방 번호 입력 (-1은 자동 매칭)";
-                Debug.Log($"[LobbySceneManager] 방 번호 필드 초기화: testRoomId={testRoomId}, 입력값='{roomIdInputField.text}'");
+                // 입력 필드가 비어있을 때만 테스트 방 번호로 설정
+                if (string.IsNullOrEmpty(roomIdInputField.text))
+                {
+                    roomIdInputField.text = testRoomId.ToString();
+                }
+                roomIdInputField.placeholder.GetComponent<Text>().text =
+                    "방 번호 입력 (-1은 자동 매칭)";
+                Debug.Log(
+                    $"[LobbySceneManager] 방 번호 필드 초기화: testRoomId={testRoomId}, 입력값='{roomIdInputField.text}'"
+                );
             }
 
             // 초기 상태 설정
             if (joinRoomButton != null)
                 joinRoomButton.interactable = true;
+
+            // InputField들 활성화
+            if (tokenInputField != null)
+                tokenInputField.interactable = true;
+
+            if (roomIdInputField != null)
+                roomIdInputField.interactable = true;
 
             Debug.Log("[LobbySceneManager] UI 초기화 완료");
         }
@@ -202,13 +256,15 @@ namespace Features.Scenes.Lobby.Managers
             Debug.Log("[LobbySceneManager] ViewModel 이벤트 구독 완료");
         }
 
-        public void StartGameCommandFromAndroid(string paramsString) 
+        public void StartGameCommandFromAndroid(string paramsString)
         {
             var parts = paramsString.Split(',');
-            
-            if (parts.Length < 4 || 
-                !int.TryParse(parts[1], out int roomId) || 
-                !int.TryParse(parts[3], out int port))
+
+            if (
+                parts.Length < 4
+                || !int.TryParse(parts[1], out int roomId)
+                || !int.TryParse(parts[3], out int port)
+            )
             {
                 Debug.LogError($"Invalid parameters: {paramsString}");
                 return;
@@ -218,7 +274,7 @@ namespace Features.Scenes.Lobby.Managers
             String host = parts[2];
             testHost = host;
             testPort = port;
-            
+
             StartGameWithTokenAndRoom(token, roomId);
         }
 
@@ -253,15 +309,23 @@ namespace Features.Scenes.Lobby.Managers
 
                     if (joinResult.Success)
                     {
-                        PublishUIState(LobbyUIStateMessage.Connecting("방 입장 성공! 맵과 플레이어 데이터 대기 중..."));
-                        Debug.Log($"[LobbySceneManager] 방 {roomId} 입장 성공 - 맵과 플레이어 데이터 대기");
+                        PublishUIState(
+                            LobbyUIStateMessage.Connecting(
+                                "방 입장 성공! 맵과 플레이어 데이터 대기 중..."
+                            )
+                        );
+                        Debug.Log(
+                            $"[LobbySceneManager] 방 {roomId} 입장 성공 - 맵과 플레이어 데이터 대기"
+                        );
 
                         // Room 데이터가 완전히 초기화될 때까지 대기
                         WaitForRoomInitialization();
                     }
                     else
                     {
-                        PublishUIState(LobbyUIStateMessage.Error($"방 입장 실패: {joinResult.Result}"));
+                        PublishUIState(
+                            LobbyUIStateMessage.Error($"방 입장 실패: {joinResult.Result}")
+                        );
                         Debug.LogError($"[LobbySceneManager] 방 입장 실패: {joinResult.Result}");
                     }
                 }
@@ -289,50 +353,42 @@ namespace Features.Scenes.Lobby.Managers
             const int checkInterval = 100; // 100ms마다 체크
             int elapsedTime = 0;
 
-            try
+            while (elapsedTime < maxWaitTime)
             {
-                while (elapsedTime < maxWaitTime)
+                var roomStorage = RoomStorage.Instance;
+                if (roomStorage?.HasReceivedNewRoomData() == true)
                 {
-                    // CancellationToken 체크
-                    if (_cancellationTokenSource?.Token.IsCancellationRequested == true)
-                    {
-                        Debug.Log("[LobbySceneManager] Room 초기화 대기가 취소되었습니다.");
-                        return;
-                    }
-
-                    var roomStorage = RoomStorage.Instance;
-                    if (roomStorage?.HasReceivedNewRoomData() == true)
-                    {
-                        Debug.Log("[LobbySceneManager] Room 초기화 완료! 로딩 씬으로 전환");
-                        PublishUIState(LobbyUIStateMessage.Ready("맵과 플레이어 데이터 수신 완료! 로딩 중..."));
-                        OnRoomJoinedSuccessfully();
-                        return;
-                    }
-
-                    await System.Threading.Tasks.Task.Delay(checkInterval, _cancellationTokenSource?.Token ?? default);
-                    elapsedTime += checkInterval;
-
-                    // 중간 상태 업데이트
-                    if (elapsedTime % 1000 == 0)
-                    {
-                        int remainingSeconds = (maxWaitTime - elapsedTime) / 1000;
-                        PublishUIState(LobbyUIStateMessage.Connecting($"맵과 플레이어 데이터 대기 중... ({remainingSeconds}초 남음)"));
-                        Debug.Log($"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음, HasReceivedNewRoomData: {roomStorage?.HasReceivedNewRoomData() ?? false}");
-                    }
+                    Debug.Log("[LobbySceneManager] Room 초기화 완료! 로딩 씬으로 전환");
+                    PublishUIState(
+                        LobbyUIStateMessage.Ready("맵과 플레이어 데이터 수신 완료! 로딩 중...")
+                    );
+                    OnRoomJoinedSuccessfully();
+                    return;
                 }
 
-                // 타임아웃
-                Debug.LogError("[LobbySceneManager] Room 초기화 타임아웃!");
-                PublishUIState(LobbyUIStateMessage.Error("서버로부터 게임 데이터를 받는데 실패했습니다 (타임아웃)"));
+                await System.Threading.Tasks.Task.Delay(checkInterval);
+                elapsedTime += checkInterval;
+
+                // 중간 상태 업데이트
+                if (elapsedTime % 1000 == 0)
+                {
+                    int remainingSeconds = (maxWaitTime - elapsedTime) / 1000;
+                    PublishUIState(
+                        LobbyUIStateMessage.Connecting(
+                            $"맵과 플레이어 데이터 대기 중... ({remainingSeconds}초 남음)"
+                        )
+                    );
+                    Debug.Log(
+                        $"[LobbySceneManager] Room 데이터 대기 중... {remainingSeconds}초 남음, HasReceivedNewRoomData: {roomStorage?.HasReceivedNewRoomData() ?? false}"
+                    );
+                }
             }
-            catch (System.OperationCanceledException)
-            {
-                Debug.Log("[LobbySceneManager] Room 초기화 대기가 취소되었습니다.");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[LobbySceneManager] Room 초기화 대기 중 오류: {e.Message}");
-            }
+
+            // 타임아웃
+            Debug.LogError("[LobbySceneManager] Room 초기화 타임아웃!");
+            PublishUIState(
+                LobbyUIStateMessage.Error("서버로부터 게임 데이터를 받는데 실패했습니다 (타임아웃)")
+            );
         }
 
         /// <summary>
@@ -378,7 +434,11 @@ namespace Features.Scenes.Lobby.Managers
 
             if (string.IsNullOrEmpty(inputToken))
             {
-                PublishUIState(LobbyUIStateMessage.Error("토큰을 입력해주세요"));
+                PublishUIState(
+                    LobbyUIStateMessage.Error(
+                        "토큰을 입력해주세요 (7,8,9,0키로 프리셋 토큰 사용 가능)"
+                    )
+                );
                 return;
             }
 
@@ -389,7 +449,9 @@ namespace Features.Scenes.Lobby.Managers
             if (roomIdInputField != null)
             {
                 string roomIdText = roomIdInputField.text.Trim();
-                Debug.Log($"[LobbySceneManager] 입력 필드 값: '{roomIdText}' (비어있음: {string.IsNullOrEmpty(roomIdText)})");
+                Debug.Log(
+                    $"[LobbySceneManager] 입력 필드 값: '{roomIdText}' (비어있음: {string.IsNullOrEmpty(roomIdText)})"
+                );
 
                 if (!string.IsNullOrEmpty(roomIdText))
                 {
@@ -403,7 +465,9 @@ namespace Features.Scenes.Lobby.Managers
                 }
                 else
                 {
-                    Debug.Log($"[LobbySceneManager] 입력 필드가 비어있어서 기본값 사용: {inputRoomId}");
+                    Debug.Log(
+                        $"[LobbySceneManager] 입력 필드가 비어있어서 기본값 사용: {inputRoomId}"
+                    );
                 }
             }
             else
@@ -551,18 +615,30 @@ namespace Features.Scenes.Lobby.Managers
 
         void CallAndroidFunction(string functionName, params string[] parameters)
         {
-        #if UNITY_ANDROID && !UNITY_EDITOR
-            using (AndroidJavaClass unityPlayer = new AndroidJavaClass("com.unity3d.player.UnityPlayer"))
+#if UNITY_ANDROID && !UNITY_EDITOR
+            using (
+                AndroidJavaClass unityPlayer = new AndroidJavaClass(
+                    "com.unity3d.player.UnityPlayer"
+                )
+            )
             {
-                using (AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>("currentActivity"))
+                using (
+                    AndroidJavaObject currentActivity = unityPlayer.GetStatic<AndroidJavaObject>(
+                        "currentActivity"
+                    )
+                )
                 {
                     currentActivity.Call(functionName, parameters);
-                    Debug.Log($"안드로이드 함수 호출: {functionName}({string.Join(", ", parameters)})");
+                    Debug.Log(
+                        $"안드로이드 함수 호출: {functionName}({string.Join(", ", parameters)})"
+                    );
                 }
             }
-        #else
-            Debug.Log($"[에디터/비안드로이드] 안드로이드 함수 호출 시뮬레이션: {functionName}({string.Join(", ", parameters)})");
-        #endif
+#else
+            Debug.Log(
+                $"[에디터/비안드로이드] 안드로이드 함수 호출 시뮬레이션: {functionName}({string.Join(", ", parameters)})"
+            );
+#endif
         }
 
         #region Debug Methods

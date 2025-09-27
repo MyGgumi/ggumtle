@@ -75,8 +75,19 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
     ) {
         sendToUnity(
             UnityTarget.ANDROID_UNITY_CONTROLLER.value,
-            UnityMethod.ADD_CHARACTER_BY_NICKNAME.value,
+            UnityMethod.CHANGE_CHARACTER_TYPE.value,
             listOf(nickname, characterType.type, level)
+        )
+    }
+
+    override fun changeTargetCharacterNickname(
+        nickname: String,
+        newNickname: String,
+    ) {
+        sendToUnity(
+            UnityTarget.ANDROID_UNITY_CONTROLLER.value,
+            UnityMethod.CHANGE_CHARACTER_NICKNAME.value,
+            listOf(nickname, newNickname)
         )
     }
 
@@ -115,6 +126,8 @@ class UnitySendManagerImpl @Inject constructor() : UnitySendManager {
             listOf(accessToken, roomId, host, port)
         )
     }
+
+
 
     override fun goToOutGame() {
     }

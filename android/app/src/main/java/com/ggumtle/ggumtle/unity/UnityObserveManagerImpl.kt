@@ -26,7 +26,7 @@ class UnityObserveManagerImpl @Inject constructor() : UnityObserveManager {
     private val _goToInGameFlow = MutableSharedFlow<Unit>(replay = 1)
     override val goToInGameFlow: SharedFlow<Unit> = _goToInGameFlow.asSharedFlow()
 
-    private val _characterTypeChangeFlow = MutableSharedFlow<String>()
+    private val _characterTypeChangeFlow = MutableSharedFlow<String>(replay = 1)
     override val characterTypeChangeFlow: SharedFlow<String> = _characterTypeChangeFlow.asSharedFlow()
 
     override fun updateProgress(progress: Int, message: String) {
@@ -41,10 +41,10 @@ class UnityObserveManagerImpl @Inject constructor() : UnityObserveManager {
     }
 
     override fun onCharacterTypeChanged(characterType: String) {
-        val getCharacterType = when(characterType){
+        val getCharacterType = when(characterType.lowercase()){
             "healmongging", "heal" -> "heal"
             "hpmongging", "physical" -> "physical"
-            "workmongging", "work" -> "work"
+            "jobmongging", "work" -> "work"
             else -> "UNKNOWN"
         }
         Log.d("unityStartUpObserveManager", "캐릭터 타입 변경: $getCharacterType")

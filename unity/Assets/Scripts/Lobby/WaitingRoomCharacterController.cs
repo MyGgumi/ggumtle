@@ -616,6 +616,33 @@ public class WaitingRoomCharacterController : MonoBehaviour
         activeCharacters.Clear();
         currentPlayerCount = 0;
     }
+    
+    // 특정 캐릭터의 닉네임 변경
+    public void ChangeCharacterNickname(string oldNickname, string newNickname)
+    {
+        // 기존 캐릭터 찾기
+        CharacterData targetCharacter = FindCharacterByNickname(oldNickname);
+        if (targetCharacter == null)
+        {
+            Debug.LogWarning($"해당 닉네임의 캐릭터를 찾을 수 없습니다: {oldNickname}");
+            return;
+        }
+        
+        // 새 닉네임이 이미 존재하는지 확인
+        if (FindCharacterByNickname(newNickname) != null)
+        {
+            Debug.LogWarning($"이미 존재하는 닉네임입니다: {newNickname}");
+            return;
+        }
+        
+        // 닉네임 변경
+        targetCharacter.nickname = newNickname;
+        
+        // 네임태그 텍스트 업데이트
+        UpdateNameTagText(targetCharacter.slotIndex, newNickname, targetCharacter.level);
+        
+        Debug.Log($"캐릭터 닉네임 변경: {oldNickname} -> {newNickname}");
+    }
 
     // 첫 번째 캐릭터의 타입 변경 (버튼용)
     public void ChangeFirstCharacterType()
@@ -627,10 +654,10 @@ public class WaitingRoomCharacterController : MonoBehaviour
         }
 
         CharacterData firstCharacter = activeCharacters[0];
-        
+
         // 다음 타입으로 순환
         CharacterType nextType = (CharacterType)(((int)firstCharacter.currentType + 1) % 3);
-        
+
         // 타입 변경
         SetCharacterTypeInSlot(firstCharacter.slotIndex, nextType);
         firstCharacter.currentType = nextType;

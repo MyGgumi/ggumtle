@@ -604,8 +604,8 @@ namespace Features.Scenes.Lobby.Managers
 
             try
             {
-                CallAndroidFunction("onInGameLoadingStart");
                 await _gameManager.TransitionToLoading();
+                CallAndroidFunction("onInGameLoadingStart");
             }
             catch (System.Exception e)
             {

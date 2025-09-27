@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using Networks;
 using Networks.Rooms.Domains;
 using Features.PlayerList.Models;
 using Features.PlayerList.Services;
@@ -359,6 +360,44 @@ namespace Features.Player.Services
         public List<PlayerInfo> GetPlayersByType(bool isMongging)
         {
             return _playerInfos.Values.Where(p => p.IsMongging == isMongging).ToList();
+        }
+
+        /// <summary>
+        /// 플레이어 역할 가져오기
+        /// </summary>
+        public PlayerRole GetPlayerRole(long playerId)
+        {
+            if (!_playerInfos.TryGetValue(playerId, out var playerInfo))
+            {
+                Debug.LogWarning($"[PlayerManagerService] 존재하지 않는 플레이어의 역할 조회: {playerId}");
+                return PlayerRole.Mongging; // 기본값
+            }
+
+            return playerInfo.IsMongging ? PlayerRole.Mongging : PlayerRole.Mongdung;
+        }
+
+        /// <summary>
+        /// 로컬 플레이어의 역할을 가져옵니다 (Mongdung/Mongging)
+        /// RoomStorage에서 서버 원본 데이터를 직접 사용
+        /// </summary>
+        public PlayerRole GetLocalPlayerRole()
+        {
+            var roomStorage = RoomStorage.Instance;
+            if (roomStorage?.Room?.players == null)
+            {
+                Debug.LogError("[PlayerManagerService] RoomStorage에 플레이어 데이터가 없습니다");
+                return PlayerRole.Mongging; // 기본값
+            }
+
+            var localPlayer = roomStorage.Room.players.FirstOrDefault(p => p.IsMine);
+            if (localPlayer == null)
+            {
+                Debug.LogError("[PlayerManagerService] RoomStorage에서 로컬 플레이어를 찾을 수 없습니다");
+                return PlayerRole.Mongging; // 기본값
+            }
+
+            Debug.Log($"[PlayerManagerService] RoomStorage에서 로컬 플레이어 역할 확인: IsMongging={localPlayer.IsMongging}");
+            return localPlayer.IsMongging ? PlayerRole.Mongging : PlayerRole.Mongdung;
         }
 
         /// <summary>

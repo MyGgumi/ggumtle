@@ -1,0 +1,37 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" noNamespaceSchemaLocation="../../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/UI/ToolKit/Uss/MongdungUI.uss" />
+
+    <!-- 몽둥이 UI 루트 컨테이너 -->
+    <ui:VisualElement name="mongdungUI" class="mongdung-ui-root">
+
+        <!-- 스킬 버튼들 (오른쪽 하단) -->
+        <ui:VisualElement name="skillButtons" class="skill-buttons">
+
+            <!-- 공격 버튼 -->
+            <ui:VisualElement name="attackButton" class="attack-button">
+                <!-- 버튼 배경 이미지 -->
+                <ui:VisualElement name="attackButtonBG" class="button-background" />
+                <!-- 버튼 아이콘 이미지 -->
+                <ui:VisualElement name="attackButtonIcon" class="button-icon attack-icon" />
+            </ui:VisualElement>
+
+            <!-- 위협 버튼 -->
+            <ui:VisualElement name="frightenButton" class="frighten-button">
+                <!-- 버튼 배경 이미지 -->
+                <ui:VisualElement name="frightenButtonBG" class="button-background" />
+                <!-- 버튼 아이콘 이미지 -->
+                <ui:VisualElement name="frightenButtonIcon" class="button-icon frighten-icon" />
+            </ui:VisualElement>
+
+        </ui:VisualElement>
+
+        <!-- 함정 슬롯 (오른쪽 상단) -->
+        <ui:VisualElement name="trapSlot" class="inventory-slot trap-slot">
+            <ui:VisualElement name="trapItemImage" class="item-image" />
+            <ui:VisualElement name="trapCounter" class="item-counter">
+                <ui:Label name="trapCount" text="3" class="item-count-text" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+    </ui:VisualElement>
+</ui:UXML>

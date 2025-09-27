@@ -92,7 +92,7 @@ namespace Features.Mongdung.Models
             new MongdungActionData(MongdungActionType.Attack, "Attack")
             {
                 executionDuration = 1.0f,
-                cooldownDuration = 1.0f,
+                cooldownDuration = 0.5f,
                 range = 3.0f,
             },
             new MongdungActionData(MongdungActionType.TrapSetting, "TrapSetting")

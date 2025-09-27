@@ -20,6 +20,7 @@ namespace Features.Mongdung.Services
         private readonly IMongdungNetworkSource _networkSource;
         private readonly IPublisher<MongdungActionStartedMessage> _actionStartedPublisher;
         private readonly IPublisher<MongdungActionCompletedMessage> _actionCompletedPublisher;
+        private readonly IPublisher<MongdungActionCooldownMessage> _actionCooldownPublisher;
         private readonly IPublisher<MongdungStateChangedMessage> _stateChangedPublisher;
         private readonly IPublisher<MongdungMovementBlockedMessage> _movementBlockedPublisher;
         private readonly IPublisher<MongdungAttackActionMessage> _attackActionPublisher;
@@ -42,6 +43,7 @@ namespace Features.Mongdung.Services
             IMongdungNetworkSource networkSource,
             IPublisher<MongdungActionStartedMessage> actionStartedPublisher,
             IPublisher<MongdungActionCompletedMessage> actionCompletedPublisher,
+            IPublisher<MongdungActionCooldownMessage> actionCooldownPublisher,
             IPublisher<MongdungStateChangedMessage> stateChangedPublisher,
             IPublisher<MongdungMovementBlockedMessage> movementBlockedPublisher,
             IPublisher<MongdungAttackActionMessage> attackActionPublisher,
@@ -55,6 +57,7 @@ namespace Features.Mongdung.Services
             _networkSource = networkSource ?? throw new ArgumentNullException(nameof(networkSource));
             _actionStartedPublisher = actionStartedPublisher;
             _actionCompletedPublisher = actionCompletedPublisher;
+            _actionCooldownPublisher = actionCooldownPublisher;
             _stateChangedPublisher = stateChangedPublisher;
             _movementBlockedPublisher = movementBlockedPublisher;
             _attackActionPublisher = attackActionPublisher;
@@ -247,6 +250,14 @@ namespace Features.Mongdung.Services
             {
                 actionStates[actionType].IsOnCooldown = false;
                 actionStates[actionType].RemainingCooldownTime = 0f;
+
+                // 쿨다운 완료 메시지 발행
+                _actionCooldownPublisher.Publish(new MongdungActionCooldownMessage(
+                    playerId,
+                    actionType,
+                    cooldownDuration,
+                    0f // 쿨타임 완료
+                ));
 
                 if (_enableDebugLogs)
                 {

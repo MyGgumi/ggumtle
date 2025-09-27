@@ -1,0 +1,75 @@
+:root {
+    --attack-icon: resource('Sprites/icon_attack');
+    --frighten-icon: resource('Sprites/icon_fear');
+    --trap-icon: resource('Sprites/icon_trap');
+}
+
+.attack-button {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    pointer-events: auto;
+    picking-mode: position;
+    right: 36px;
+    bottom: -164px;
+    z-index: 15;
+}
+
+.frighten-button {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    pointer-events: auto;
+    picking-mode: position;
+    right: 250px;
+    bottom: -130px;
+    z-index: 15;
+}
+
+.attack-icon {
+    background-image: var(--attack-icon);
+}
+
+.frighten-icon {
+    background-image: var(--frighten-icon);
+}
+
+.trap-slot {
+    position: absolute;
+    right: 100px;
+    top: -127px;
+    width: 100px;
+    height: 100px;
+    background-size: contain;
+    pointer-events: auto;
+    picking-mode: position;
+    z-index: 15;
+}
+
+.trap-slot .item-image {
+    background-image: var(--trap-icon);
+}
+
+.action-button.cooldown {
+    opacity: 0.5;
+}
+
+.action-button.cooldown .button-background {
+    opacity: 0.3;
+}
+
+.action-button.cooldown .button-icon {
+    opacity: 0.6;
+}
+
+.action-button.active {
+    opacity: 1;
+}
+
+.action-button.active .button-background {
+    opacity: 0.3;
+}
+
+.action-button.active .button-icon {
+    opacity: 1;
+}

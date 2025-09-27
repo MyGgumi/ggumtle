@@ -94,7 +94,48 @@ namespace Networks.Players
         {
             this.Result = (MonggingRevivalStopResult)result;
         }
-        
+
         public bool Success => Result == MonggingRevivalStopResult.Success;
+    }
+
+    public enum UseDefibrillatorResult : byte
+    {
+        Fail = 0,              // 실패
+        Success = 1,           // 성공
+        PlayerNotFound = 2,    // 플레이어를 찾지 못하거나 몽깅이가 아님
+        NotUnconscious = 3,    // 기절 상태가 아님
+        NoDefibrillator = 4    // 제세동기 없음
+    }
+
+    public class UseDefibrillatorSend : Sendable
+    {
+        public override PacketType Type => PacketType.UseDefibrillator;
+
+        public UseDefibrillatorSend()
+        {
+            // 요청은 패킷 바디가 없고 헤더만 보내면 됨
+        }
+
+        public override byte[] ToBytes()
+        {
+            // 빈 바이트 배열 반환 (헤더만 전송)
+            return new byte[0];
+        }
+    }
+
+    public class UseDefibrillatorCommand : Command
+    {
+        public override PacketType Type => PacketType.UseDefibrillatorResponse;
+
+        public UseDefibrillatorResult Result { get; set; }
+        public int Hp { get; set; }
+
+        public UseDefibrillatorCommand(byte result, int hp)
+        {
+            this.Result = (UseDefibrillatorResult)result;
+            this.Hp = hp;
+        }
+
+        public bool Success => Result == UseDefibrillatorResult.Success;
     }
 }

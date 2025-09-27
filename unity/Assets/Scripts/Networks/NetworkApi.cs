@@ -753,6 +753,58 @@ namespace Networks
             }
         }
 
+        public async Task<UseDefibrillatorCommand> UseDefibrillator()
+        {
+            try
+            {
+                Debug.Log("[NetworkApi] 제세동기 사용 시작");
+
+                if (client == null || !client.IsConnected)
+                {
+                    Debug.LogError("[NetworkApi] 클라이언트 연결 실패");
+                    throw new Exception("Client가 연결되지 않았습니다.");
+                }
+
+                var tcs = new TaskCompletionSource<object>();
+                _pendingRequests[PacketType.UseDefibrillatorResponse] = tcs;
+
+                var useDefibrillatorRequest = new UseDefibrillatorSend();
+                client.Send(useDefibrillatorRequest);
+
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                cts.Token.Register(() =>
+                {
+                    Debug.LogError("[NetworkApi] 제세동기 사용 요청 타임아웃");
+                    tcs.TrySetCanceled();
+                });
+
+                var response = await tcs.Task;
+
+                if (response is UseDefibrillatorCommand command)
+                {
+                    return command;
+                }
+
+                throw new InvalidOperationException(
+                    "UseDefibrillator에서 예상치 못한 응답 타입입니다."
+                );
+            }
+            catch (TimeoutException)
+            {
+                Debug.LogError("[NetworkApi] 제세동기 사용 요청 타임아웃");
+                throw;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[NetworkApi] 제세동기 사용 패킷 전송 실패: {e.Message}");
+                throw;
+            }
+            finally
+            {
+                _pendingRequests.TryRemove(PacketType.UseDefibrillatorResponse, out _);
+            }
+        }
+
         public async Task<MonggingFieldItemUseCommand> MonggingFieldItemUse(int fieldItemId)
         {
             try

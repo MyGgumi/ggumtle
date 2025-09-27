@@ -293,12 +293,9 @@ namespace Features.Inventory.ViewModels
 
             try
             {
-                // TODO: 멀티플레이어에서 내 플레이어의 시야 방향 계산 필요
-                var direction = Vector3.forward;
-                var success = await _inventoryService.RequestUseItemAsync(
-                    slot.ItemId,
-                    direction
-                );
+                // ItemUsedMessage를 발행하여 ItemUsageService에서 처리하도록 함
+                int slotNumber = SelectedSlotIndex.Value + 1; // 슬롯 번호는 1부터 시작
+                bool success = UseItemInSlot(slotNumber);
 
                 if (success)
                 {

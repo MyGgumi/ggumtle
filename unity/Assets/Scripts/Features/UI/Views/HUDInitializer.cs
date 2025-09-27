@@ -44,6 +44,7 @@ namespace Features.UI.Views
         private Features.Inventory.Views.InventoryUIView _inventoryUIView;
         private Features.Chest.Views.ChestUIView _chestUIView;
         private Features.Feeding.Views.FeedingUIView _feedingUIView;
+        private Features.Revival.Views.RevivalUIView _revivalUIView;
         private MongdungUIView _mongdungUIView;
 
         [Inject]
@@ -117,6 +118,7 @@ namespace Features.UI.Views
             _inventoryUIView = FindFirstObjectByType<Features.Inventory.Views.InventoryUIView>();
             _chestUIView = FindFirstObjectByType<Features.Chest.Views.ChestUIView>();
             _feedingUIView = FindFirstObjectByType<Features.Feeding.Views.FeedingUIView>();
+            _revivalUIView = FindFirstObjectByType<Features.Revival.Views.RevivalUIView>();
             _mongdungUIView = FindFirstObjectByType<MongdungUIView>();
 
             UnityEngine.Debug.Log("[HUDInitializer] Feature Views 찾기 완료");
@@ -137,6 +139,7 @@ namespace Features.UI.Views
             _inventoryUIView?.Initialize(_root);
             _chestUIView?.Initialize(_root);
             _feedingUIView?.Initialize(_root);
+            _revivalUIView?.Initialize(_root);
             _mongdungUIView?.Initialize(_root);
 
             // MobileControlsView 디버그 비활성화

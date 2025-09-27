@@ -23,8 +23,9 @@
         MongdungSkill = 67,
         MonggingItemUse = 69,
         MonggingFieldItemUse = 71,
+        UseDefibrillator = 73,
         ExitAttempt = 140,
-        
+
         // Receive
         VerifyTokenResponse = 2,
         RoomJoinResponse = 11,
@@ -49,6 +50,7 @@
         MongdungSkillResponse = 68,
         MonggingItemUseResponse = 70,
         MonggingFieldItemUseResponse = 72,
+        UseDefibrillatorResponse = 74,
         MonggingStateBroadcast = 42,
         GgumtleSpawn = 43,
         GgumtleState = 120,

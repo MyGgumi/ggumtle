@@ -514,16 +514,6 @@ public class DreamManager {
             return;
         }
 
-        // 필드 아이템 사용 여부 확인
-        if (fieldItem.isUsed()) {
-            Body body = new UseFieldItemBody(UseFieldItemBody.Result.ALREADY_USED, fieldItem.id);
-            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
-
-            log.warn("[{} - {}] 필드 아이템 사용 실패: {}번 필드 아이템을 이미 사용함", session.getChannel().id(), room.id, itemId);
-            return;
-        }
-
         // 필드템 인근인지 확인
         if (!fieldItem.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_NEAR, fieldItem.id);
@@ -534,8 +524,21 @@ public class DreamManager {
             return;
         }
 
-        // 필드 아이템 사용
-        fieldItem.use();
+        boolean success = fieldItem.use();
+
+        // 필드 아이템 사용 여부 확인
+        if (!success) {
+            Body body = new UseFieldItemBody(UseFieldItemBody.Result.ALREADY_USED, fieldItem.id);
+            Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.warn("[{} - {}] 필드 아이템 사용 실패: {}번 필드 아이템을 이미 사용함", session.getChannel().id(), room.id, itemId);
+            return;
+        }
+
+        if (fieldItem.type == FieldItem.Type.HEAL) {
+            mongging.heal(50);
+        }
 
         // 필드 아이템 사용은 모든 플레이어에게 전송되어야 함
         Body body = new UseFieldItemBody(UseFieldItemBody.Result.SUCCESS, fieldItem.id);

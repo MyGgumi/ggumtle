@@ -217,6 +217,13 @@ public class Mongging extends Player {
         }
     }
 
+    public int heal(int amount) {
+        synchronized (statusLock) {
+            this.hp = Math.min(maxHp, this.hp + amount);
+            return this.hp;
+        }
+    }
+
     public void revive() {
         synchronized (statusLock) {
             this.hp = REVIVE_HP;

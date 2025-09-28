@@ -12,6 +12,8 @@ using Features.Revival.Messages;
 using Features.Revival.Views;
 using Features.EscapeGate.Messages;
 using Features.EscapeGate.Views;
+using Features.FieldItem.Messages;
+using Features.FieldItem.Views;
 using Features.Player.Services;
 using Features.PlayerList.Models;
 using MessagePipe;
@@ -254,15 +256,22 @@ namespace Interaction
 
         void OnTriggerEnter(Collider other)
         {
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] OnTriggerEnter 호출됨: {other.gameObject.name}, Layer={other.gameObject.layer}");
+
             // 로컬 몽깅이 플레이어만 상호작용 감지 활성화
             if (!IsLocalMonggingPlayer())
             {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 로컬 몽깅이가 아님 - 무시");
                 return;
             }
 
             // 레이어 마스크 체크 (상호작용 객체는 Layer 7, 다른 것들은 다른 레이어이므로 필터링)
             if (!IsInLayerMask(other.gameObject.layer, interactionLayerMask))
             {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 레이어 마스크 불일치: {other.gameObject.layer} vs {interactionLayerMask}");
                 return;
             }
 
@@ -308,6 +317,18 @@ namespace Interaction
                 if (enableDebugLogs)
                     Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지: {other.gameObject.name}");
                 AddEscapeGateToDetectionList(escapeGateGameObject, other);
+                return;
+            }
+
+            // 필드 아이템인지 확인하고 바로 사용 요청
+            var fieldItemGameObject = other.GetComponent<FieldItemGameObject>();
+            if (fieldItemGameObject != null && fieldItemGameObject.IsActive)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 필드 아이템 감지 및 자동 사용: {other.gameObject.name}, ID={fieldItemGameObject.ItemId}, Type={fieldItemGameObject.ItemType}");
+
+                // 바로 사용 요청
+                fieldItemGameObject.RequestUse();
                 return;
             }
 
@@ -424,6 +445,7 @@ namespace Interaction
                 RemoveEscapeGateFromDetectionList(escapeGateGameObject);
                 return;
             }
+
 
             // 다른 상호작용 객체는 기존 방식 유지
             var interactable = other.GetComponent<IInteractable>();

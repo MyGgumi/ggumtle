@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 3464664650734173800}
   - component: {fileID: 5895370188296523541}
   - component: {fileID: 1433812079487320023}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Glow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4969,7 +4969,8 @@ GameObject:
   - component: {fileID: 3833503105472271537}
   - component: {fileID: 7856576961434712842}
   - component: {fileID: -8991253052335944494}
-  m_Layer: 0
+  - component: {fileID: 2740853896053996388}
+  m_Layer: 7
   m_Name: SpedPack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -4992,7 +4993,7 @@ Transform:
   - {fileID: 7246598047041268788}
   - {fileID: 3464664650734173800}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: -90, y: 0, z: 0}
 --- !u!198 &3833503105472271537
 ParticleSystem:
   m_ObjectHideFlags: 0
@@ -9817,8 +9818,34 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edb9b6608a115cb45be77bc7cce2b7c6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  itemId: 0
+  itemId: -1
   itemType: 1
+  itemName: FieldItem
+  itemVisual: {fileID: 0}
+  itemCollider: {fileID: 0}
+  useEffect: {fileID: 0}
+  enableDebugLogs: 1
+--- !u!65 &2740853896053996388
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5471107720689626481}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.6367488, y: 0.63674897, z: 0.63674897}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &8610789706724901983
 GameObject:
   m_ObjectHideFlags: 0
@@ -9830,7 +9857,7 @@ GameObject:
   - component: {fileID: 7246598047041268788}
   - component: {fileID: 2145505726333582988}
   - component: {fileID: 6189337941593356820}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Particles
   m_TagString: Untagged
   m_Icon: {fileID: 0}

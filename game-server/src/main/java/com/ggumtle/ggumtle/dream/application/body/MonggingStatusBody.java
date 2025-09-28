@@ -15,6 +15,8 @@ public record MonggingStatusBody(
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {
         NORMAL(1),
+        DIGGING(2),
+        FEEDING(20),
         KNOCKOUT(50),
         DEAD(70),
         ESCAPE(100),

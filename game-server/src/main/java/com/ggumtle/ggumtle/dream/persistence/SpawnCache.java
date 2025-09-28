@@ -61,8 +61,11 @@ public class SpawnCache {
         return copy.subList(0, size);
     }
 
-    public List<ExitSpawn> getRandomExitSpawns() {
-        return List.copyOf(this.exitSpawns);
+    public List<ExitSpawn> getExitSpawns() {
+        return List.of(
+                new ExitSpawn(1, 60 * 100,(int) (5.5 * 100),-10 * 100),
+                new ExitSpawn(2, 42 * 100,5 * 100,20 * 100)
+        );
     }
 
     public List<FieldItemSpawn> getFieldItemSpawns() {

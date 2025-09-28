@@ -1481,7 +1481,7 @@ public class DreamManager {
         }
 
         // 출구 초기화
-        List<ExitSpawn> exitSpawns = spawnCache.getRandomExitSpawns();
+        List<ExitSpawn> exitSpawns = spawnCache.getExitSpawns();
         for (int i = 0; i < exitSpawns.size(); i++) {
             exits.put(i, new Exit(i, Position.from(exitSpawns.get(i))));
         }

@@ -5,6 +5,9 @@ using Features.Chest.Messages;
 using Features.Chest.Services;
 using Features.Chest.ViewModels;
 using Features.Chest.Views;
+using Features.EscapeGate.Messages;
+using Features.EscapeGate.Services;
+using Features.EscapeGate.NetworkSources;
 using Features.FieldItem.Views;
 using Features.GameInfo.Messages;
 using Features.GameInfo.Services;
@@ -129,6 +132,12 @@ namespace DI
             // Revival Messages
             builder.RegisterMessageBroker<FaintedMonggingDetectedMessage>(options);
             builder.RegisterMessageBroker<FaintedMonggingLeftMessage>(options);
+
+            // EscapeGate Messages
+            builder.RegisterMessageBroker<Features.EscapeGate.Messages.EscapeGateDetectedMessage>(options);
+            builder.RegisterMessageBroker<Features.EscapeGate.Messages.EscapeGateLeftMessage>(options);
+            builder.RegisterMessageBroker<Features.EscapeGate.Messages.EscapeGateOpenedMessage>(options);
+            builder.RegisterMessageBroker<Features.EscapeGate.Messages.EscapeAttemptSuccessMessage>(options);
 
             // Inventory Messages
             builder.RegisterMessageBroker<ItemAddedMessage>(options);
@@ -273,6 +282,9 @@ namespace DI
             // InteractionTriggerDetector는 별도로 주입 처리
             builder.RegisterComponentInHierarchy<Interaction.InteractionTriggerDetector>();
 
+            // EscapeGateGameObject들 자동 의존성 주입
+            builder.RegisterComponentInHierarchy<Features.EscapeGate.Views.EscapeGateGameObject>();
+
             // NetworkApi 등록 (팩토리 방식으로 싱글톤 인스턴스 사용)
             builder.Register<Networks.NetworkApi>(
                 _ =>
@@ -299,6 +311,10 @@ namespace DI
             builder.Register<IMainGameNetworkSource, MainGameNetworkSource>(Lifetime.Scoped);
             builder.Register<IPlayerNetworkSource, PlayerNetworkSource>(Lifetime.Scoped);
             builder.Register<IMongdungNetworkSource, MongdungNetworkSource>(Lifetime.Scoped);
+            builder.Register<
+                Features.EscapeGate.NetworkSources.IEscapeGateNetworkSource,
+                Features.EscapeGate.NetworkSources.EscapeGateNetworkSource
+            >(Lifetime.Scoped);
 
             // ItemUsage & Revival NetworkSources 등록
             builder.Register<
@@ -353,6 +369,12 @@ namespace DI
                 Features.Revival.Services.RevivalServiceImpl
             >(Lifetime.Scoped);
 
+            // EscapeGate Services 등록
+            builder.Register<
+                Features.EscapeGate.Services.IEscapeGateService,
+                Features.EscapeGate.Services.EscapeGateServiceImpl
+            >(Lifetime.Scoped);
+
             // Revival Handlers 등록
             builder.Register<Features.Revival.Handlers.MonggingInteractableHandler>(Lifetime.Scoped);
 
@@ -402,12 +424,19 @@ namespace DI
             builder.RegisterEntryPoint<Features.Revival.Handlers.MonggingInteractableHandler>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MonggingInteractableHandler EntryPoint 등록 완료");
 
-            // MainGameNetworkEventHandler에 MainGameService 주입
+            // NetworkEventHandlers 초기화
             builder.RegisterBuildCallback(container =>
             {
+                // MainGameNetworkEventHandler에 MainGameService와 NotificationService 주입
                 var mainGameService = container.Resolve<IMainGameService>();
-                MainGameNetworkEventHandler.Initialize(mainGameService);
+                var notificationService = container.Resolve<INotificationService>();
+                MainGameNetworkEventHandler.Initialize(mainGameService, notificationService);
                 UnityEngine.Debug.Log("[MainLifetimeScope] MainGameNetworkEventHandler 초기화 완료");
+
+                // EscapeGateNetworkEventHandler에 Publisher 주입
+                var escapeGateOpenedPublisher = container.Resolve<IPublisher<Features.EscapeGate.Messages.EscapeGateOpenedMessage>>();
+                Features.EscapeGate.NetworkSources.EscapeGateNetworkEventHandler.Initialize(escapeGateOpenedPublisher);
+                UnityEngine.Debug.Log("[MainLifetimeScope] EscapeGateNetworkEventHandler 초기화 완료");
             });
 
             UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료 - Addressable 동적 생성 방식 사용");

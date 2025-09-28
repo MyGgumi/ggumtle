@@ -2,6 +2,7 @@ using System;
 using DotNetty.Transport.Channels;
 using Features.MainGame.Services;
 using Features.GameResult.Models;
+using Features.Notification.Services;
 using Networks;
 using Networks.Attributes;
 using Networks.Game;
@@ -17,16 +18,18 @@ namespace Features.MainGame.NetworkSources
     /// </summary>
     public static class MainGameNetworkEventHandler
     {
-        // static CommandHandler를 위한 static MainGameService 저장소
+        // static CommandHandler를 위한 static 서비스 저장소
         private static IMainGameService _mainGameService;
+        private static INotificationService _notificationService;
 
         /// <summary>
-        /// MainGameService 설정 (DI Container에서 호출)
+        /// 서비스들 설정 (DI Container에서 호출)
         /// </summary>
-        public static void Initialize(IMainGameService mainGameService)
+        public static void Initialize(IMainGameService mainGameService, INotificationService notificationService)
         {
             _mainGameService = mainGameService;
-            Debug.Log("[MainGameNetworkEventHandler] MainGameService 설정 완료");
+            _notificationService = notificationService;
+            Debug.Log("[MainGameNetworkEventHandler] 서비스들 설정 완료");
         }
 
         /// <summary>
@@ -85,6 +88,10 @@ namespace Features.MainGame.NetworkSources
                     string reason = $"서버 게임 종료 - 탈출한 몽깅이: {command.escapedMonggingCount}명";
 
                     _mainGameService.EndGame(teamResult, reason);
+
+                    // NotificationService로 게임 결과 알림 표시
+                    ShowGameResultNotification(teamResult, command.escapedMonggingCount);
+
                     Debug.Log("[MainGameNetworkEventHandler] MainGameService.EndGame() 호출 완료");
                 }
                 else
@@ -110,6 +117,39 @@ namespace Features.MainGame.NetworkSources
                 1 => TeamResult.MongdungWin,    // 몽둥이 승리
                 _ => TeamResult.MonggingWin     // 기본값
             };
+        }
+
+        /// <summary>
+        /// 게임 결과를 NotificationService로 알림 표시
+        /// </summary>
+        private static void ShowGameResultNotification(TeamResult teamResult, int escapedMonggingCount)
+        {
+            if (_notificationService == null)
+            {
+                Debug.LogWarning("[MainGameNetworkEventHandler] NotificationService가 설정되지 않아 게임 결과 알림을 표시할 수 없습니다");
+                return;
+            }
+
+            string resultMessage;
+            switch (teamResult)
+            {
+                case TeamResult.MonggingWin:
+                    resultMessage = $"🎉 몽깅이 승리! {escapedMonggingCount}명이 탈출했습니다!";
+                    _notificationService.ShowSuccessNotification(resultMessage);
+                    break;
+
+                case TeamResult.MongdungWin:
+                    resultMessage = $"💀 몽둥이 승리! 아무도 탈출하지 못했습니다.";
+                    _notificationService.ShowNotification(resultMessage, 5f);
+                    break;
+
+                default:
+                    resultMessage = "게임이 종료되었습니다.";
+                    _notificationService.ShowNotification(resultMessage, 3f);
+                    break;
+            }
+
+            Debug.Log($"[MainGameNetworkEventHandler] 게임 결과 알림 표시: {resultMessage}");
         }
     }
 }

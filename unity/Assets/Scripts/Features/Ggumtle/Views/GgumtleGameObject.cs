@@ -1,3 +1,4 @@
+using DI;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.Models;
 using Features.Ggumtle.ViewModels;
@@ -6,7 +7,6 @@ using R3;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
-using DI;
 using R3DisposableBag = R3.DisposableBag;
 
 namespace Features.Ggumtle.Views
@@ -79,7 +79,8 @@ namespace Features.Ggumtle.Views
         public void Construct(
             GgumtleViewModel viewModel,
             Features.Ggumtle.Services.IGgumtleService ggumtleService,
-            ISubscriber<GgumtleStateBroadcastMessage> stateBroadcastSubscriber)
+            ISubscriber<GgumtleStateBroadcastMessage> stateBroadcastSubscriber
+        )
         {
             _viewModel = viewModel;
             _ggumtleService = ggumtleService;
@@ -104,7 +105,9 @@ namespace Features.Ggumtle.Views
             // VContainer 의존성 주입 확인
             if (_viewModel == null || _ggumtleService == null || _stateBroadcastSubscriber == null)
             {
-                Debug.LogError($"[GgumtleGameObject] VContainer 의존성 주입 실패: {gameObject.name}. ViewModel: {_viewModel != null}, Service: {_ggumtleService != null}, Subscriber: {_stateBroadcastSubscriber != null}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] VContainer 의존성 주입 실패: {gameObject.name}. ViewModel: {_viewModel != null}, Service: {_ggumtleService != null}, Subscriber: {_stateBroadcastSubscriber != null}"
+                );
                 return;
             }
 
@@ -150,11 +153,15 @@ namespace Features.Ggumtle.Views
             childAnimator = GetComponentInChildren<Animator>();
             if (childAnimator == null)
             {
-                Debug.LogWarning($"[GgumtleGameObject] 하위 Animator를 찾을 수 없습니다: {gameObject.name}");
+                Debug.LogWarning(
+                    $"[GgumtleGameObject] 하위 Animator를 찾을 수 없습니다: {gameObject.name}"
+                );
             }
 
             if (enableDebugLogs)
-                Debug.Log($"[GgumtleGameObject] 컴포넌트 초기화 완료: {gameObject.name}, ID: {ggumtleId}, ChildAnimator: {childAnimator != null}");
+                Debug.Log(
+                    $"[GgumtleGameObject] 컴포넌트 초기화 완료: {gameObject.name}, ID: {ggumtleId}, ChildAnimator: {childAnimator != null}"
+                );
         }
 
         private void SetupInteractionLayer()
@@ -211,7 +218,6 @@ namespace Features.Ggumtle.Views
             }
         }
 
-
         #endregion
 
         #region Service Registration
@@ -223,19 +229,29 @@ namespace Features.Ggumtle.Views
         {
             if (_ggumtleService == null)
             {
-                Debug.LogError($"[GgumtleGameObject] GgumtleService가 주입되지 않아 등록 실패: {gameObject.name}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] GgumtleService가 주입되지 않아 등록 실패: {gameObject.name}"
+                );
                 return;
             }
 
             try
             {
                 // GgumtleService에 등록 (ID, 이름, 위치)
-                _ggumtleService.RegisterGgumtle(ggumtleId.ToString(), gameObject.name, transform.position);
-                Debug.Log($"[GgumtleGameObject] GgumtleService 등록 완료: {gameObject.name}, ID: {ggumtleId}");
+                _ggumtleService.RegisterGgumtle(
+                    ggumtleId.ToString(),
+                    gameObject.name,
+                    transform.position
+                );
+                Debug.Log(
+                    $"[GgumtleGameObject] GgumtleService 등록 완료: {gameObject.name}, ID: {ggumtleId}"
+                );
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[GgumtleGameObject] GgumtleService 등록 실패: {gameObject.name}, 오류: {ex.Message}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] GgumtleService 등록 실패: {gameObject.name}, 오류: {ex.Message}"
+                );
             }
         }
 
@@ -246,19 +262,25 @@ namespace Features.Ggumtle.Views
         {
             if (_ggumtleService == null)
             {
-                Debug.LogError($"[GgumtleGameObject] GgumtleService가 주입되지 않아 해제 실패: {gameObject.name}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] GgumtleService가 주입되지 않아 해제 실패: {gameObject.name}"
+                );
                 return;
             }
 
             try
             {
                 // 주입된 GgumtleService 사용
-                _ggumtleService.UnregisterGgumtle(ggumtleId.ToString());
-                Debug.Log($"[GgumtleGameObject] GgumtleService 해제 완료: {gameObject.name}, ID: {ggumtleId}");
+                _ggumtleService.UnregisterGgumtle(ggumtleId);
+                Debug.Log(
+                    $"[GgumtleGameObject] GgumtleService 해제 완료: {gameObject.name}, ID: {ggumtleId}"
+                );
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[GgumtleGameObject] GgumtleService 해제 실패: {gameObject.name}, 오류: {ex.Message}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] GgumtleService 해제 실패: {gameObject.name}, 오류: {ex.Message}"
+                );
             }
         }
 
@@ -348,14 +370,14 @@ namespace Features.Ggumtle.Views
         {
             if (_stateBroadcastSubscriber == null)
             {
-                Debug.LogError($"[GgumtleGameObject] StateBroadcastSubscriber가 null이어서 네트워크 이벤트 구독 실패: {gameObject.name}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] StateBroadcastSubscriber가 null이어서 네트워크 이벤트 구독 실패: {gameObject.name}"
+                );
                 return;
             }
 
             // 서버에서 오는 상태 브로드캐스트 메시지 구독
-            _stateBroadcastSubscriber
-                .Subscribe(OnStateBroadcastReceived)
-                .AddTo(_disposables);
+            _stateBroadcastSubscriber.Subscribe(OnStateBroadcastReceived).AddTo(_disposables);
 
             if (enableDebugLogs)
                 Debug.Log($"[GgumtleGameObject] 네트워크 이벤트 구독 완료: {gameObject.name}");
@@ -368,7 +390,9 @@ namespace Features.Ggumtle.Views
                 return;
 
             if (enableDebugLogs)
-                Debug.Log($"[GgumtleGameObject] 상태 브로드캐스트 수신: {gameObject.name}, Status={message.Status}");
+                Debug.Log(
+                    $"[GgumtleGameObject] 상태 브로드캐스트 수신: {gameObject.name}, Status={message.Status}"
+                );
 
             // 서버 상태 코드에 따라 애니메이터 파라미터 설정
             UpdateAnimatorParameters(message.Status);
@@ -395,7 +419,9 @@ namespace Features.Ggumtle.Views
         {
             if (childAnimator == null)
             {
-                Debug.LogWarning($"[GgumtleGameObject] Child Animator가 null이어서 파라미터 설정 실패: {gameObject.name}");
+                Debug.LogWarning(
+                    $"[GgumtleGameObject] Child Animator가 null이어서 파라미터 설정 실패: {gameObject.name}"
+                );
                 return;
             }
 
@@ -412,12 +438,12 @@ namespace Features.Ggumtle.Views
 
                 case 10: // 나와 있음 (PullUp)
                     childAnimator.SetTrigger("Emerge");
-                    childAnimator.SetBool("IsFeeding", false);  // Feeding 중단
+                    childAnimator.SetBool("IsFeeding", false); // Feeding 중단
                     break;
 
                 case 11: // 짭꿈틀
                     childAnimator.SetBool("IsFake", true);
-                    
+
                     break;
 
                 case 20: // 먹는 중
@@ -450,7 +476,7 @@ namespace Features.Ggumtle.Views
                 11 => GgumtleState.Fake,
                 20 => GgumtleState.Feeding, // 먹는 중
                 30 => GgumtleState.Purified,
-                _ => null
+                _ => null,
             };
         }
 
@@ -502,7 +528,9 @@ namespace Features.Ggumtle.Views
         {
             // 파내는 중 상태
             if (enableDebugLogs)
-                Debug.Log($"[GgumtleGameObject] OnStateDigging 호출됨 - Animator: {ggumtleAnimator != null}, Trigger: '{diggingAnimationTrigger}'");
+                Debug.Log(
+                    $"[GgumtleGameObject] OnStateDigging 호출됨 - Animator: {ggumtleAnimator != null}, Trigger: '{diggingAnimationTrigger}'"
+                );
 
             if (ggumtleAnimator != null && !string.IsNullOrEmpty(diggingAnimationTrigger))
             {
@@ -510,11 +538,15 @@ namespace Features.Ggumtle.Views
                 ggumtleAnimator.SetBool("IsDigging", true);
 
                 if (enableDebugLogs)
-                    Debug.Log($"[GgumtleGameObject] 파기 애니메이션 실행: {diggingAnimationTrigger}");
+                    Debug.Log(
+                        $"[GgumtleGameObject] 파기 애니메이션 실행: {diggingAnimationTrigger}"
+                    );
             }
             else
             {
-                Debug.LogWarning($"[GgumtleGameObject] 파기 애니메이션 실행 실패 - Animator: {ggumtleAnimator != null}, Trigger: '{diggingAnimationTrigger}'");
+                Debug.LogWarning(
+                    $"[GgumtleGameObject] 파기 애니메이션 실행 실패 - Animator: {ggumtleAnimator != null}, Trigger: '{diggingAnimationTrigger}'"
+                );
             }
 
             if (diggingEffect != null)
@@ -582,12 +614,6 @@ namespace Features.Ggumtle.Views
             {
                 purificationEffect.Play();
             }
-
-            // 3초 후 오브젝트 제거
-            Observable
-                .Timer(System.TimeSpan.FromSeconds(3f))
-                .Subscribe(_ => DestroyGameObject())
-                .AddTo(_disposables);
         }
 
         private void StopAllEffects()
@@ -613,7 +639,9 @@ namespace Features.Ggumtle.Views
             PlayFakeEffectAndDestroy();
 
             if (enableDebugLogs)
-                Debug.Log($"[GgumtleGameObject] 짭꿈틀 발견 - 이펙트 재생 후 삭제: {gameObject.name}");
+                Debug.Log(
+                    $"[GgumtleGameObject] 짭꿈틀 발견 - 이펙트 재생 후 삭제: {gameObject.name}"
+                );
         }
 
         private void PlayFakeEffectAndDestroy()
@@ -626,7 +654,8 @@ namespace Features.Ggumtle.Views
                 if (fakeEffectTransform != null)
                 {
                     // Fake_effect와 모든 하위 파티클 시스템 재생
-                    ParticleSystem[] allParticles = fakeEffectTransform.GetComponentsInChildren<ParticleSystem>();
+                    ParticleSystem[] allParticles =
+                        fakeEffectTransform.GetComponentsInChildren<ParticleSystem>();
                     float maxDuration = 0f;
 
                     foreach (ParticleSystem ps in allParticles)
@@ -652,13 +681,17 @@ namespace Features.Ggumtle.Views
                 }
                 else
                 {
-                    Debug.LogWarning($"[GgumtleGameObject] Fake_effect를 찾을 수 없습니다: {gameObject.name}");
+                    Debug.LogWarning(
+                        $"[GgumtleGameObject] Fake_effect를 찾을 수 없습니다: {gameObject.name}"
+                    );
                     DestroyGameObject(); // 이펙트 없어도 즉시 삭제
                 }
             }
             else
             {
-                Debug.LogWarning($"[GgumtleGameObject] Main 오브젝트를 찾을 수 없습니다: {gameObject.name}");
+                Debug.LogWarning(
+                    $"[GgumtleGameObject] Main 오브젝트를 찾을 수 없습니다: {gameObject.name}"
+                );
                 DestroyGameObject(); // 이펙트 없어도 즉시 삭제
             }
         }
@@ -684,11 +717,15 @@ namespace Features.Ggumtle.Views
             {
                 _viewModel.State.Value = GgumtleState.Fake;
                 if (enableDebugLogs)
-                    Debug.Log($"[GgumtleGameObject] ViewModel 상태를 Fake로 변경: {gameObject.name}");
+                    Debug.Log(
+                        $"[GgumtleGameObject] ViewModel 상태를 Fake로 변경: {gameObject.name}"
+                    );
             }
             else
             {
-                Debug.LogError($"[GgumtleGameObject] ViewModel이 null이어서 Fake 상태 설정 실패: {gameObject.name}");
+                Debug.LogError(
+                    $"[GgumtleGameObject] ViewModel이 null이어서 Fake 상태 설정 실패: {gameObject.name}"
+                );
             }
         }
 

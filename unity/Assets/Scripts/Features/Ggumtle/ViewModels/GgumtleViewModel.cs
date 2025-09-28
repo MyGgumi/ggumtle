@@ -310,7 +310,9 @@ namespace Features.Ggumtle.ViewModels
             // 현재 접근 중인 꿈틀이의 먹은 젤리 개수가 업데이트되면 즉시 UI 반영
             UpdateCurrentFood(CurrentGgumtleId.Value);
 
-            Debug.Log($"[GgumtleViewModel] 꿈틀이 {msg.GgumtleId} 젤리 개수 실시간 업데이트: {msg.EatenCount}");
+            Debug.Log(
+                $"[GgumtleViewModel] 꿈틀이 {msg.GgumtleId} 젤리 개수 실시간 업데이트: {msg.EatenCount}"
+            );
         }
 
         private async void OnMobileInteractHoldStart()
@@ -324,7 +326,9 @@ namespace Features.Ggumtle.ViewModels
 
         private void OnMobileInteractHoldEnd()
         {
-            Debug.Log($"[GgumtleViewModel] OnMobileInteractHoldEnd 호출됨 - IsHolding: {IsHolding.Value}, CurrentGgumtleId: {CurrentGgumtleId.Value}");
+            Debug.Log(
+                $"[GgumtleViewModel] OnMobileInteractHoldEnd 호출됨 - IsHolding: {IsHolding.Value}, CurrentGgumtleId: {CurrentGgumtleId.Value}"
+            );
 
             if (IsHolding.Value)
             {
@@ -404,7 +408,7 @@ namespace Features.Ggumtle.ViewModels
                     return await StartFeeding();
 
                 default:
-                    _ggumtleService.StartHold(CurrentGgumtleId.Value);
+                    // _ggumtleService.StartHold(CurrentGgumtleId.Value);
                     return true;
             }
         }
@@ -476,7 +480,10 @@ namespace Features.Ggumtle.ViewModels
                 IsHolding.Value = false;
                 HoldProgress.Value = 0f;
             }
-            else if (data.currentState == GgumtleState.Feeding || data.currentState == GgumtleState.Emerged)
+            else if (
+                data.currentState == GgumtleState.Feeding
+                || data.currentState == GgumtleState.Emerged
+            )
             {
                 // 먹이주기는 홀드 완료되어도 중단 가능하도록 IsHolding 유지
                 Debug.Log("[GgumtleViewModel] 먹이주기 홀드 완료 - 중단 가능하도록 IsHolding 유지");
@@ -496,7 +503,9 @@ namespace Features.Ggumtle.ViewModels
 
         private async UniTask HandleHoldCancellation()
         {
-            Debug.Log($"[GgumtleViewModel] 홀드 취소 처리 - CurrentGgumtleId: {CurrentGgumtleId.Value}");
+            Debug.Log(
+                $"[GgumtleViewModel] 홀드 취소 처리 - CurrentGgumtleId: {CurrentGgumtleId.Value}"
+            );
 
             var data = _ggumtleService.GetGgumtleData(CurrentGgumtleId.Value);
             if (data != null)
@@ -506,7 +515,9 @@ namespace Features.Ggumtle.ViewModels
             }
             else
             {
-                Debug.LogError($"[GgumtleViewModel] GgumtleData를 찾을 수 없음: {CurrentGgumtleId.Value}");
+                Debug.LogError(
+                    $"[GgumtleViewModel] GgumtleData를 찾을 수 없음: {CurrentGgumtleId.Value}"
+                );
             }
 
             _ggumtleService.CancelHold(CurrentGgumtleId.Value);
@@ -520,7 +531,9 @@ namespace Features.Ggumtle.ViewModels
 
         private async UniTask HandleNetworkCancellation(GgumtleData data)
         {
-            Debug.Log($"[GgumtleViewModel] HandleNetworkCancellation 호출됨 - 상태: {data.currentState}");
+            Debug.Log(
+                $"[GgumtleViewModel] HandleNetworkCancellation 호출됨 - 상태: {data.currentState}"
+            );
 
             // 파기 중단
             if (
@@ -545,14 +558,24 @@ namespace Features.Ggumtle.ViewModels
                 }
             }
             // 먹이주기 중단 (Emerging, Emerged, Feeding 상태)
-            else if (data.currentState == GgumtleState.Emerging || data.currentState == GgumtleState.Emerged || data.currentState == GgumtleState.Feeding)
+            else if (
+                data.currentState == GgumtleState.Emerging
+                || data.currentState == GgumtleState.Emerged
+                || data.currentState == GgumtleState.Feeding
+            )
             {
-                Debug.Log($"[GgumtleViewModel] 먹이주기 중단 시도, 현재 상태: {data.currentState}, GgumtleId: {CurrentGgumtleId.Value}");
-                Debug.Log($"[GgumtleViewModel] 먹이주기 중단 전 - IsHolding: {IsHolding.Value}, IsCancelRequested: {IsCancelRequested.Value}");
+                Debug.Log(
+                    $"[GgumtleViewModel] 먹이주기 중단 시도, 현재 상태: {data.currentState}, GgumtleId: {CurrentGgumtleId.Value}"
+                );
+                Debug.Log(
+                    $"[GgumtleViewModel] 먹이주기 중단 전 - IsHolding: {IsHolding.Value}, IsCancelRequested: {IsCancelRequested.Value}"
+                );
                 try
                 {
                     var success = _ggumtleService.StopNetworkFeeding();
-                    Debug.Log($"[GgumtleViewModel] 먹이주기 중단 결과: {success}, 상태: {data.currentState}");
+                    Debug.Log(
+                        $"[GgumtleViewModel] 먹이주기 중단 결과: {success}, 상태: {data.currentState}"
+                    );
                 }
                 catch (Exception ex)
                 {
@@ -607,7 +630,11 @@ namespace Features.Ggumtle.ViewModels
             }
 
             _notificationPublisher.Publish(
-                new Features.Notification.Messages.NotificationMessage("진짜 꿈틀이를 발견했습니다!", 3f, Features.Notification.Models.NotificationType.Success)
+                new Features.Notification.Messages.NotificationMessage(
+                    "진짜 꿈틀이를 발견했습니다!",
+                    3f,
+                    Features.Notification.Models.NotificationType.Success
+                )
             );
         }
 
@@ -629,7 +656,11 @@ namespace Features.Ggumtle.ViewModels
             }
 
             await UniTask.Delay(2000);
-            _ggumtleService.UnregisterGgumtle(CurrentGgumtleId.Value);
+            // UnregisterGgumtle 호출 제거 - 가짜 꿈틀이 처리 시 다른 꿈틀이들에게 영향을 주지 않도록 함
+            // _ggumtleService.UnregisterGgumtle(CurrentGgumtleId.Value);
+            Debug.Log(
+                $"[GgumtleViewModel] 가짜 꿈틀이 처리 완료 - UnregisterGgumtle 호출하지 않음: {CurrentGgumtleId.Value}"
+            );
         }
 
         private void ResetHoldState()
@@ -731,7 +762,7 @@ namespace Features.Ggumtle.ViewModels
                 GgumtleState.Emerged => $"빛젤리 먹이기 ({CurrentFood.Value}/{MaxFood.Value})",
                 GgumtleState.Feeding => $"빛젤리 먹이기 ({CurrentFood.Value}/{MaxFood.Value})",
                 GgumtleState.Purified => "정화 완료!",
-                GgumtleState.Fake => string.Empty,  // 짭꿈틀이는 텍스트 표시 안함
+                GgumtleState.Fake => string.Empty, // 짭꿈틀이는 텍스트 표시 안함
                 _ => string.Empty,
             };
         }

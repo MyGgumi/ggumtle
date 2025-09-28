@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Features.Mongdung.Models;
 using Features.Mongdung.NetworkSources;
 using Features.Mongdung.Messages;
+using Features.Ggumtle.Messages;
 using Cysharp.Threading.Tasks;
 using MessagePipe;
 using R3;
@@ -30,6 +31,7 @@ namespace Features.Mongdung.Services
         private readonly ISubscriber<MongdungActionRequestMessage> _actionRequestSubscriber;
         private readonly ISubscriber<MongdungAttackResponseMessage> _attackResponseSubscriber;
         private readonly ISubscriber<MongdungSkillResponseMessage> _skillResponseSubscriber;
+        private readonly ISubscriber<GgumtleSpawnMessage> _ggumtleSpawnSubscriber;
 
         private readonly bool _enableDebugLogs = true;
 
@@ -52,7 +54,8 @@ namespace Features.Mongdung.Services
             ISubscriber<MongdungActionBroadcastMessage> actionBroadcastSubscriber,
             ISubscriber<MongdungActionRequestMessage> actionRequestSubscriber,
             ISubscriber<MongdungAttackResponseMessage> attackResponseSubscriber,
-            ISubscriber<MongdungSkillResponseMessage> skillResponseSubscriber)
+            ISubscriber<MongdungSkillResponseMessage> skillResponseSubscriber,
+            ISubscriber<GgumtleSpawnMessage> ggumtleSpawnSubscriber)
         {
             _networkSource = networkSource ?? throw new ArgumentNullException(nameof(networkSource));
             _actionStartedPublisher = actionStartedPublisher;
@@ -67,6 +70,7 @@ namespace Features.Mongdung.Services
             _actionRequestSubscriber = actionRequestSubscriber;
             _attackResponseSubscriber = attackResponseSubscriber;
             _skillResponseSubscriber = skillResponseSubscriber;
+            _ggumtleSpawnSubscriber = ggumtleSpawnSubscriber;
 
             // 네트워크 응답 구독
             _networkResponseSubscriber
@@ -91,6 +95,11 @@ namespace Features.Mongdung.Services
             // 스킬 응답 구독
             _skillResponseSubscriber
                 .Subscribe(OnSkillResponseReceived)
+                .AddTo(_disposables);
+
+            // 꿈틀이 스폰 이벤트 구독 (함정 발동 애니메이션용)
+            _ggumtleSpawnSubscriber
+                .Subscribe(OnGgumtleSpawnReceived)
                 .AddTo(_disposables);
 
             if (_enableDebugLogs)
@@ -678,6 +687,37 @@ namespace Features.Mongdung.Services
             {
                 Debug.LogError($"[MongdungServiceImpl] AttackHitDetector 호출 실패: {e.Message}");
                 return -1;
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 스폰 이벤트 처리 - 함정 발동 애니메이션 실행
+        /// </summary>
+        private void OnGgumtleSpawnReceived(GgumtleSpawnMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungServiceImpl] 꿈틀이 스폰 이벤트 수신 - 함정 발동 애니메이션 실행: GgumtleId={message.GgumtleId}, Position={message.Position}");
+                }
+
+                // 함정 발동 애니메이션 메시지를 모든 몽둥이에게 발행 (개수 감소하지 않도록 다른 SkillType 사용)
+                var trapActionMessage = new MongdungSkillActionMessage(
+                    99, // SkillType 99 = TrapActivation (함정 발동용, 개수 감소 없음)
+                    MongdungActionType.TrapSetting,
+                    Networks.Players.MongdungSkillResult.Success // Result
+                );
+                _skillActionPublisher.Publish(trapActionMessage);
+
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungServiceImpl] 함정 발동 애니메이션 메시지 발행 완료: TrapSetting");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MongdungServiceImpl] 꿈틀이 스폰 이벤트 처리 실패: {e.Message}");
             }
         }
 

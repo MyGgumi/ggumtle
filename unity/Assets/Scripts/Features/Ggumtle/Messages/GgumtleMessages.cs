@@ -149,6 +149,21 @@ namespace Features.Ggumtle.Messages
         }
     }
 
+    /// <summary>
+    /// 꿈틀이 GameObject 스폰 요청 메시지 (순환 참조 해결용)
+    /// </summary>
+    public readonly struct GgumtleGameObjectSpawnRequestMessage
+    {
+        public readonly int GgumtleId;
+        public readonly Vector3 Position;
+
+        public GgumtleGameObjectSpawnRequestMessage(int ggumtleId, Vector3 position)
+        {
+            GgumtleId = ggumtleId;
+            Position = position;
+        }
+    }
+
 
     /// <summary>
     /// 꿈틀이 상태 브로드캐스트 네트워크 이벤트 메시지

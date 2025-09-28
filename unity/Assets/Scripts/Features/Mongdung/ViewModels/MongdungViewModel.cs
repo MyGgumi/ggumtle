@@ -25,6 +25,7 @@ namespace Features.Mongdung.ViewModels
         private readonly ReactiveProperty<MongdungState> _currentState = new(MongdungState.Idle);
         private readonly ReactiveProperty<bool> _isMovementBlocked = new(false);
         private readonly ReactiveProperty<string> _blockReason = new("");
+        private readonly ReactiveProperty<int> _trapCount = new(3); // 초기 함정 개수 3개
 
         // 액션별 상태 관리
         private readonly Dictionary<MongdungActionType, ReactiveProperty<bool>> _actionExecutingStates = new();
@@ -35,6 +36,7 @@ namespace Features.Mongdung.ViewModels
         public ReadOnlyReactiveProperty<MongdungState> CurrentState => _currentState.ToReadOnlyReactiveProperty();
         public ReadOnlyReactiveProperty<bool> IsMovementBlocked => _isMovementBlocked.ToReadOnlyReactiveProperty();
         public ReadOnlyReactiveProperty<string> BlockReason => _blockReason.ToReadOnlyReactiveProperty();
+        public ReadOnlyReactiveProperty<int> TrapCount => _trapCount.ToReadOnlyReactiveProperty();
 
         // 플레이어 정보
         public long PlayerId { get; private set; }
@@ -279,7 +281,48 @@ namespace Features.Mongdung.ViewModels
         /// </summary>
         public bool CanExecuteAction(MongdungActionType actionType)
         {
+            // TrapSetting 액션의 경우 함정 개수도 확인
+            if (actionType == MongdungActionType.TrapSetting && _trapCount.Value <= 0)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungViewModel] 함정 개수 부족: {_trapCount.Value}개");
+                }
+                return false;
+            }
+
             return _mongdungService.CanExecuteAction(PlayerId, actionType);
+        }
+
+        /// <summary>
+        /// 함정 개수 감소 (TrapSetting 액션 실행 시 호출)
+        /// </summary>
+        public void DecreaseTrapCount()
+        {
+            if (_trapCount.Value > 0)
+            {
+                _trapCount.Value--;
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MongdungViewModel] 함정 개수 감소: {_trapCount.Value + 1} → {_trapCount.Value}");
+                }
+            }
+            else
+            {
+                Debug.LogWarning($"[MongdungViewModel] 함정 개수가 이미 0입니다.");
+            }
+        }
+
+        /// <summary>
+        /// 함정 개수 리셋 (게임 시작 시 호출)
+        /// </summary>
+        public void ResetTrapCount()
+        {
+            _trapCount.Value = 3;
+            if (_enableDebugLogs)
+            {
+                Debug.Log($"[MongdungViewModel] 함정 개수 리셋: 3개");
+            }
         }
 
         public void Dispose()
@@ -295,6 +338,7 @@ namespace Features.Mongdung.ViewModels
             _currentState?.Dispose();
             _isMovementBlocked?.Dispose();
             _blockReason?.Dispose();
+            _trapCount?.Dispose();
 
             foreach (var kvp in _actionExecutingStates)
                 kvp.Value?.Dispose();

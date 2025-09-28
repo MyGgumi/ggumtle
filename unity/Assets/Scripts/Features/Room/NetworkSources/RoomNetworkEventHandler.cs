@@ -128,12 +128,22 @@ namespace Features.Room.NetworkSources
                     for (int i = 0; i < command.players.Count; i++)
                     {
                         var player = command.players[i];
-                        string playerType = player.IsMongging ? $"Mongging(Class:{player.ClassId})" : "Mongdung";
-                        Debug.Log($"[SERVER_PLAYER_DATA]   [{i}] ID: {player.Id}, 타입: {playerType}");
-                        Debug.Log($"[SERVER_PLAYER_DATA]       닉네임: {player.NickName}, 로컬: {player.IsMine}");
+                        string playerType = player.IsMongging
+                            ? $"Mongging(Class:{player.ClassId})"
+                            : "Mongdung";
+                        Debug.Log(
+                            $"[SERVER_PLAYER_DATA]   [{i}] ID: {player.Id}, 타입: {playerType}"
+                        );
+                        Debug.Log(
+                            $"[SERVER_PLAYER_DATA]       닉네임: {player.NickName}, 로컬: {player.IsMine}"
+                        );
                         Debug.Log($"[SERVER_PLAYER_DATA]       위치: {player.Position}");
-                        Debug.Log($"[SERVER_PLAYER_DATA]       이동속도: {player.MoveSpeed}, 최대HP: {player.MaxHp}");
-                        Debug.Log($"[SERVER_PLAYER_DATA]       힐속도: {player.HealSpeed}, 작업속도: {player.WorkSpeed}");
+                        Debug.Log(
+                            $"[SERVER_PLAYER_DATA]       이동속도: {player.MoveSpeed}, 최대HP: {player.MaxHp}"
+                        );
+                        Debug.Log(
+                            $"[SERVER_PLAYER_DATA]       힐속도: {player.HealSpeed}, 작업속도: {player.WorkSpeed}"
+                        );
                     }
                 }
 
@@ -232,57 +242,5 @@ namespace Features.Room.NetworkSources
                 Debug.LogError($"[RoomNetworkEventHandler] 게임 종료 처리 실패: {e.Message}");
             }
         }
-
-        /// <summary>
-        /// 꿈틀이 스폰 이벤트 처리
-        /// </summary>
-        [CommandHandler(PacketType.GgumtleSpawn)]
-        public static void GgumtleSpawn(GgumtleSpawnCommand command, IChannelHandlerContext ctx)
-        {
-            try
-            {
-                Debug.Log(
-                    $"[RoomNetworkEventHandler] 꿈틀이 스폰: Id={command.id}, Position={command.position}"
-                );
-
-                // TODO: RoomService로 처리 위임 필요
-                // var unityPosition = new UnityEngine.Vector3(command.position.X, command.position.Y, command.position.Z);
-                // _roomService.SpawnGgumtle(command.id, unityPosition);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[RoomNetworkEventHandler] 꿈틀이 스폰 처리 실패: {e.Message}");
-            }
-        }
-
-        /// <summary>
-        /// 꿈틀이 상태 이벤트 처리
-        /// </summary>
-        [CommandHandler(PacketType.GgumtleState)]
-        public static void GgumtleState(GgumtleStatusCommand command, IChannelHandlerContext ctx)
-        {
-            try
-            {
-                Debug.Log(
-                    $"[RoomNetworkEventHandler] 꿈틀이 상태: Id={command.ggumtleId}, State={command.state}"
-                );
-
-                // TODO: RoomService로 처리 위임 필요
-                // _roomService.RemoveGgumtle(command.ggumtleId);
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"[RoomNetworkEventHandler] 꿈틀이 상태 처리 실패: {e.Message}");
-            }
-        }
-
-        // TODO: 기타 게임 관련 이벤트들 추가
-        // - PlayerMove
-        // - MongdungAttack
-        // - GetItem/PutItem
-        // - MonggingRevival
-        // - ExitOpen
-        // 등등... 필요에 따라 다른 Handler로 분리할 수도 있음
-        // GameStart와 GameEnd 핸들러는 MainGameNetworkEventHandler로 이동됨
     }
 }

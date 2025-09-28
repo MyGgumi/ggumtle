@@ -74,6 +74,14 @@ namespace Features.Map.Services
         // SpawnGgumtleAsync는 preplaced 방식으로 대체됨 - SetupPreplacedGgumtles 사용
 
         /// <summary>
+        /// 단일 꿈틀이 동적 스폰 (함정 발동용)
+        /// </summary>
+        /// <param name="ggumtleId">꿈틀이 ID</param>
+        /// <param name="position">스폰 위치</param>
+        /// <returns>스폰 성공 여부</returns>
+        UniTask<bool> SpawnSingleGgumtleAsync(int ggumtleId, Vector3 position);
+
+        /// <summary>
         /// 꿈틀이 제거 (성불용) - preplaced 오브젝트 비활성화
         /// </summary>
         /// <param name="id">꿈틀이 ID</param>

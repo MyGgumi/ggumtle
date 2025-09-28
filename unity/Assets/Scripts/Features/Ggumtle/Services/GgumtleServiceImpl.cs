@@ -23,6 +23,7 @@ namespace Features.Ggumtle.Services
         private readonly IPublisher<GgumtleFoodAddedMessage> _foodAddedPublisher;
         private readonly IPublisher<Features.Notification.Messages.NotificationMessage> _notificationPublisher;
         private readonly IGgumtleNetworkSource _networkSource;
+        private readonly IPublisher<GgumtleGameObjectSpawnRequestMessage> _gameObjectSpawnRequestPublisher;
 
         // 네트워크 이벤트 구독자들
         private readonly ISubscriber<GgumtleDiggingDoneMessage> _diggingDoneSubscriber;
@@ -50,6 +51,7 @@ namespace Features.Ggumtle.Services
             IPublisher<GgumtleFoodAddedMessage> foodAddedPublisher,
             IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher,
             IGgumtleNetworkSource networkSource,
+            IPublisher<GgumtleGameObjectSpawnRequestMessage> gameObjectSpawnRequestPublisher,
             ISubscriber<GgumtleDiggingDoneMessage> diggingDoneSubscriber,
             ISubscriber<GgumtleJellyForceQuitMessage> jellyForceQuitSubscriber,
             ISubscriber<GgumtleSpawnMessage> spawnSubscriber,
@@ -61,6 +63,7 @@ namespace Features.Ggumtle.Services
             _foodAddedPublisher = foodAddedPublisher;
             _notificationPublisher = notificationPublisher;
             _networkSource = networkSource;
+            _gameObjectSpawnRequestPublisher = gameObjectSpawnRequestPublisher;
             _diggingDoneSubscriber = diggingDoneSubscriber;
             _jellyForceQuitSubscriber = jellyForceQuitSubscriber;
             _spawnSubscriber = spawnSubscriber;
@@ -103,7 +106,9 @@ namespace Features.Ggumtle.Services
         /// </summary>
         public int GetGgumtleJellyEaten(int ggumtleId)
         {
-            return _ggumtleJellyEatenMap.TryGetValue(ggumtleId, out int eatenCount) ? eatenCount : 0;
+            return _ggumtleJellyEatenMap.TryGetValue(ggumtleId, out int eatenCount)
+                ? eatenCount
+                : 0;
         }
 
         /// <summary>
@@ -114,7 +119,9 @@ namespace Features.Ggumtle.Services
             int previousCount = GetGgumtleJellyEaten(ggumtleId);
             _ggumtleJellyEatenMap[ggumtleId] = eatenCount;
 
-            DebugLog($"[GgumtleServiceImpl] 꿈틀이 {ggumtleId} 젤리 개수 업데이트: {previousCount} → {eatenCount}");
+            DebugLog(
+                $"[GgumtleServiceImpl] 꿈틀이 {ggumtleId} 젤리 개수 업데이트: {previousCount} → {eatenCount}"
+            );
         }
 
         #endregion
@@ -166,14 +173,6 @@ namespace Features.Ggumtle.Services
         public Dictionary<int, GgumtleData> GetAllGgumtleData()
         {
             return new Dictionary<int, GgumtleData>(_ggumtleDataMap);
-        }
-
-        public void UnregisterGgumtle(string ggumtleId)
-        {
-            if (int.TryParse(ggumtleId, out int id))
-            {
-                UnregisterGgumtle(id);
-            }
         }
 
         public void UnregisterGgumtle(int ggumtleId)
@@ -312,7 +311,11 @@ namespace Features.Ggumtle.Services
             {
                 // 빛젤리 부족 알림
                 _notificationPublisher.Publish(
-                    new Features.Notification.Messages.NotificationMessage("빛젤리가 부족합니다!", 2f, Features.Notification.Models.NotificationType.Warning)
+                    new Features.Notification.Messages.NotificationMessage(
+                        "빛젤리가 부족합니다!",
+                        2f,
+                        Features.Notification.Models.NotificationType.Warning
+                    )
                 );
                 return false;
             }
@@ -589,9 +592,17 @@ namespace Features.Ggumtle.Services
             {
                 // 가짜 꿈틀이인 경우
                 _notificationPublisher.Publish(
-                    new Features.Notification.Messages.NotificationMessage("가짜 꿈틀이였습니다!", 2f, Features.Notification.Models.NotificationType.Info)
+                    new Features.Notification.Messages.NotificationMessage(
+                        "가짜 꿈틀이였습니다!",
+                        2f,
+                        Features.Notification.Models.NotificationType.Info
+                    )
                 );
-                UnregisterGgumtle(ggumtleIdStr);
+                // UnregisterGgumtle 호출 제거 - 가짜 꿈틀이 처리 시 다른 꿈틀이들에게 영향을 주지 않도록 함
+                // UnregisterGgumtle(ggumtleIdStr);
+                DebugLog(
+                    $"[GgumtleServiceImpl] 가짜 꿈틀이 처리 완료 - UnregisterGgumtle 호출하지 않음: {ggumtleIdStr}"
+                );
             }
         }
 
@@ -627,9 +638,19 @@ namespace Features.Ggumtle.Services
             // 꿈틀이 등록 (Buried 상태로 시작)
             RegisterGgumtle(ggumtleId, ggumtleName, position);
 
+            // GameObject 스폰 요청 메시지 발행 (순환 참조 해결)
+            var spawnRequestMessage = new GgumtleGameObjectSpawnRequestMessage(ggumtleId, position);
+            _gameObjectSpawnRequestPublisher.Publish(spawnRequestMessage);
+
+            DebugLog($"[GgumtleServiceImpl] 꿈틀이 GameObject 스폰 요청 발행: {ggumtleId}");
+
             // 스폰 알림 발행
             _notificationPublisher.Publish(
-                new Features.Notification.Messages.NotificationMessage($"새로운 꿈틀이가 나타났습니다!", 2f, Features.Notification.Models.NotificationType.Info)
+                new Features.Notification.Messages.NotificationMessage(
+                    $"새로운 꿈틀이가 나타났습니다!",
+                    2f,
+                    Features.Notification.Models.NotificationType.Info
+                )
             );
         }
 
@@ -675,7 +696,11 @@ namespace Features.Ggumtle.Services
             };
 
             _notificationPublisher.Publish(
-                new Features.Notification.Messages.NotificationMessage(message, 2f, Features.Notification.Models.NotificationType.Warning)
+                new Features.Notification.Messages.NotificationMessage(
+                    message,
+                    2f,
+                    Features.Notification.Models.NotificationType.Warning
+                )
             );
         }
 
@@ -695,7 +720,11 @@ namespace Features.Ggumtle.Services
             };
 
             _notificationPublisher.Publish(
-                new Features.Notification.Messages.NotificationMessage(message, 2f, Features.Notification.Models.NotificationType.Warning)
+                new Features.Notification.Messages.NotificationMessage(
+                    message,
+                    2f,
+                    Features.Notification.Models.NotificationType.Warning
+                )
             );
         }
 
@@ -729,7 +758,9 @@ namespace Features.Ggumtle.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[GgumtleServiceImpl] 젤리 강제 종료 이벤트 처리 실패: {e.Message}");
+                Debug.LogError(
+                    $"[GgumtleServiceImpl] 젤리 강제 종료 이벤트 처리 실패: {e.Message}"
+                );
             }
         }
 
@@ -759,7 +790,9 @@ namespace Features.Ggumtle.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[GgumtleServiceImpl] 꿈틀이 먹은 젤리 개수 업데이트 처리 실패: {e.Message}");
+                Debug.LogError(
+                    $"[GgumtleServiceImpl] 꿈틀이 먹은 젤리 개수 업데이트 처리 실패: {e.Message}"
+                );
             }
         }
 
@@ -772,11 +805,15 @@ namespace Features.Ggumtle.Services
         /// </summary>
         public void LogGgumtleStatus()
         {
-            DebugLog($"[GgumtleServiceImpl] 등록된 꿈틀이 목록: [{string.Join(", ", _ggumtleDataMap.Keys)}]");
+            DebugLog(
+                $"[GgumtleServiceImpl] 등록된 꿈틀이 목록: [{string.Join(", ", _ggumtleDataMap.Keys)}]"
+            );
             foreach (var kvp in _ggumtleDataMap)
             {
                 var data = kvp.Value;
-                DebugLog($"[GgumtleServiceImpl] ID: {kvp.Key}, 이름: {data.ggumtleName}, 상태: {data.currentState}, 홀드중: {data.isHoldInProgress}");
+                DebugLog(
+                    $"[GgumtleServiceImpl] ID: {kvp.Key}, 이름: {data.ggumtleName}, 상태: {data.currentState}, 홀드중: {data.isHoldInProgress}"
+                );
             }
         }
 

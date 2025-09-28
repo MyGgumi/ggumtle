@@ -1227,7 +1227,7 @@ public class DreamManager {
 
     public void tryOpenExit() {
         for (Ggumtle ggumtle : ggumtles.values()) {
-            if (!ggumtle.isDone()) {
+            if (!(ggumtle instanceof FakeGgumtle) && !ggumtle.isDone()) {
                 log.info("{}번 드림에 아직 정화되지 않은 꿈틀이가 있어 탈출구가 열리지 않음", this.room.id);
                 return;
             }

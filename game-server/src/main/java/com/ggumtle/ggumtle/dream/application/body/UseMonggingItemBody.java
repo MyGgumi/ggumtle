@@ -9,7 +9,10 @@ import java.nio.charset.Charset;
 
 public record UseMonggingItemBody(
         Result result,
-        int itemId
+        int itemId,
+        int effectX,
+        int effectY,
+        int effectZ
 ) implements Body {
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public enum Result {

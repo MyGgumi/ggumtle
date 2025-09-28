@@ -400,7 +400,7 @@ public class DreamManager {
     public void attackWithItem(AttackWithItemCommand command, Session session) {
         Boxable item = ItemDictionary.valueOf(command.itemId());
         if (item == null) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM_ID, command.itemId());
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM_ID, command.itemId(), command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -409,7 +409,7 @@ public class DreamManager {
         }
 
         if (!(item instanceof Attackable<?> attackable)) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_ATTACK_ITEM, item.id);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_ATTACK_ITEM, item.id, command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -418,7 +418,7 @@ public class DreamManager {
         }
 
         if (!(players.getOrDefault(session.getMemberId(), null) instanceof Mongging mongging)) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGGING, item.id);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGGING, item.id, command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -428,7 +428,7 @@ public class DreamManager {
 
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id, command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -438,7 +438,7 @@ public class DreamManager {
 
         Boxable usedItem = mongging.popItem(item);
         if (usedItem == null) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id, command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -452,12 +452,12 @@ public class DreamManager {
         Position targetPosition = mongdungPlayer.getPositionAt(now);
         boolean isHit = switch (attackable) {
             case Flash flash -> {
-                Flash.HitContext context = new Flash.HitContext(sourcePosition, targetPosition, Mongdung.SIZE, command.vx(), command.vy(), command.vz());
+                Flash.HitContext context = new Flash.HitContext(sourcePosition, targetPosition, Mongdung.SIZE, command.effectX(), command.effectY(), command.effectZ());
                 yield flash.detectHit(context);
             }
 
             case Taser taser -> {
-                Taser.HitContext context = new Taser.HitContext(sourcePosition, targetPosition, Mongdung.SIZE, command.vx(), command.vy(), command.vz());
+                Taser.HitContext context = new Taser.HitContext(sourcePosition, targetPosition, Mongdung.SIZE, command.effectX(), command.effectY(), command.effectZ());
                 yield taser.detectHit(context);
             }
 
@@ -468,18 +468,17 @@ public class DreamManager {
         };
 
         if (!isHit) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id);
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id, command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
+            this.room.broadcast(packet);
 
             log.info("[{} - {}] 몽깅이 아이템 공격 실패: 몽둥이가 {}번 아이템의 피격 범위에 없음", session.getChannel().id(), room.id, item.id);
             return;
         }
 
-        Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.SUCCESS, item.id);
+        Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.SUCCESS, item.id, command.effectX(), command.effectY(), command.effectZ());
         Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-        session.sendPacket(packet);
-        this.room.sendPacket(mongdungPlayer.getId(), packet);
+        this.room.broadcast(packet);
 
         log.error("[{} - {}] 몽깅이 아이템 공격 성공", session.getChannel().id(), room.id);
     }

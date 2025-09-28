@@ -79,11 +79,36 @@ namespace Features.Scenes.Loading.Managers
             // Audio Listener 중복 문제 해결: Loading 씬의 Audio Listener 비활성화
             DisableLoadingSceneAudioListener();
 
+            // 가로 모드로 전환
+            Screen.orientation = ScreenOrientation.LandscapeLeft;
+            Screen.autorotateToPortrait = false;
+            Screen.autorotateToPortraitUpsideDown = false;
+            Screen.autorotateToLandscapeLeft = false;  // 여전히 자동회전은 막기
+            Screen.autorotateToLandscapeRight = false;
+            // 화면 전환 완료 대기
+            await WaitForScreenRotation();
+
+
             // UI 초기화
             InitializeUI();
 
             // 로딩 프로세스 시작
             await StartLoadingProcess();
+        }
+
+        private async UniTask WaitForScreenRotation()
+        {
+            // 가로 모드가 될 때까지 대기
+            while (Screen.width <= Screen.height)
+            {
+                await UniTask.Yield();
+            }
+            
+            // 추가로 몇 프레임 더 대기 (레이아웃 완전 적용)
+            await UniTask.DelayFrame(3);
+            
+            if (enableDetailedLogs)
+                Debug.Log($"[LoadingSceneManager] 화면 전환 완료: {Screen.width}x{Screen.height}");
         }
 
         void OnDestroy()

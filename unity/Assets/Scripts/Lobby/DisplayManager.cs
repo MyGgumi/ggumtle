@@ -4,13 +4,11 @@ public class DisplayManager : MonoBehaviour
 {
     void Start()
     {
-        // 화면 회전 허용 설정
-        Screen.autorotateToLandscapeLeft = true;
-        Screen.autorotateToLandscapeRight = false;
+        // 가로 고정으로 변경
+        Screen.orientation = ScreenOrientation.LandscapeLeft;
         Screen.autorotateToPortrait = false;
         Screen.autorotateToPortraitUpsideDown = false;
-        
-        // 강제로 가로 방향 설정
-        Screen.orientation = ScreenOrientation.LandscapeLeft;
+        Screen.autorotateToLandscapeLeft = false;  // 여전히 자동회전은 막기
+        Screen.autorotateToLandscapeRight = false;
     }
 }

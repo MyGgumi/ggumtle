@@ -34,6 +34,7 @@ namespace Features.Mongging.Views
 
         // 컴포넌트
         private Animator _animator;
+        private Collider[] _colliders;
         private CompositeDisposable _disposables = new CompositeDisposable();
 
         // 플레이어 정보
@@ -168,6 +169,14 @@ namespace Features.Mongging.Views
                         $"[MonggingPlayerGameObject] Controller가 있는 Animator 발견: {_animator.gameObject.name} (Controller: {_animator.runtimeAnimatorController.name})"
                     );
                 }
+            }
+
+            // 렌더러 및 콜라이더 컴포넌트 캐시
+            _colliders = GetComponentsInChildren<Collider>();
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[MonggingPlayerGameObject] {_colliders.Length}개의 Collider 캐시 완료");
             }
         }
 
@@ -362,6 +371,10 @@ namespace Features.Mongging.Views
                             TriggerAnimation("Revive");
                         }
                         break;
+                    case MonggingPlayerState.Escaped:
+                        ApplyEscapedVisual();
+                        SetInteractionEnabled(false);
+                        break;
                 }
             }
             catch (Exception e)
@@ -512,6 +525,79 @@ namespace Features.Mongging.Views
         public MonggingPlayerState GetCurrentState()
         {
             return _currentState;
+        }
+
+        /// <summary>
+        /// 탈출 시각 효과 적용 (SkinnedMeshRenderer 비활성화)
+        /// </summary>
+        private void ApplyEscapedVisual()
+        {
+            // SkinnedMeshRenderer를 찾아서 비활성화 (투명 효과)
+            var skinnedRenderers = GetComponentsInChildren<SkinnedMeshRenderer>();
+            int disabledCount = 0;
+
+            foreach (var renderer in skinnedRenderers)
+            {
+                if (renderer != null)
+                {
+                    renderer.enabled = false;
+                    disabledCount++;
+
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log(
+                            $"[MonggingPlayerGameObject] SkinnedMeshRenderer 비활성화: {renderer.gameObject.name}"
+                        );
+                    }
+                }
+            }
+
+            if (enableDebugLogs)
+            {
+                Debug.Log(
+                    $"[MonggingPlayerGameObject] 탈출 시각 효과 적용 완료: {disabledCount}개의 SkinnedMeshRenderer 비활성화"
+                );
+            }
+        }
+
+        /// <summary>
+        /// 상호작용 활성화/비활성화 (이동은 유지)
+        /// </summary>
+        private void SetInteractionEnabled(bool enabled)
+        {
+            // CharacterController를 제외한 Collider만 비활성화 (이동 유지)
+            if (_colliders != null)
+            {
+                foreach (var collider in _colliders)
+                {
+                    if (collider != null && !(collider is CharacterController))
+                    {
+                        collider.enabled = enabled;
+                    }
+                }
+            }
+
+            // InteractionTriggerDetector 비활성화
+            var interactionDetector =
+                GetComponentInChildren<Interaction.InteractionTriggerDetector>();
+            if (interactionDetector != null)
+            {
+                interactionDetector.enabled = enabled;
+            }
+
+            // FaintedMonggingInteractable 비활성화
+            var faintedInteractable =
+                GetComponentInChildren<Features.Revival.Views.FaintedMonggingInteractable>();
+            if (faintedInteractable != null)
+            {
+                faintedInteractable.SetInteractionEnabled(enabled);
+            }
+
+            if (enableDebugLogs)
+            {
+                string action = enabled ? "활성화" : "비활성화";
+                Debug.Log($"[MonggingPlayerGameObject] 상호작용 {action} 완료 (이동은 유지)");
+            }
         }
 
         private void OnDestroy()

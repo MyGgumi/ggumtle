@@ -1,7 +1,9 @@
 using System;
 using System.Linq;
 using Features.GameResult.Models;
+using Features.GameResult.Services;
 using Features.PlayerList.Services;
+using Features.Player.Services;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -18,6 +20,8 @@ namespace Features.GameResult.ViewModels
 
         // Dependencies
         private readonly IPlayerListService _playerListService;
+        private readonly IGameResultService _gameResultService;
+        private readonly PlayerManagerService _playerManagerService;
 
         // UI State
         private readonly ReactiveProperty<bool> _isVisible = new(false);
@@ -36,9 +40,15 @@ namespace Features.GameResult.ViewModels
         public ReadOnlyReactiveProperty<GameResultModel> GameResult => _gameResult;
 
         [Inject]
-        public GameResultViewModel(IPlayerListService playerListService)
+        public GameResultViewModel(IPlayerListService playerListService, IGameResultService gameResultService, PlayerManagerService playerManagerService)
         {
             _playerListService = playerListService;
+            _gameResultService = gameResultService;
+            _playerManagerService = playerManagerService;
+
+            // GameResultService 이벤트 구독
+            _gameResultService.OnGameResultUpdated += HandleGameResultUpdated;
+            _gameResultService.OnShowGameResult += HandleShowGameResult;
 
             if (_enableDebugLogs)
             {
@@ -78,7 +88,7 @@ namespace Features.GameResult.ViewModels
             {
                 TeamResult = (TeamResult)result,
                 EscapedCount = 0,
-                CoinReward = 150, // TODO: 서버에서 실제 코인 값 받기
+                CoinReward = 0, // 서버에서 받은 실제 코인 값 사용
                 MonggingPlayers = new PlayerResultModel[4]
             };
 
@@ -154,12 +164,83 @@ namespace Features.GameResult.ViewModels
         /// </summary>
         public void OnContinueClicked()
         {
-            HideResult();
-            // TODO: 로비로 이동 또는 다음 게임 시작 로직
+            // UI는 숨기지 않고 로비 이동만 처리
+            _gameResultService?.ReturnToLobby();
             if (_enableDebugLogs)
             {
-                Debug.Log("[GameResultViewModel] 계속 버튼 클릭");
+                Debug.Log("[GameResultViewModel] 계속 버튼 클릭 - 로비 이동 시작");
             }
+        }
+
+        /// <summary>
+        /// GameResultService에서 게임 결과 업데이트 이벤트 처리
+        /// </summary>
+        private void HandleGameResultUpdated(GameResultData resultData)
+        {
+            Debug.Log($"[GameResultViewModel] ===== GameResultData 수신 =====");
+            Debug.Log($"[GameResultViewModel] Result: {resultData.Result}");
+            Debug.Log($"[GameResultViewModel] EscapedCount: {resultData.EscapedMonggingCount}");
+            Debug.Log($"[GameResultViewModel] CoinReward: {resultData.CoinReward}");
+
+            // GameResultData를 기존 GameResultModel 구조로 변환
+            var gameResult = ConvertToGameResultModel(resultData);
+
+            Debug.Log($"[GameResultViewModel] ===== GameResultModel 변환 완료 =====");
+            Debug.Log($"[GameResultViewModel] TeamResult: {gameResult.TeamResult}");
+            Debug.Log($"[GameResultViewModel] EscapedCount: {gameResult.EscapedCount}");
+            Debug.Log($"[GameResultViewModel] CoinReward: {gameResult.CoinReward}");
+
+            SetGameResult(gameResult);
+        }
+
+        /// <summary>
+        /// GameResultService에서 게임 결과 표시 이벤트 처리
+        /// </summary>
+        private void HandleShowGameResult()
+        {
+            ShowResult();
+        }
+
+        /// <summary>
+        /// GameResultData를 GameResultModel로 변환
+        /// </summary>
+        private GameResultModel ConvertToGameResultModel(GameResultData resultData)
+        {
+            // 로컬 플레이어의 코인 찾기
+            int localPlayerCoin = GetLocalPlayerCoin(resultData);
+
+            var gameResult = new GameResultModel
+            {
+                TeamResult = resultData.Result,
+                EscapedCount = resultData.EscapedMonggingCount,
+                CoinReward = localPlayerCoin, // 로컬 플레이어의 코인 사용
+                MonggingPlayers = new PlayerResultModel[4]
+            };
+
+            if (_enableDebugLogs)
+            {
+                Debug.Log($"[GameResultViewModel] 로컬 플레이어 코인: {localPlayerCoin}");
+            }
+
+            // 플레이어 결과 변환
+            int monggingIndex = 0;
+            foreach (var playerResult in resultData.PlayerResults)
+            {
+                var playerModel = new PlayerResultModel
+                {
+                    PlayerId = playerResult.Id,
+                    Status = playerResult.Status,
+                    IsMongging = true, // TODO: 실제 역할 정보로 수정 필요
+                    PlayerName = GetPlayerNickname(playerResult.Id)
+                };
+
+                if (monggingIndex < 4)
+                {
+                    gameResult.MonggingPlayers[monggingIndex++] = playerModel;
+                }
+            }
+
+            return gameResult;
         }
 
         #region Private Methods
@@ -196,10 +277,20 @@ namespace Features.GameResult.ViewModels
         }
 
         /// <summary>
-        /// 플레이어 닉네임 조회
+        /// 플레이어 닉네임 조회 (PlayerManagerService 사용)
         /// </summary>
         private string GetPlayerNickname(long playerId)
         {
+            if (_playerManagerService != null)
+            {
+                var playerInfo = _playerManagerService.GetPlayerInfo(playerId);
+                if (playerInfo != null)
+                {
+                    return playerInfo.NickName;
+                }
+            }
+
+            // 백업으로 PlayerListService 사용
             if (_playerListService != null)
             {
                 int id = (int)playerId;
@@ -289,10 +380,75 @@ namespace Features.GameResult.ViewModels
             };
         }
 
+        /// <summary>
+        /// 로컬 플레이어의 코인을 찾아서 반환
+        /// </summary>
+        private int GetLocalPlayerCoin(GameResultData resultData)
+        {
+            if (_playerManagerService == null || resultData?.PlayerResults == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning("[GameResultViewModel] PlayerManagerService 또는 PlayerResults가 null입니다.");
+                }
+                return 0;
+            }
+
+            // 로컬 플레이어 ID 가져오기
+            var localPlayerInfo = _playerManagerService.GetLocalPlayer();
+            if (localPlayerInfo == null)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.LogWarning("[GameResultViewModel] 로컬 플레이어 정보를 찾을 수 없습니다.");
+                }
+                return 0;
+            }
+
+            long localPlayerId = localPlayerInfo.Id;
+
+            if (_enableDebugLogs)
+            {
+                Debug.Log($"[GameResultViewModel] 로컬 플레이어 ID: {localPlayerId}");
+                Debug.Log($"[GameResultViewModel] 서버 플레이어 결과 개수: {resultData.PlayerResults.Count}");
+            }
+
+            // 서버에서 받은 PlayerResults에서 로컬 플레이어 찾기
+            foreach (var playerResult in resultData.PlayerResults)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[GameResultViewModel] 플레이어 확인: ID={playerResult.Id}, Coin={playerResult.Coin}");
+                }
+
+                if (playerResult.Id == localPlayerId)
+                {
+                    if (_enableDebugLogs)
+                    {
+                        Debug.Log($"[GameResultViewModel] 로컬 플레이어 발견! 코인: {playerResult.Coin}");
+                    }
+                    return playerResult.Coin;
+                }
+            }
+
+            if (_enableDebugLogs)
+            {
+                Debug.LogWarning($"[GameResultViewModel] 로컬 플레이어 ID {localPlayerId}를 서버 결과에서 찾을 수 없습니다.");
+            }
+            return 0;
+        }
+
         #endregion
 
         public void Dispose()
         {
+            // GameResultService 이벤트 구독 해제
+            if (_gameResultService != null)
+            {
+                _gameResultService.OnGameResultUpdated -= HandleGameResultUpdated;
+                _gameResultService.OnShowGameResult -= HandleShowGameResult;
+            }
+
             _isVisible?.Dispose();
             _resultTitle?.Dispose();
             _escapedCount?.Dispose();

@@ -12,6 +12,9 @@ using Features.FieldItem.Views;
 using Features.GameInfo.Messages;
 using Features.GameInfo.Services;
 using Features.GameInfo.ViewModels;
+using Features.GameResult.Messages;
+using Features.GameResult.Services;
+using Features.GameResult.ViewModels;
 using Features.Ggumtle.Messages;
 using Features.Ggumtle.NetworkSources;
 using Features.Ggumtle.Services;
@@ -194,6 +197,9 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleLevelChangedMessage>(options);
             builder.RegisterMessageBroker<StatusMessageChangedMessage>(options);
 
+            // GameResult Messages
+            builder.RegisterMessageBroker<GameResultMessage>(options);
+
             // MainGame Messages
             builder.RegisterMessageBroker<GameInitializedMessage>(options);
             builder.RegisterMessageBroker<GameStartedMessage>(options);
@@ -277,6 +283,7 @@ namespace DI
             builder.RegisterComponentInHierarchy<Features.Feeding.Views.FeedingUIView>();
             builder.RegisterComponentInHierarchy<Features.Revival.Views.RevivalUIView>();
             builder.RegisterComponentInHierarchy<Features.Mongdung.Views.MongdungUIView>();
+            builder.RegisterComponentInHierarchy<Features.GameResult.Views.GameResultUIView>();
 
             // 모든 컴포넌트들은 Addressable 동적 생성 방식으로 처리
 
@@ -360,6 +367,9 @@ namespace DI
             builder.Register<IMongdungService, MongdungServiceImpl>(Lifetime.Scoped);
             builder.Register<IUIAssetService, UIAssetServiceImpl>(Lifetime.Scoped);
 
+            // GameResult Services 등록
+            builder.Register<IGameResultService, GameResultService>(Lifetime.Scoped);
+
             // ItemUsage & Revival Services 등록
             builder.Register<
                 Features.ItemUsage.Services.IItemUsageService,
@@ -408,6 +418,9 @@ namespace DI
             // Revival ViewModel 등록
             builder.Register<Features.Revival.ViewModels.RevivalViewModel>(Lifetime.Scoped);
 
+            // GameResult ViewModel 등록
+            builder.Register<GameResultViewModel>(Lifetime.Scoped);
+
             // Mongging ViewModels
             builder.Register<MonggingPlayerViewModel>(Lifetime.Scoped);
             builder.Register<MonggingTeamViewModel>(Lifetime.Scoped);
@@ -437,10 +450,11 @@ namespace DI
             // NetworkEventHandlers 초기화
             builder.RegisterBuildCallback(container =>
             {
-                // MainGameNetworkEventHandler에 MainGameService와 NotificationService 주입
+                // MainGameNetworkEventHandler에 MainGameService와 NotificationService, GameResultPublisher 주입
                 var mainGameService = container.Resolve<IMainGameService>();
                 var notificationService = container.Resolve<INotificationService>();
-                MainGameNetworkEventHandler.Initialize(mainGameService, notificationService);
+                var gameResultPublisher = container.Resolve<IPublisher<Features.GameResult.Messages.GameResultMessage>>();
+                MainGameNetworkEventHandler.Initialize(mainGameService, notificationService, gameResultPublisher);
                 UnityEngine.Debug.Log("[MainLifetimeScope] MainGameNetworkEventHandler 초기화 완료");
 
                 // EscapeGateNetworkEventHandler에 Publisher 주입

@@ -2,6 +2,7 @@ using Features.Player.Services;
 using Features.PlayerList.Models;
 using Features.UI.Services;
 using Features.Mongdung.Views;
+using Features.GameResult.Views;
 using UnityEngine;
 using UnityEngine.UIElements;
 using VContainer;
@@ -46,6 +47,7 @@ namespace Features.UI.Views
         private Features.Feeding.Views.FeedingUIView _feedingUIView;
         private Features.Revival.Views.RevivalUIView _revivalUIView;
         private MongdungUIView _mongdungUIView;
+        private GameResultUIView _gameResultUIView;
 
         [Inject]
         public void Construct(IPlayerRoleService playerRoleService, IUIAssetService uiAssetService, PlayerManagerService playerManagerService)
@@ -120,6 +122,7 @@ namespace Features.UI.Views
             _feedingUIView = FindFirstObjectByType<Features.Feeding.Views.FeedingUIView>();
             _revivalUIView = FindFirstObjectByType<Features.Revival.Views.RevivalUIView>();
             _mongdungUIView = FindFirstObjectByType<MongdungUIView>();
+            _gameResultUIView = FindFirstObjectByType<GameResultUIView>();
 
             UnityEngine.Debug.Log("[HUDInitializer] Feature Views 찾기 완료");
         }
@@ -141,6 +144,7 @@ namespace Features.UI.Views
             _feedingUIView?.Initialize(_root);
             _revivalUIView?.Initialize(_root);
             _mongdungUIView?.Initialize(_root);
+            _gameResultUIView?.Initialize(_root);
 
             // MobileControlsView 디버그 비활성화
             _mobileControlsView?.SetDebugLogging(false);

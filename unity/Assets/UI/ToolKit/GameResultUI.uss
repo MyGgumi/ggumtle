@@ -15,7 +15,7 @@
     width: 100%;
     height: 100%;
     background-color: rgba(30, 20, 60, 0.95);
-    background-image: url('project://database/Assets/UI/ToolKit/Sprites/bg_result.png');
+    background-image: resource('Sprites/bg_result');
 }
 
 /* 제목 영역 */
@@ -117,14 +117,14 @@
     width: 280px;
     height: 365px;
     margin-bottom: 10px;
-    background-image: url('project://database/Assets/UI/Images/mongdung_icon.png');
+    background-image: resource('Sprites/mongdung_icon');
 }
 
 .mongging-character {
     width: 162px;
     height: 164px;
     margin-bottom: 10px;
-    background-image: url('project://database/Assets/UI/Images/mongging_icon.png');
+    background-image: resource('Sprites/mongging_icon');
 }
 
 /* 몽깅이 색상별 */
@@ -165,15 +165,15 @@
 }
 
 .status-bubble.escaped {
-    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_alive_result.png');
+    background-image: resource('Sprites/ic_alive_result');
 }
 
 .status-bubble.alive {
-    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_alive_result.png');
+    background-image: resource('Sprites/ic_alive_result');
 }
 
 .status-bubble.dead {
-    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_dead_result.png');
+    background-image: resource('Sprites/ic_dead_result');
 }
 
 /*팀별 결과*/
@@ -238,7 +238,7 @@
 .coin-icon {
     width: 48px;
     height: 48px;
-    background-image: url('project://database/Assets/UI/ToolKit/Sprites/ic_dream_coin.png');
+    background-image: resource('Sprites/ic_dream_coin');
     background-size: contain;
     margin-right: 10px;
 }
@@ -272,6 +272,6 @@
     font-size: 36px;
     color: white;
     background-color: rgba(0, 0, 0, 0);
-    background-image: url('project://database/Assets/UI/ToolKit/Sprites/bg_btn_result.png');
+    background-image: resource('Sprites/bg_btn_result');
     border-width: 0;
 }

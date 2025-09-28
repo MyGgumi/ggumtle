@@ -1488,11 +1488,27 @@ public class DreamManager {
             ggumtleSpawns.add(new GgumtleSpawn(0, 5000, 500, 1500));
 
             boxSpawns = new ArrayList<>();
-            for (int i = 0; i < 4; i++) {
-                for (int j = 0; j < 5; j++) {
-                    boxSpawns.add(new BoxSpawn(0, (33 + i * 3) * 100, 550, j * 2 * -100));
-                }
-            }
+            boxSpawns.add(new BoxSpawn(0, 3468, 499, -24));
+            boxSpawns.add(new BoxSpawn(0, 38460, 515, 135));
+            boxSpawns.add(new BoxSpawn(0, 4449, 499, 211));
+            boxSpawns.add(new BoxSpawn(0, 3981, 500, -497));
+            boxSpawns.add(new BoxSpawn(0, 5548, 491, -96));
+            boxSpawns.add(new BoxSpawn(0, 6403, 459, 365));
+            boxSpawns.add(new BoxSpawn(0, 5622, 479, 718));
+            boxSpawns.add(new BoxSpawn(0, 5075, 496, 1209));
+            boxSpawns.add(new BoxSpawn(0, 5810, 482, 1043));
+            boxSpawns.add(new BoxSpawn(0, 5943, 466, 451));
+            boxSpawns.add(new BoxSpawn(0, 4608, 499, -36));
+            boxSpawns.add(new BoxSpawn(0, 4301, 499, -204));
+            boxSpawns.add(new BoxSpawn(0, 5502, 499, -543));
+            boxSpawns.add(new BoxSpawn(0, 4331, 500, -883));
+            boxSpawns.add(new BoxSpawn(0, 6028, 513, -539));
+            boxSpawns.add(new BoxSpawn(0, 4316, 550, -3577));
+            boxSpawns.add(new BoxSpawn(0, 4141, 604, -3331));
+            boxSpawns.add(new BoxSpawn(0, 4030, 624, -3669));
+            boxSpawns.add(new BoxSpawn(0, 4253, 571, -3839));
+            boxSpawns.add(new BoxSpawn(0, 4459, 528, -3781));
+            boxSpawns.add(new BoxSpawn(0, 4547, 513, -3614));
 
             fieldItemSpawns = new ArrayList<>();
             for (int i = 0; i < 3; i++) {

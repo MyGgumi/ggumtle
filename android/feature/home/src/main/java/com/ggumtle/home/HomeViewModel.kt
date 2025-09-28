@@ -599,7 +599,7 @@ class HomeViewModel @Inject constructor(
                     reduce { state.copy(isGameStartingDialogVisible = true) }
                     unitySendManager.goToInGame(
                         authManager.getAccessToken().toString(),
-                        -4,
+                        -5,
                         "p-ryan.iptime.org",
                         8888
                     )

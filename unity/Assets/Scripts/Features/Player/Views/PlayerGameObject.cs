@@ -18,6 +18,11 @@ namespace Features.Player.Views
         public float RotationSmoothTime = 0.12f;
         public float SpeedChangeRate = 10.0f;
 
+        // 스피드 부스트 관련
+        private float _baseMoveSpeed;
+        private float _baseSprintSpeed;
+        private float _currentSpeedMultiplier = 1.0f;
+
         [Header("점프")]
         public float JumpHeight = 1.2f;
         public float Gravity = -15.0f;
@@ -131,8 +136,13 @@ namespace Features.Player.Views
 
             _playerMovementService = playerMovementService;
 
-            // 점프 이벤트 직접 구독
+            // 기본 속도 저장
+            _baseMoveSpeed = MoveSpeed;
+            _baseSprintSpeed = SprintSpeed;
+
+            // 이벤트 구독
             _playerMovementService.JumpInputChanged += OnJumpInputChanged;
+            _playerMovementService.SpeedMultiplierChanged += OnSpeedMultiplierChanged;
 
             // 네트워크 전송 시작
             if (_playerNetworkSource != null)
@@ -686,6 +696,20 @@ namespace Features.Player.Views
             }
         }
 
+        private void OnSpeedMultiplierChanged(float multiplier)
+        {
+            _currentSpeedMultiplier = multiplier;
+
+            // 기본 속도에 배율 적용
+            MoveSpeed = _baseMoveSpeed * multiplier;
+            SprintSpeed = _baseSprintSpeed * multiplier;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[PlayerGameObject] 속도 배율 적용: {multiplier:F2}배 - MoveSpeed: {MoveSpeed:F2}, SprintSpeed: {SprintSpeed:F2}");
+            }
+        }
+
         private void PerformJump()
         {
             _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
@@ -821,6 +845,7 @@ namespace Features.Player.Views
             if (_playerMovementService != null)
             {
                 _playerMovementService.JumpInputChanged -= OnJumpInputChanged;
+                _playerMovementService.SpeedMultiplierChanged -= OnSpeedMultiplierChanged;
             }
 
             // 네트워크 전송 중지

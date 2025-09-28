@@ -150,15 +150,11 @@ namespace Features.Inventory.ViewModels
 
             if (slot.IsEmpty || slot.Count < amount) return false;
 
-            // 아이템 사용 처리
-            slot.Count -= amount;
-            PlayerSlots.OnNext(slots);
-
             if (_enableDebugLogs)
-                Debug.Log($"[InventoryViewModel] 슬롯 {slotNumber} 아이템 사용, 남은 개수: {slot.Count}");
+                Debug.Log($"[InventoryViewModel] 슬롯 {slotNumber} 아이템 사용 요청: ItemId={slot.ItemId}, Amount={amount}");
 
-            // MessagePipe로 이벤트 발송
-            _itemUsedPublisher.Publish(new ItemUsedMessage(slotNumber, slot.ItemId, amount, slot.Count));
+            // MessagePipe로 이벤트 발송 (실제 제거는 ItemUsageService에서 처리)
+            _itemUsedPublisher.Publish(new ItemUsedMessage(slotNumber - 1, slot.ItemId, amount, slot.Count));
 
             return true;
         }

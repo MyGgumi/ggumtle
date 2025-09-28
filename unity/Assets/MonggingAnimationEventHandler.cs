@@ -19,7 +19,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
 
 
     [Header("Debug")]
-    [SerializeField] private bool enableDebugLogs = false;
+    [SerializeField] private bool enableDebugLogs = true;
 
     // Local/Remote 구분
     private bool isLocalPlayer = true;
@@ -52,6 +52,8 @@ public class MonggingAnimationEventHandler : MonoBehaviour
         // Local/Remote 구분 - 오브젝트 이름으로 판단
         isLocalPlayer = gameObject.name.Contains("Local") || GetComponent<Features.Player.Views.PlayerGameObject>() != null;
 
+        Debug.Log($"[MonggingAnimationEventHandler] 플레이어 타입 확인: Name='{gameObject.name}', IsLocal={isLocalPlayer}");
+
         // Local 플레이어만 PlayerMovementService 연결
         if (isLocalPlayer)
         {
@@ -71,6 +73,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
                     if (enableDebugLogs)
                         Debug.Log("[MonggingAnimationEventHandler] Local 플레이어 - PlayerMovementService 연결 완료");
                 }
+
             }
         }
         else
@@ -170,6 +173,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
                 Debug.Log("[MonggingAnimationEventHandler] Interact 트리거 (아이템 사용)");
         }
     }
+
 
     // ========== 지속형 상호작용 (Bool) - 이펙트는 Update()에서 자동 처리 ==========
 
@@ -653,6 +657,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
             wasDying = isDying;
         }
     }
+
 
     void OnDestroy()
     {

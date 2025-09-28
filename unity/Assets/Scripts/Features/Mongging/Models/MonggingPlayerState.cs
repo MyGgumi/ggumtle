@@ -6,6 +6,8 @@ namespace Features.Mongging.Models
     public enum MonggingPlayerState
     {
         Normal,     // 정상 상태
+        Digging,    // 파기 상태
+        Feeding,    // 먹이주기 상태
         Stunned,    // 감전 상태 (2초간 이동 불가)
         Frightened, // 공포 상태 (시야 어둡게)
         Fainted,    // 기절 상태 (체력 0)

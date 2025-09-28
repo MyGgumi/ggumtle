@@ -14,8 +14,12 @@ namespace Networks.Factories
 
             var result = buffer.ReadByte();
             var itemId = buffer.ReadInt();
-
-            return new MonggingItemUseCommand(result, itemId);
+                        
+            var x = buffer.ReadInt();
+            var y = buffer.ReadInt();
+            var z = buffer.ReadInt();
+            
+            return new MonggingItemUseCommand(result, itemId, x, y, z);
         }
     }
 

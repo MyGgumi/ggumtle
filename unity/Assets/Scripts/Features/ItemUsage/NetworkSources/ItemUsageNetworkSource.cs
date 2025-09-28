@@ -28,20 +28,20 @@ namespace Features.ItemUsage.NetworkSources
             }
         }
 
-        public async UniTask<MonggingItemUseCommand> UseItemAsync(int itemId, Vector3 direction)
+        public async UniTask<MonggingItemUseCommand> UseItemAsync(int itemId, Vector3 effectPosition)
         {
             try
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[ItemUsageNetworkSource] 아이템 사용 요청: ItemId={itemId}, Direction={direction}");
+                    Debug.Log($"[ItemUsageNetworkSource] 아이템 사용 요청: ItemId={itemId}, EffectPosition={effectPosition}");
                 }
 
-                var result = await _networkApi.MonggingItemUse(direction, itemId);
+                var result = await _networkApi.MonggingItemUse(effectPosition, itemId);
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[ItemUsageNetworkSource] 아이템 사용 응답: Success={result.Success}, Result={result.Result}");
+                    Debug.Log($"[ItemUsageNetworkSource] 아이템 사용 응답: Success={result.Success}, Result={result.Result}, Position={result.position}");
                 }
 
                 return result;

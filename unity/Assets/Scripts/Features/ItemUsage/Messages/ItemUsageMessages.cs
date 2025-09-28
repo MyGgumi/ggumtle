@@ -59,15 +59,13 @@ namespace Features.ItemUsage.Messages
     public readonly struct TaserGunUsedMessage
     {
         public readonly long userId;
-        public readonly long targetId;
-        public readonly Vector3 direction;
+        public readonly Vector3 effectPosition; // 이펙트 생성 위치
         public readonly bool success;
 
-        public TaserGunUsedMessage(long userId, long targetId, Vector3 direction, bool success)
+        public TaserGunUsedMessage(long userId, Vector3 effectPosition, bool success)
         {
             this.userId = userId;
-            this.targetId = targetId;
-            this.direction = direction;
+            this.effectPosition = effectPosition;
             this.success = success;
         }
     }
@@ -78,13 +76,13 @@ namespace Features.ItemUsage.Messages
     public readonly struct FlashBangUsedMessage
     {
         public readonly long userId;
-        public readonly Vector3 direction;
+        public readonly Vector3 effectPosition; // 이펙트 생성 위치
         public readonly bool success;
 
-        public FlashBangUsedMessage(long userId, Vector3 direction, bool success)
+        public FlashBangUsedMessage(long userId, Vector3 effectPosition, bool success)
         {
             this.userId = userId;
-            this.direction = direction;
+            this.effectPosition = effectPosition;
             this.success = success;
         }
     }

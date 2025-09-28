@@ -13,17 +13,17 @@
                 
                 <!-- 진행도 채우기 - 1/3 -->
                 <ui:VisualElement name="fillMask_1of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden;">
-                    <ui:VisualElement name="fill_1of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 33%; background-color: rgba(253, 247, 211, 0.2); border-radius: 0 0 65px 65px;" />
+                    <ui:VisualElement name="fill_1of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background-color: rgba(253, 247, 211, 0.2); border-radius: 0 0 65px 65px;" />
                 </ui:VisualElement>
-                
-                <!-- 진행도 채우기 - 2/3 (숨김) -->
-                <ui:VisualElement name="fillMask_2of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden; display: none;">
-                    <ui:VisualElement name="fill_2of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 67%; background-color: rgba(253, 247, 211, 0.2); border-radius: 0 0 65px 65px;" />
+
+                <!-- 진행도 채우기 - 2/3 -->
+                <ui:VisualElement name="fillMask_2of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden;">
+                    <ui:VisualElement name="fill_2of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background-color: rgba(253, 247, 211, 0.2); border-radius: 0 0 65px 65px;" />
                 </ui:VisualElement>
-                
+
                 <!-- 진행도 채우기 - 3/3 -->
-                <ui:VisualElement name="fillMask_3of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden; display: none;">
-                    <ui:VisualElement name="fill_3of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 100%; background-color: rgba(253, 247, 211, 0.2); border-radius: 65px;" />
+                <ui:VisualElement name="fillMask_3of3" style="position: absolute; left: 0; top: 0; width: 130px; height: 130px; border-radius: 50%; overflow: hidden;">
+                    <ui:VisualElement name="fill_3of3" style="position: absolute; left: 0; right: 0; bottom: 0; height: 0%; background-color: rgba(253, 247, 211, 0.2); border-radius: 65px;" />
                 </ui:VisualElement>
                 
                 <!-- 1/3 텍스트 (원 안에) -->

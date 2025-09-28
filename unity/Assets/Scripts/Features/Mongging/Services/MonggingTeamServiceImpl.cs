@@ -83,6 +83,9 @@ namespace Features.Mongging.Services
         // Revival 시스템 구독
         private readonly ISubscriber<RevivalCompletedMessage> _revivalCompletedSubscriber;
 
+        // EscapeGate 시스템 구독
+        private readonly ISubscriber<MonggingPlayerEscapedMessage> _playerEscapedSubscriber;
+
         // 상호작용 상태 발행
         private readonly IPublisher<Features.Revival.Messages.MonggingInteractableStateMessage> _interactableStatePublisher;
 
@@ -113,6 +116,7 @@ namespace Features.Mongging.Services
             ISubscriber<MonggingPlayerRevivedMessage> playerRevivedSubscriber,
             ISubscriber<MonggingPlayerServerStateMessage> serverStateSubscriber,
             ISubscriber<RevivalCompletedMessage> revivalCompletedSubscriber,
+            ISubscriber<MonggingPlayerEscapedMessage> playerEscapedSubscriber,
             IPublisher<Features.Revival.Messages.MonggingInteractableStateMessage> interactableStatePublisher,
             IPublisher<Features.PlayerHealth.Messages.HealReceivedMessage> healReceivedPublisher)
         {
@@ -134,6 +138,7 @@ namespace Features.Mongging.Services
             _playerRevivedSubscriber = playerRevivedSubscriber;
             _serverStateSubscriber = serverStateSubscriber;
             _revivalCompletedSubscriber = revivalCompletedSubscriber;
+            _playerEscapedSubscriber = playerEscapedSubscriber;
             _interactableStatePublisher = interactableStatePublisher;
             _healReceivedPublisher = healReceivedPublisher;
 
@@ -308,6 +313,11 @@ namespace Features.Mongging.Services
             // Revival 완료 구독
             _revivalCompletedSubscriber
                 .Subscribe(OnRevivalCompleted)
+                .AddTo(_disposables);
+
+            // EscapeGate 탈출 구독
+            _playerEscapedSubscriber
+                .Subscribe(OnPlayerEscapedFromGate)
                 .AddTo(_disposables);
 
             if (_enableDebugLogs)
@@ -919,6 +929,47 @@ namespace Features.Mongging.Services
             {
                 Debug.LogError($"[MonggingTeamServiceImpl] Revival 부활 완료 처리 실패: {e.Message}");
                 Debug.LogError($"[MonggingTeamServiceImpl] Stack trace: {e.StackTrace}");
+            }
+        }
+
+        /// <summary>
+        /// EscapeGate에서 탈출한 플레이어 처리
+        /// </summary>
+        private void OnPlayerEscapedFromGate(MonggingPlayerEscapedMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MonggingTeamServiceImpl] EscapeGate 탈출 메시지 수신: PlayerId={message.PlayerId}, Position={message.EscapePosition}");
+                }
+
+                if (_playerServices.TryGetValue(message.PlayerId, out var playerService))
+                {
+                    // 플레이어 상태를 탈출로 변경 (메시지 재발행 방지를 위해 SyncFromServer 사용)
+                    var currentPlayerData = playerService.GetPlayerData();
+                    playerService.SyncFromServer(currentPlayerData.currentHp, MonggingPlayerState.Escaped, currentPlayerData.faintCount);
+                    UpdateObservables();
+
+                    // PlayerList에 탈출 상태 알림
+                    NotifyPlayerListStateChange(message.PlayerId, MonggingPlayerState.Escaped);
+
+                    // 상호작용 불가 상태로 변경 (탈출했으므로)
+                    PublishInteractableState(message.PlayerId, false, currentPlayerData.playerName);
+
+                    if (_enableDebugLogs)
+                    {
+                        Debug.Log($"[MonggingTeamServiceImpl] 플레이어 탈출 처리 완료: PlayerId={message.PlayerId}, 탈출 위치={message.EscapePosition}");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning($"[MonggingTeamServiceImpl] 탈출할 플레이어 서비스를 찾을 수 없음: PlayerId={message.PlayerId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MonggingTeamServiceImpl] EscapeGate 탈출 처리 실패: {e.Message}");
             }
         }
 

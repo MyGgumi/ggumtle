@@ -1,11 +1,11 @@
 using System;
+using Features.Chest.Messages;
+using Features.Ggumtle.Messages;
 using Features.MobileControls.Messages;
 using Features.MobileControls.Models;
-using Features.Ggumtle.Messages;
-using Features.Chest.Messages;
-using Features.Revival.Messages;
 using Features.Player.Services;
 using Features.PlayerList.Models;
+using Features.Revival.Messages;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -71,6 +71,8 @@ namespace Features.MobileControls.ViewModels
         private readonly ISubscriber<ChestClosedMessage> _chestClosedSubscriber;
         private readonly ISubscriber<FaintedMonggingDetectedMessage> _faintedMonggingDetectedSubscriber;
         private readonly ISubscriber<FaintedMonggingLeftMessage> _faintedMonggingLeftSubscriber;
+        private readonly ISubscriber<Features.EscapeGate.Messages.EscapeGateDetectedMessage> _escapeGateDetectedSubscriber;
+        private readonly ISubscriber<Features.EscapeGate.Messages.EscapeGateLeftMessage> _escapeGateLeftSubscriber;
 
         #endregion
 
@@ -83,9 +85,11 @@ namespace Features.MobileControls.ViewModels
         private bool _isGgumtleNearby = false;
         private bool _isChestNearby = false;
         private bool _isFaintedMonggingNearby = false;
+        private bool _isEscapeGateNearby = false;
         private string _currentGgumtleId = null;
         private int _currentChestId = -1;
         private long _currentFaintedMonggingId = -1;
+        private int _currentEscapeGateId = -1;
 
         #endregion
 
@@ -108,7 +112,9 @@ namespace Features.MobileControls.ViewModels
             ISubscriber<ChestLeftMessage> chestLeftSubscriber,
             ISubscriber<ChestClosedMessage> chestClosedSubscriber,
             ISubscriber<FaintedMonggingDetectedMessage> faintedMonggingDetectedSubscriber,
-            ISubscriber<FaintedMonggingLeftMessage> faintedMonggingLeftSubscriber
+            ISubscriber<FaintedMonggingLeftMessage> faintedMonggingLeftSubscriber,
+            ISubscriber<Features.EscapeGate.Messages.EscapeGateDetectedMessage> escapeGateDetectedSubscriber,
+            ISubscriber<Features.EscapeGate.Messages.EscapeGateLeftMessage> escapeGateLeftSubscriber
         )
         {
             _data = new MobileControlsData();
@@ -129,8 +135,12 @@ namespace Features.MobileControls.ViewModels
             _chestClosedSubscriber = chestClosedSubscriber;
             _faintedMonggingDetectedSubscriber = faintedMonggingDetectedSubscriber;
             _faintedMonggingLeftSubscriber = faintedMonggingLeftSubscriber;
+            _escapeGateDetectedSubscriber = escapeGateDetectedSubscriber;
+            _escapeGateLeftSubscriber = escapeGateLeftSubscriber;
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] VContainer 의존성 주입 완료 - JoystickPublisher: {joystickInputPublisher != null}");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] VContainer 의존성 주입 완료 - JoystickPublisher: {joystickInputPublisher != null}"
+            );
 
             Initialize();
         }
@@ -146,35 +156,28 @@ namespace Features.MobileControls.ViewModels
                 .AddTo(_disposables);
 
             // 꿈틀이 관련 메시지 구독
-            _ggumtleDetectedSubscriber
-                .Subscribe(OnGgumtleDetected)
-                .AddTo(_disposables);
+            _ggumtleDetectedSubscriber.Subscribe(OnGgumtleDetected).AddTo(_disposables);
 
-            _ggumtleLeftSubscriber
-                .Subscribe(OnGgumtleLeft)
-                .AddTo(_disposables);
+            _ggumtleLeftSubscriber.Subscribe(OnGgumtleLeft).AddTo(_disposables);
 
             // 상자 관련 메시지 구독
-            _chestDetectedSubscriber
-                .Subscribe(OnChestDetected)
-                .AddTo(_disposables);
+            _chestDetectedSubscriber.Subscribe(OnChestDetected).AddTo(_disposables);
 
-            _chestLeftSubscriber
-                .Subscribe(OnChestLeft)
-                .AddTo(_disposables);
+            _chestLeftSubscriber.Subscribe(OnChestLeft).AddTo(_disposables);
 
-            _chestClosedSubscriber
-                .Subscribe(OnChestClosed)
-                .AddTo(_disposables);
+            _chestClosedSubscriber.Subscribe(OnChestClosed).AddTo(_disposables);
 
             // 기절한 몽깅이 관련 메시지 구독
             _faintedMonggingDetectedSubscriber
                 .Subscribe(OnFaintedMonggingDetected)
                 .AddTo(_disposables);
 
-            _faintedMonggingLeftSubscriber
-                .Subscribe(OnFaintedMonggingLeft)
-                .AddTo(_disposables);
+            _faintedMonggingLeftSubscriber.Subscribe(OnFaintedMonggingLeft).AddTo(_disposables);
+
+            // 탈출 게이트 관련 메시지 구독
+            _escapeGateDetectedSubscriber.Subscribe(OnEscapeGateDetected).AddTo(_disposables);
+
+            _escapeGateLeftSubscriber.Subscribe(OnEscapeGateLeft).AddTo(_disposables);
 
             // 데이터 상태를 ReactiveProperty와 동기화
             SyncDataToProperties();
@@ -290,7 +293,9 @@ namespace Features.MobileControls.ViewModels
 
             _holdStartTime = Time.time;
             _interactHoldStartPublisher.Publish(InteractHoldStartMessage.Instance);
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 홀드 시작 - 시간: {_holdStartTime:F2}");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 상호작용 홀드 시작 - 시간: {_holdStartTime:F2}"
+            );
         }
 
         /// <summary>
@@ -300,7 +305,9 @@ namespace Features.MobileControls.ViewModels
         {
             float holdDuration = Time.time - _holdStartTime;
             _interactHoldEndPublisher.Publish(InteractHoldEndMessage.Instance);
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 홀드 종료 - 홀드 시간: {holdDuration:F2}초");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 상호작용 홀드 종료 - 홀드 시간: {holdDuration:F2}초"
+            );
         }
 
         #endregion
@@ -330,7 +337,6 @@ namespace Features.MobileControls.ViewModels
             UpdateControlVisibility();
         }
 
-
         /// <summary>
         /// 전체 투명도 설정
         /// </summary>
@@ -352,9 +358,9 @@ namespace Features.MobileControls.ViewModels
             _data.interactButton.SetVisibility(msg.IsVisible);
             InteractButtonVisible.Value = msg.IsVisible;
 
-            // Debug.Log(
-            //     $"[MobileControlsViewModel] 상호작용 버튼 가시성 변경: {msg.IsVisible} ({msg.Reason})"
-            // );
+            Debug.Log(
+                $"[MobileControlsViewModel] 상호작용 버튼 가시성 변경: {msg.IsVisible} ({msg.Reason})"
+            );
         }
 
         #endregion
@@ -429,7 +435,9 @@ namespace Features.MobileControls.ViewModels
 
             UpdateInteractButtonVisibility();
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 꿈틀이 감지: {message.GgumtleId}, 상호작용 버튼 표시");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 꿈틀이 감지: {message.GgumtleId}, 상호작용 버튼 표시"
+            );
         }
 
         /// <summary>
@@ -444,7 +452,9 @@ namespace Features.MobileControls.ViewModels
 
                 UpdateInteractButtonVisibility();
 
-                UnityEngine.Debug.Log($"[MobileControlsViewModel] 꿈틀이 벗어남: {message.GgumtleId}");
+                UnityEngine.Debug.Log(
+                    $"[MobileControlsViewModel] 꿈틀이 벗어남: {message.GgumtleId}"
+                );
             }
         }
 
@@ -458,7 +468,9 @@ namespace Features.MobileControls.ViewModels
 
             UpdateInteractButtonVisibility();
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상자 감지: {message.ChestId}, 상호작용 버튼 표시");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 상자 감지: {message.ChestId}, 상호작용 버튼 표시"
+            );
         }
 
         /// <summary>
@@ -485,7 +497,9 @@ namespace Features.MobileControls.ViewModels
             if (_currentChestId == message.ChestId)
             {
                 // 상자가 닫혔지만 아직 근처에 있을 수 있으므로 상태만 초기화
-                UnityEngine.Debug.Log($"[MobileControlsViewModel] 상자 닫힘 처리: {message.ChestId} (현재 근처: {_isChestNearby})");
+                UnityEngine.Debug.Log(
+                    $"[MobileControlsViewModel] 상자 닫힘 처리: {message.ChestId} (현재 근처: {_isChestNearby})"
+                );
             }
         }
 
@@ -499,7 +513,9 @@ namespace Features.MobileControls.ViewModels
 
             UpdateInteractButtonVisibility();
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 기절한 몽깅이 감지: {message.PlayerId} ({message.PlayerName}), 상호작용 버튼 표시");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 기절한 몽깅이 감지: {message.PlayerId} ({message.PlayerName}), 상호작용 버튼 표시"
+            );
         }
 
         /// <summary>
@@ -514,7 +530,9 @@ namespace Features.MobileControls.ViewModels
 
                 UpdateInteractButtonVisibility();
 
-                UnityEngine.Debug.Log($"[MobileControlsViewModel] 기절한 몽깅이 벗어남: {message.PlayerId}");
+                UnityEngine.Debug.Log(
+                    $"[MobileControlsViewModel] 기절한 몽깅이 벗어남: {message.PlayerId}"
+                );
             }
         }
 
@@ -528,7 +546,13 @@ namespace Features.MobileControls.ViewModels
             bool isLocalMongging = localPlayerRole == PlayerRole.Mongging;
 
             // 로컬 몽깅이이고 상호작용 객체가 근처에 있을 때만 표시
-            bool shouldShow = isLocalMongging && (_isGgumtleNearby || _isChestNearby || _isFaintedMonggingNearby);
+            if (!isLocalMongging)
+                return;
+            bool shouldShow =
+                _isGgumtleNearby
+                || _isChestNearby
+                || _isFaintedMonggingNearby
+                || _isEscapeGateNearby;
 
             var interactData = _data.GetButtonData(MobileButtonType.Interact);
             if (interactData != null)
@@ -537,7 +561,44 @@ namespace Features.MobileControls.ViewModels
                 UpdateButtonProperties(MobileButtonType.Interact, interactData);
             }
 
-            UnityEngine.Debug.Log($"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (로컬몽깅이: {isLocalMongging}, 꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby}, 기절몽깅이: {_isFaintedMonggingNearby})");
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 상호작용 버튼 가시성 업데이트: {shouldShow} (isLocalMongging: {isLocalMongging}, 꿈틀이: {_isGgumtleNearby}, 상자: {_isChestNearby}, 기절몽깅이: {_isFaintedMonggingNearby}, 탈출구: {_isEscapeGateNearby})"
+            );
+        }
+
+        /// <summary>
+        /// 탈출 게이트 감지 메시지 처리
+        /// </summary>
+        private void OnEscapeGateDetected(
+            Features.EscapeGate.Messages.EscapeGateDetectedMessage message
+        )
+        {
+            _isEscapeGateNearby = true;
+            _currentEscapeGateId = message.GateId;
+
+            UpdateInteractButtonVisibility();
+
+            UnityEngine.Debug.Log(
+                $"[MobileControlsViewModel] 탈출 게이트 감지: {message.GateId}, 상호작용 버튼 표시"
+            );
+        }
+
+        /// <summary>
+        /// 탈출 게이트 벗어남 메시지 처리
+        /// </summary>
+        private void OnEscapeGateLeft(Features.EscapeGate.Messages.EscapeGateLeftMessage message)
+        {
+            if (_currentEscapeGateId == message.GateId)
+            {
+                _isEscapeGateNearby = false;
+                _currentEscapeGateId = -1;
+
+                UpdateInteractButtonVisibility();
+
+                UnityEngine.Debug.Log(
+                    $"[MobileControlsViewModel] 탈출 게이트 벗어남: {message.GateId}"
+                );
+            }
         }
 
         #endregion

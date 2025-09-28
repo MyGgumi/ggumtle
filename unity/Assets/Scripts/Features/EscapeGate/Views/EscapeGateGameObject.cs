@@ -28,6 +28,16 @@ namespace Features.EscapeGate.Views
         public int GateId => gateId;
         public string GateName => gateName;
 
+        /// <summary>
+        /// 게이트 ID 설정 (동적 생성 시 사용)
+        /// </summary>
+        public void SetGateId(int id)
+        {
+            gateId = id;
+            if (enableDebugLogs)
+                Debug.Log($"[EscapeGateGameObject] GateId 설정 완료: {id}");
+        }
+
         [Header("비주얼 컴포넌트")]
         [SerializeField]
         private Animator gateAnimator;
@@ -80,6 +90,7 @@ namespace Features.EscapeGate.Views
         }
 
         #endregion
+
 
         #region Unity Lifecycle
 

@@ -62,18 +62,26 @@ namespace Networks.Players
 
     public class MonggingItemUseCommand : Command
     {
+        public const int Unit = 100;
         public override PacketType Type => PacketType.MonggingItemUseResponse;
 
         public MonggingItemUseResult Result { get; set; }
         public int itemId;
+        public Vector3 position;
 
-        public MonggingItemUseCommand(byte result, int itemId)
+        public MonggingItemUseCommand(byte result, int itemId, int x, int y, int z)
         {
             this.Result = (MonggingItemUseResult)result;
             this.itemId = itemId;
+            
+            var xFloat = (float)x / Unit;
+            var yFloat = (float)y / Unit;
+            var zFloat = (float)z / Unit;
+            
+            position = new Vector3(xFloat, yFloat, zFloat);
         }
         
-        public bool Success => Result == MonggingItemUseResult.Success;
+        public bool Success => (Result == MonggingItemUseResult.Success || Result == MonggingItemUseResult.Miss);
     }
 
     public class MonggingFieldItemUseSend : Sendable

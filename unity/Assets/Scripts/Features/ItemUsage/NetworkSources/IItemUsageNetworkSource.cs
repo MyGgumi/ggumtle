@@ -13,9 +13,9 @@ namespace Features.ItemUsage.NetworkSources
         /// 몽깅이 아이템 사용 (테이저건, 섬광탄, 자가제세동기)
         /// </summary>
         /// <param name="itemId">아이템 ID (2: 섬광탄, 3: 테이저건, 4: 자가제세동기)</param>
-        /// <param name="direction">사용 방향</param>
+        /// <param name="effectPosition">이펙트 생성 위치</param>
         /// <returns>아이템 사용 응답</returns>
-        UniTask<MonggingItemUseCommand> UseItemAsync(int itemId, Vector3 direction);
+        UniTask<MonggingItemUseCommand> UseItemAsync(int itemId, Vector3 effectPosition);
 
         /// <summary>
         /// 필드 아이템 사용 (필요시)

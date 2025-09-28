@@ -359,12 +359,11 @@ namespace Features.Inventory.Services
                 switch (itemId)
                 {
                     case 2: // 섬광탄
-                        success = await _itemUsageService.UseFlashBangAsync(localPlayerId, direction);
+                        success = await _itemUsageService.UseFlashBangAsync(localPlayerId);
                         break;
 
                     case 3: // 테이저건
-                        // TODO: 타겟 ID 처리 필요 (현재는 -1로 처리)
-                        success = await _itemUsageService.UseTaserGunAsync(localPlayerId, -1, direction);
+                        success = await _itemUsageService.UseTaserGunAsync(localPlayerId);
                         break;
 
                     case 4: // 자가제세동기

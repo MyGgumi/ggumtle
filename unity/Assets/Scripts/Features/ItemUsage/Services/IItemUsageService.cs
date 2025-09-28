@@ -14,18 +14,15 @@ namespace Features.ItemUsage.Services
         /// 테이저건 사용
         /// </summary>
         /// <param name="userId">사용자 ID</param>
-        /// <param name="targetId">대상 ID</param>
-        /// <param name="direction">사용 방향</param>
         /// <returns>사용 성공 여부</returns>
-        UniTask<bool> UseTaserGunAsync(long userId, long targetId, Vector3 direction);
+        UniTask<bool> UseTaserGunAsync(long userId);
 
         /// <summary>
         /// 섬광탄 사용
         /// </summary>
         /// <param name="userId">사용자 ID</param>
-        /// <param name="direction">사용 방향</param>
         /// <returns>사용 성공 여부</returns>
-        UniTask<bool> UseFlashBangAsync(long userId, Vector3 direction);
+        UniTask<bool> UseFlashBangAsync(long userId);
 
         /// <summary>
         /// 자가제세동기 사용

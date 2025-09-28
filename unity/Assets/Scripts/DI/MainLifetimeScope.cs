@@ -379,6 +379,9 @@ namespace DI
             // Revival Handlers 등록
             builder.Register<Features.Revival.Handlers.MonggingInteractableHandler>(Lifetime.Scoped);
 
+            // ItemEffect Manager 등록 (맵에 직접 이펙트 스폰)
+            builder.Register<Features.ItemUsage.Managers.ItemEffectManager>(Lifetime.Scoped);
+
             // Mongging Services
             builder.Register<IMonggingPlayerService, MonggingPlayerServiceImpl>(Lifetime.Scoped);
             builder.Register<IMonggingTeamService, MonggingTeamServiceImpl>(Lifetime.Scoped);
@@ -424,6 +427,10 @@ namespace DI
             // Revival Handlers EntryPoint 등록 (자동 활성화)
             builder.RegisterEntryPoint<Features.Revival.Handlers.MonggingInteractableHandler>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MonggingInteractableHandler EntryPoint 등록 완료");
+
+            // ItemEffect Manager EntryPoint 등록 (자동 활성화)
+            builder.RegisterEntryPoint<Features.ItemUsage.Managers.ItemEffectManager>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] ItemEffectManager EntryPoint 등록 완료");
 
             // NetworkEventHandlers 초기화
             builder.RegisterBuildCallback(container =>

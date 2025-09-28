@@ -84,7 +84,7 @@ namespace Features.ItemUsage.Services
 
         #region Public Methods
 
-        public async UniTask<bool> UseTaserGunAsync(long userId, long targetId, Vector3 direction)
+        public async UniTask<bool> UseTaserGunAsync(long userId)
         {
             try
             {
@@ -99,17 +99,24 @@ namespace Features.ItemUsage.Services
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[ItemUsageServiceImpl] 테이저건 사용 시작: UserId={userId}, TargetId={targetId}");
+                    Debug.Log($"[ItemUsageServiceImpl] 테이저건 사용 시작: UserId={userId}");
                 }
 
-                var result = await _networkSource.UseItemAsync(TASER_GUN_ID, direction);
+                // 플레이어 위치에서 전방 3미터 지점에 이펙트 생성
+                var playerGO = _playerManagerService?.GetLocalPlayer()?.GameObject;
+                Vector3 effectPosition = playerGO != null
+                    ? playerGO.transform.position + playerGO.transform.forward * 3f
+                    : Vector3.zero;
+
+                var result = await _networkSource.UseItemAsync(TASER_GUN_ID, effectPosition);
                 bool success = result.Success;
 
                 // 쿨다운 적용
                 ApplyCooldown(TASER_GUN_ID);
 
-                // 결과 메시지 발행
-                _taserUsedPublisher.Publish(new TaserGunUsedMessage(userId, targetId, direction, success));
+                // 결과 메시지 발행 (서버에서 받은 좌표 사용)
+                Vector3 serverPosition = result.position;
+                _taserUsedPublisher.Publish(new TaserGunUsedMessage(userId, serverPosition, success));
                 _itemUsageResultPublisher.Publish(new ItemUsageResultMessage(TASER_GUN_ID, success, result.Result.ToString()));
 
                 if (_enableDebugLogs)
@@ -126,7 +133,7 @@ namespace Features.ItemUsage.Services
             }
         }
 
-        public async UniTask<bool> UseFlashBangAsync(long userId, Vector3 direction)
+        public async UniTask<bool> UseFlashBangAsync(long userId)
         {
             try
             {
@@ -144,14 +151,22 @@ namespace Features.ItemUsage.Services
                     Debug.Log($"[ItemUsageServiceImpl] 섬광탄 사용 시작: UserId={userId}");
                 }
 
-                var result = await _networkSource.UseItemAsync(FLASH_BANG_ID, direction);
+                // 플레이어 위치에서 전방 3미터 지점에 이펙트 생성
+                var playerGO = _playerManagerService?.GetLocalPlayer()?.GameObject;
+                Vector3 effectPosition = playerGO != null
+                    ? playerGO.transform.position + playerGO.transform.forward * 3f
+                    : Vector3.zero;
+
+                // 이펙트 위치를 direction 파라미터로 전달 (서버에서 vx,vy,vz를 이펙트 좌표로 사용)
+                var result = await _networkSource.UseItemAsync(FLASH_BANG_ID, effectPosition);
                 bool success = result.Success;
 
                 // 쿨다운 적용
                 ApplyCooldown(FLASH_BANG_ID);
 
-                // 결과 메시지 발행
-                _flashBangUsedPublisher.Publish(new FlashBangUsedMessage(userId, direction, success));
+                // 결과 메시지 발행 (서버에서 받은 좌표 사용)
+                Vector3 serverPosition = result.position;
+                _flashBangUsedPublisher.Publish(new FlashBangUsedMessage(userId, serverPosition, success));
                 _itemUsageResultPublisher.Publish(new ItemUsageResultMessage(FLASH_BANG_ID, success, result.Result.ToString()));
 
                 if (_enableDebugLogs)
@@ -310,9 +325,9 @@ namespace Features.ItemUsage.Services
                     case TASER_GUN_ID:
                         if (_enableDebugLogs)
                         {
-                            Debug.Log("[ItemUsageServiceImpl] 테이저건 사용 - 목표 플레이어 필요");
+                            Debug.Log("[ItemUsageServiceImpl] 테이저건 사용 처리");
                         }
-                        // 테이저건은 목표 플레이어가 필요하므로 별도 처리 필요
+                        await UseTaserGunAsync(localPlayerId);
                         break;
 
                     case FLASH_BANG_ID:
@@ -320,8 +335,7 @@ namespace Features.ItemUsage.Services
                         {
                             Debug.Log("[ItemUsageServiceImpl] 섬광탄 사용 처리");
                         }
-                        // 방향 정보가 필요하므로 기본 방향 사용
-                        await UseFlashBangAsync(localPlayerId, Vector3.forward);
+                        await UseFlashBangAsync(localPlayerId);
                         break;
 
                     default:

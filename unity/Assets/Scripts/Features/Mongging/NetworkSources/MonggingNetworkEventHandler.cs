@@ -86,15 +86,18 @@ namespace Features.Mongging.NetworkSources
         /// <summary>
         /// 서버 상태 코드를 MonggingPlayerState로 변환
         /// </summary>
-        private static MonggingPlayerState ConvertServerStateToMonggingState(int serverStateType)
+        private static MonggingPlayerState ConvertServerStateToMonggingState(MonggingStateType serverStateType)
         {
             return serverStateType switch
             {
-                50 => MonggingPlayerState.Fainted,   // 기절
-                70 => MonggingPlayerState.Dead,      // 사망
-                100 => MonggingPlayerState.Escaped,  // 탈출
-                120 => MonggingPlayerState.Stunned,  // 스턴
-                _ => MonggingPlayerState.Normal      // 기본값
+                MonggingStateType.Normal => MonggingPlayerState.Normal,
+                MonggingStateType.Digging => MonggingPlayerState.Digging,
+                MonggingStateType.Feeding => MonggingPlayerState.Feeding,
+                MonggingStateType.Knockout => MonggingPlayerState.Fainted,
+                MonggingStateType.Dead => MonggingPlayerState.Dead,
+                MonggingStateType.Escape => MonggingPlayerState.Escaped,
+                MonggingStateType.Stunned => MonggingPlayerState.Stunned,
+                _ => MonggingPlayerState.Normal
             };
         }
     }

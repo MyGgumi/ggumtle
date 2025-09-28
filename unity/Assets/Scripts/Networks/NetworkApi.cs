@@ -699,12 +699,12 @@ namespace Networks
             }
         }
 
-        public async Task<MonggingItemUseCommand> MonggingItemUse(Vector3 direction, int itemId)
+        public async Task<MonggingItemUseCommand> MonggingItemUse(Vector3 effectPosition, int itemId)
         {
             try
             {
                 Debug.Log(
-                    $"[NetworkApi] 몽깅이 아이템 사용 시작: Direction={direction}, ItemId={itemId}"
+                    $"[NetworkApi] 몽깅이 아이템 사용 시작: EffectPosition={effectPosition}, ItemId={itemId}"
                 );
 
                 if (client == null || !client.IsConnected)
@@ -716,7 +716,7 @@ namespace Networks
                 var tcs = new TaskCompletionSource<object>();
                 _pendingRequests[PacketType.MonggingItemUseResponse] = tcs;
 
-                var monggingItemUseRequest = new MonggingItemUseSend(direction, itemId);
+                var monggingItemUseRequest = new MonggingItemUseSend(effectPosition, itemId);
                 client.Send(monggingItemUseRequest);
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));

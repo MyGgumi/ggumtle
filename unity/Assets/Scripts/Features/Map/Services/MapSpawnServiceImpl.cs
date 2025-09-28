@@ -5,6 +5,7 @@ using Features.Ggumtle.Services;
 using Features.Chest.Views;
 using Features.FieldItem.Views;
 using Features.FieldItem.Models;
+using Features.FieldItem.Services;
 using Features.Ggumtle.Views;
 using Networks.Rooms.Domains;
 using System;
@@ -25,6 +26,7 @@ namespace Features.Map.Services
         private readonly IAddressableLoadService _addressableLoadService;
         private readonly IGgumtleService _ggumtleService;
         private readonly Features.Chest.Services.IChestService _chestService;
+        private readonly IFieldItemService _fieldItemService;
         private readonly bool _enableDebugLogs = false;
 
         // 설정할 데이터
@@ -50,11 +52,13 @@ namespace Features.Map.Services
         public MapSpawnServiceImpl(
             IAddressableLoadService addressableLoadService,
             IGgumtleService ggumtleService,
-            Features.Chest.Services.IChestService chestService)
+            Features.Chest.Services.IChestService chestService,
+            IFieldItemService fieldItemService)
         {
             _addressableLoadService = addressableLoadService ?? throw new ArgumentNullException(nameof(addressableLoadService));
             _ggumtleService = ggumtleService ?? throw new ArgumentNullException(nameof(ggumtleService));
             _chestService = chestService ?? throw new ArgumentNullException(nameof(chestService));
+            _fieldItemService = fieldItemService ?? throw new ArgumentNullException(nameof(fieldItemService));
 
             if (_enableDebugLogs)
                 Debug.Log("[MapSpawnService] 초기화 완료");
@@ -248,6 +252,9 @@ namespace Features.Map.Services
                     healPackObject.SetId(healPackData.Id);
                     healPackObject.SetType(FieldItemType.HealPack);
 
+                    // FieldItemService에 등록
+                    _fieldItemService.RegisterFieldItem(healPackData.Id, FieldItemType.HealPack);
+
                     // 관리 리스트에 추가
                     _spawnedHealPacks.Add(healPackObject);
 
@@ -287,6 +294,9 @@ namespace Features.Map.Services
                     // ID 및 타입 설정
                     speedPackObject.SetId(speedPackData.Id);
                     speedPackObject.SetType(FieldItemType.SpeedPack);
+
+                    // FieldItemService에 등록
+                    _fieldItemService.RegisterFieldItem(speedPackData.Id, FieldItemType.SpeedPack);
 
                     // 관리 리스트에 추가
                     _spawnedSpeedPacks.Add(speedPackObject);

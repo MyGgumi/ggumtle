@@ -35,6 +35,7 @@ namespace Features.ItemUsage.Services
         private readonly IPublisher<TaserGunUsedMessage> _taserUsedPublisher;
         private readonly IPublisher<FlashBangUsedMessage> _flashBangUsedPublisher;
         private readonly IPublisher<ItemUsageResultMessage> _itemUsageResultPublisher;
+        private readonly IPublisher<ItemRemovedMessage> _itemRemovedPublisher;
         private readonly PlayerManagerService _playerManagerService;
         private readonly ISubscriber<ItemUsedMessage> _itemUsedSubscriber;
 
@@ -57,6 +58,7 @@ namespace Features.ItemUsage.Services
             IPublisher<TaserGunUsedMessage> taserUsedPublisher,
             IPublisher<FlashBangUsedMessage> flashBangUsedPublisher,
             IPublisher<ItemUsageResultMessage> itemUsageResultPublisher,
+            IPublisher<ItemRemovedMessage> itemRemovedPublisher,
             PlayerManagerService playerManagerService,
             ISubscriber<ItemUsedMessage> itemUsedSubscriber)
         {
@@ -65,6 +67,7 @@ namespace Features.ItemUsage.Services
             _taserUsedPublisher = taserUsedPublisher;
             _flashBangUsedPublisher = flashBangUsedPublisher;
             _itemUsageResultPublisher = itemUsageResultPublisher;
+            _itemRemovedPublisher = itemRemovedPublisher;
             _playerManagerService = playerManagerService;
             _itemUsedSubscriber = itemUsedSubscriber;
 
@@ -312,6 +315,7 @@ namespace Features.ItemUsage.Services
                 }
 
                 // 아이템 ID에 따른 분기 처리
+                bool itemUsed = false;
                 switch (message.itemId)
                 {
                     case SELF_DEFIBRILLATOR_ID:
@@ -319,7 +323,7 @@ namespace Features.ItemUsage.Services
                         {
                             Debug.Log("[ItemUsageServiceImpl] 자가제세동기 사용 처리");
                         }
-                        await UseSelfDefibrillatorAsync(localPlayerId);
+                        itemUsed = await UseSelfDefibrillatorAsync(localPlayerId);
                         break;
 
                     case TASER_GUN_ID:
@@ -327,7 +331,7 @@ namespace Features.ItemUsage.Services
                         {
                             Debug.Log("[ItemUsageServiceImpl] 테이저건 사용 처리");
                         }
-                        await UseTaserGunAsync(localPlayerId);
+                        itemUsed = await UseTaserGunAsync(localPlayerId);
                         break;
 
                     case FLASH_BANG_ID:
@@ -335,7 +339,7 @@ namespace Features.ItemUsage.Services
                         {
                             Debug.Log("[ItemUsageServiceImpl] 섬광탄 사용 처리");
                         }
-                        await UseFlashBangAsync(localPlayerId);
+                        itemUsed = await UseFlashBangAsync(localPlayerId);
                         break;
 
                     default:
@@ -344,6 +348,22 @@ namespace Features.ItemUsage.Services
                             Debug.Log($"[ItemUsageServiceImpl] 알 수 없는 아이템 ID: {message.itemId}");
                         }
                         break;
+                }
+
+                // 아이템이 사용되었으면 인벤토리에서 제거 메시지 발행
+                if (itemUsed && message.slotNumber >= 0)
+                {
+                    _itemRemovedPublisher.Publish(new ItemRemovedMessage
+                    {
+                        ItemId = message.itemId.ToString(),
+                        Count = 1,
+                        Success = true
+                    });
+
+                    if (_enableDebugLogs)
+                    {
+                        Debug.Log($"[ItemUsageServiceImpl] 아이템 제거 메시지 발행: ItemId={message.itemId}, SlotNumber={message.slotNumber}");
+                    }
                 }
             }
             catch (Exception e)

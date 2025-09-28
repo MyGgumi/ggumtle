@@ -153,6 +153,12 @@ namespace DI
             builder.RegisterMessageBroker<InventorySlotClickedMessage>(options);
             builder.RegisterMessageBroker<InventoryToggleMessage>(options);
 
+            // FieldItem Messages
+            builder.RegisterMessageBroker<Features.FieldItem.Messages.FieldItemUseRequestMessage>(options);
+            builder.RegisterMessageBroker<Features.FieldItem.Messages.FieldItemGlobalUsedMessage>(options);
+            builder.RegisterMessageBroker<Features.FieldItem.Messages.HealthChangedMessage>(options);
+            builder.RegisterMessageBroker<Features.FieldItem.Messages.SpeedChangedMessage>(options);
+
             // ItemUsage Messages
             builder.RegisterMessageBroker<Features.ItemUsage.Messages.SelfDefibrillatorUsedMessage>(options);
             builder.RegisterMessageBroker<Features.ItemUsage.Messages.TaserGunUsedMessage>(options);
@@ -340,7 +346,7 @@ namespace DI
                 Lifetime.Scoped
             );
             builder.Register<MongdungNetworkEventHandler>(Lifetime.Scoped);
-            // MonggingNetworkEventHandler는 static 클래스이므로 DI 등록하지 않음
+            // MonggingNetworkEventHandler, FieldItemNetworkEventHandler는 static 클래스이므로 DI 등록하지 않음
 
             // Main 씬 전용 Services 등록 (씬 생명주기와 동일하게 Scoped)
             builder.Register<PlayerMovementService>(Lifetime.Scoped);
@@ -367,6 +373,10 @@ namespace DI
             builder.Register<IMongdungService, MongdungServiceImpl>(Lifetime.Scoped);
             builder.Register<IUIAssetService, UIAssetServiceImpl>(Lifetime.Scoped);
 
+            // FieldItem Services 등록
+            builder.Register<Features.FieldItem.Services.IFieldItemService, Features.FieldItem.Services.FieldItemServiceImpl>(Lifetime.Scoped);
+            builder.Register<Features.FieldItem.NetworkSources.IFieldItemNetworkSource, Features.FieldItem.NetworkSources.FieldItemNetworkSource>(Lifetime.Scoped);
+
             // GameResult Services 등록
             builder.Register<IGameResultService, GameResultService>(Lifetime.Scoped);
 
@@ -384,6 +394,12 @@ namespace DI
             builder.Register<
                 Features.EscapeGate.Services.IEscapeGateService,
                 Features.EscapeGate.Services.EscapeGateServiceImpl
+            >(Lifetime.Scoped);
+
+            // FieldItem Services 등록
+            builder.Register<
+                Features.FieldItem.Services.IFieldItemService,
+                Features.FieldItem.Services.FieldItemServiceImpl
             >(Lifetime.Scoped);
 
             // Revival Handlers 등록
@@ -434,6 +450,10 @@ namespace DI
             UnityEngine.Debug.Log("[MainLifetimeScope] MainGameService EntryPoint 등록 완료");
             builder.RegisterEntryPoint<Features.EscapeGate.Services.EscapeGateServiceImpl>();
             UnityEngine.Debug.Log("[MainLifetimeScope] EscapeGateService EntryPoint 등록 완료");
+
+            // FieldItem EntryPoint 등록
+            builder.RegisterEntryPoint<Features.FieldItem.Services.FieldItemServiceImpl>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] FieldItemService EntryPoint 등록 완료");
 
             // Mongging EntryPoint 등록
             builder.RegisterEntryPoint<MonggingTeamServiceImpl>();

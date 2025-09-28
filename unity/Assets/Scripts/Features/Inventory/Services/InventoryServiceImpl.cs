@@ -333,61 +333,22 @@ namespace Features.Inventory.Services
         }
 
         /// <summary>
-        /// 비동기 아이템 사용 처리
+        /// 비동기 아이템 사용 처리 - 메시지 시스템으로 위임
         /// </summary>
         private async UniTaskVoid UseItemAsync(int slotIndex, int itemId)
         {
             try
             {
-                if (_itemUsageService == null)
+                if (_enableDebugLogs)
+                    Debug.Log($"[InventoryServiceImpl] 아이템 사용 요청을 메시지 시스템으로 위임: ItemId={itemId}, SlotIndex={slotIndex}");
+
+                // ItemUsedMessage 발행 (실제 처리는 ItemUsageServiceImpl에서)
+                var slot = GetSlot(slotIndex);
+                if (slot != null && !slot.IsEmpty)
                 {
-                    Debug.LogError("[InventoryServiceImpl] ItemUsageService가 주입되지 않았습니다!");
-                    return;
-                }
-
-                var localPlayerId = _playerManagerService?.GetLocalPlayer()?.Id ?? -1;
-                if (localPlayerId <= 0)
-                {
-                    Debug.LogError("[InventoryServiceImpl] 로컬 플레이어 ID를 찾을 수 없습니다!");
-                    return;
-                }
-
-                bool success = false;
-                Vector3 direction = Vector3.forward; // 기본 방향 (추후 플레이어 방향으로 수정 가능)
-
-                // 아이템 ID에 따른 사용 처리
-                switch (itemId)
-                {
-                    case 2: // 섬광탄
-                        success = await _itemUsageService.UseFlashBangAsync(localPlayerId);
-                        break;
-
-                    case 3: // 테이저건
-                        success = await _itemUsageService.UseTaserGunAsync(localPlayerId);
-                        break;
-
-                    case 4: // 자가제세동기
-                        success = await _itemUsageService.UseSelfDefibrillatorAsync(localPlayerId);
-                        break;
-
-                    default:
-                        if (_enableDebugLogs)
-                            Debug.LogWarning($"[InventoryServiceImpl] 알 수 없는 아이템 ID: {itemId}");
-                        return;
-                }
-
-                if (success)
-                {
-                    // 사용 성공시 아이템 제거
-                    RemoveFromSlot(slotIndex, 1);
-
-                    if (_enableDebugLogs)
-                        Debug.Log($"[InventoryServiceImpl] 아이템 사용 성공: ItemId={itemId}");
-                }
-                else
-                {
-                    if (_enableDebugLogs)
-                        Debug.LogWarning($"[InventoryServiceImpl] 아이템 사용 실패: ItemId={itemId}");
+                    // 메시지 시스템을 통해 처리하도록 변경
+                    // 실제 아이템 사용 및 제거는 ItemUsageServiceImpl에서 처리
+                    await UniTask.Yield(); // 메시지 처리를 위한 대기
                 }
             }
             catch (Exception e)

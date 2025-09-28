@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using Features.MobileControls.Messages;
+using Features.FieldItem.Messages;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -28,6 +30,10 @@ namespace Features.Player.Services
         private bool _analogMovement = true;
         private bool _canMove = true;
 
+        // 스피드 배율 관련
+        private float _speedMultiplier = 1.0f;
+        private Coroutine _speedBoostCoroutine;
+
         #endregion
 
         #region Events
@@ -37,6 +43,7 @@ namespace Features.Player.Services
         public event Action<bool> JumpInputChanged;
         public event Action<bool> SprintInputChanged;
         public event Action<bool> MovingStateChanged;
+        public event Action<float> SpeedMultiplierChanged;
 
         #endregion
 
@@ -127,6 +134,22 @@ namespace Features.Player.Services
             }
         }
 
+        public float SpeedMultiplier
+        {
+            get => _speedMultiplier;
+            private set
+            {
+                if (Math.Abs(_speedMultiplier - value) > 0.01f)
+                {
+                    _speedMultiplier = value;
+                    SpeedMultiplierChanged?.Invoke(value);
+
+                    if (enableDebugLogs)
+                        Debug.Log($"[PlayerMovementService] 속도 배율 변경: {value:F2}");
+                }
+            }
+        }
+
         #endregion
 
         #region Dependencies & Subscriptions
@@ -138,13 +161,17 @@ namespace Features.Player.Services
         #region Constructor
 
         [Inject]
-        public PlayerMovementService(ISubscriber<MobileInputMessage> mobileInputSubscriber)
+        public PlayerMovementService(
+            ISubscriber<MobileInputMessage> mobileInputSubscriber,
+            ISubscriber<SpeedChangedMessage> speedChangedSubscriber)
         {
             ResetAllInputs();
             CanMove = true;
             AnalogMovement = true;
+            SpeedMultiplier = 1.0f;
 
             mobileInputSubscriber.Subscribe(HandleMobileInput).AddTo(_disposables);
+            speedChangedSubscriber.Subscribe(HandleSpeedChanged).AddTo(_disposables);
 
             if (enableDebugLogs)
             {
@@ -222,6 +249,24 @@ namespace Features.Player.Services
             SprintInput = input;
         }
 
+        private void HandleSpeedChanged(SpeedChangedMessage msg)
+        {
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[PlayerMovementService] 속도 변경 메시지 수신: UserId={msg.userId}, Multiplier={msg.speedMultiplier}, Duration={msg.duration}초");
+            }
+
+            // 기존 속도 부스트 중단
+            if (_speedBoostCoroutine != null)
+            {
+                // 코루틴은 MonoBehaviour에서만 실행 가능하므로 직접 타이머 관리
+                StopSpeedBoost();
+            }
+
+            // 새로운 속도 부스트 적용
+            ApplySpeedBoost(msg.speedMultiplier, msg.duration);
+        }
+
         #endregion
 
         #region State Management
@@ -248,6 +293,55 @@ namespace Features.Player.Services
 
         #endregion
 
+        #region Speed Boost Management
+
+        private void ApplySpeedBoost(float multiplier, float duration)
+        {
+            SpeedMultiplier = multiplier;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[PlayerMovementService] 속도 부스트 적용: {multiplier:F2}배, {duration:F1}초 지속");
+            }
+
+            // UniTask로 타이머 관리 (코루틴 대신)
+            ResetSpeedAfterDelay(duration);
+        }
+
+        private async void ResetSpeedAfterDelay(float delay)
+        {
+            try
+            {
+                await System.Threading.Tasks.Task.Delay((int)(delay * 1000));
+
+                SpeedMultiplier = 1.0f;
+
+                if (enableDebugLogs)
+                {
+                    Debug.Log("[PlayerMovementService] 속도 부스트 종료");
+                }
+            }
+            catch (System.Exception e)
+            {
+                if (enableDebugLogs)
+                {
+                    Debug.LogError($"[PlayerMovementService] 속도 부스트 타이머 오류: {e.Message}");
+                }
+            }
+        }
+
+        private void StopSpeedBoost()
+        {
+            SpeedMultiplier = 1.0f;
+
+            if (enableDebugLogs)
+            {
+                Debug.Log("[PlayerMovementService] 속도 부스트 중단");
+            }
+        }
+
+        #endregion
+
         #region Dispose
 
         public void Dispose()
@@ -259,6 +353,10 @@ namespace Features.Player.Services
             JumpInputChanged = null;
             SprintInputChanged = null;
             MovingStateChanged = null;
+            SpeedMultiplierChanged = null;
+
+            // 속도 부스트 중단
+            StopSpeedBoost();
 
             if (enableDebugLogs)
             {

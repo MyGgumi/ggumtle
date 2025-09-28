@@ -1536,6 +1536,9 @@ public class DreamManager {
         // TEST
         if (this.room.id == -4) {
             Mongging mongging = new Mongging(playerIds.getFirst(), Position.from(playerSpawns.getFirst()), this.room.getPlayerInfo(playerIds.getFirst()));
+            for (int j = 0; j < 15; j++) {
+                mongging.addItem(ItemDictionary.LIGHT_JELLY.boxableItem);
+            }
             this.players.put(mongging.getId(), mongging);
         }
         else if (this.room.id == -5) {
@@ -1555,7 +1558,7 @@ public class DreamManager {
 
                 // TEST
                 if (this.room.id < 0) {
-                    for (int j = 0; j < 10; j++) {
+                    for (int j = 0; j < 15; j++) {
                         mongging.addItem(ItemDictionary.LIGHT_JELLY.boxableItem);
                     }
                 }

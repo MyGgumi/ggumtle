@@ -78,13 +78,17 @@ fun GameFriendItem(
                     fontWeight = FontWeight.Bold
                 )
 
-                if (friend.status != null) {
-                    Text(
-                        text = friend.status.toString(),
-                        color = GameColors.textSecondary,
-                        fontSize = 14.sp
-                    )
+                val statusText = when (friend.connectionState) {
+                    MemberConnectionState.ONLINE -> "온라인"
+                    MemberConnectionState.OFFLINE -> "오프라인"
+                    MemberConnectionState.INGAME -> "게임 중"
                 }
+
+                Text(
+                    text = statusText,
+                    color = GameColors.textSecondary,
+                    fontSize = 14.sp
+                )
             }
 
             Box {

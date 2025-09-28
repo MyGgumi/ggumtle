@@ -22,7 +22,7 @@ fun RemainMissionButton(
         modifier = modifier
             .size(40.dp)
             .background(
-                color = Color.Green.copy(alpha = 0.9f),
+                color = Color.Green.copy(alpha = 0.5f),
                 shape = CircleShape
             )
             .clickable { onShowRemainMissionDialog() },

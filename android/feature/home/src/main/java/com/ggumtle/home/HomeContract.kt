@@ -34,6 +34,7 @@ object HomeContract {
         val isSettingsDialogVisible: Boolean = false,
         val isInviteFriendsDialogVisible: Boolean = false,
         val isInviteRequestsDialogVisible: Boolean = false,
+        val isGameStartingDialogVisible: Boolean = false,
         val isMenuExpanded: Boolean = false,
         val isNicknameEditMode: Boolean = false,
         val tempNickname: String = "",
@@ -53,6 +54,7 @@ object HomeContract {
         val selectedCharacterIndex: Int = 0,
 
         val isLoading: Boolean = false,
+        val isGameStartLoading: Boolean = false,
         val errorMessage: String? = null
     )
 

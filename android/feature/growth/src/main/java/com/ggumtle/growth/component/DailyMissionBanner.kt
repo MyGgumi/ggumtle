@@ -1,5 +1,6 @@
 package com.ggumtle.growth.component
 
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -61,7 +62,7 @@ fun DailyMissionBanner(
                 )
                 Text(
                     text = dailyMission?.let {
-                        "완료까지 ${it.remainingMissionsCount}개"
+                        "완료까지 ${it.completedMissionsCount + it.remainingMissionsCount}개"
                     } ?: "미션 정보 없음",
                     color = BrandColors.PurpleLight,
                     style = MaterialTheme.typography.bodyMedium
@@ -76,8 +77,9 @@ fun DailyMissionBanner(
                 contentAlignment = Alignment.Center
             ) {
                 val totalMissions = dailyMission?.totalMissionsCount ?: 5
-                val completedMissions = dailyMission?.completedMissionsCount ?: 0
-
+                val completedMission = dailyMission?.completedMissionsCount ?:0
+                val afterRewordMission = dailyMission?.afterRewordMissionsCount ?: 0
+                val completedMissions =  afterRewordMission
                 // 배경 선
                 Canvas(
                     modifier = Modifier

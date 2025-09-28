@@ -23,28 +23,27 @@ fun EmoticonButton(
     onHideEmoticonSelector: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // 이모티콘 선택기를 왼쪽에 배치
+    Box(modifier = modifier) {
+        // 이모티콘 선택기를 절대 위치로 배치
         if (showEmoticonSelector) {
             EmoticonSelector(
                 onEmoticonSelected = onEmoticonSelected,
-                onDismiss = onHideEmoticonSelector
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .offset(x = (-48).dp) // 버튼 왼쪽으로 약간 이동
             )
         }
 
-        // 이모티콘 버튼
+        // 이모티콘 버튼 - 항상 같은 위치 유지
         Box(
             modifier = Modifier
                 .size(40.dp)
                 .background(
-                    color = Color(0xFFD08E00).copy(alpha = 0.9f),
+                    color = Color.Yellow.copy(alpha = 0.9f),
                     shape = CircleShape
                 )
-                .clickable { onShowEmoticonSelector() },
+                .clickable { onShowEmoticonSelector() }
+                .align(Alignment.CenterEnd),
             contentAlignment = Alignment.Center
         ) {
             Icon(

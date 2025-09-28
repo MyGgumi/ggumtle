@@ -2,6 +2,7 @@ package com.ggumtle.domain.unity
 
 import com.ggumtle.domain.websocket.model.UnityMonggingClass
 import com.ggumtle.domain.unity.model.UnityMessage
+import com.ggumtle.domain.websocket.model.PartyMember
 import kotlinx.coroutines.flow.SharedFlow
 
 interface UnitySendManager {
@@ -25,4 +26,6 @@ interface UnitySendManager {
     fun goToOutGame()
 
     fun changeTargetCharacterNickname(nickname: String, newNickname: String)
+    fun enterNewPartyMember(nickname: String, type: UnityMonggingClass, level: Int)
+    fun updateParty(participants: List<PartyMember>, myId: Long?)
 }

@@ -79,12 +79,14 @@ class GlobalInviteManager @Inject constructor(
                         emitNotification("네트워크 연결을 확인해주세요", type = NotificationType.SYSTEM_MESSAGE)
                     }
                     .collect { result ->
-                        val message = "${result.inviterNickname}님이 파티에 초대했습니다"
-                        emitNotification(
-                            message = message,
-                            senderName = result.inviterNickname,
-                            type = NotificationType.PARTY_INVITE
-                        )
+                        if(result.inviterNickname!=authManager.getNickname()){
+                            val message = "${result.inviterNickname}님이 파티에 초대했습니다"
+                            emitNotification(
+                                message = message,
+                                senderName = result.inviterNickname,
+                                type = NotificationType.PARTY_INVITE
+                            )
+                        }
                     }
             } catch (e: Exception) {
                 isObserving = false

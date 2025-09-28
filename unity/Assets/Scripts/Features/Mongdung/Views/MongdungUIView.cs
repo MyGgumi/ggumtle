@@ -109,9 +109,10 @@ namespace Features.Mongdung.Views
             // 버튼 이벤트 등록
             RegisterButtonEvents();
 
+            // ViewModel 구독 설정
+            SubscribeToViewModel();
 
-            // 초기 함정 개수 설정
-            _trapCountLabel.text = "3";
+            // 초기 함정 개수는 ViewModel에서 자동으로 설정됨
         }
 
         /// <summary>
@@ -124,6 +125,67 @@ namespace Features.Mongdung.Views
             _trapSlot.RegisterCallback<ClickEvent>(evt => OnTrapSlotClicked());
         }
 
+        /// <summary>
+        /// ViewModel 구독 설정
+        /// </summary>
+        private void SubscribeToViewModel()
+        {
+            if (_mongdungViewModel == null)
+            {
+                Debug.LogError("[MongdungUIView] MongdungViewModel이 주입되지 않아 구독 실패");
+                return;
+            }
+
+            // 함정 개수 구독
+            _mongdungViewModel.TrapCount
+                .Subscribe(OnTrapCountChanged)
+                .AddTo(_disposables);
+
+            Debug.Log("[MongdungUIView] ViewModel 구독 설정 완료");
+        }
+
+        /// <summary>
+        /// 함정 개수 변경 시 UI 업데이트
+        /// </summary>
+        private void OnTrapCountChanged(int trapCount)
+        {
+            if (_trapCountLabel != null)
+            {
+                _trapCountLabel.text = trapCount.ToString();
+                Debug.Log($"[MongdungUIView] 함정 개수 UI 업데이트: {trapCount}");
+            }
+
+            // 함정 개수가 0개일 때 버튼 비활성화
+            UpdateTrapSlotState(trapCount > 0);
+        }
+
+        /// <summary>
+        /// 함정 슬롯 활성화/비활성화 상태 업데이트
+        /// </summary>
+        private void UpdateTrapSlotState(bool isEnabled)
+        {
+            if (_trapSlot != null)
+            {
+                // 버튼 활성화/비활성화
+                _trapSlot.SetEnabled(isEnabled);
+
+                // 시각적 피드백 (투명도 조절)
+                _trapSlot.style.opacity = isEnabled ? 1.0f : 0.5f;
+
+                if (!isEnabled)
+                {
+                    // 비활성화 상태일 때 추가 스타일 적용
+                    _trapSlot.AddToClassList("disabled");
+                }
+                else
+                {
+                    // 활성화 상태일 때 비활성화 스타일 제거
+                    _trapSlot.RemoveFromClassList("disabled");
+                }
+
+                Debug.Log($"[MongdungUIView] 함정 슬롯 상태 업데이트: {(isEnabled ? "활성화" : "비활성화")}");
+            }
+        }
 
         #endregion
 
@@ -298,6 +360,16 @@ namespace Features.Mongdung.Views
         /// </summary>
         private void OnTrapSlotClicked()
         {
+            // 함정 개수 확인
+            if (_mongdungViewModel.TrapCount.CurrentValue <= 0)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log("[MongdungUIView] 함정 개수가 0개입니다. 스킬을 사용할 수 없습니다.");
+                }
+                return;
+            }
+
             if (!_mongdungViewModel.CanExecuteAction(MongdungActionType.TrapSetting))
             {
                 if (_enableDebugLogs)

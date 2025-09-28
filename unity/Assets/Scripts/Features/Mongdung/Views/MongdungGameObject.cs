@@ -334,6 +334,23 @@ namespace Features.Mongdung.Views
                     Debug.Log($"[MongdungGameObject] 서버 Skill 액션 메시지 수신: SkillType={message.SkillType}, ActionType={skillName}, Success={message.Success} - 애니메이션 실행");
                 }
 
+                // TrapSetting 액션이고 실제 스킬 사용(SkillType=2)인 경우에만 함정 개수 감소
+                if (message.ActionType == MongdungActionType.TrapSetting && message.SkillType == 2 && _viewModel != null)
+                {
+                    _viewModel.DecreaseTrapCount();
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"[MongdungGameObject] 함정 설치 - 개수 감소 처리 완료 (SkillType: {message.SkillType})");
+                    }
+                }
+                else if (message.ActionType == MongdungActionType.TrapSetting && message.SkillType == 99)
+                {
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"[MongdungGameObject] 함정 발동 애니메이션 - 개수 감소하지 않음 (SkillType: {message.SkillType})");
+                    }
+                }
+
                 // 서버 이벤트 수신 시 바로 해당 Skill 애니메이션 실행
                 TriggerActionAnimation(message.ActionType);
 

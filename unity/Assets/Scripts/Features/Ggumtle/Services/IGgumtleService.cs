@@ -43,11 +43,6 @@ namespace Features.Ggumtle.Services
         /// </summary>
         void UnregisterGgumtle(int ggumtleId);
 
-        /// <summary>
-        /// 꿈틀이 제거 (기존 호환용)
-        /// </summary>
-        void UnregisterGgumtle(string ggumtleId);
-
         #endregion
 
         #region Hold Interaction

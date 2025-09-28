@@ -1,9 +1,9 @@
 using System.Collections.Generic;
-using Features.Player.NetworkSources;
 using Features.Mongdung.Messages;
 using Features.Mongdung.Models;
-using Networks.Rooms.Domains;
+using Features.Player.NetworkSources;
 using MessagePipe;
+using Networks.Rooms.Domains;
 using R3;
 using UnityEngine;
 using VContainer;
@@ -155,13 +155,17 @@ namespace Features.Player.Views
 
             if (_animator == null)
             {
-                Debug.LogError($"[RemotePlayerGameObject] Controller가 할당된 Animator를 찾을 수 없습니다: {gameObject.name}");
+                Debug.LogError(
+                    $"[RemotePlayerGameObject] Controller가 할당된 Animator를 찾을 수 없습니다: {gameObject.name}"
+                );
                 if (enableDebugLogs)
                 {
                     Debug.Log($"[RemotePlayerGameObject] 발견된 Animator 목록:");
                     for (int i = 0; i < animators.Length; i++)
                     {
-                        Debug.Log($"  [{i}] {animators[i].gameObject.name} - Controller: {animators[i].runtimeAnimatorController?.name ?? "None"}");
+                        Debug.Log(
+                            $"  [{i}] {animators[i].gameObject.name} - Controller: {animators[i].runtimeAnimatorController?.name ?? "None"}"
+                        );
                     }
                 }
                 _hasAnimator = false;
@@ -172,13 +176,14 @@ namespace Features.Player.Views
 
             if (enableDebugLogs)
             {
-                Debug.Log($"[RemotePlayerGameObject] Controller가 있는 Animator 발견: {_animator.gameObject.name} (Controller: {_animator.runtimeAnimatorController.name})");
+                Debug.Log(
+                    $"[RemotePlayerGameObject] Controller가 있는 Animator 발견: {_animator.gameObject.name} (Controller: {_animator.runtimeAnimatorController.name})"
+                );
             }
         }
 
         // SetupMessagePipeSubscriptions 메서드 제거됨
         // 이제 MongdungGameObject가 모든 메시지 구독을 담당함
-
 
         // OnMongdungActionBroadcast 메서드 제거됨
         // 이제 MongdungService → ViewModel → MongdungGameObject 플로우로 통합됨
@@ -261,27 +266,27 @@ namespace Features.Player.Views
             float speed
         )
         {
-            if (enableDebugLogs)
-            {
-                Debug.Log(
-                    $"[REMOTE_PLAYER] ID={PlayerId}: 📡 네트워크 데이터 수신"
-                        + $"\n새 위치: {position}"
-                        + $"\n이전 위치: {_networkPosition}"
-                        + $"\n실제 위치: {transform.position}"
-                        + $"\n방향: {direction}, 움직임: {isMoving}, 속도: {speed:F2}"
-                );
-            }
+            // if (enableDebugLogs)
+            // {
+            //     Debug.Log(
+            //         $"[REMOTE_PLAYER] ID={PlayerId}: 📡 네트워크 데이터 수신"
+            //             + $"\n새 위치: {position}"
+            //             + $"\n이전 위치: {_networkPosition}"
+            //             + $"\n실제 위치: {transform.position}"
+            //             + $"\n방향: {direction}, 움직임: {isMoving}, 속도: {speed:F2}"
+            //     );
+            // }
 
             // 중복 명령 필터링 강화 (임계값 증가)
             float positionDifference = Vector3.Distance(_networkPosition, position);
             if (positionDifference < 0.1f)
             {
-                if (enableDebugLogs)
-                {
-                    Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🚫 중복 명령 무시 (강화) - 거리={positionDifference:F3}m"
-                    );
-                }
+                // if (enableDebugLogs)
+                // {
+                //     Debug.Log(
+                //         $"[REMOTE_PLAYER] ID={PlayerId}: 🚫 중복 명령 무시 (강화) - 거리={positionDifference:F3}m"
+                //     );
+                // }
                 return;
             }
 
@@ -289,7 +294,10 @@ namespace Features.Player.Views
             Vector3 problemPos1 = new Vector3(45.00f, 5.00f, 0.00f);
             Vector3 problemPos2 = new Vector3(49.16f, 3.70f, -1.77f);
 
-            if (Vector3.Distance(position, problemPos1) < 0.1f || Vector3.Distance(position, problemPos2) < 0.1f)
+            if (
+                Vector3.Distance(position, problemPos1) < 0.1f
+                || Vector3.Distance(position, problemPos2) < 0.1f
+            )
             {
                 Debug.LogWarning(
                     $"[REMOTE_PLAYER] ID={PlayerId}: ⚠️ 문제 위치 패턴 감지됨 - 무시"
@@ -311,24 +319,24 @@ namespace Features.Player.Views
                 _networkPosition = position;
                 _isInterpolating = false;
 
-                if (enableDebugLogs)
-                {
-                    Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: ⚡ 즉시 설정 - 거리={distanceFromCurrent:F3}m"
-                    );
-                }
+                // if (enableDebugLogs)
+                // {
+                //     Debug.Log(
+                //         $"[REMOTE_PLAYER] ID={PlayerId}: ⚡ 즉시 설정 - 거리={distanceFromCurrent:F3}m"
+                //     );
+                // }
                 return;
             }
 
             // 보간 중단 처리 (새로운 명령이 들어오면 현재 위치에서 다시 시작)
             if (_isInterpolating)
             {
-                if (enableDebugLogs)
-                {
-                    Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🔄 보간 중단 후 재시작 - 현재위치={transform.position}"
-                    );
-                }
+                // if (enableDebugLogs)
+                // {
+                //     Debug.Log(
+                //         $"[REMOTE_PLAYER] ID={PlayerId}: 🔄 보간 중단 후 재시작 - 현재위치={transform.position}"
+                //     );
+                // }
             }
 
             // 더미 방향값 필터링 (서버에서 보내는 의미없는 값 제거)
@@ -411,17 +419,17 @@ namespace Features.Player.Views
                 _useInterpolation = true;
                 _isInterpolating = true;
 
-                if (enableDebugLogs)
-                {
-                    Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎬 보간 시작"
-                            + $"\n이전 네트워크: {_previousPosition}"
-                            + $"\n새 네트워크: {position}"
-                            + $"\n현재 실제: {transform.position}"
-                            + $"\n네트워크 거리: {Vector3.Distance(_previousPosition, position):F3}m"
-                            + $"\n실제 거리: {distanceFromCurrent:F3}m"
-                    );
-                }
+                // if (enableDebugLogs)
+                // {
+                //     Debug.Log(
+                //         $"[REMOTE_PLAYER] ID={PlayerId}: 🎬 보간 시작"
+                //             + $"\n이전 네트워크: {_previousPosition}"
+                //             + $"\n새 네트워크: {position}"
+                //             + $"\n현재 실제: {transform.position}"
+                //             + $"\n네트워크 거리: {Vector3.Distance(_previousPosition, position):F3}m"
+                //             + $"\n실제 거리: {distanceFromCurrent:F3}m"
+                //     );
+                // }
             }
 
             // 애니메이션 상태 업데이트
@@ -432,15 +440,15 @@ namespace Features.Player.Views
             {
                 Vector3 networkMovement = position - _previousPosition;
                 float networkDistance = networkMovement.magnitude;
-                Debug.Log(
-                    $"[REMOTE_PLAYER] ID={PlayerId}: 📊 이동 패턴 분석"
-                        + $"\n네트워크 이동: {_previousPosition} → {position} (거리: {networkDistance:F3})"
-                        + $"\n현재 실제: {transform.position}"
-                        + $"\n실제→목표: {distanceFromCurrent:F3}m"
-                        + $"\n보간상태: {_isInterpolating}"
-                        + $"\n이동상태: {isMoving}"
-                        + $"\n속도: {speed:F2}"
-                );
+                // Debug.Log(
+                // $"[REMOTE_PLAYER] ID={PlayerId}: 📊 이동 패턴 분석"
+                //     + $"\n네트워크 이동: {_previousPosition} → {position} (거리: {networkDistance:F3})"
+                //     + $"\n현재 실제: {transform.position}"
+                //     + $"\n실제→목표: {distanceFromCurrent:F3}m"
+                //     + $"\n보간상태: {_isInterpolating}"
+                //     + $"\n이동상태: {isMoving}"
+                //     + $"\n속도: {speed:F2}"
+                // );
             }
         }
 
@@ -477,7 +485,14 @@ namespace Features.Player.Views
         {
             _networkIsJumping = isJumping;
 
-            if (isJumping && Grounded && _hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDJump))
+            if (
+                isJumping
+                && Grounded
+                && _hasAnimator
+                && _animator != null
+                && _animator.runtimeAnimatorController != null
+                && HasAnimatorParameter(_animIDJump)
+            )
             {
                 _animator.SetBool(_animIDJump, true);
                 if (enableDebugLogs)
@@ -525,8 +540,12 @@ namespace Features.Player.Views
                 );
             }
 
-
-            if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDGrounded))
+            if (
+                _hasAnimator
+                && _animator != null
+                && _animator.runtimeAnimatorController != null
+                && HasAnimatorParameter(_animIDGrounded)
+            )
             {
                 _animator.SetBool(_animIDGrounded, Grounded);
             }
@@ -566,19 +585,18 @@ namespace Features.Player.Views
 
             if (enableDebugLogs && Time.frameCount % 180 == 0)
             {
-                Debug.Log(
-                    $"[REMOTE_PLAYER] ID={PlayerId}: 🔮 예측 계산"
-                        + $"\n현재 위치: {currentPos}"
-                        + $"\n속도: {velocity} (크기: {velocity.magnitude:F2})"
-                        + $"\n예측 시간: {predictionTime:F3}s"
-                        + $"\n예측 위치: {predictedPos}"
-                        + $"\n예측 거리: {predictionOffset.magnitude:F3}m"
-                );
+                // Debug.Log(
+                //     $"[REMOTE_PLAYER] ID={PlayerId}: 🔮 예측 계산"
+                //         + $"\n현재 위치: {currentPos}"
+                //         + $"\n속도: {velocity} (크기: {velocity.magnitude:F2})"
+                //         + $"\n예측 시간: {predictionTime:F3}s"
+                //         + $"\n예측 위치: {predictedPos}"
+                //         + $"\n예측 거리: {predictionOffset.magnitude:F3}m"
+                // );
             }
 
             return predictedPos;
         }
-
 
         /// <summary>
         /// SmoothDamp 기반 보간 움직임 처리
@@ -608,15 +626,15 @@ namespace Features.Player.Views
                 // 프레임별 이동 분석 (매 3초마다)
                 if (enableDebugLogs && Time.frameCount % 180 == 0)
                 {
-                    Debug.Log(
-                        $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 SmoothDamp 보간 처리중"
-                            + $"\n현재 실제: {currentPosition}"
-                            + $"\n목표 위치: {_targetPosition}"
-                            + $"\n새 위치: {newPosition}"
-                            + $"\n이동벡터: {moveVector} (크기: {moveVector.magnitude:F4})"
-                            + $"\n목표거리: {distanceToTarget:F4}m"
-                            + $"\n보간속도: {_smoothDampVelocity.magnitude:F4}"
-                    );
+                    // Debug.Log(
+                    //     $"[REMOTE_PLAYER] ID={PlayerId}: 🎯 SmoothDamp 보간 처리중"
+                    //         + $"\n현재 실제: {currentPosition}"
+                    //         + $"\n목표 위치: {_targetPosition}"
+                    //         + $"\n새 위치: {newPosition}"
+                    //         + $"\n이동벡터: {moveVector} (크기: {moveVector.magnitude:F4})"
+                    //         + $"\n목표거리: {distanceToTarget:F4}m"
+                    //         + $"\n보간속도: {_smoothDampVelocity.magnitude:F4}"
+                    // );
                 }
             }
 
@@ -647,16 +665,16 @@ namespace Features.Player.Views
                     // 회전 디버그 로그 (5초마다)
                     if (enableDebugLogs && Time.frameCount % 300 == 0)
                     {
-                        float rotationDelta = Mathf.DeltaAngle(previousRotation, rotation);
-                        Debug.Log(
-                            $"[REMOTE_PLAYER] ID={PlayerId}: 🔄 회전 처리"
-                                + $"\n네트워크방향: {_networkDirection}"
-                                + $"\n수평방향: {horizontalDirection}"
-                                + $"\n이전회전: {previousRotation:F1}°"
-                                + $"\n목표회전: {_targetRotation:F1}°"
-                                + $"\n현재회전: {rotation:F1}°"
-                                + $"\n변화량: {rotationDelta:F1}°"
-                        );
+                        // float rotationDelta = Mathf.DeltaAngle(previousRotation, rotation);
+                        // Debug.Log(
+                        //     $"[REMOTE_PLAYER] ID={PlayerId}: 🔄 회전 처리"
+                        //         + $"\n네트워크방향: {_networkDirection}"
+                        //         + $"\n수평방향: {horizontalDirection}"
+                        //         + $"\n이전회전: {previousRotation:F1}°"
+                        //         + $"\n목표회전: {_targetRotation:F1}°"
+                        //         + $"\n현재회전: {rotation:F1}°"
+                        //         + $"\n변화량: {rotationDelta:F1}°"
+                        // );
                     }
                 }
             }
@@ -741,7 +759,10 @@ namespace Features.Player.Views
 
             foreach (var parameter in _animator.parameters)
             {
-                if (parameter.name == triggerName && parameter.type == AnimatorControllerParameterType.Trigger)
+                if (
+                    parameter.name == triggerName
+                    && parameter.type == AnimatorControllerParameterType.Trigger
+                )
                     return true;
             }
             return false;
@@ -751,7 +772,11 @@ namespace Features.Player.Views
         {
             if (Grounded)
             {
-                if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null)
+                if (
+                    _hasAnimator
+                    && _animator != null
+                    && _animator.runtimeAnimatorController != null
+                )
                 {
                     if (HasAnimatorParameter(_animIDJump))
                         _animator.SetBool(_animIDJump, false);
@@ -768,7 +793,12 @@ namespace Features.Player.Views
                 if (_networkIsJumping)
                 {
                     _verticalVelocity = Mathf.Sqrt(JumpHeight * -2f * Gravity);
-                    if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDJump))
+                    if (
+                        _hasAnimator
+                        && _animator != null
+                        && _animator.runtimeAnimatorController != null
+                        && HasAnimatorParameter(_animIDJump)
+                    )
                     {
                         _animator.SetBool(_animIDJump, true);
                     }
@@ -776,7 +806,12 @@ namespace Features.Player.Views
             }
             else
             {
-                if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && HasAnimatorParameter(_animIDFreeFall))
+                if (
+                    _hasAnimator
+                    && _animator != null
+                    && _animator.runtimeAnimatorController != null
+                    && HasAnimatorParameter(_animIDFreeFall)
+                )
                 {
                     _animator.SetBool(_animIDFreeFall, _verticalVelocity < -0.1f);
                 }
@@ -839,31 +874,44 @@ namespace Features.Player.Views
         {
             if (enableDebugLogs)
             {
-                Debug.Log($"[RemotePlayerGameObject] TriggerAnimation 호출: triggerName={triggerName}, _hasAnimator={_hasAnimator}, _animator={_animator != null}, controller={_animator?.runtimeAnimatorController != null}");
+                Debug.Log(
+                    $"[RemotePlayerGameObject] TriggerAnimation 호출: triggerName={triggerName}, _hasAnimator={_hasAnimator}, _animator={_animator != null}, controller={_animator?.runtimeAnimatorController != null}"
+                );
             }
 
-            if (_hasAnimator && _animator != null && _animator.runtimeAnimatorController != null && !string.IsNullOrEmpty(triggerName))
+            if (
+                _hasAnimator
+                && _animator != null
+                && _animator.runtimeAnimatorController != null
+                && !string.IsNullOrEmpty(triggerName)
+            )
             {
                 if (HasAnimatorTrigger(triggerName))
                 {
                     _animator.SetTrigger(triggerName);
                     if (enableDebugLogs)
                     {
-                        Debug.Log($"[RemotePlayerGameObject] 애니메이션 트리거 성공: {triggerName}, Controller={_animator.runtimeAnimatorController.name}, GameObject={gameObject.name}");
+                        Debug.Log(
+                            $"[RemotePlayerGameObject] 애니메이션 트리거 성공: {triggerName}, Controller={_animator.runtimeAnimatorController.name}, GameObject={gameObject.name}"
+                        );
                     }
 
                     // 추가 디버깅: 현재 애니메이터 상태 정보
                     if (enableDebugLogs && _animator.layerCount > 0)
                     {
                         var currentState = _animator.GetCurrentAnimatorStateInfo(0);
-                        Debug.Log($"[RemotePlayerGameObject] 현재 애니메이터 상태: {currentState.fullPathHash}, IsName={currentState.IsName(triggerName)}");
+                        Debug.Log(
+                            $"[RemotePlayerGameObject] 현재 애니메이터 상태: {currentState.fullPathHash}, IsName={currentState.IsName(triggerName)}"
+                        );
                     }
                 }
                 else
                 {
                     if (enableDebugLogs)
                     {
-                        Debug.LogWarning($"[RemotePlayerGameObject] 애니메이션 트리거 '{triggerName}' 파라미터가 존재하지 않음: {gameObject.name}");
+                        Debug.LogWarning(
+                            $"[RemotePlayerGameObject] 애니메이션 트리거 '{triggerName}' 파라미터가 존재하지 않음: {gameObject.name}"
+                        );
 
                         // 사용 가능한 파라미터 목록 출력
                         if (_animator != null && _animator.parameters != null)
@@ -874,7 +922,9 @@ namespace Features.Player.Views
                                 if (param.type == AnimatorControllerParameterType.Trigger)
                                     triggerParams += param.name + ", ";
                             }
-                            Debug.Log($"[RemotePlayerGameObject] 사용 가능한 트리거: {triggerParams}");
+                            Debug.Log(
+                                $"[RemotePlayerGameObject] 사용 가능한 트리거: {triggerParams}"
+                            );
                         }
                     }
                 }

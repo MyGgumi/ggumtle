@@ -967,6 +967,13 @@ public class DreamManager {
                 Body body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.NORMAL);
                 Packet packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
                 this.room.broadcast(packet);
+
+                // 몽깅이 상태를 NORMAL로 복원
+                body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+                packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
+                log.info("[{} - {}] 꿈틀이 파기 성공: {}번 몽깅이가 {}번 꿈틀이를 성공적으로 파내고 상태가 NORMAL로 복원됨", session.getChannel().id(), room.id, session.getMemberId(), ggumtleId);
             }
 
             if (digUpResult == -1) {
@@ -979,6 +986,15 @@ public class DreamManager {
                 this.room.broadcast(packet);
 
                 log.info("[{} - {}] 꿈틀이 파기 스턴: 가짜 꿈틀이를 파낸 {}번 몽깅이 스턴", session.getChannel().id(), room.id, session.getMemberId());
+
+                // 1.5초 후 스턴 상태 해제
+                ScheduledFuture<?> stunRecoveryFuture = workerThreadPool.schedule(() -> {
+                    Body stunRecoveryBody = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+                    Packet stunRecoveryPacket = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), stunRecoveryBody);
+                    this.room.broadcast(stunRecoveryPacket);
+
+                    log.info("[{} - {}] 스턴 상태 해제: {}번 몽깅이의 스턴 상태가 자동으로 해제됨", session.getChannel().id(), room.id, session.getMemberId());
+                }, 1500, TimeUnit.MILLISECONDS);
             }
         }, 3, TimeUnit.SECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.DIG_UP, ggumtle.id));
@@ -987,6 +1003,11 @@ public class DreamManager {
         Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.START_DIGGING);
         Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
         session.sendPacket(packet);
+
+        // 몽깅이 땅파는 상태 전파
+        body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.DIGGING);
+        packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+        this.room.broadcast(packet);
 
         // 다른 몽깅이가 해당 꿈틀이에 작업 중이었는지 확인
         long count = workingThreads.values().stream()
@@ -1014,6 +1035,16 @@ public class DreamManager {
             session.sendPacket(packet);
 
             log.info("[{} - {}] 꿈틀이 파기 중단 완료: {}번 사용자의 작업 중단", session.getChannel().id(), room.id, session.getMemberId());
+
+            // 몽깅이 상태를 NORMAL로 복원
+            Player player = players.getOrDefault(session.getMemberId(), null);
+            if (player instanceof Mongging mongging) {
+                body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+                packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
+                log.info("[{} - {}] 꿈틀이 파기 중단: {}번 몽깅이 상태가 NORMAL로 복원됨", session.getChannel().id(), room.id, session.getMemberId());
+            }
 
             // 다른 몽깅이가 해당 꿈틀이에 작업 중이 아니면, 묻힘 상태 전파
             long count = workingThreads.values().stream()
@@ -1111,13 +1142,18 @@ public class DreamManager {
                 packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
+                // 몽깅이 상태를 NORMAL로 복원
+                body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+                packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
                 body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.DONE);
                 packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
                 this.room.broadcast(packet);
 
                 tryOpenExit();
 
-                log.info("[{} - {}] 꿈틀이 먹이기 완료: 꿈틀이가 정화해 종료", session.getChannel().id(), room.id);
+                log.info("[{} - {}] 꿈틀이 먹이기 완료: 꿈틀이가 정화해 종료, {}번 몽깅이 상태가 NORMAL로 복원됨", session.getChannel().id(), room.id, session.getMemberId());
                 return;
             }
 
@@ -1130,7 +1166,12 @@ public class DreamManager {
                 Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
-                log.info("[{} - {}] 꿈틀이 먹이기 종료: 다른 몽깅이가 성불시켜 종료", session.getChannel().id(), room.id);
+                // 몽깅이 상태를 NORMAL로 복원
+                body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+                packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
+                log.info("[{} - {}] 꿈틀이 먹이기 종료: 다른 몽깅이가 성불시켜 종료, {}번 몽깅이 상태가 NORMAL로 복원됨", session.getChannel().id(), room.id, session.getMemberId());
                 return;
             }
 
@@ -1154,6 +1195,13 @@ public class DreamManager {
                 packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
                 session.sendPacket(packet);
 
+                // 몽깅이 상태를 NORMAL로 복원
+                body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+                packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+                this.room.broadcast(packet);
+
+                log.info("[{} - {}] 아이템 소진으로 먹이기 종료: {}번 몽깅이 상태가 NORMAL로 복원됨", session.getChannel().id(), room.id, session.getMemberId());
+
                 // 작업 중인 몽깅이가 없으면 일반 상태로 전파
                 boolean isWorking = workingThreads.values().stream()
                         .anyMatch(thread -> thread.ggumtleId == targetGgumtle.id);
@@ -1174,6 +1222,11 @@ public class DreamManager {
         Body body = new StartFeedBody(StartFeedBody.Result.START_FEEDING);
         Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
         session.sendPacket(packet);
+
+        // 몽깅이 먹이는 상태 전파
+        body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.FEEDING);
+        packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+        this.room.broadcast(packet);
 
         // 다른 사용자가 작업중이 아니면 Feeding으로 전파
         boolean isWorking = workingThreads.values().stream()
@@ -1204,6 +1257,13 @@ public class DreamManager {
             session.sendPacket(packet);
 
             log.info("[{} - {}] 꿈틀이 먹이기 중단 성공: {}번 사용자의 빛젤리 먹이기 작업 중단", session.getChannel().id(), room.id, session.getMemberId());
+
+            // 몽깅이 상태를 NORMAL로 복원
+            body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
+            packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
+            this.room.broadcast(packet);
+
+            log.info("[{} - {}] 꿈틀이 먹이기 중단: {}번 몽깅이 상태가 NORMAL로 복원됨", session.getChannel().id(), room.id, session.getMemberId());
 
             // 다른 몽깅이가 해당 꿈틀이에 작업 중이 아니면, 일반 상태 전파
             long count = workingThreads.values().stream()

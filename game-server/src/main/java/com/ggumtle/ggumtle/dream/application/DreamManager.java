@@ -428,9 +428,13 @@ public class DreamManager {
 
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id, command.effectX(), command.effectY(), command.effectZ());
+//            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id, command.effectX(), command.effectY(), command.effectZ());
+//            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
+//            session.sendPacket(packet);
+            // TEST
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id, command.effectX(), command.effectY(), command.effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
+            this.room.broadcast(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: 드림에 몽둥이가 없음", session.getChannel().id(), room.id);
             return;

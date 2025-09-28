@@ -1491,18 +1491,18 @@ public class DreamManager {
             boxSpawns.add(new BoxSpawn(0, 3468, 499, -24));
             boxSpawns.add(new BoxSpawn(0, 38460, 515, 135));
             boxSpawns.add(new BoxSpawn(0, 4449, 499, 211));
-            boxSpawns.add(new BoxSpawn(0, 3981, 500, -497));
+//            boxSpawns.add(new BoxSpawn(0, 3981, 500, -497));
             boxSpawns.add(new BoxSpawn(0, 5548, 491, -96));
             boxSpawns.add(new BoxSpawn(0, 6403, 459, 365));
             boxSpawns.add(new BoxSpawn(0, 5622, 479, 718));
-            boxSpawns.add(new BoxSpawn(0, 5075, 496, 1209));
-            boxSpawns.add(new BoxSpawn(0, 5810, 482, 1043));
-            boxSpawns.add(new BoxSpawn(0, 5943, 466, 451));
+//            boxSpawns.add(new BoxSpawn(0, 5075, 496, 1209));
+//            boxSpawns.add(new BoxSpawn(0, 5810, 482, 1043));
+//            boxSpawns.add(new BoxSpawn(0, 5943, 466, 451));
             boxSpawns.add(new BoxSpawn(0, 4608, 499, -36));
-            boxSpawns.add(new BoxSpawn(0, 4301, 499, -204));
+//            boxSpawns.add(new BoxSpawn(0, 4301, 499, -204));
             boxSpawns.add(new BoxSpawn(0, 5502, 499, -543));
-            boxSpawns.add(new BoxSpawn(0, 4331, 500, -883));
-            boxSpawns.add(new BoxSpawn(0, 6028, 513, -539));
+//            boxSpawns.add(new BoxSpawn(0, 4331, 500, -883));
+//            boxSpawns.add(new BoxSpawn(0, 6028, 513, -539));
             boxSpawns.add(new BoxSpawn(0, 4316, 550, -3577));
             boxSpawns.add(new BoxSpawn(0, 4141, 604, -3331));
             boxSpawns.add(new BoxSpawn(0, 4030, 624, -3669));
@@ -1546,7 +1546,7 @@ public class DreamManager {
 
 
         // 상자 위치 초기화
-        for (int i = 0; i < BOX_SPAWN_SIZE; i++) {
+        for (int i = 0; i < boxSpawns.size(); i++) {
             boxes.put(i, new Box(i, Position.from(boxSpawns.get(i))));
         }
 

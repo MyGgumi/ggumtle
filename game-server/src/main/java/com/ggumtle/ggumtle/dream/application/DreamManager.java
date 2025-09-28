@@ -336,7 +336,7 @@ public class DreamManager {
                     workingThreads.remove(session.getMemberId());
 
                     log.info("[{} - {}] 몽깅이 부활 완료: {}번 몽깅이 부활 성공!", session.getChannel().id(), room.id, targetMonggingId);
-                }, 3, TimeUnit.SECONDS);
+                }, 3500, TimeUnit.MILLISECONDS);
         workingThreads.put(session.getMemberId(), new WorkingThread(session.getMemberId(), future, WorkingThread.ThreadType.REVIVE, targetMongging.getId()));
 
         Body body = new StartReviveBody(StartReviveBody.Result.SUCCESS);

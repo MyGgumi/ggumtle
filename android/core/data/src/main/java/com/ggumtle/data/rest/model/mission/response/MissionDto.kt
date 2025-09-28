@@ -21,5 +21,5 @@ fun MissionDto.toDomain() = Mission(
     description = this.description,
     requiredCount = this.requiredCount,
     doneCount = this.doneCount,
-    state = this.state
+    state = this.state,
 )

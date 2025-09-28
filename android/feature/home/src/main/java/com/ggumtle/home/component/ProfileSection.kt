@@ -60,12 +60,11 @@ fun ProfileSection(
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                // TODO: 프로필 이미지 로드
-                Icon(
-                    Icons.Default.Person,
-                    contentDescription = "프로필",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
+                Text(
+                    text = userProfile.nickname.first().toString(),
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
                 )
             }
 

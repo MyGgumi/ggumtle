@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,7 +41,7 @@ fun MenuTab(
     ) {
         // 파티 나가기 버튼 (오프셋으로 고정 위치)
         AnimatedVisibility(
-            visible = true,
+            visible = isInParty,
             enter = fadeIn() + slideInVertically(),
             exit = fadeOut() + slideOutVertically(),
             modifier = Modifier
@@ -52,6 +53,7 @@ fun MenuTab(
                 contentDescription = "파티 나가기",
                 onClick = onLeavePartyClick,
                 backgroundColor = Color.Transparent,
+                iconTint = Color.White
             )
         }
 
@@ -97,13 +99,14 @@ fun MenuTab(
                                 MenuButton(
                                     icon = Icons.Default.Settings,
                                     contentDescription = "설정",
-                                    onClick = onSettingsClick
+                                    onClick = onSettingsClick,
+                                    iconTint = Color.White
                                 )
 
                                 MenuButton(
-                                    icon = Icons.Default.Mail,
+                                    painter = painterResource(id = R.drawable.btn_game_invite),
                                     contentDescription = "초대 목록 확인",
-                                    onClick = onInviteListClick
+                                    onClick = onInviteListClick,
                                 )
                             }
                         }
@@ -114,9 +117,10 @@ fun MenuTab(
     }
 }
 
+// MenuButton을 Painter도 받을 수 있도록 오버로드 추가
 @Composable
 private fun MenuButton(
-    icon: ImageVector,
+    painter: androidx.compose.ui.graphics.painter.Painter,
     contentDescription: String,
     onClick: () -> Unit,
     backgroundColor: Color = Color.Transparent,
@@ -131,9 +135,35 @@ private fun MenuButton(
         contentAlignment = Alignment.Center
     ) {
         Icon(
-            imageVector = icon,
+            painter = painter,
             contentDescription = contentDescription,
             tint = Color.White,
+            modifier = Modifier.size(28.dp)
+        )
+    }
+}
+
+@Composable
+private fun MenuButton(
+    icon: ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit,
+    backgroundColor: Color = Color.Transparent,
+    iconTint: Color = Color.White,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            tint = iconTint,
             modifier = Modifier.size(28.dp)
         )
     }

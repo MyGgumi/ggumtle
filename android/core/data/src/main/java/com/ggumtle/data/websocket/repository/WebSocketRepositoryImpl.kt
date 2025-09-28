@@ -104,6 +104,7 @@ class WebSocketRepositoryImpl @Inject constructor(
                 WebSocketMessageType.LEAVE_PARTY_RESULT -> handleMessage<LeavePartyResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.START_DREAM_RESULT -> handleMessage<StartGameResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.READY_DREAM_RESULT -> handleMessage<ReadyGameResponseDto>(message){ it.toEvent() }
+                WebSocketMessageType.UNREADY_DREAM_RESULT -> handleMessage<ReadyGameResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.CANCELLED_MATCHING_RESULT -> handleMessage<MatchingCancelledResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.GET_SENT_FRIEND_REQUESTS_RESULT -> handleMessage<GetSentFriendRequestsResponseDto>(message){ it.toEvent() }
                 WebSocketMessageType.CANCEL_FRIEND_REQUEST_RESULT -> handleMessage<CancelFriendRequestResponseDto>(message){ it.toEvent() }

@@ -106,7 +106,7 @@ fun DailyMissionDialog(
 
                     // 완료 현황
                     Text(
-                        text = "완료까지 ${remainingCount}개",
+                        text = "완료까지 ${remainingCount + completedCount}개",
                         color = BrandColors.PurpleLight,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -135,9 +135,9 @@ fun DailyMissionDialog(
                         }
 
                         // 완료된 부분의 선 (애니메이션)
-                        if (completedCount > 1) {
+                        if (afterRewardCount > 1) {
                             val animatedProgress by animateFloatAsState(
-                                targetValue = (completedCount - 1) / (totalCount - 1).toFloat(),
+                                targetValue = (afterRewardCount - 1) / (totalCount - 1).toFloat(),
                                 animationSpec = tween(
                                     durationMillis = 800,
                                     easing = EaseOutCubic
@@ -153,8 +153,8 @@ fun DailyMissionDialog(
                                 val progressWidth = size.width * animatedProgress
                                 drawLine(
                                     color = BrandColors.Mint,
-                                    start = androidx.compose.ui.geometry.Offset(0f, size.height / 2),
-                                    end = androidx.compose.ui.geometry.Offset(progressWidth, size.height / 2),
+                                    start = Offset(0f, size.height / 2),
+                                    end = Offset(progressWidth, size.height / 2),
                                     strokeWidth = 4.dp.toPx()
                                 )
                             }
@@ -166,7 +166,7 @@ fun DailyMissionDialog(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             repeat(totalCount) { index ->
-                                val isCompleted = index < completedCount
+                                val isCompleted = index < afterRewardCount
 
                                 // 원형 인디케이터 애니메이션
                                 val animatedColor by animateColorAsState(
@@ -466,8 +466,9 @@ private fun MissionItem(
                             contentDescription = "Coin",
                             modifier = Modifier.size(18.dp)
                         )
+                        //TODO: 서버에서 reward주는걸로 수정후 수정필요
                         Text(
-                            text = "보상받기!",
+                            text = if(mission.missionId.toInt() ==2) "150" else " 50",
                             color = BrandColors.Mint,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Bold

@@ -6,7 +6,8 @@
       "Bash(done)",
       "Bash(./gradlew build:*)",
       "Bash(gradle build:*)",
-      "Bash(where gradle)"
+      "Bash(where gradle)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

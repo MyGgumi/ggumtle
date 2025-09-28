@@ -98,7 +98,8 @@ sealed class WebSocketEvent {
 
     data class StartGameSuccess(
         val status: DreamStatus,
-        val dream: Dream?
+        val roomId: Long?,
+        val dreamServer: DreamServer?
     ) : WebSocketEvent()
 
     data class ReadyGameSuccess(

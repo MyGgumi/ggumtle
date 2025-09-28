@@ -28,23 +28,23 @@ fun AppNavigation(
     unitySendManager: UnitySendManager,
     showUnity: (onComplete: () -> Unit) -> Unit,
     hideUnity: (onComplete: () -> Unit) -> Unit,
-    ) {
+) {
     val navController = rememberNavController()
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         authManager.logoutEvent.collect { reason ->
             val message = when (reason) {
-                LogoutReason.UserLogout -> "로그아웃되었습니다"
-                LogoutReason.TokenExpired -> "세션이 만료되어 다시 로그인해 주세요"
-                LogoutReason.NetworkError -> "네트워크 오류로 인해 로그아웃되었습니다"
+                is LogoutReason.UserLogout -> "로그아웃되었습니다"
+                is LogoutReason.TokenExpired -> "세션이 만료되어 다시 로그인해 주세요"
+                is LogoutReason.NetworkError -> "네트워크 오류로 인해 로그아웃되었습니다"
                 is LogoutReason.SessionExpired -> "세션이 만료되었습니다. 다시 로그인해 주세요"
-                LogoutReason.AccountDeleted -> "회원탈퇴가 완료되었습니다"
+                is LogoutReason.AccountDeleted -> "회원탈퇴가 완료되었습니다"
             }
-            message?.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
+            message.let { Toast.makeText(context, it, Toast.LENGTH_SHORT).show() }
             unitySendManager.goToLoginFromHome()
             delay(2000)
-            navController.navigate(LoginRoute) {
+            navController.navigate(LoginDestination) {
                 popUpTo(0) { inclusive = true }
             }
         }
@@ -52,64 +52,60 @@ fun AppNavigation(
 
     NavHost(
         navController = navController,
-        startDestination = StartUpRoute
+        startDestination = StartUpDestination
     ) {
-        composable<StartUpRoute> {
+        composable<StartUpDestination> {
             StartUpRoute(
                 onNavigateToLogin = {
-                    navController.navigate(LoginRoute) {
-                        popUpTo(StartUpRoute) { inclusive = true }
+                    navController.navigate(LoginDestination) {
+                        popUpTo(StartUpDestination) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable<LoginRoute> {
+        composable<LoginDestination> {
             LoginRoute(
                 onNavigateToMain = {
-                    navController.navigate(HomeRoute) {
-                        popUpTo(LoginRoute) { inclusive = true }
+                    navController.navigate(HomeDestination(fromLogin = true)) {
+                        popUpTo(LoginDestination) { inclusive = true }
                     }
                 },
                 isLoggedIn = isLoggedIn
             )
         }
 
-        composable<HomeRoute> {
+        composable<HomeDestination> {
             HomeRoute(
                 onNavigateToSocial = {
-                    navController.navigate(SocialRoute){}
+                    navController.navigate(SocialDestination)
                 },
                 onNavigateToGrowth = {
-                    navController.navigate(GrowthRoute){}
+                    navController.navigate(GrowthDestination)
                 },
                 onNavigateToInGame = {
-                    navController.navigate(InGameRoute){
-                        popUpTo(HomeRoute) { inclusive = true }
-                    }
+                    navController.navigate(InGameDestination)
                 }
             )
         }
 
-        composable<SocialRoute> {
+        composable<SocialDestination> {
             SocialRoute(
                 onNavigateToHome = {
-                    navController.navigate(HomeRoute) {
-                        popUpTo(SocialRoute) { inclusive = true }
+                    navController.navigate(HomeDestination(fromLogin = false)) {
+                        popUpTo(HomeDestination::class) { inclusive = true }
                     }
                 }
             )
         }
 
-        composable<GrowthRoute>{
+        composable<GrowthDestination>{
             val cameraPermissionLauncher = rememberLauncherForActivityResult(
                 contract = ActivityResultContracts.RequestPermission()
             ) { isGranted ->
                 if (isGranted) {
                     hideUnity {
-                        navController.navigate(MissionRoute) {
-                            popUpTo(GrowthRoute) { inclusive = true }
-                        }
+                        navController.navigate(MissionDestination)
                     }
                 } else {
                     Toast.makeText(context, "카메라 권한이 필요합니다", Toast.LENGTH_SHORT).show()
@@ -118,8 +114,8 @@ fun AppNavigation(
 
             GrowthRoute(
                 onNavigateToHome = {
-                    navController.navigate(HomeRoute) {
-                        popUpTo(GrowthRoute) { inclusive = true }
+                    navController.navigate(HomeDestination(fromLogin = false)) {
+                        popUpTo(HomeDestination::class) { inclusive = true }
                     }
                 },
                 onNavigateToMission = {
@@ -128,20 +124,22 @@ fun AppNavigation(
             )
         }
 
-        composable<MissionRoute>{
+        composable<MissionDestination>{
             MissionRoute(
                 onNavigateBack = {
                     showUnity{
-                        navController.navigate(GrowthRoute){
-                            popUpTo(MissionRoute){inclusive = true}
+                        navController.navigate(GrowthDestination) {
+                            popUpTo(GrowthDestination) { inclusive = false }
                         }
                     }
                 }
             )
         }
 
-        composable<InGameRoute>{
-            InGameRoute()
+        composable<InGameDestination>{
+            InGameRoute(
+
+            )
         }
     }
 }

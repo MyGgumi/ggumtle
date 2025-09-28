@@ -33,7 +33,7 @@ import android.view.SurfaceView
 import android.view.View
 
 @AndroidEntryPoint
-//class MainActivity : ComponentActivity()
+//class MainActivity : ComponentActivity(){
 class MainActivity : UnityPlayerGameActivity() {
 
     @Inject
@@ -252,6 +252,12 @@ private fun AutoLoginGate(
     onAutoLoginComplete: @Composable (Boolean) -> Unit
 ) {
     val autoLoginState by authManager.autoLoginState.collectAsState()
+
+    LaunchedEffect(Unit) {
+        authManager.logoutEvent.collect {
+            authManager.checkAutoLogin()
+        }
+    }
 
     when (autoLoginState) {
         is AutoLoginState.Loading -> {

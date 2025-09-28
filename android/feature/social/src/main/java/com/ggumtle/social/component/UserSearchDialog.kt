@@ -45,7 +45,7 @@ fun UserSearchDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "친구 검색",
+                        text = "플레이어 검색",
                         color = GameColors.textPrimary,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold,

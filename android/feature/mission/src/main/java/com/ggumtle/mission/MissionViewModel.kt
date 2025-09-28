@@ -243,7 +243,6 @@ class MissionViewModel @Inject constructor(
             arManager.playAnimation(animationIndex)
             Log.d(TAG, "이모티콘 애니메이션 실행: $animationIndex")
         }
-        reduce { state.copy(showEmoticonSelector = false) }
     }
 
     fun startFoodDrag() = intent {

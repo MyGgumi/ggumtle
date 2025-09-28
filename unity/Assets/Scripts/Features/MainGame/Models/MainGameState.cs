@@ -15,6 +15,16 @@ namespace Features.MainGame.Models
         Preparing,
 
         /// <summary>
+        /// 다른 플레이어들을 기다리는 중
+        /// </summary>
+        WaitingForPlayers,
+
+        /// <summary>
+        /// 게임 시작 카운트다운 중
+        /// </summary>
+        CountingDown,
+
+        /// <summary>
         /// 게임 진행 중
         /// </summary>
         InProgress,

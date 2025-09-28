@@ -1,11 +1,12 @@
 using System;
-using Features.MainGame.Models;
-using Features.MainGame.Messages;
-using Features.GameResult.Models;
-using Features.GameInfo.Services;
 using Features.GameInfo.Messages;
-using Features.PlayerList.Services;
+using Features.GameInfo.Services;
+using Features.GameResult.Models;
+using Features.MainGame.Messages;
+using Features.MainGame.Models;
+using Features.Notification.Services;
 using Features.PlayerHealth.Services;
+using Features.PlayerList.Services;
 using MessagePipe;
 using R3;
 using UnityEngine;
@@ -34,7 +35,9 @@ namespace Features.MainGame.Services
         private readonly ReactiveProperty<GamePhase> _currentPhase = new(GamePhase.Preparing);
         private readonly ReactiveProperty<bool> _isGameInProgress = new(false);
         private readonly ReactiveProperty<int> _activePlayerCount = new(0);
-        private readonly ReactiveProperty<WinConditionType> _winCondition = new(WinConditionType.TimeExpired);
+        private readonly ReactiveProperty<WinConditionType> _winCondition = new(
+            WinConditionType.TimeExpired
+        );
 
         private readonly MainGameData _gameData = new();
         private readonly CompositeDisposable _disposables = new();
@@ -50,6 +53,7 @@ namespace Features.MainGame.Services
         private readonly IGameInfoService _gameInfoService;
         private readonly IPlayerListService _playerListService;
         private readonly IPlayerHealthService _playerHealthService;
+        private readonly INotificationService _notificationService;
 
         // MessagePipe Subscribers
         private readonly ISubscriber<GameTimeExpiredMessage> _timeExpiredSubscriber;
@@ -73,6 +77,7 @@ namespace Features.MainGame.Services
             IGameInfoService gameInfoService,
             IPlayerListService playerListService,
             IPlayerHealthService playerHealthService,
+            INotificationService notificationService,
             ISubscriber<GameTimeExpiredMessage> timeExpiredSubscriber,
             IPublisher<GameInitializedMessage> gameInitializedPublisher,
             IPublisher<GameStartedMessage> gameStartedPublisher,
@@ -87,6 +92,7 @@ namespace Features.MainGame.Services
             _gameInfoService = gameInfoService;
             _playerListService = playerListService;
             _playerHealthService = playerHealthService;
+            _notificationService = notificationService;
             _timeExpiredSubscriber = timeExpiredSubscriber;
 
             _gameInitializedPublisher = gameInitializedPublisher;
@@ -121,9 +127,7 @@ namespace Features.MainGame.Services
                 .AddTo(_disposables);
 
             // 메시지 구독
-            _timeExpiredSubscriber
-                .Subscribe(OnTimeExpiredMessage)
-                .AddTo(_disposables);
+            _timeExpiredSubscriber.Subscribe(OnTimeExpiredMessage).AddTo(_disposables);
 
             DebugLog("MainGameService 초기화 완료");
         }
@@ -177,18 +181,27 @@ namespace Features.MainGame.Services
 
             // 게임 시간 미리 설정 (UI가 0:00으로 나타나지 않도록)
             var gameTime = TimeSpan.FromMinutes(_gameData.gameDurationMinutes);
-            DebugLog($"게임 시간 설정: {gameTime.TotalMinutes}분 = {gameTime.Minutes:D2}:{gameTime.Seconds:D2}");
+            DebugLog(
+                $"게임 시간 설정: {gameTime.TotalMinutes}분 = {gameTime.Minutes:D2}:{gameTime.Seconds:D2}"
+            );
             _gameInfoService.SetCurrentTime(gameTime);
 
             _isInitialized = true;
 
             // 초기화 완료 메시지 발송
-            _gameInitializedPublisher.Publish(new GameInitializedMessage(_gameData, "MainGameService"));
+            _gameInitializedPublisher.Publish(
+                new GameInitializedMessage(_gameData, "MainGameService")
+            );
 
             DebugLog("게임 초기화 완료");
         }
 
         public void StartGame()
+        {
+            ActualStartGame();
+        }
+
+        public void ActualStartGame()
         {
             if (!_isInitialized)
             {
@@ -202,7 +215,10 @@ namespace Features.MainGame.Services
                 return;
             }
 
-            DebugLog("게임 시작");
+            DebugLog("실제 게임 시작");
+
+            // 게임 시작 알림 표시
+            _notificationService.ShowGameStartNotification();
 
             // 게임 시작 시간 설정
             _gameData.gameStartTime = DateTime.Now;
@@ -214,15 +230,47 @@ namespace Features.MainGame.Services
             // 타이머 시작 (시간은 이미 InitializeGame에서 설정됨)
             _gameInfoService.StartTimer();
 
-            // 메시지 발송
-            _gamePhaseChangedPublisher.Publish(new GamePhaseChangedMessage(previousPhase, GamePhase.InProgress, "게임 시작"));
-            _gameStartedPublisher.Publish(new GameStartedMessage(
-                _gameData.gameStartTime,
-                _activePlayerCount.Value,
-                _gameData.winCondition
-            ));
+            // 상태 메시지 변경
+            _gameInfoService.SetStatusMessage("• 꿈 속을 탈출하세요.");
 
-            DebugLog($"게임 시작 완료 - 제한시간: {_gameData.gameDurationMinutes}분, 승리조건: {_gameData.winCondition}");
+            // 메시지 발송
+            _gamePhaseChangedPublisher.Publish(
+                new GamePhaseChangedMessage(previousPhase, GamePhase.InProgress, "게임 시작")
+            );
+            _gameStartedPublisher.Publish(
+                new GameStartedMessage(
+                    _gameData.gameStartTime,
+                    _activePlayerCount.Value,
+                    _gameData.winCondition
+                )
+            );
+
+            DebugLog(
+                $"게임 시작 완료 - 제한시간: {_gameData.gameDurationMinutes}분, 승리조건: {_gameData.winCondition}"
+            );
+        }
+
+        public void SetWaitingForPlayersState()
+        {
+            DebugLog("다른 플레이어들을 기다리는 상태로 변경");
+
+            // 단계 변경
+            var previousPhase = _currentPhase.Value;
+            _currentPhase.Value = GamePhase.WaitingForPlayers;
+
+            // 상태 메시지 설정
+            _gameInfoService.SetStatusMessage("다른 플레이어를 기다리는 중...");
+
+            // 메시지 발송
+            _gamePhaseChangedPublisher.Publish(
+                new GamePhaseChangedMessage(
+                    previousPhase,
+                    GamePhase.WaitingForPlayers,
+                    "플레이어 대기 중"
+                )
+            );
+
+            DebugLog("플레이어 대기 상태 설정 완료");
         }
 
         public void EndGame(TeamResult result, string reason = "")
@@ -234,6 +282,9 @@ namespace Features.MainGame.Services
             }
 
             DebugLog($"게임 종료: {result}, 이유: {reason}");
+
+            // 게임 종료 알림 표시
+            _notificationService.ShowGameEndNotification();
 
             // 게임 종료 시간 설정
             _gameData.gameEndTime = DateTime.Now;
@@ -247,14 +298,18 @@ namespace Features.MainGame.Services
             _gameInfoService.StopTimer();
 
             // 메시지 발송
-            _gamePhaseChangedPublisher.Publish(new GamePhaseChangedMessage(previousPhase, GamePhase.Ending, reason));
-            _gameEndedPublisher.Publish(new GameEndedMessage(
-                result,
-                _gameData.winCondition,
-                "", // winnerId - 추후 구현
-                _gameData.GetElapsedTime(),
-                reason
-            ));
+            _gamePhaseChangedPublisher.Publish(
+                new GamePhaseChangedMessage(previousPhase, GamePhase.Ending, reason)
+            );
+            _gameEndedPublisher.Publish(
+                new GameEndedMessage(
+                    result,
+                    _gameData.winCondition,
+                    "", // winnerId - 추후 구현
+                    _gameData.GetElapsedTime(),
+                    reason
+                )
+            );
 
             // 완료 상태로 전환
             _currentPhase.Value = GamePhase.Completed;
@@ -275,7 +330,9 @@ namespace Features.MainGame.Services
                 _gameInfoService.StartTimer();
             }
 
-            _gamePausedPublisher.Publish(new GamePausedMessage(_isPaused, _isPaused ? "게임 일시정지" : "게임 재개"));
+            _gamePausedPublisher.Publish(
+                new GamePausedMessage(_isPaused, _isPaused ? "게임 일시정지" : "게임 재개")
+            );
 
             DebugLog($"게임 {(_isPaused ? "일시정지" : "재개")}");
         }
@@ -296,13 +353,13 @@ namespace Features.MainGame.Services
                 _gameData.activePlayers.Remove(playerId);
                 _activePlayerCount.Value = _gameData.activePlayers.Count;
 
-                _playerEliminatedPublisher.Publish(new PlayerEliminatedMessage(
-                    playerId,
-                    reason,
-                    _gameData.activePlayers.Count
-                ));
+                _playerEliminatedPublisher.Publish(
+                    new PlayerEliminatedMessage(playerId, reason, _gameData.activePlayers.Count)
+                );
 
-                DebugLog($"플레이어 탈락: {playerId}, 이유: {reason}, 남은 플레이어: {_gameData.activePlayers.Count}");
+                DebugLog(
+                    $"플레이어 탈락: {playerId}, 이유: {reason}, 남은 플레이어: {_gameData.activePlayers.Count}"
+                );
 
                 // 승리 조건 체크
                 CheckWinConditions();
@@ -335,12 +392,12 @@ namespace Features.MainGame.Services
 
         public void OnSceneInitializationComplete()
         {
-            DebugLog("씬 초기화 완료 - 게임 시작 준비");
+            DebugLog("씬 초기화 완료 - 바로 게임 시작");
 
-            // 씬 초기화가 완료되면 자동으로 게임 시작
+            // 씬 초기화가 완료되면 바로 게임 시작
             if (_isInitialized)
             {
-                StartGame();
+                ActualStartGame();
             }
             else
             {
@@ -354,7 +411,9 @@ namespace Features.MainGame.Services
 
             if (_gameData.winCondition == WinConditionType.TimeExpired)
             {
-                _winConditionMetPublisher.Publish(new WinConditionMetMessage(WinConditionType.TimeExpired, "", "제한시간 만료"));
+                _winConditionMetPublisher.Publish(
+                    new WinConditionMetMessage(WinConditionType.TimeExpired, "", "제한시간 만료")
+                );
                 EndGame(TeamResult.MonggingWin, "제한시간 생존 성공");
             }
         }
@@ -401,8 +460,11 @@ namespace Features.MainGame.Services
                 case WinConditionType.LastPlayerStanding:
                     if (_activePlayerCount.Value <= 1)
                     {
-                        var winner = _gameData.activePlayers.Count > 0 ? _gameData.activePlayers[0] : "";
-                        _winConditionMetPublisher.Publish(new WinConditionMetMessage(WinConditionType.LastPlayerStanding, winner));
+                        var winner =
+                            _gameData.activePlayers.Count > 0 ? _gameData.activePlayers[0] : "";
+                        _winConditionMetPublisher.Publish(
+                            new WinConditionMetMessage(WinConditionType.LastPlayerStanding, winner)
+                        );
                         EndGame(TeamResult.MonggingWin, "마지막 생존자");
                     }
                     break;

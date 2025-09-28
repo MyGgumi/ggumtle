@@ -203,6 +203,7 @@ namespace DI
             builder.RegisterMessageBroker<PlayerEliminatedMessage>(options);
             builder.RegisterMessageBroker<GameStateSyncMessage>(options);
             builder.RegisterMessageBroker<GamePausedMessage>(options);
+            builder.RegisterMessageBroker<CountdownCompletedMessage>(options);
 
             // PlayerList Messages
             builder.RegisterMessageBroker<PlayerUpdatedMessage>(options);

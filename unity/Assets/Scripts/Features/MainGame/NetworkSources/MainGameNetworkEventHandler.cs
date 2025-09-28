@@ -29,7 +29,7 @@ namespace Features.MainGame.NetworkSources
         {
             _mainGameService = mainGameService;
             _notificationService = notificationService;
-            Debug.Log("[MainGameNetworkEventHandler] 서비스들 설정 완료");
+            Debug.Log($"[MainGameNetworkEventHandler] ===== 서비스들 설정 완료 ===== MainGameService: {_mainGameService != null}, NotificationService: {_notificationService != null}");
         }
 
         /// <summary>
@@ -40,7 +40,7 @@ namespace Features.MainGame.NetworkSources
         {
             try
             {
-                Debug.Log("[MainGameNetworkEventHandler] 게임 시작 수신");
+                Debug.Log($"[MainGameNetworkEventHandler] ===== 게임 시작 패킷 수신 ===== Command: {command != null}, Context: {ctx != null}");
 
                 if (_mainGameService != null)
                 {
@@ -50,6 +50,12 @@ namespace Features.MainGame.NetworkSources
                 else
                 {
                     Debug.LogError("[MainGameNetworkEventHandler] MainGameService가 설정되지 않음");
+                }
+
+                // 게임 시작 알림 추가 표시 (MainGameService에서도 표시하지만 추가로)
+                if (_notificationService != null)
+                {
+                    _notificationService.ShowNotification("모든 플레이어가 준비되었습니다!", 2f);
                 }
             }
             catch (Exception e)

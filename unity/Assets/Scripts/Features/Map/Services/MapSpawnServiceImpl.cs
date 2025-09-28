@@ -319,45 +319,25 @@ namespace Features.Map.Services
             return parent.transform;
         }
 
-        // 기존 SetupPreplaced 메서드들은 호환성을 위해 새 스폰 메서드 호출로 변경
+        // 레거시 메서드들 - 더 이상 사용하지 않음 (SpawnAllObjectsAsync 사용)
         public void SetupPreplacedChests(List<ChestPacket> chests)
         {
-            if (chests == null || chests.Count == 0)
-                return;
-
-            // 동적 생성 방식으로 변경 - 비동기 호출
-            var parent = GetOrCreateParent("Chests");
-            _ = SpawnChestsAsync(chests, parent);
+            Debug.Log("[MapSpawnService] SetupPreplacedChests는 더 이상 사용되지 않습니다. SpawnAllObjectsAsync를 사용하세요.");
         }
 
         public void SetupPreplacedGgumtles(List<GgumtlePacket> ggumtles)
         {
-            if (ggumtles == null || ggumtles.Count == 0)
-                return;
-
-            // 동적 생성 방식으로 변경 - 비동기 호출
-            var parent = GetOrCreateParent("Ggumtles");
-            _ = SpawnGgumtlesAsync(ggumtles, parent);
+            Debug.Log("[MapSpawnService] SetupPreplacedGgumtles는 더 이상 사용되지 않습니다. SpawnAllObjectsAsync를 사용하세요.");
         }
 
         public void SetupPreplacedHealPacks(List<HealPackPacket> healPacks)
         {
-            if (healPacks == null || healPacks.Count == 0)
-                return;
-
-            // 동적 생성 방식으로 변경 - 비동기 호출
-            var parent = GetOrCreateParent("FieldItems");
-            _ = SpawnHealPacksAsync(healPacks, parent);
+            Debug.Log("[MapSpawnService] SetupPreplacedHealPacks는 더 이상 사용되지 않습니다. SpawnAllObjectsAsync를 사용하세요.");
         }
 
         public void SetupPreplacedSpeedPacks(List<SpeedPackPacket> speedPacks)
         {
-            if (speedPacks == null || speedPacks.Count == 0)
-                return;
-
-            // 동적 생성 방식으로 변경 - 비동기 호출
-            var parent = GetOrCreateParent("FieldItems");
-            _ = SpawnSpeedPacksAsync(speedPacks, parent);
+            Debug.Log("[MapSpawnService] SetupPreplacedSpeedPacks는 더 이상 사용되지 않습니다. SpawnAllObjectsAsync를 사용하세요.");
         }
 
         private async UniTask ClearAllObjectsAsync()
@@ -426,21 +406,10 @@ namespace Features.Map.Services
             }
         }
 
-        // 나머지 기존 메서드들은 동적 생성 방식으로 변경됨
+        // 레거시 메서드 - 더 이상 사용하지 않음
         public void SpawnItems(List<HealPackPacket> healPacks, List<SpeedPackPacket> speedPacks)
         {
-            try
-            {
-                if (healPacks != null && healPacks.Count > 0)
-                    SetupPreplacedHealPacks(healPacks);
-
-                if (speedPacks != null && speedPacks.Count > 0)
-                    SetupPreplacedSpeedPacks(speedPacks);
-            }
-            catch (Exception e)
-            {
-                Debug.LogWarning($"[MapSpawnService] 아이템 스폰 실패: {e.Message}");
-            }
+            Debug.Log("[MapSpawnService] SpawnItems는 더 이상 사용되지 않습니다. SpawnAllObjectsAsync를 사용하세요.");
         }
 
         public bool RemoveGgumtle(int id)

@@ -12,6 +12,9 @@ public class WaitingRoomCharacterController : MonoBehaviour
     public Canvas nameTagCanvas; // UI Canvas 참조
     public GameObject nameTagPrefab; // 네임태그 프리팹 (없으면 자동 생성)
 
+    [Header("폰트 설정")]
+    public Font customFont;
+
     public enum CharacterType
     {
         HpMongging = 0,
@@ -170,8 +173,6 @@ public class WaitingRoomCharacterController : MonoBehaviour
 
         Text nameText = textGO.AddComponent<Text>();
         nameText.text = $"{nickname}\nLv.{level}";
-        // 수성혜성체 폰트 로드 (Resources 폴더에 있어야 함)
-        Font customFont = Resources.Load<Font>("SuseongHyejeong");
         if (customFont != null)
         {
             nameText.font = customFont;

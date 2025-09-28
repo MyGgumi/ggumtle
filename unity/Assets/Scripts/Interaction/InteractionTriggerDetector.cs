@@ -10,6 +10,8 @@ using Features.Chest.Models;
 using Features.Chest.Views;
 using Features.Revival.Messages;
 using Features.Revival.Views;
+using Features.EscapeGate.Messages;
+using Features.EscapeGate.Views;
 using Features.Player.Services;
 using Features.PlayerList.Models;
 using MessagePipe;
@@ -47,6 +49,8 @@ namespace Interaction
         private IPublisher<Features.Chest.Messages.ChestLeftMessage> _chestLeftPublisher;
         private IPublisher<Features.Revival.Messages.FaintedMonggingDetectedMessage> _faintedMonggingDetectedPublisher;
         private IPublisher<Features.Revival.Messages.FaintedMonggingLeftMessage> _faintedMonggingLeftPublisher;
+        private IPublisher<Features.EscapeGate.Messages.EscapeGateDetectedMessage> _escapeGateDetectedPublisher;
+        private IPublisher<Features.EscapeGate.Messages.EscapeGateLeftMessage> _escapeGateLeftPublisher;
 
         // 플레이어 관리 서비스
         private PlayerManagerService _playerManagerService;
@@ -59,7 +63,9 @@ namespace Interaction
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
             IPublisher<ChestLeftMessage> chestLeftPublisher,
             IPublisher<FaintedMonggingDetectedMessage> faintedMonggingDetectedPublisher,
-            IPublisher<FaintedMonggingLeftMessage> faintedMonggingLeftPublisher
+            IPublisher<FaintedMonggingLeftMessage> faintedMonggingLeftPublisher,
+            IPublisher<EscapeGateDetectedMessage> escapeGateDetectedPublisher,
+            IPublisher<EscapeGateLeftMessage> escapeGateLeftPublisher
         )
         {
             _playerManagerService = playerManagerService;
@@ -69,6 +75,8 @@ namespace Interaction
             _chestLeftPublisher = chestLeftPublisher;
             _faintedMonggingDetectedPublisher = faintedMonggingDetectedPublisher;
             _faintedMonggingLeftPublisher = faintedMonggingLeftPublisher;
+            _escapeGateDetectedPublisher = escapeGateDetectedPublisher;
+            _escapeGateLeftPublisher = escapeGateLeftPublisher;
             Debug.Log($"[InteractionTriggerDetector] VContainer 의존성 주입 완료 - {gameObject.name}");
         }
 
@@ -89,6 +97,10 @@ namespace Interaction
         // 현재 감지된 기절한 몽깅이들을 거리순으로 관리
         private readonly List<(FaintedMonggingInteractable faintedMongging, Collider collider, float distance)> _detectedFaintedMonggings = new();
         private FaintedMonggingInteractable _currentClosestFaintedMongging = null;
+
+        // 현재 감지된 탈출 게이트들을 거리순으로 관리
+        private readonly List<(EscapeGateGameObject escapeGate, Collider collider, float distance)> _detectedEscapeGates = new();
+        private EscapeGateGameObject _currentClosestEscapeGate = null;
 
         void Awake()
         {
@@ -122,8 +134,10 @@ namespace Interaction
             // VContainer 주입 확인
             bool ggumtlePublishersOK = _ggumtleDetectedPublisher != null && _ggumtleLeftPublisher != null;
             bool chestPublishersOK = _chestDetectedPublisher != null && _chestLeftPublisher != null;
+            bool faintedMonggingPublishersOK = _faintedMonggingDetectedPublisher != null && _faintedMonggingLeftPublisher != null;
+            bool escapeGatePublishersOK = _escapeGateDetectedPublisher != null && _escapeGateLeftPublisher != null;
 
-            if (ggumtlePublishersOK && chestPublishersOK)
+            if (ggumtlePublishersOK && chestPublishersOK && faintedMonggingPublishersOK && escapeGatePublishersOK)
             {
                 Debug.Log(
                     $"[InteractionTriggerDetector] VContainer MessagePipe 주입 성공 - {gameObject.name}"
@@ -134,7 +148,9 @@ namespace Interaction
                 Debug.LogError(
                     $"[InteractionTriggerDetector] VContainer MessagePipe 주입 실패! " +
                     $"GgumtleDetected: {_ggumtleDetectedPublisher != null}, GgumtleLeft: {_ggumtleLeftPublisher != null}, " +
-                    $"ChestDetected: {_chestDetectedPublisher != null}, ChestLeft: {_chestLeftPublisher != null} - {gameObject.name}"
+                    $"ChestDetected: {_chestDetectedPublisher != null}, ChestLeft: {_chestLeftPublisher != null}, " +
+                    $"FaintedMonggingDetected: {_faintedMonggingDetectedPublisher != null}, FaintedMonggingLeft: {_faintedMonggingLeftPublisher != null}, " +
+                    $"EscapeGateDetected: {_escapeGateDetectedPublisher != null}, EscapeGateLeft: {_escapeGateLeftPublisher != null} - {gameObject.name}"
                 );
             }
 
@@ -285,6 +301,16 @@ namespace Interaction
                 return;
             }
 
+            // 탈출 게이트인지 확인하고 MessagePipe로 처리
+            var escapeGateGameObject = other.GetComponent<EscapeGateGameObject>();
+            if (escapeGateGameObject != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지: {other.gameObject.name}");
+                AddEscapeGateToDetectionList(escapeGateGameObject, other);
+                return;
+            }
+
             if (enableDebugLogs)
             {
                 // 어떤 컴포넌트들이 있는지 확인
@@ -384,6 +410,18 @@ namespace Interaction
                         $"[InteractionTriggerDetector] 기절한 몽깅이 벗어남: {other.gameObject.name}"
                     );
                 RemoveFaintedMonggingFromDetectionList(faintedMonggingInteractable);
+                return;
+            }
+
+            // 탈출 게이트인지 확인하고 MessagePipe로 처리
+            var escapeGateGameObject = other.GetComponent<EscapeGateGameObject>();
+            if (escapeGateGameObject != null)
+            {
+                if (enableDebugLogs)
+                    Debug.Log(
+                        $"[InteractionTriggerDetector] 탈출 게이트 벗어남: {other.gameObject.name}"
+                    );
+                RemoveEscapeGateFromDetectionList(escapeGateGameObject);
                 return;
             }
 
@@ -725,6 +763,40 @@ namespace Interaction
                     UpdateClosestFaintedMongging();
                 }
             }
+
+            // 탈출 게이트들의 거리 업데이트
+            distanceChanged = false;
+            if (_detectedEscapeGates.Count > 0)
+            {
+                for (int i = 0; i < _detectedEscapeGates.Count; i++)
+                {
+                    var (escapeGate, collider, oldDistance) = _detectedEscapeGates[i];
+
+                    if (escapeGate == null || collider == null)
+                    {
+                        // 무효한 참조는 제거
+                        _detectedEscapeGates.RemoveAt(i);
+                        i--;
+                        distanceChanged = true;
+                        continue;
+                    }
+
+                    var newDistance = Vector3.Distance(transform.position, collider.transform.position);
+
+                    // 거리 변화가 0.1f 이상일 때만 업데이트 (노이즈 방지)
+                    if (Mathf.Abs(newDistance - oldDistance) > 0.1f)
+                    {
+                        _detectedEscapeGates[i] = (escapeGate, collider, newDistance);
+                        distanceChanged = true;
+                    }
+                }
+
+                // 거리가 변경되었다면 가장 가까운 탈출 게이트 재평가
+                if (distanceChanged)
+                {
+                    UpdateClosestEscapeGate();
+                }
+            }
         }
 
         private bool IsInLayerMask(int layer, LayerMask layerMask)
@@ -942,6 +1014,127 @@ namespace Interaction
                 Gizmos.color = new Color(1f, 1f, 0f, 0.1f);
                 Gizmos.DrawSphere(transform.position, detectionRadius);
             }
+        }
+
+        /// <summary>
+        /// 탈출 게이트를 감지 리스트에 추가하고 가장 가까운 탈출 게이트 업데이트
+        /// </summary>
+        private void AddEscapeGateToDetectionList(EscapeGateGameObject escapeGate, Collider other)
+        {
+            var distance = Vector3.Distance(transform.position, other.transform.position);
+
+            // 이미 리스트에 있는지 확인
+            var existingIndex = _detectedEscapeGates.FindIndex(e => e.escapeGate == escapeGate);
+            if (existingIndex >= 0)
+            {
+                // 거리만 업데이트
+                _detectedEscapeGates[existingIndex] = (escapeGate, other, distance);
+            }
+            else
+            {
+                // 새로 추가
+                _detectedEscapeGates.Add((escapeGate, other, distance));
+            }
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지 리스트에 추가: {escapeGate.GateId}, 거리: {distance:F2}");
+
+            UpdateClosestEscapeGate();
+        }
+
+        /// <summary>
+        /// 탈출 게이트를 감지 리스트에서 제거하고 가장 가까운 탈출 게이트 업데이트
+        /// </summary>
+        private void RemoveEscapeGateFromDetectionList(EscapeGateGameObject escapeGate)
+        {
+            var removed = _detectedEscapeGates.RemoveAll(e => e.escapeGate == escapeGate);
+
+            if (removed > 0)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지 리스트에서 제거: {escapeGate.GateId}");
+
+                UpdateClosestEscapeGate();
+            }
+        }
+
+        /// <summary>
+        /// 가장 가까운 탈출 게이트 업데이트 및 메시지 발행
+        /// </summary>
+        private void UpdateClosestEscapeGate()
+        {
+            EscapeGateGameObject newClosest = null;
+
+            if (_detectedEscapeGates.Count > 0)
+            {
+                // 거리순으로 정렬하여 가장 가까운 탈출 게이트 찾기
+                var closest = _detectedEscapeGates.OrderBy(e => e.distance).First();
+                newClosest = closest.escapeGate;
+
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 탈출 게이트: {newClosest.GateId}, 거리: {closest.distance:F2}");
+            }
+
+            // 가장 가까운 탈출 게이트가 변경되었는지 확인
+            if (_currentClosestEscapeGate != newClosest)
+            {
+                // 이전 탈출 게이트가 있었다면 Left 메시지 발행
+                if (_currentClosestEscapeGate != null)
+                {
+                    PublishEscapeGateLeftMessage(_currentClosestEscapeGate);
+                }
+
+                // 새로운 탈출 게이트가 있다면 Detected 메시지 발행
+                if (newClosest != null)
+                {
+                    var closestInfo = _detectedEscapeGates.First(e => e.escapeGate == newClosest);
+                    PublishEscapeGateDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
+                }
+
+                _currentClosestEscapeGate = newClosest;
+            }
+        }
+
+        /// <summary>
+        /// 탈출 게이트 감지 메시지 발행
+        /// </summary>
+        private void PublishEscapeGateDetectedMessage(EscapeGateGameObject escapeGate, Collider collider, float distance)
+        {
+            if (_escapeGateDetectedPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] EscapeGateDetectedPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
+            var message = new EscapeGateDetectedMessage(
+                escapeGate.GateId,
+                collider.transform,
+                distance,
+                Features.EscapeGate.Models.EscapeGateState.Inactive // 기본값, Service에서 실제 상태 관리
+            );
+
+            _escapeGateDetectedPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지 메시지 발행: {escapeGate.GateId}");
+        }
+
+        /// <summary>
+        /// 탈출 게이트 벗어남 메시지 발행
+        /// </summary>
+        private void PublishEscapeGateLeftMessage(EscapeGateGameObject escapeGate)
+        {
+            if (_escapeGateLeftPublisher == null)
+            {
+                Debug.LogError("[InteractionTriggerDetector] EscapeGateLeftPublisher가 주입되지 않아 메시지를 발행할 수 없습니다!");
+                return;
+            }
+
+            var message = new EscapeGateLeftMessage(escapeGate.GateId);
+            _escapeGateLeftPublisher.Publish(message);
+
+            if (enableDebugLogs)
+                Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 벗어남 메시지 발행: {escapeGate.GateId}");
         }
 
         #region Public Properties

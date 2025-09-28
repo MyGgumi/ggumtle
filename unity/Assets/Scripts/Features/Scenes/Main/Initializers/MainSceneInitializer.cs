@@ -1,6 +1,7 @@
 using Features.Chest.Messages;
 using Features.Ggumtle.Messages;
 using Features.Revival.Messages;
+using Features.EscapeGate.Messages;
 using Features.MainGame.Services;
 using Features.MainGame.NetworkSources;
 using Features.Map.Services;
@@ -33,6 +34,8 @@ namespace Features.Scenes.Main.Initializers
         private readonly IPublisher<ChestLeftMessage> _chestLeftPublisher;
         private readonly IPublisher<FaintedMonggingDetectedMessage> _faintedMonggingDetectedPublisher;
         private readonly IPublisher<FaintedMonggingLeftMessage> _faintedMonggingLeftPublisher;
+        private readonly IPublisher<EscapeGateDetectedMessage> _escapeGateDetectedPublisher;
+        private readonly IPublisher<EscapeGateLeftMessage> _escapeGateLeftPublisher;
         private readonly bool _enableDebugLogs = false; // 디버그 로그 비활성화
 
         [Inject]
@@ -46,7 +49,9 @@ namespace Features.Scenes.Main.Initializers
             IPublisher<ChestDetectedMessage> chestDetectedPublisher,
             IPublisher<ChestLeftMessage> chestLeftPublisher,
             IPublisher<FaintedMonggingDetectedMessage> faintedMonggingDetectedPublisher,
-            IPublisher<FaintedMonggingLeftMessage> faintedMonggingLeftPublisher
+            IPublisher<FaintedMonggingLeftMessage> faintedMonggingLeftPublisher,
+            IPublisher<EscapeGateDetectedMessage> escapeGateDetectedPublisher,
+            IPublisher<EscapeGateLeftMessage> escapeGateLeftPublisher
         )
         {
             _mapSpawnService = mapSpawnService;
@@ -59,6 +64,8 @@ namespace Features.Scenes.Main.Initializers
             _chestLeftPublisher = chestLeftPublisher;
             _faintedMonggingDetectedPublisher = faintedMonggingDetectedPublisher;
             _faintedMonggingLeftPublisher = faintedMonggingLeftPublisher;
+            _escapeGateDetectedPublisher = escapeGateDetectedPublisher;
+            _escapeGateLeftPublisher = escapeGateLeftPublisher;
 
             if (_enableDebugLogs)
                 Debug.Log("[MainSceneInitializer] 의존성 주입 완료");
@@ -276,7 +283,9 @@ namespace Features.Scenes.Main.Initializers
                                 _chestDetectedPublisher,
                                 _chestLeftPublisher,
                                 _faintedMonggingDetectedPublisher,
-                                _faintedMonggingLeftPublisher
+                                _faintedMonggingLeftPublisher,
+                                _escapeGateDetectedPublisher,
+                                _escapeGateLeftPublisher
                             }
                         );
                         Debug.Log(

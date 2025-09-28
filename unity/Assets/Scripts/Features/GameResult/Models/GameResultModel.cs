@@ -46,23 +46,6 @@ namespace Features.GameResult.Models
         }
     }
 
-    /// <summary>
-    /// 팀 결과 타입
-    /// </summary>
-    public enum TeamResult
-    {
-        MonggingWin = 1,    // 몽깅이 승리
-        MongdungWin = 2     // 몽둥이 승리
-    }
-
-    /// <summary>
-    /// 플레이어 상태
-    /// </summary>
-    public enum PlayerStatus
-    {
-        Escaped = 1,    // 탈출(생존)
-        Dead = 2        // 죽음
-    }
 }
 
 

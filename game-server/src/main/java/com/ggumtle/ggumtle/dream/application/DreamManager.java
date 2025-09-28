@@ -1483,9 +1483,9 @@ public class DreamManager {
         // TEST
         if (this.room.id < 0) {
             ggumtleSpawns = new ArrayList<>();
-            ggumtleSpawns.add(new GgumtleSpawn(0, 5000, 500, 1200));
-            ggumtleSpawns.add(new GgumtleSpawn(0, 5300, 500, 1200));
-            ggumtleSpawns.add(new GgumtleSpawn(0, 5000, 500, 1500));
+            ggumtleSpawns.add(new GgumtleSpawn(0, 4399, 499, -602));
+            ggumtleSpawns.add(new GgumtleSpawn(0, 5982, 469, 763));
+            ggumtleSpawns.add(new GgumtleSpawn(0, 3920, 499, 543));
 
             boxSpawns = new ArrayList<>();
             boxSpawns.add(new BoxSpawn(0, 3468, 499, -24));

@@ -10,7 +10,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 @ToString
 public final class FieldItem {
-    public static final int FIELD_ITEM_SIZE = 10;
+    // TEST
+    public static final int FIELD_ITEM_SIZE = 100_000_000;
 
     public final int id;
 

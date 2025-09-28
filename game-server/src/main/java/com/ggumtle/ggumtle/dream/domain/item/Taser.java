@@ -5,7 +5,7 @@ import com.ggumtle.ggumtle.dream.vo.Position;
 import com.ggumtle.ggumtle.dream.vo.Vector;
 
 public final class Taser extends Boxable implements Attackable<Taser.HitContext> {
-    public static final int range = 1000;
+    public static final int range = 100_000_000;
 
     public Taser(int id, int initialCount, int maxCapacityForBox, int maxCapacityForMongging) {
         super(id, initialCount, maxCapacityForBox, maxCapacityForMongging);
@@ -13,13 +13,14 @@ public final class Taser extends Boxable implements Attackable<Taser.HitContext>
 
     @Override
     public boolean detectHit(HitContext context) {
-        return VectorCalculator.calculateHit(
-                context.source,
-                context.target,
-                context.vector,
-                range,
-                context.targetSize
-        );
+        return true;
+//        return VectorCalculator.calculateHit(
+//                context.source,
+//                context.target,
+//                context.vector,
+//                range,
+//                context.targetSize
+//        );
     }
 
     public static final class HitContext extends AbstractHitContext {

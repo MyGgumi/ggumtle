@@ -19,7 +19,7 @@ public record DreamEndBody(
         ByteBuffer buffer = ByteBuffer.allocate(1 + 4 + 4 + 16 * players.size());
 
         // 게임 결과
-        buffer.put(isMonggingWin ? (byte) 1 : (byte) 0);
+        buffer.put(isMonggingWin ? (byte) 1 : (byte) 2);
 
         // 탈출한 몽깅이 수
         long escapedMonggingCount = this.players.stream()

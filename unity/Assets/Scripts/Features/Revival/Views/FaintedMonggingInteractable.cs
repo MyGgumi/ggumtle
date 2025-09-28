@@ -54,19 +54,21 @@ namespace Features.Revival.Views
         #region Dependencies
 
         private RevivalViewModel _revivalViewModel;
+        private Features.Player.Services.PlayerManagerService _playerManagerService;
 
         #endregion
 
         #region Initialization
 
         [Inject]
-        public void Construct(RevivalViewModel revivalViewModel)
+        public void Construct(RevivalViewModel revivalViewModel, Features.Player.Services.PlayerManagerService playerManagerService)
         {
             _revivalViewModel = revivalViewModel;
+            _playerManagerService = playerManagerService;
 
             if (enableDebugLogs)
             {
-                Debug.Log($"[FaintedMonggingInteractable] VContainer 의존성 주입 완료: {_revivalViewModel != null}");
+                Debug.Log($"[FaintedMonggingInteractable] VContainer 의존성 주입 완료: {_revivalViewModel != null}, {_playerManagerService != null}");
             }
         }
 
@@ -90,6 +92,20 @@ namespace Features.Revival.Views
 
         public bool CanInteract()
         {
+            // 로컬 플레이어 자신과는 상호작용 불가 (자기 자신을 부활시킬 수 없음)
+            if (_playerManagerService != null)
+            {
+                var localPlayer = _playerManagerService.GetLocalPlayer();
+                if (localPlayer != null && localPlayer.Id == faintedPlayerId)
+                {
+                    if (enableDebugLogs)
+                    {
+                        Debug.Log($"[FaintedMonggingInteractable] 자기 자신과는 상호작용 불가: LocalPlayerId={localPlayer.Id}, FaintedPlayerId={faintedPlayerId}");
+                    }
+                    return false;
+                }
+            }
+
             // 기절한 플레이어 ID가 설정되어 있고, 상호작용 가능한 상태인지 확인
             bool canInteract = _canInteract &&
                               faintedPlayerId > 0 &&

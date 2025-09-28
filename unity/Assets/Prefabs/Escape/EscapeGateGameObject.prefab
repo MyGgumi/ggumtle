@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 4412891426663091773}
   - component: {fileID: 4482969267109030315}
   - component: {fileID: 2378293755584620714}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Portal_FX
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -167,10 +167,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 0.5
-  m_Height: 1
+  m_Radius: 2
+  m_Height: 6.92
   m_Direction: 1
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Center: {x: 0, y: 3, z: 0}
 --- !u!114 &4332604218451878417
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -184,7 +184,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   gateName: "\uD0C8\uCD9C\uAD6C"
-  gateId: -1
+  gateId: 0
   gateAnimator: {fileID: 0}
   activationEffect: {fileID: 0}
   escapeEffect: {fileID: 0}
@@ -205,7 +205,7 @@ GameObject:
   - component: {fileID: 6018777191986448726}
   - component: {fileID: 8426972936295683632}
   - component: {fileID: 3112307803711866556}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Portal_01_LOD0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -315,7 +315,7 @@ GameObject:
   - component: {fileID: 8786565151419593564}
   - component: {fileID: 2229340760893855620}
   - component: {fileID: 3520657419233418257}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Portal_01_LOD1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -425,7 +425,7 @@ GameObject:
   - component: {fileID: 6806094569917006294}
   - component: {fileID: 5350340817726015043}
   - component: {fileID: 2668431469853100494}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Portal_BG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -533,7 +533,7 @@ GameObject:
   - component: {fileID: 8094396580539165232}
   - component: {fileID: 5685199008763577800}
   - component: {fileID: 6510564759204700342}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Portal_FX2
   m_TagString: Untagged
   m_Icon: {fileID: 0}

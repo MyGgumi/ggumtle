@@ -283,8 +283,8 @@ namespace DI
             // InteractionTriggerDetector는 별도로 주입 처리
             builder.RegisterComponentInHierarchy<Interaction.InteractionTriggerDetector>();
 
-            // EscapeGateGameObject들 자동 의존성 주입
-            builder.RegisterComponentInHierarchy<Features.EscapeGate.Views.EscapeGateGameObject>();
+            // EscapeGateGameObject는 동적 생성 시 AddressableLoadService에서 자동 의존성 주입됨
+            // RegisterComponentInHierarchy 제거 - 씬에 미리 배치되지 않음
 
             // NetworkApi 등록 (팩토리 방식으로 싱글톤 인스턴스 사용)
             builder.Register<Networks.NetworkApi>(
@@ -419,6 +419,8 @@ namespace DI
             builder.RegisterEntryPoint<MainSceneInitializer>();
             builder.RegisterEntryPoint<MainGameServiceImpl>();
             UnityEngine.Debug.Log("[MainLifetimeScope] MainGameService EntryPoint 등록 완료");
+            builder.RegisterEntryPoint<Features.EscapeGate.Services.EscapeGateServiceImpl>();
+            UnityEngine.Debug.Log("[MainLifetimeScope] EscapeGateService EntryPoint 등록 완료");
 
             // Mongging EntryPoint 등록
             builder.RegisterEntryPoint<MonggingTeamServiceImpl>();

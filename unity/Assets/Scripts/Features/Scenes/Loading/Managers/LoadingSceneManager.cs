@@ -558,12 +558,9 @@ namespace Features.Scenes.Loading.Managers
 
                 if (mapSpawnService != null)
                 {
-                    // MapSpawnService를 통한 오브젝트 생성 (이제 Main Scene에 직접 스폰됨)
-                    mapSpawnService.PrepareSpawnData(roomData);
-                    await mapSpawnService.SpawnAllObjectsAsync();
-
+                    // MainSceneInitializer에서 처리하도록 변경 - 중복 스폰 방지
                     if (enableDetailedLogs)
-                        Debug.Log("[LoadingSceneManager] MapSpawnService를 통한 오브젝트 생성 완료 - Main Scene에 직접 스폰됨");
+                        Debug.Log("[LoadingSceneManager] 오브젝트 스폰은 MainSceneInitializer에서 처리됨");
                 }
                 else
                 {

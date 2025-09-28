@@ -1,9 +1,11 @@
 using Features.Map.Services;
 using Features.Room.Services;
 using Features.Game.Services;
+using Features.MainGame.Services;
 using Networks;
 using UnityEngine;
 using VContainer;
+using System.Collections;
 
 namespace Features.Scenes.Main.Managers
 {
@@ -18,11 +20,13 @@ namespace Features.Scenes.Main.Managers
 
         // 의존성 주입
         private SkyboxTransitionManager _skyboxManager;
+        private IMainGameService _mainGameService;
 
         [Inject]
-        public void Construct(SkyboxTransitionManager skyboxManager)
+        public void Construct(SkyboxTransitionManager skyboxManager, IMainGameService mainGameService)
         {
             _skyboxManager = skyboxManager;
+            _mainGameService = mainGameService;
         }
 
         void Start()
@@ -51,6 +55,10 @@ namespace Features.Scenes.Main.Managers
 
             // 이벤트 구독
             SubscribeToServices();
+
+            // 바로 게임 시작
+            Debug.Log("[MainSceneManager] 바로 게임 시작");
+            _mainGameService?.StartGame();
 
             if (enableDebugLogs)
                 Debug.Log("[MainSceneManager] 메인 씬 초기화 완료");

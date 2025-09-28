@@ -138,4 +138,34 @@ namespace Features.MainGame.Messages
             this.reason = reason;
         }
     }
+
+    /// <summary>
+    /// 카운트다운 틱 메시지 (UI 업데이트용)
+    /// </summary>
+    public readonly struct CountdownTickMessage
+    {
+        public readonly int remainingSeconds;
+        public readonly string source;
+
+        public CountdownTickMessage(int remainingSeconds, string source = "MainSceneManager")
+        {
+            this.remainingSeconds = remainingSeconds;
+            this.source = source;
+        }
+    }
+
+    /// <summary>
+    /// 카운트다운 완료 메시지 (실제 게임 시작 요청)
+    /// </summary>
+    public readonly struct CountdownCompletedMessage
+    {
+        public readonly string source;
+        public readonly DateTime requestTime;
+
+        public CountdownCompletedMessage(string source = "MainSceneManager")
+        {
+            this.source = source;
+            this.requestTime = DateTime.Now;
+        }
+    }
 }

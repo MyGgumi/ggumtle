@@ -38,11 +38,11 @@ namespace Features.EscapeGate.NetworkSources
         {
             try
             {
-                Debug.Log($"[EscapeGateNetworkEventHandler] 탈출구 오픈 수신: Count={command.count}, Exits=[{string.Join(", ", command.exits)}]");
+                Debug.Log($"[EscapeGateNetworkEventHandler] 탈출구 오픈 수신: Count={command.count}, Exits=[{string.Join(", ", command.exits.Select(exit => exit.id))}]");
 
                 if (_escapeGateOpenedPublisher != null)
                 {
-                    var message = new EscapeGateOpenedMessage(command.count, command.exits.ToArray());
+                    var message = new EscapeGateOpenedMessage(command.count, command.exits.Select(exit => exit.id).ToArray());
                     _escapeGateOpenedPublisher.Publish(message);
                     Debug.Log("[EscapeGateNetworkEventHandler] EscapeGateOpenedMessage 발행 완료");
                 }

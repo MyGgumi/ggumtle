@@ -26,6 +26,12 @@ public record UseMonggingItemBody(
 
     @Override
     public byte[] toBytes(Charset charsets) {
-        return ByteBuffer.allocate(1 + 4).put(result.value).putInt(itemId).array();
+        return ByteBuffer.allocate(1 + 4 + 12)
+                .put(result.value)
+                .putInt(itemId)
+                .putInt(effectX)
+                .putInt(effectY)
+                .putInt(effectZ)
+                .array();
     }
 }

@@ -45,5 +45,21 @@ public class RoomCreator {
         roomManager.insertRoom(room5);
         roomManager.insertRoom(monggingRoom);
         roomManager.insertRoom(mongdungRoom);
+
+        roomManager.insertRoom(new Room(-6L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-7L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-8L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-9L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-10L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-11L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-12L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-13L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-14L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-15L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-16L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-17L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-18L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-19L, playerInfos.subList(0, 3)));
+        roomManager.insertRoom(new Room(-20L, playerInfos.subList(0, 3)));
     }
 }

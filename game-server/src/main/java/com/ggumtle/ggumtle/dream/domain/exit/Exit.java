@@ -5,7 +5,7 @@ import lombok.ToString;
 
 @ToString
 public class Exit {
-    private static final int EXIT_SIZE = 20;
+    private static final int EXIT_SIZE = 100_000_000;
 
     public final int id;
 

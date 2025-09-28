@@ -17,6 +17,7 @@ public class UnityToAndroidLoader : MonoBehaviour
     
     void Start()
     {
+        setSceenPortrait();
         InitializeAndroidCommunication();
         
         // 현재 씬과 다르면 로딩 시작
@@ -32,6 +33,15 @@ public class UnityToAndroidLoader : MonoBehaviour
             SendProgressToAndroid(100, "로딩 완료!");
             HideAndroidLoadingScreen();
         }
+    }
+
+    void setSceenPortrait()
+    {
+        Screen.orientation = ScreenOrientation.Portrait;
+        Screen.autorotateToPortrait = false;
+        Screen.autorotateToPortraitUpsideDown = false;
+        Screen.autorotateToLandscapeLeft = false;
+        Screen.autorotateToLandscapeRight = false;
     }
     
     void InitializeAndroidCommunication()

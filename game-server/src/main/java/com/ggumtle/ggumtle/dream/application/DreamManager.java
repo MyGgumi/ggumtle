@@ -1511,12 +1511,9 @@ public class DreamManager {
             boxSpawns.add(new BoxSpawn(0, 4547, 513, -3614));
 
             fieldItemSpawns = new ArrayList<>();
-            for (int i = 0; i < 3; i++) {
-                fieldItemSpawns.add(new FieldItemSpawn(i, 4800, 550, 2 * i * 100, 1));
-            }
-            for (int i = 0; i < 5; i++) {
-                fieldItemSpawns.add(new FieldItemSpawn(i + 3, 4600, 550, (4 - i * 2) * 100, 2));
-            }
+            fieldItemSpawns.add(new FieldItemSpawn(2, 5466, 609, 2233, 1));
+            fieldItemSpawns.add(new FieldItemSpawn(0, 6295, 537, -236, 2));
+            fieldItemSpawns.add(new FieldItemSpawn(1, 4041, 538, -111, 2));
             log.info("테스트용 맵 생성");
         } else {
             ggumtleSpawns = spawnCache.getRandomGgumtleSpawns(GGUMTLE_SPAWN_SIZE);

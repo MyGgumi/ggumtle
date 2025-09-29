@@ -41,7 +41,7 @@ public final class FieldItem {
      * @return 사용 성공 여부
      */
     public boolean use() {
-        return this.isUsed.compareAndExchange(false, true);
+        return this.isUsed.compareAndSet(false, true);
     }
 
     /**

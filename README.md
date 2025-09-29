@@ -1,93 +1,135 @@
-# dream with tomi
+# 🌙 Ggumtle (꿈틀)
 
+## 📋 프로젝트 개요
 
+**Ggumtle**은 낮에는 AR로 캐릭터를 육성하고 밤에는 친구들과 함께 악몽을 이겨내는 멀티 호러 1:4 대전 게임입니다.
 
-## Getting started
-
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
-
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
-
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+## 🏗️ 프로젝트 구조
 
 ```
-cd existing_repo
-git remote add origin https://lab.ssafy.com/wgwjh05169/dream-with-tomi.git
-git branch -M master
-git push -uf origin master
+S13P21D103/
+├── 🎮 unity/           # Unity 게임 클라이언트
+├── 📱 android/         # Android 앱
+├── 🎯 game-server/     # 게임 서버
+├── 🌐 api-server/      # API 서버
+├── 🧪 dream-test/      # 테스트
+└── 📦 exec/            # 배포 및 실행 스크립트
 ```
 
-## Integrate with your tools
+## 🎥 프로젝트 소개 영상
 
-- [ ] [Set up project integrations](https://lab.ssafy.com/wgwjh05169/dream-with-tomi/-/settings/integrations)
+[![Video Label](http://img.youtube.com/vi/srlmeW2e8Lk/0.jpg)](https://youtu.be/srlmeW2e8Lk)
 
-## Collaborate with your team
+## 🎮 구현
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+### 1. 로비 화면
 
-## Test and Deploy
+| 대기방 | 파티초대 | 클래스 변경 | 준비 |
+|:---:|:---:|:---:|:---:|
+| ![대기방](./assets/대기방.gif) | ![파티초대](./assets/파티_초대.gif) | ![클래스 변경](./assets/몽깅이_클래스_변경.gif) | ![준비](./assets/준비.gif) |
 
-Use the built-in continuous integration in GitLab.
+### 2. 강화 화면
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+| 강화 | 강화 성공 | 강화 실패 |
+|:---:|:---:|:---:|
+| ![강화](./assets/강화.gif) | ![강화 성공](./assets/강화_성공.gif) | ![강화 실패](./assets/강화_실패.gif) |
 
-***
+### 3. AR 미션 화면
 
-# Editing this README
+| 먹이 주기 | 사진 찍기(실패) | 사진 찍기(성공) | 인사하기 |
+|:---:|:---:|:---:|:---:|
+| ![먹이 주기](./assets/몽깅이_미션_먹이주기.gif) | ![사진 찍기(실패)](./assets/몽깅이_미션_사진_실패.gif) | ![사진 찍기(성공)](./assets/몽깅이_미션_사진_성공.gif) | ![인사하기](./assets/몽깅이_미션_인사하기.gif) |
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+### 4. 게임 플레이 화면
 
-## Suggestions for a good README
+| 꿈틀이 파기 | 꿈틀이 정화|
+|:---:|:---:|
+| ![꿈틀이 파기](./assets/땅파기.gif) | ![꿈틀이 정화](./assets/정화.gif) |
+| 몽깅이 기절 | 몽깅이 부활 |
+| ![몽깅이 기절](./assets/몽깅이_기절.gif) | ![몽깅이 부활](./assets/몽깅이_부활.gif) |
+| 몽둥이 공포 |
+| ![몽둥이 공포](./assets/몽둥이공포.gif) |
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+## 5. 몽깅이 애니메이션
 
-## Name
-Choose a self-explaining name for your project.
+| 이동 | 빛 주기 |
+|:---:|:---:|
+| ![이동](./assets/몽깅이동.gif) | ![빛 주기](./assets/몽깅진짜밥줘.gif) |
+|상자 열기 | 기절 |
+| ![상자 열기](./assets/몽깅상자열어.gif) | ![기절](./assets/몽깅기절.gif) |
+| 힐 | 피격 |
+| ![힐](./assets/몽깅힐받기.gif) | ![피격](./assets/몽깅피격.gif) |
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## 6. 몽둥이 애니메이션
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+| 이동 | 공격 |
+|:---:|:---:|
+| ![이동](./assets/몽둥_이동.gif) | ![공격](./assets/몽둥_공격.gif) |
+| 꿈틀이 심기 | 공포 |
+| ![꿈틀이 심기](./assets/몽둥_꿈틀이심기.gif) | ![공포](./assets/몽둥_공포.gif) |
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+## 🛠️ 기술 스택
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+### Frontend
+- **Unity**: C# + DotNetty
+- **Android**: Kotlin + Jetpack Compose
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+### Backend
+- **Game Server**: Spring Boot + Netty
+- **API Server**: Spring Boot + WebSocket
+- **Database**: MySQL + Redis
+- **Authentication**: JWT + Google OAuth
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+### 개발 도구
+- Gradle (빌드 도구)
+- Docker (컨테이너화)
+- Git (버전 관리)
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+## ⚙️ 설치 및 실행
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+### 필요 환경
+- Java 21
+- Unity 6.0
+- MySQL 8.0
+- Redis 8.2.1
+- Docker
+- Gradle 8.14.3
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+## 🎯 아키텍처
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+### 시스템 구성도
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+![시스템 구성도](./assets/시스템_구성도.png)
 
-## License
-For open source projects, say how it is licensed.
+### 통신 모듈
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+![통신 모듈](./assets/통신_모듈.png)
+
+### 안드로이드
+
+![alt text](./assets/안드로이드.png)
+
+### Unity
+
+![alt text](./assets/유니티.png)
+
+![alt text](./assets/유니티2.png)
+
+## 📚 API 문서
+
+[API 문서 링크](https://horse-ocicat-fc7.notion.site/API-25af12e1a08880a5bf2fed2aaf39102f?pvs=74)
+
+## 🌳 브랜치 전략
+
+- `master`: 배포 브랜치
+- `develop`: 개발 브랜치
+- `feature/*`: 기능 개발
+- `fix/*`: 버그 수정
+
+## 👥 팀 마이꿈이
+
+| 팀장 | 팀원 | 팀원 | 팀원 | 팀원 | 팀원 |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| @ys05059 | @rhflffkaksl | @newsungk7 | @dhwm0710 | @kiryanchi | @wgwjh05169 |
+| 최재웅 | 김수현 | 김성민 | 공연경 | 박기현 | 정현정 |
+| Unity | Designer 및 Unity | Android 및 Unity | BE | BE | BE |

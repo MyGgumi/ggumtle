@@ -1550,8 +1550,9 @@ public class DreamManager {
         // 상자 아이템 초기화
         List<Box> boxes = this.boxes.values().stream().toList();
         if (this.room.id < 0) {
-            boxes.getFirst().addItem(ItemDictionary.FLASH.boxableItem);
             boxes.getFirst().addItem(ItemDictionary.TASER.boxableItem);
+            boxes.getFirst().addItem(ItemDictionary.LIGHT_JELLY.boxableItem);
+            boxes.getFirst().addItem(ItemDictionary.DEFIBRILLATOR.boxableItem);
         }
         for (ItemDictionary itemDictionary : ItemDictionary.values()) {
             ItemDistributor.distribute(itemDictionary.boxableItem, boxes, itemDictionary.boxableItem.initialCount);

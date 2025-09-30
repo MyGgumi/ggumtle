@@ -130,6 +130,11 @@ namespace Features.Notification.Services
         /// </summary>
         void ShowSuccessNotification(string success);
 
+        /// <summary>
+        /// 아이템 사용 불가 알림
+        /// </summary>
+        void ShowItemCannotBeUsedNotification(string itemName, string reason);
+
         // 유틸리티 메서드들
         /// <summary>
         /// 큐에 있는 모든 알림 가져오기

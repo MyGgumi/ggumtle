@@ -15,6 +15,17 @@
     white-space: nowrap;
 }
 
+/* 표시/숨김 상태 */
+.hide {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.show {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* 알림 타입별 스타일 */
 .notification-success {
     color: rgb(120, 255, 120);
@@ -30,4 +41,12 @@
 
 .notification-info {
     color: rgb(120, 200, 255);
+}
+
+.notification-game {
+    color: rgb(180, 180, 255);
+}
+
+.notification-player {
+    color: rgb(255, 200, 150);
 }

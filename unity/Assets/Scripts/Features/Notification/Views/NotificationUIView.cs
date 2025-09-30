@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Linq;
 using Features.Notification.Models;
 using Features.Notification.ViewModels;
 using R3;
@@ -26,7 +27,7 @@ namespace Features.Notification.Views
 
         [Header("Settings")]
         [SerializeField]
-        private bool enableDebugLogs = true;
+        private bool enableDebugLogs = false;
 
         [Header("Animation State")]
         private Coroutine _currentBannerCoroutine;
@@ -38,8 +39,6 @@ namespace Features.Notification.Views
         public void Construct(NotificationViewModel notificationViewModel)
         {
             viewModel = notificationViewModel;
-            if (enableDebugLogs)
-                Debug.Log($"[NotificationUIView] VContainer 의존성 주입 완료: {viewModel != null}");
         }
 
         public void Initialize(VisualElement root)
@@ -57,9 +56,6 @@ namespace Features.Notification.Views
             SubscribeToViewModel();
             InitializeUI();
             _isInitialized = true;
-
-            if (enableDebugLogs)
-                Debug.Log("[NotificationUIView] 초기화 완료");
         }
 
         private void CacheUIElements()
@@ -70,7 +66,18 @@ namespace Features.Notification.Views
                 return;
             }
 
-            _banner = _root.Q<VisualElement>("topBanner");
+            // 전체 root에서 notificationBanner 템플릿 인스턴스를 찾고, 그 안의 topBanner를 찾기
+            var notificationBannerInstance = _root.Q<VisualElement>("notificationBanner");
+            if (notificationBannerInstance != null)
+            {
+                _banner = notificationBannerInstance.Q<VisualElement>("topBanner");
+            }
+            else
+            {
+                // fallback: 직접 topBanner 찾기
+                _banner = _root.Q<VisualElement>("topBanner");
+            }
+
             _bannerLabel = _banner?.Q<Label>();
 
             // UXML의 하드코딩된 배너 텍스트 즉시 제거
@@ -78,24 +85,12 @@ namespace Features.Notification.Views
             {
                 _bannerLabel.text = "";
             }
-
-            if (enableDebugLogs)
-            {
-                Debug.Log(
-                    $"[NotificationUIView] UI 요소 캐싱 완료: "
-                        + $"배너={(_banner != null ? "OK" : "NULL")}, "
-                        + $"배너라벨={(_bannerLabel != null ? "OK" : "NULL")}"
-                );
-            }
         }
 
         private void InitializeUI()
         {
             // 초기에는 배너 숨김
             HideBanner(immediate: true);
-
-            if (enableDebugLogs)
-                Debug.Log("[NotificationUIView] UI 초기화 완료");
         }
 
         private void SubscribeToViewModel()
@@ -125,9 +120,6 @@ namespace Features.Notification.Views
             viewModel.CurrentNotificationType
                 .Subscribe(type => UpdateBannerStyle(type))
                 .AddTo(_disposables);
-
-            if (enableDebugLogs)
-                Debug.Log("[NotificationUIView] ViewModel 구독 완료");
         }
 
         #region Banner Display Methods
@@ -148,6 +140,7 @@ namespace Features.Notification.Views
             // 배너 요소 다시 확인
             if (_banner == null || _bannerLabel == null)
             {
+                Debug.LogWarning("[NotificationUIView] 배너 요소가 null입니다. 다시 캐싱 시도...");
                 CacheUIElements();
             }
 
@@ -169,9 +162,6 @@ namespace Features.Notification.Views
             }
 
             _currentBannerCoroutine = StartCoroutine(ShowBannerCoroutine(displayDuration));
-
-            if (enableDebugLogs)
-                Debug.Log($"[NotificationUIView] 배너 표시: {message} ({displayDuration}초)");
         }
 
         public void HideBanner(bool immediate = false)
@@ -190,9 +180,6 @@ namespace Features.Notification.Views
             {
                 _currentBannerCoroutine = StartCoroutine(HideBannerCoroutine());
             }
-
-            if (enableDebugLogs)
-                Debug.Log($"[NotificationUIView] 배너 숨김 {(immediate ? "(즉시)" : "(애니메이션)")}");
         }
 
         private void UpdateBannerText(string message)
@@ -246,13 +233,25 @@ namespace Features.Notification.Views
             // 페이드 아웃
             yield return StartCoroutine(FadeOutBanner());
 
-            // ViewModel에 완료 알림
-            if (viewModel != null && viewModel.HasQueuedNotifications.CurrentValue)
+            _currentBannerCoroutine = null;
+
+            // Model의 isShowing 상태를 false로 업데이트
+            if (viewModel != null)
             {
-                viewModel.ProcessNotificationQueue();
+                viewModel.HideNotification(immediate: true);
+
+                if (enableDebugLogs)
+                    Debug.Log($"[NotificationUIView] 배너 애니메이션 완료, Model 상태 업데이트");
             }
 
-            _currentBannerCoroutine = null;
+            // 애니메이션 완료 후 다음 큐 처리
+            if (viewModel != null && viewModel.HasQueuedNotifications.CurrentValue)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[NotificationUIView] 다음 큐 처리: 대기 중인 알림 {viewModel.QueueCount.CurrentValue}개");
+
+                viewModel.ProcessNotificationQueue();
+            }
         }
 
         private IEnumerator HideBannerCoroutine()
@@ -264,7 +263,10 @@ namespace Features.Notification.Views
         private IEnumerator FadeInBanner()
         {
             if (_banner == null)
+            {
+                Debug.LogError("[NotificationUIView] FadeInBanner - _banner가 null입니다!");
                 yield break;
+            }
 
             SetBannerDisplayState(true);
 
@@ -322,6 +324,10 @@ namespace Features.Notification.Views
                     _banner.AddToClassList("hide");
                     _banner.style.opacity = 0f;
                 }
+            }
+            else
+            {
+                Debug.LogError("[NotificationUIView] SetBannerDisplayState - _banner가 null입니다!");
             }
         }
 
@@ -390,9 +396,6 @@ namespace Features.Notification.Views
                 StopCoroutine(_currentBannerCoroutine);
                 _currentBannerCoroutine = null;
             }
-
-            if (enableDebugLogs)
-                Debug.Log("[NotificationUIView] OnDestroy - Dispose 완료");
         }
 
         #endregion

@@ -1,7 +1,25 @@
+using Networks.Players;
 using UnityEngine;
 
 namespace Features.ItemUsage.Messages
 {
+    /// <summary>
+    /// 서버 브로드캐스트 아이템 사용 메시지
+    /// </summary>
+    public readonly struct ItemUsedBroadcastMessage
+    {
+        public readonly int itemId;
+        public readonly Vector3 position;
+        public readonly MonggingItemUseResult result;
+
+        public ItemUsedBroadcastMessage(int itemId, Vector3 position, MonggingItemUseResult result)
+        {
+            this.itemId = itemId;
+            this.position = position;
+            this.result = result;
+        }
+    }
+
     /// <summary>
     /// 아이템 사용 요청 메시지
     /// </summary>

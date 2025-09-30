@@ -208,6 +208,18 @@ namespace Features.Inventory.Views
                 })
                 .AddTo(_disposables);
 
+            // 쿨다운 상태 구독 (각 슬롯별)
+            for (int i = 0; i < viewModel.SlotCooldownStates.Length; i++)
+            {
+                int slotIndex = i; // 클로저 캡처 문제 해결
+                viewModel.SlotCooldownStates[i]
+                    .Subscribe(isOnCooldown =>
+                    {
+                        UpdateSlotCooldownVisual(slotIndex, isOnCooldown);
+                    })
+                    .AddTo(_disposables);
+            }
+
             // 상태 텍스트는 사용하지 않음
 
             if (enableDebugLogs)
@@ -259,6 +271,7 @@ namespace Features.Inventory.Views
                     if (counter != null)
                         counter.style.display = DisplayStyle.None;
                     slotElement?.RemoveFromClassList("filled");
+                    slotElement?.RemoveFromClassList("slot-on-cooldown");
                     slotElement?.AddToClassList("empty");
 
                     if (enableDebugLogs)
@@ -280,6 +293,9 @@ namespace Features.Inventory.Views
                         counter.style.display = DisplayStyle.Flex;
                     slotElement?.RemoveFromClassList("empty");
                     slotElement?.AddToClassList("filled");
+
+                    // 쿨다운 상태는 ViewModel에서 관리
+                    // 별도의 구독을 통해 처리됨
 
                     if (enableDebugLogs)
                         Debug.Log(
@@ -313,6 +329,35 @@ namespace Features.Inventory.Views
             }
         }
 
+        /// <summary>
+        /// 슬롯 쿨다운 시각적 업데이트
+        /// </summary>
+        private void UpdateSlotCooldownVisual(int slotIndex, bool isOnCooldown)
+        {
+            if (slotIndex < 0 || slotIndex >= _slotElements.Count)
+                return;
+
+            var slotElement = _slotElements[slotIndex];
+            if (slotElement == null)
+                return;
+
+            _root.schedule.Execute(() =>
+            {
+                if (isOnCooldown)
+                {
+                    slotElement.AddToClassList("slot-on-cooldown");
+                    if (enableDebugLogs)
+                        Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 쿨다운 시각 효과 적용");
+                }
+                else
+                {
+                    slotElement.RemoveFromClassList("slot-on-cooldown");
+                    if (enableDebugLogs)
+                        Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 쿨다운 시각 효과 제거");
+                }
+            });
+        }
+
         // 상태 텍스트와 선택 슬롯, 상호작용 상태 기능 제거
 
         #endregion
@@ -326,6 +371,14 @@ namespace Features.Inventory.Views
         {
             if (enableDebugLogs)
                 Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 사용 클릭됨");
+
+            // 쿨다운 체크는 ViewModel에서 처리
+            if (viewModel?.IsSlotOnCooldown(slotIndex) ?? false)
+            {
+                if (enableDebugLogs)
+                    Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 쿨다운 중");
+                return;
+            }
 
             // 슬롯 클릭 시 아이템 사용
             UseSlotItem(slotIndex);
@@ -390,9 +443,7 @@ namespace Features.Inventory.Views
         {
             if (viewModel != null && slotIndex >= 0 && slotIndex < 3)
             {
-                // 슬롯 선택 후 사용
-                viewModel.SelectSlot(slotIndex);
-                await viewModel.UseSelectedItem();
+                await viewModel.UseItem(slotIndex);
 
                 if (enableDebugLogs)
                     Debug.Log($"[InventoryUIView] 슬롯 {slotIndex + 1} 아이템 사용");

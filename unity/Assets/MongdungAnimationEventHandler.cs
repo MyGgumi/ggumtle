@@ -18,6 +18,9 @@ public class MongdungAnimationEventHandler : MonoBehaviour
 
     [SerializeField] private bool enableDebugLogs = false;
 
+    // 오디오 클립 캐싱
+    private AudioClip swingAudioClip;
+
     // Local/Remote 구분
     private bool isLocalPlayer = true;
 
@@ -49,6 +52,11 @@ public class MongdungAnimationEventHandler : MonoBehaviour
         {
             audioSource = GetComponentInChildren<AudioSource>();
         }
+
+        // 오디오 클립 미리 로드
+        swingAudioClip = Resources.Load<AudioClip>("Swing4-Free-1");
+        if (swingAudioClip == null && enableDebugLogs)
+            Debug.LogWarning("[MongdungAnimationEventHandler] Swing4-Free-1 오디오 클립을 찾을 수 없습니다!");
 
         // 이펙트 찾기
         FindParticleEffects();
@@ -128,9 +136,6 @@ public class MongdungAnimationEventHandler : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Remote 플레이어용 애니메이션 상태 설정 (외부에서 호출)
-    /// </summary>
     public void SetMovingState(bool isMoving)
     {
         if (animator != null && !isLocalPlayer)
@@ -217,7 +222,6 @@ public class MongdungAnimationEventHandler : MonoBehaviour
             frightenEffect.gameObject.SetActive(false);
             frightenEffect.Stop();
 
-            // frighten_effect의 하위 이펙트들도 초기화
             ParticleSystem[] childEffects = frightenEffect.GetComponentsInChildren<ParticleSystem>(true);
             foreach (ParticleSystem child in childEffects)
             {
@@ -244,7 +248,6 @@ public class MongdungAnimationEventHandler : MonoBehaviour
     {
         if (effect != null)
         {
-            // 부모 오브젝트의 모든 하위 ParticleSystem 찾기
             ParticleSystem[] childEffects = effect.transform.GetComponentsInChildren<ParticleSystem>(true);
 
             if (enableDebugLogs)
@@ -273,7 +276,6 @@ public class MongdungAnimationEventHandler : MonoBehaviour
                 effect.Stop();
                 effect.gameObject.SetActive(false);
 
-                // 하위 이펙트들도 정지
                 ParticleSystem[] childEffects = effect.GetComponentsInChildren<ParticleSystem>(true);
                 foreach (ParticleSystem child in childEffects)
                 {
@@ -305,31 +307,11 @@ public class MongdungAnimationEventHandler : MonoBehaviour
 
     private void PlayAttackAudio()
     {
-        if (audioSource != null)
+        if (audioSource != null && swingAudioClip != null)
         {
-            AudioClip[] audioClips = Resources.LoadAll<AudioClip>("");
-            AudioClip swingClip = null;
-
-            foreach (AudioClip clip in audioClips)
-            {
-                if (clip.name == "Swing4-Free-1")
-                {
-                    swingClip = clip;
-                    break;
-                }
-            }
-
-            if (swingClip != null)
-            {
-                audioSource.PlayOneShot(swingClip);
-                if (enableDebugLogs)
-                    Debug.Log("[MongdungAnimationEventHandler] Attack 오디오 재생: Swing4-Free-1");
-            }
-            else
-            {
-                if (enableDebugLogs)
-                    Debug.LogWarning("[MongdungAnimationEventHandler] Swing4-Free-1 오디오 클립을 찾을 수 없습니다!");
-            }
+            audioSource.PlayOneShot(swingAudioClip);
+            if (enableDebugLogs)
+                Debug.Log("[MongdungAnimationEventHandler] Attack 오디오 재생: Swing4-Free-1");
         }
     }
 

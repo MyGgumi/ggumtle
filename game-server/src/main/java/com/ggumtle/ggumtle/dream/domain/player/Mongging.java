@@ -17,7 +17,7 @@ public class Mongging extends Player {
     private static final int BASE_MOVE_SPEED = 1_000_000_000;
     private static final int BASE_HEAL_SPEED = 100;
     private static final int BASE_WORK_SPEED = 100;
-    private static final int INVENTORY_SIZE = 3;
+    private static final int INVENTORY_SIZE = 4;        // TODO: 빛젤리랑 일반 아이템 인벤 분리
     private static final int ITEM_ID = 0;
     private static final int ITEM_COUNT = 1;
     private static final int MAX_KNOCKOUT_COUNT = 3;

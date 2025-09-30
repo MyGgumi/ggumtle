@@ -153,7 +153,7 @@ public class DreamService {
     public void handleMongdungSkill(MongdungSkillCommand command, Session session) {
         DreamManager dreamManager = getDreamManager(session);
 
-        dreamManager.doSkill(command.skillTypeId(), session);
+        dreamManager.doSkill(command, session);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.ATTACK_WITH_ITEM)

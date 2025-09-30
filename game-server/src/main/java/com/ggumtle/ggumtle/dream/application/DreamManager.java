@@ -31,6 +31,7 @@ import com.ggumtle.ggumtle.dream.application.body.StopDiggingBody;
 import com.ggumtle.ggumtle.dream.application.body.StopFeedingBody;
 import com.ggumtle.ggumtle.dream.application.body.UseFieldItemBody;
 import com.ggumtle.ggumtle.dream.application.body.UseMonggingItemBody;
+import com.ggumtle.ggumtle.dream.application.command.MongdungSkillCommand;
 import com.ggumtle.ggumtle.dream.application.command.PlayerMoveCommand;
 import com.ggumtle.ggumtle.dream.application.result.GetHitResult;
 import com.ggumtle.ggumtle.dream.domain.item.Attackable;
@@ -365,20 +366,20 @@ public class DreamManager {
         session.sendPacket(packet);
     }
 
-    public void doSkill(int skillTypeId, Session session) {
-        Mongdung.SkillType skillType = Mongdung.SkillType.valueById(skillTypeId);
+    public void doSkill(MongdungSkillCommand command, Session session) {
+        Mongdung.SkillType skillType = Mongdung.SkillType.valueById(command.skillTypeId());
         if (skillType == null) {
-            Body body = new MongdungSkillBody(skillTypeId, MongdungSkillBody.Result.NOT_FOUND_SKILL);
+            Body body = new MongdungSkillBody(command.skillTypeId(), MongdungSkillBody.Result.NOT_FOUND_SKILL);
             Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
-            log.error("[{} - {}] 몽둥이 스킬 실패: {}번에 해당하는 스킬 없음", session.getChannel().id(), room.id, skillTypeId);
+            log.error("[{} - {}] 몽둥이 스킬 실패: {}번에 해당하는 스킬 없음", session.getChannel().id(), room.id, command.skillTypeId());
             return;
         }
 
         Player player = players.getOrDefault(session.getMemberId(), null);
         if (!(player instanceof Mongdung mongdung)) {
-            Body body = new MongdungSkillBody(skillTypeId, MongdungSkillBody.Result.NOT_FOUND_MONGDUNG);
+            Body body = new MongdungSkillBody(skillType.getId(), MongdungSkillBody.Result.NOT_FOUND_MONGDUNG);
             Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
             session.sendPacket(packet);
 
@@ -392,7 +393,7 @@ public class DreamManager {
         }
 
         if (skillType == Mongdung.SkillType.FAKE_GGUMTLE) {
-            buryFakeGgumtle(mongdung, session);
+            buryFakeGgumtle(mongdung, command.x(), command.y(), command.z(), session);
             return;
         }
     }
@@ -426,6 +427,16 @@ public class DreamManager {
             return;
         }
 
+        Boxable usedItem = mongging.popItem(item);
+        if (usedItem == null) {
+            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id, command.effectX(), command.effectY(), command.effectZ());
+            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+
+            log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번 몽깅이에게 {} 아이템이 없음", session.getChannel().id(), room.id, session.getMemberId(), item);
+            return;
+        }
+
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
 //            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id, command.effectX(), command.effectY(), command.effectZ());
@@ -437,16 +448,6 @@ public class DreamManager {
             this.room.broadcast(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: 드림에 몽둥이가 없음", session.getChannel().id(), room.id);
-            return;
-        }
-
-        Boxable usedItem = mongging.popItem(item);
-        if (usedItem == null) {
-            Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id, command.effectX(), command.effectY(), command.effectZ());
-            Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
-
-            log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번 몽깅이에게 {} 아이템이 없음", session.getChannel().id(), room.id, session.getMemberId(), item);
             return;
         }
 
@@ -1398,9 +1399,7 @@ public class DreamManager {
         log.info("[{} - {}] 몽둥이 공포 스킬 성공", session.getChannel().id(), room.id);
     }
 
-    private void buryFakeGgumtle(Mongdung mongdung, Session session) {
-        Position position = mongdung.getPositionAt(System.currentTimeMillis());
-
+    private void buryFakeGgumtle(Mongdung mongdung, int x, int y, int z, Session session) {
         boolean success = mongdung.tryBuryFakeGgumtle();
 
         if (!success) {
@@ -1417,7 +1416,7 @@ public class DreamManager {
         session.sendPacket(packet);
 
         int id = ggumtleIdGenerator.addAndGet(1);
-        FakeGgumtle fakeGgumtle = new FakeGgumtle(id, position);
+        FakeGgumtle fakeGgumtle = new FakeGgumtle(id, new Position(x, y, z, -1));
 
         this.ggumtles.put(id, fakeGgumtle);
 
@@ -1533,7 +1532,7 @@ public class DreamManager {
             int id = ggumtleIdGenerator.addAndGet(1);
             Position fakePosition = new Position(
                     (int) (52.38745 * 100),
-                    (int) (4.613199 * 100),
+                    (int) (5.027 * 100),
                     (int) (14.37919 * 100),
                     0);
             FakeGgumtle fakeGgumtle = new FakeGgumtle(id, fakePosition);

@@ -17,6 +17,8 @@ public class UnityToAndroidLoader : MonoBehaviour
     
     void Start()
     {
+        Application.targetFrameRate = 60;
+
         setSceenPortrait();
         InitializeAndroidCommunication();
         

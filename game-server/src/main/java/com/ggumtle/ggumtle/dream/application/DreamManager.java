@@ -1601,12 +1601,12 @@ public class DreamManager {
         List<Long> playerIds = room.getPlayerIds().stream().sorted().toList();
         List<PlayerSpawn> playerSpawns;
 
-        // TEST
+        // TEST, ,
         int mongdungIndex;
         if (this.room.id < 0) {
             mongdungIndex = 0;
             playerSpawns = List.of(
-                    new PlayerSpawn(1, 45 * 100, 5 * 100, 0 * 100),
+                    new PlayerSpawn(1, (int) (60.1313 * 100), (int) (4.520969 * 100), (int) (-2.583155 * 100)),
                     new PlayerSpawn(1, 45 * 100, 5 * 100, 2 * 100),
                     new PlayerSpawn(1, 47 * 100, 5 * 100, 4 * 100),
                     new PlayerSpawn(1, 47 * 100, 5 * 100, 0 * 100),

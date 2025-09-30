@@ -39,13 +39,20 @@ namespace Features.Inventory.ViewModels
         public readonly ReactiveProperty<bool> CanUseSelectedItem = new(false);
         public readonly ReactiveProperty<float> ItemCooldown = new(0f);
 
+        // 슬롯별 쿨다운 상태 (3개 슬롯)
+        public readonly ReactiveProperty<bool>[] SlotCooldownStates = new ReactiveProperty<bool>[3]
+        {
+            new(false), new(false), new(false)
+        };
+
         #endregion
 
         #region Dependencies
 
         private readonly IInventoryService _inventoryService;
         private readonly IPublisher<Features.Notification.Messages.NotificationMessage> _notificationPublisher;
-        private readonly IPublisher<ItemUsedMessage> _itemUsedPublisher;
+        private readonly Features.ItemUsage.Services.IItemUsageService _itemUsageService;
+        private readonly Features.Player.Services.PlayerManagerService _playerManagerService;
 
         #endregion
 
@@ -64,20 +71,20 @@ namespace Features.Inventory.ViewModels
             IInventoryService inventoryService,
             ISubscriber<SlotChangedMessage> slotChangedSubscriber,
             ISubscriber<ItemTransferredMessage> itemTransferredSubscriber,
-            ISubscriber<ItemUsedMessage> itemUsedSubscriber,
             ISubscriber<InventorySlotClickedMessage> slotClickedSubscriber,
             ISubscriber<InventoryToggleMessage> toggleSubscriber,
             IPublisher<Features.Notification.Messages.NotificationMessage> notificationPublisher,
-            IPublisher<ItemUsedMessage> itemUsedPublisher)
+            Features.ItemUsage.Services.IItemUsageService itemUsageService,
+            Features.Player.Services.PlayerManagerService playerManagerService)
         {
             _inventoryService = inventoryService;
             _notificationPublisher = notificationPublisher;
-            _itemUsedPublisher = itemUsedPublisher;
+            _itemUsageService = itemUsageService;
+            _playerManagerService = playerManagerService;
 
             Initialize(
                 slotChangedSubscriber,
                 itemTransferredSubscriber,
-                itemUsedSubscriber,
                 slotClickedSubscriber,
                 toggleSubscriber
             );
@@ -86,7 +93,6 @@ namespace Features.Inventory.ViewModels
         private void Initialize(
             ISubscriber<SlotChangedMessage> slotChangedSubscriber,
             ISubscriber<ItemTransferredMessage> itemTransferredSubscriber,
-            ISubscriber<ItemUsedMessage> itemUsedSubscriber,
             ISubscriber<InventorySlotClickedMessage> slotClickedSubscriber,
             ISubscriber<InventoryToggleMessage> toggleSubscriber)
         {
@@ -110,10 +116,6 @@ namespace Features.Inventory.ViewModels
                 .Subscribe(msg => OnItemTransferred(msg))
                 .AddTo(_disposables);
 
-            itemUsedSubscriber
-                .Subscribe(msg => OnItemUsed(msg))
-                .AddTo(_disposables);
-
             slotClickedSubscriber
                 .Subscribe(msg => OnSlotClicked(msg))
                 .AddTo(_disposables);
@@ -127,6 +129,9 @@ namespace Features.Inventory.ViewModels
                 .Subscribe(index => UpdateSelectedSlotState(index))
                 .AddTo(_disposables);
 
+            // 쿨다운 상태 업데이트 타이머 시작
+            StartCooldownUpdateTimer();
+
             _isInitialized = true;
 
             if (_enableDebugLogs)
@@ -137,27 +142,6 @@ namespace Features.Inventory.ViewModels
 
         #region Item Slot Management (ResourceViewModel에서 이동)
 
-        /// <summary>
-        /// 슬롯 아이템 사용
-        /// </summary>
-        public bool UseItemInSlot(int slotNumber, int amount = 1)
-        {
-            if (slotNumber < 1 || slotNumber > 3) return false;
-
-            var slots = PlayerSlots.Value;
-            int slotIndex = slotNumber - 1;
-            var slot = slots[slotIndex];
-
-            if (slot.IsEmpty || slot.Count < amount) return false;
-
-            if (_enableDebugLogs)
-                Debug.Log($"[InventoryViewModel] 슬롯 {slotNumber} 아이템 사용 요청: ItemId={slot.ItemId}, Amount={amount}");
-
-            // MessagePipe로 이벤트 발송 (실제 제거는 ItemUsageService에서 처리)
-            _itemUsedPublisher.Publish(new ItemUsedMessage(slotNumber - 1, slot.ItemId, amount, slot.Count));
-
-            return true;
-        }
 
         /// <summary>
         /// 슬롯에 아이템 추가
@@ -272,36 +256,93 @@ namespace Features.Inventory.ViewModels
         }
 
         /// <summary>
-        /// 선택된 아이템 사용
+        /// 아이템 사용 (통합된 메서드)
         /// </summary>
-        public async UniTask UseSelectedItem()
+        public async UniTask<bool> UseItem(int slotIndex)
         {
-            if (!HasSelectedSlot.Value || !CanUseSelectedItem.Value)
-                return;
+            // 슬롯 유효성 검사
+            if (slotIndex < 0 || slotIndex >= PlayerSlots.Value.Length)
+                return false;
 
-            var slot = PlayerSlots.Value[SelectedSlotIndex.Value];
-            if (slot.IsEmpty) return;
+            var slot = PlayerSlots.Value[slotIndex];
+            if (slot.IsEmpty || slot.Count <= 0)
+                return false;
+
+            // 쿨다운 체크
+            if (ItemCooldown.Value > 0)
+            {
+                ShowNotification("쿨다운 중입니다!", Features.Notification.Models.NotificationType.Warning);
+                return false;
+            }
 
             if (_enableDebugLogs)
-                Debug.Log($"[InventoryViewModel] 아이템 사용: {slot.ItemId}");
+                Debug.Log($"[InventoryViewModel] 아이템 사용 시작: SlotIndex={slotIndex}, ItemId={slot.ItemId}");
 
             IsInteracting.Value = true;
 
             try
             {
-                // ItemUsedMessage를 발행하여 ItemUsageService에서 처리하도록 함
-                int slotNumber = SelectedSlotIndex.Value + 1; // 슬롯 번호는 1부터 시작
-                bool success = UseItemInSlot(slotNumber);
+                // 로컬 플레이어 ID 가져오기
+                var localPlayer = _playerManagerService?.GetLocalPlayer();
+                if (localPlayer == null)
+                {
+                    ShowNotification("플레이어 정보를 찾을 수 없습니다", Features.Notification.Models.NotificationType.Error);
+                    return false;
+                }
+                long localPlayerId = localPlayer.Id;
+
+                // ItemUsageService 직접 호출
+                bool success = false;
+                switch (slot.ItemId)
+                {
+                    case 3: // 테이저건
+                        success = await _itemUsageService.UseTaserGunAsync(localPlayerId);
+                        break;
+                    case 2: // 섬광탄
+                        success = await _itemUsageService.UseFlashBangAsync(localPlayerId);
+                        break;
+                    case 4: // 자가제세동기
+                        success = await _itemUsageService.UseSelfDefibrillatorAsync(localPlayerId);
+                        break;
+                    default:
+                        if (_enableDebugLogs)
+                            Debug.LogWarning($"[InventoryViewModel] 알 수 없는 아이템 ID: {slot.ItemId}");
+                        return false;
+                }
 
                 if (success)
                 {
-                    ShowNotification($"{slot.ItemId} 사용!");
-                    StartItemCooldown(2f); // 2초 쿨다운
+                    // 인벤토리에서 아이템 제거
+                    slot.Count--;
+                    if (slot.Count <= 0)
+                    {
+                        slot.ItemId = 0;
+                        slot.Count = 0;
+                    }
+
+                    // UI 업데이트
+                    PlayerSlots.ForceNotify();
+
+                    // 쿨다운 시작
+                    StartItemCooldown(2f);
+
+                    ShowNotification("아이템 사용 성공!", Features.Notification.Models.NotificationType.Success);
+
+                    if (_enableDebugLogs)
+                        Debug.Log($"[InventoryViewModel] 아이템 사용 성공: ItemId={slot.ItemId}");
                 }
                 else
                 {
                     ShowNotification("아이템 사용 실패", Features.Notification.Models.NotificationType.Error);
                 }
+
+                return success;
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[InventoryViewModel] 아이템 사용 중 예외 발생: {e.Message}");
+                ShowNotification("아이템 사용 중 오류 발생", Features.Notification.Models.NotificationType.Error);
+                return false;
             }
             finally
             {
@@ -417,18 +458,6 @@ namespace Features.Inventory.ViewModels
                 Debug.Log($"[InventoryViewModel] 아이템 전송: {msg.ItemId} x{msg.Count} ({msg.Direction})");
         }
 
-        private void OnItemUsed(ItemUsedMessage msg)
-        {
-            // 새로운 ItemUsedMessage 구조에 맞게 수정
-            if (msg.remainingCount >= 0)
-            {
-                ShowNotification($"슬롯 {msg.slotNumber} 아이템 사용! 남은 개수: {msg.remainingCount}", NotificationType.Success);
-            }
-            else
-            {
-                ShowNotification($"슬롯 {msg.slotNumber} 아이템 사용 실패", NotificationType.Error);
-            }
-        }
 
         private void OnSlotClicked(InventorySlotClickedMessage msg)
         {
@@ -438,7 +467,7 @@ namespace Features.Inventory.ViewModels
                     SelectSlot(msg.SlotIndex);
                     break;
                 case ClickType.Use:
-                    _ = UseSelectedItem();
+                    _ = UseItem(msg.SlotIndex);
                     break;
                 case ClickType.Transfer:
                     PutItemToChest(msg.SlotIndex);
@@ -500,6 +529,67 @@ namespace Features.Inventory.ViewModels
 
         #endregion
 
+        #region Cooldown Management
+
+        /// <summary>
+        /// 특정 슬롯이 쿨다운 중인지 확인
+        /// </summary>
+        public bool IsSlotOnCooldown(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= SlotCooldownStates.Length)
+                return false;
+
+            return SlotCooldownStates[slotIndex].Value;
+        }
+
+        /// <summary>
+        /// 쿨다운 상태 업데이트 타이머 시작
+        /// </summary>
+        private async void StartCooldownUpdateTimer()
+        {
+            while (!_disposables.IsDisposed)
+            {
+                await UniTask.Yield();
+                UpdateAllSlotCooldowns();
+                await UniTask.Delay(100); // 100ms마다 업데이트
+            }
+        }
+
+        /// <summary>
+        /// 모든 슬롯의 쿨다운 상태 업데이트
+        /// </summary>
+        private void UpdateAllSlotCooldowns()
+        {
+            if (_itemUsageService == null) return;
+
+            var slots = PlayerSlots.Value;
+            for (int i = 0; i < slots.Length && i < SlotCooldownStates.Length; i++)
+            {
+                var slot = slots[i];
+                if (slot.IsEmpty)
+                {
+                    SlotCooldownStates[i].Value = false;
+                }
+                else
+                {
+                    float cooldown = _itemUsageService.GetItemCooldownRemaining(slot.ItemId);
+                    bool isOnCooldown = cooldown > 0;
+
+                    if (SlotCooldownStates[i].Value != isOnCooldown)
+                    {
+                        SlotCooldownStates[i].Value = isOnCooldown;
+
+                        if (_enableDebugLogs && isOnCooldown)
+                        {
+                            Debug.Log($"[InventoryViewModel] 슬롯 {i + 1} 쿨다운 시작: {cooldown:F1}초");
+                        }
+                    }
+                }
+            }
+        }
+
+        #endregion
+
         #region Dispose
 
         public void Dispose()
@@ -515,6 +605,12 @@ namespace Features.Inventory.ViewModels
             StatusText?.Dispose();
             CanUseSelectedItem?.Dispose();
             ItemCooldown?.Dispose();
+
+            // 슬롯 쿨다운 상태 Dispose
+            for (int i = 0; i < SlotCooldownStates.Length; i++)
+            {
+                SlotCooldownStates[i]?.Dispose();
+            }
 
             if (_enableDebugLogs)
                 Debug.Log("[InventoryViewModel] Dispose 완료");

@@ -45,7 +45,7 @@ namespace Features.Notification.ViewModels
 
         private readonly CompositeDisposable _disposables = new();
         private readonly ReactiveProperty<NotificationType> _currentNotificationType = new(NotificationType.Info);
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false;
 
         #endregion
 

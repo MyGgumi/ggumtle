@@ -97,3 +97,8 @@
 .slot-small .item-count-text {
     font-size: 12px;
 }
+
+/* 쿨다운 중인 슬롯 스타일 */
+.slot-on-cooldown {
+    opacity: 0.4;
+}

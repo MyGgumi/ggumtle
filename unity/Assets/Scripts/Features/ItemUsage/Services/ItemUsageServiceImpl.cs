@@ -35,9 +35,9 @@ namespace Features.ItemUsage.Services
         private readonly IPublisher<TaserGunUsedMessage> _taserUsedPublisher;
         private readonly IPublisher<FlashBangUsedMessage> _flashBangUsedPublisher;
         private readonly IPublisher<ItemUsageResultMessage> _itemUsageResultPublisher;
-        private readonly IPublisher<ItemRemovedMessage> _itemRemovedPublisher;
         private readonly PlayerManagerService _playerManagerService;
-        private readonly ISubscriber<ItemUsedMessage> _itemUsedSubscriber;
+        private readonly Features.Mongging.Services.IMonggingTeamService _monggingTeamService;
+        private readonly Features.Notification.Services.INotificationService _notificationService;
 
         #endregion
 
@@ -58,24 +58,25 @@ namespace Features.ItemUsage.Services
             IPublisher<TaserGunUsedMessage> taserUsedPublisher,
             IPublisher<FlashBangUsedMessage> flashBangUsedPublisher,
             IPublisher<ItemUsageResultMessage> itemUsageResultPublisher,
-            IPublisher<ItemRemovedMessage> itemRemovedPublisher,
+            ISubscriber<ItemUsedBroadcastMessage> itemUsedBroadcastSubscriber,
             PlayerManagerService playerManagerService,
-            ISubscriber<ItemUsedMessage> itemUsedSubscriber)
+            Features.Mongging.Services.IMonggingTeamService monggingTeamService,
+            Features.Notification.Services.INotificationService notificationService)
         {
             _networkSource = networkSource;
             _selfDefibUsedPublisher = selfDefibUsedPublisher;
             _taserUsedPublisher = taserUsedPublisher;
             _flashBangUsedPublisher = flashBangUsedPublisher;
             _itemUsageResultPublisher = itemUsageResultPublisher;
-            _itemRemovedPublisher = itemRemovedPublisher;
             _playerManagerService = playerManagerService;
-            _itemUsedSubscriber = itemUsedSubscriber;
+            _monggingTeamService = monggingTeamService;
+            _notificationService = notificationService;
 
             // 쿨다운 타이머 초기화
             InitializeCooldowns();
 
-            // 메시지 구독 시작
-            SubscribeToMessages();
+            // 서버 브로드캐스트 구독
+            itemUsedBroadcastSubscriber.Subscribe(OnItemUsedBroadcast).AddTo(_disposables);
 
             if (_enableDebugLogs)
             {
@@ -117,14 +118,10 @@ namespace Features.ItemUsage.Services
                 // 쿨다운 적용
                 ApplyCooldown(TASER_GUN_ID);
 
-                // 결과 메시지 발행 (서버에서 받은 좌표 사용)
-                Vector3 serverPosition = result.position;
-                _taserUsedPublisher.Publish(new TaserGunUsedMessage(userId, serverPosition, success));
-                _itemUsageResultPublisher.Publish(new ItemUsageResultMessage(TASER_GUN_ID, success, result.Result.ToString()));
-
+                // 서버 응답 로그만 출력 (실제 이펙트는 브로드캐스트에서 처리)
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[ItemUsageServiceImpl] 테이저건 사용 완료: Success={success}");
+                    Debug.Log($"[ItemUsageServiceImpl] 테이저건 사용 요청 응답: Success={success}, Result={result.Result}");
                 }
 
                 return success;
@@ -167,14 +164,10 @@ namespace Features.ItemUsage.Services
                 // 쿨다운 적용
                 ApplyCooldown(FLASH_BANG_ID);
 
-                // 결과 메시지 발행 (서버에서 받은 좌표 사용)
-                Vector3 serverPosition = result.position;
-                _flashBangUsedPublisher.Publish(new FlashBangUsedMessage(userId, serverPosition, success));
-                _itemUsageResultPublisher.Publish(new ItemUsageResultMessage(FLASH_BANG_ID, success, result.Result.ToString()));
-
+                // 서버 응답 로그만 출력 (실제 이펙트는 브로드캐스트에서 처리)
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[ItemUsageServiceImpl] 섬광탄 사용 완료: Success={success}");
+                    Debug.Log($"[ItemUsageServiceImpl] 섬광탄 사용 요청 응답: Success={success}, Result={result.Result}");
                 }
 
                 return success;
@@ -190,6 +183,23 @@ namespace Features.ItemUsage.Services
         {
             try
             {
+                // 기절 상태 체크 (Mongging 시스템에서 확인)
+                if (_monggingTeamService != null)
+                {
+                    var localPlayer = _monggingTeamService.GetLocalPlayer();
+                    if (localPlayer != null && localPlayer.currentState != Features.Mongging.Models.MonggingPlayerState.Fainted)
+                    {
+                        if (_enableDebugLogs)
+                        {
+                            Debug.LogWarning($"[ItemUsageServiceImpl] 자가제세동기 사용 불가: 기절 상태가 아님 UserId={userId}, State={localPlayer.currentState}");
+                        }
+
+                        // 알림 표시
+                        _notificationService?.ShowItemCannotBeUsedNotification("자가제세동기", "기절 상태일 때만 사용 가능합니다");
+                        return false;
+                    }
+                }
+
                 if (!CanUseItem(userId, SELF_DEFIBRILLATOR_ID))
                 {
                     if (_enableDebugLogs)
@@ -208,8 +218,7 @@ namespace Features.ItemUsage.Services
                 var result = await _networkSource.UseDefibrillatorAsync();
                 bool success = result.Success;
 
-                // 쿨다운 적용
-                ApplyCooldown(SELF_DEFIBRILLATOR_ID);
+                // 자가제세동기는 1회용이므로 쿨다운 적용 안 함 (서버에서 처리)
 
                 // Revival Feature에 메시지 전달 (HP 정보 포함)
                 _selfDefibUsedPublisher.Publish(new SelfDefibrillatorUsedMessage(userId, success, result.Hp));
@@ -279,96 +288,69 @@ namespace Features.ItemUsage.Services
 
         #region Private Methods
 
-        private void SubscribeToMessages()
+        /// <summary>
+        /// 서버 브로드캐스트 아이템 사용 이벤트 처리
+        /// </summary>
+        private void OnItemUsedBroadcast(ItemUsedBroadcastMessage message)
         {
-            if (_itemUsedSubscriber != null)
+            // Success 또는 Miss일 때만 이펙트 처리
+            if (message.result != Networks.Players.MonggingItemUseResult.Success &&
+                message.result != Networks.Players.MonggingItemUseResult.Miss)
             {
-                _itemUsedSubscriber
-                    .Subscribe(OnItemUsed)
-                    .AddTo(_disposables);
-
                 if (_enableDebugLogs)
                 {
-                    Debug.Log("[ItemUsageServiceImpl] ItemUsedMessage 구독 완료");
+                    Debug.Log($"[ItemUsageServiceImpl] 아이템 사용 실패로 이펙트 생성 안 함: ItemId={message.itemId}, Result={message.result}");
                 }
+                return;
+            }
+
+            // 아이템 타입에 따라 처리
+            switch (message.itemId)
+            {
+                case TASER_GUN_ID:
+                    HandleTaserGunBroadcast(message);
+                    break;
+                case FLASH_BANG_ID:
+                    HandleFlashBangBroadcast(message);
+                    break;
+                default:
+                    if (_enableDebugLogs)
+                    {
+                        Debug.LogWarning($"[ItemUsageServiceImpl] 알 수 없는 아이템 ID: {message.itemId}");
+                    }
+                    break;
             }
         }
 
-        private async void OnItemUsed(ItemUsedMessage message)
+        /// <summary>
+        /// 테이저건 브로드캐스트 처리
+        /// </summary>
+        private void HandleTaserGunBroadcast(ItemUsedBroadcastMessage message)
         {
-            try
+            bool success = message.result == Networks.Players.MonggingItemUseResult.Success;
+
+            // 이펙트 생성을 위한 메시지 발행
+            _taserUsedPublisher.Publish(new TaserGunUsedMessage(0, message.position, success));
+
+            if (_enableDebugLogs)
             {
-                if (_enableDebugLogs)
-                {
-                    Debug.Log($"[ItemUsageServiceImpl] 아이템 사용 메시지 수신: ItemId={message.itemId}, SlotNumber={message.slotNumber}");
-                }
-
-                // 로컬 플레이어 ID 가져오기
-                var localPlayerId = _playerManagerService?.GetLocalPlayer()?.Id ?? -1;
-                if (localPlayerId <= 0)
-                {
-                    if (_enableDebugLogs)
-                    {
-                        Debug.LogWarning("[ItemUsageServiceImpl] 로컬 플레이어 ID를 찾을 수 없음");
-                    }
-                    return;
-                }
-
-                // 아이템 ID에 따른 분기 처리
-                bool itemUsed = false;
-                switch (message.itemId)
-                {
-                    case SELF_DEFIBRILLATOR_ID:
-                        if (_enableDebugLogs)
-                        {
-                            Debug.Log("[ItemUsageServiceImpl] 자가제세동기 사용 처리");
-                        }
-                        itemUsed = await UseSelfDefibrillatorAsync(localPlayerId);
-                        break;
-
-                    case TASER_GUN_ID:
-                        if (_enableDebugLogs)
-                        {
-                            Debug.Log("[ItemUsageServiceImpl] 테이저건 사용 처리");
-                        }
-                        itemUsed = await UseTaserGunAsync(localPlayerId);
-                        break;
-
-                    case FLASH_BANG_ID:
-                        if (_enableDebugLogs)
-                        {
-                            Debug.Log("[ItemUsageServiceImpl] 섬광탄 사용 처리");
-                        }
-                        itemUsed = await UseFlashBangAsync(localPlayerId);
-                        break;
-
-                    default:
-                        if (_enableDebugLogs)
-                        {
-                            Debug.Log($"[ItemUsageServiceImpl] 알 수 없는 아이템 ID: {message.itemId}");
-                        }
-                        break;
-                }
-
-                // 아이템이 사용되었으면 인벤토리에서 제거 메시지 발행
-                if (itemUsed && message.slotNumber >= 0)
-                {
-                    _itemRemovedPublisher.Publish(new ItemRemovedMessage
-                    {
-                        ItemId = message.itemId.ToString(),
-                        Count = 1,
-                        Success = true
-                    });
-
-                    if (_enableDebugLogs)
-                    {
-                        Debug.Log($"[ItemUsageServiceImpl] 아이템 제거 메시지 발행: ItemId={message.itemId}, SlotNumber={message.slotNumber}");
-                    }
-                }
+                Debug.Log($"[ItemUsageServiceImpl] 테이저건 이펙트 생성: Position={message.position}, Success={success}");
             }
-            catch (Exception e)
+        }
+
+        /// <summary>
+        /// 섬광탄 브로드캐스트 처리
+        /// </summary>
+        private void HandleFlashBangBroadcast(ItemUsedBroadcastMessage message)
+        {
+            bool success = message.result == Networks.Players.MonggingItemUseResult.Success;
+
+            // 이펙트 생성을 위한 메시지 발행
+            _flashBangUsedPublisher.Publish(new FlashBangUsedMessage(0, message.position, success));
+
+            if (_enableDebugLogs)
             {
-                Debug.LogError($"[ItemUsageServiceImpl] 아이템 사용 메시지 처리 실패: {e.Message}");
+                Debug.Log($"[ItemUsageServiceImpl] 섬광탄 이펙트 생성: Position={message.position}, Success={success}");
             }
         }
 

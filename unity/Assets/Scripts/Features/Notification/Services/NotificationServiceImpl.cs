@@ -39,7 +39,7 @@ namespace Features.Notification.Services
         private readonly NotificationModel _notificationModel = new();
         private readonly CompositeDisposable _disposables = new();
 
-        private readonly bool _enableDebugLogs = true;
+        private readonly bool _enableDebugLogs = false;
 
         #endregion
 
@@ -112,6 +112,15 @@ namespace Features.Notification.Services
             if (string.IsNullOrEmpty(message))
                 return;
 
+            // 이미 알림이 표시 중이면 큐에 추가
+            if (_notificationModel.isShowing)
+            {
+                DebugLog($"알림 표시 중 - 큐에 추가: {message}");
+                QueueNotification(message, duration, type);
+                return;
+            }
+
+            // 표시 중이 아니면 즉시 표시
             float displayDuration = _notificationModel.GetValidDuration(duration);
             var notification = new NotificationData(message, displayDuration, type);
 
@@ -269,6 +278,13 @@ namespace Features.Notification.Services
             string message = $"✅ {success}";
             ShowNotification(message, 2.5f, NotificationType.Success);
             _successPublisher.Publish(new SuccessNotificationMessage(success, 2.5f));
+        }
+
+        public void ShowItemCannotBeUsedNotification(string itemName, string reason)
+        {
+            string message = $"⚠️ {itemName}을(를) 사용할 수 없습니다: {reason}";
+            ShowNotification(message, 2.5f, NotificationType.Warning);
+            _warningPublisher.Publish(new WarningNotificationMessage(message, 2.5f, false));
         }
 
         // 유틸리티 메서드들

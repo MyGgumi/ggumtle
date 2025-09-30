@@ -145,7 +145,6 @@ namespace DI
             // Inventory Messages
             builder.RegisterMessageBroker<ItemAddedMessage>(options);
             builder.RegisterMessageBroker<ItemRemovedMessage>(options);
-            builder.RegisterMessageBroker<ItemUsedMessage>(options);
             builder.RegisterMessageBroker<FieldItemUsedMessage>(options);
             builder.RegisterMessageBroker<InventorySyncMessage>(options);
             builder.RegisterMessageBroker<SlotChangedMessage>(options);
@@ -160,9 +159,11 @@ namespace DI
             builder.RegisterMessageBroker<Features.FieldItem.Messages.SpeedChangedMessage>(options);
 
             // ItemUsage Messages
+            builder.RegisterMessageBroker<Features.ItemUsage.Messages.ItemUsedBroadcastMessage>(options);
             builder.RegisterMessageBroker<Features.ItemUsage.Messages.SelfDefibrillatorUsedMessage>(options);
             builder.RegisterMessageBroker<Features.ItemUsage.Messages.TaserGunUsedMessage>(options);
             builder.RegisterMessageBroker<Features.ItemUsage.Messages.FlashBangUsedMessage>(options);
+            builder.RegisterMessageBroker<Features.ItemUsage.Messages.ItemUsageResultMessage>(options);
 
             // Revival Messages
             builder.RegisterMessageBroker<RevivalProgressMessage>(options);
@@ -396,11 +397,6 @@ namespace DI
                 Features.EscapeGate.Services.EscapeGateServiceImpl
             >(Lifetime.Scoped);
 
-            // FieldItem Services 등록
-            builder.Register<
-                Features.FieldItem.Services.IFieldItemService,
-                Features.FieldItem.Services.FieldItemServiceImpl
-            >(Lifetime.Scoped);
 
             // Revival Handlers 등록
             builder.Register<Features.Revival.Handlers.MonggingInteractableHandler>(Lifetime.Scoped);
@@ -481,6 +477,11 @@ namespace DI
                 var escapeGateOpenedPublisher = container.Resolve<IPublisher<Features.EscapeGate.Messages.EscapeGateOpenedMessage>>();
                 Features.EscapeGate.NetworkSources.EscapeGateNetworkEventHandler.Initialize(escapeGateOpenedPublisher);
                 UnityEngine.Debug.Log("[MainLifetimeScope] EscapeGateNetworkEventHandler 초기화 완료");
+
+                // ItemUsageNetworkEventHandler에 Publisher 주입
+                var itemUsedBroadcastPublisher = container.Resolve<IPublisher<Features.ItemUsage.Messages.ItemUsedBroadcastMessage>>();
+                Features.ItemUsage.NetworkSources.ItemUsageNetworkEventHandler.Initialize(itemUsedBroadcastPublisher);
+                UnityEngine.Debug.Log("[MainLifetimeScope] ItemUsageNetworkEventHandler 초기화 완료");
             });
 
             UnityEngine.Debug.Log("[MainLifetimeScope] Configure 완료 - Addressable 동적 생성 방식 사용");

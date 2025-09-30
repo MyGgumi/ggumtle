@@ -699,7 +699,10 @@ namespace Networks
             }
         }
 
-        public async Task<MonggingItemUseCommand> MonggingItemUse(Vector3 effectPosition, int itemId)
+        public async Task<MonggingItemUseCommand> MonggingItemUse(
+            Vector3 effectPosition,
+            int itemId
+        )
         {
             try
             {
@@ -857,7 +860,7 @@ namespace Networks
             }
         }
 
-        public void MongdungSkill(int skillType)
+        public void MongdungSkill(int skillType, Vector3 position)
         {
             try
             {
@@ -869,7 +872,7 @@ namespace Networks
                     return;
                 }
 
-                var mongdungSkillRequest = new MongdungSkillSend(skillType);
+                var mongdungSkillRequest = new MongdungSkillSend(skillType, position);
                 client.Send(mongdungSkillRequest);
 
                 Debug.Log($"[NetworkApi] 몽둥이 스킬 요청 전송 완료: SkillType={skillType}");

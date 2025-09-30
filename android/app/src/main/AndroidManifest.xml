@@ -17,7 +17,7 @@
 
     <uses-feature
         android:name="android.hardware.camera.ar"
-        android:required="true" />
+        android:required="false" />
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
@@ -39,7 +39,7 @@
         tools:targetApi="24">
         <meta-data
             android:name="com.google.ar.core"
-            android:value="required" />
+            android:value="optional" />
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|keyboardHidden|screenSize|screenLayout|uiMode"

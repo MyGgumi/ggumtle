@@ -47,4 +47,4 @@ include(":feature:ingame")
 include(":unityLibrary")
 
 // Unity 라이브러리 경로 설정 (외부 경로에 있는 경우)
-project(":unityLibrary").projectDir = file("C:\\Users\\SSAFY\\Documents\\unity\\testcom\\unityLibrary")
+project(":unityLibrary").projectDir = file("C:\\Users\\SSAFY\\Documents\\unity\\qwer2\\unityLibrary")

@@ -11,6 +11,7 @@ public class GgumtleAnimationEventHandler : MonoBehaviour
     private ParticleSystem after_pullup_effect;
     private ParticleSystem dig_dirt_effect;
     private ParticleSystem gumttle_feeding_effect;
+    private ParticleSystem fake_effect;
     private AudioSource audioSource;
 
     private void Start()
@@ -72,6 +73,17 @@ public class GgumtleAnimationEventHandler : MonoBehaviour
                 if (gumttle_feeding_effect != null)
                 {
                     Debug.Log("Gumttle_feeding_effect 찾음");
+                }
+            }
+
+            // Fake_effect 찾기
+            Transform fakeEffectTransform = mainTransform.Find("Fake_effect");
+            if (fakeEffectTransform != null)
+            {
+                fake_effect = fakeEffectTransform.GetComponent<ParticleSystem>();
+                if (fake_effect != null)
+                {
+                    Debug.Log("Fake_effect 찾음");
                 }
             }
         }
@@ -155,40 +167,42 @@ public class GgumtleAnimationEventHandler : MonoBehaviour
     private bool wasFake = false;
     private Features.Ggumtle.Views.GgumtleGameObject ggumtleGameObject;
 
-    // 네트워크 브로드캐스트 구독
-    private ISubscriber<GgumtleStateBroadcastMessage> _stateBroadcastSubscriber;
-    private CompositeDisposable _disposables = new();
-
     void Update()
     {
         if (animator != null)
         {
             AnimatorStateInfo stateInfo = animator.GetCurrentAnimatorStateInfo(0);
 
-            // Fake 상태 체크 (짭꿈틀)
+            // Fake 상태 체크 및 이펙트 재생
             bool isFake = stateInfo.IsName("fake") || stateInfo.IsName("Fake");
-
-            // Fake 상태로 전환될 때
             if (isFake && !wasFake)
             {
-                // GgumtleGameObject의 ViewModel 상태를 Fake로 변경
-                // GgumtleGameObject에서 이펙트와 삭제를 처리함
+                if (fake_effect != null)
+                {
+                    fake_effect.gameObject.SetActive(true);
+                    fake_effect.Play();
+                    Debug.Log($"[GgumtleAnimationEventHandler] Fake 이펙트 재생 시작");
+                }
+
+                // GgumtleGameObject에서 ID 가져오기
                 if (ggumtleGameObject != null)
                 {
-                    Debug.Log("GgumtleGameObject를 통한 짭꿈틀 처리");
-                    ggumtleGameObject.SetFakeState();
+                    Debug.Log($"[GgumtleAnimationEventHandler] Fake 상태 진입: ID={ggumtleGameObject.GgumtleId}");
                 }
                 else
                 {
-                    Debug.LogWarning("GgumtleGameObject가 없어서 Fake 상태 처리 실패");
+                    Debug.Log($"[GgumtleAnimationEventHandler] Fake 상태 진입: (ID 없음)");
                 }
                 wasFake = true;
-                return; // fake 처리 후 다른 상태 체크 안함
             }
-
-            // Fake 상태가 아닐 때만 다른 상태 체크
-            if (!isFake)
+            else if (!isFake && wasFake)
             {
+                if (fake_effect != null)
+                {
+                    fake_effect.Stop();
+                    fake_effect.gameObject.SetActive(false);
+                    Debug.Log($"[GgumtleAnimationEventHandler] Fake 이펙트 정지");
+                }
                 wasFake = false;
             }
 

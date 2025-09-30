@@ -246,7 +246,7 @@ namespace Features.Ggumtle.Views
                                        currentState == Features.Ggumtle.Models.GgumtleState.Emerging;
             }
 
-            // Fake, Purified 상태에서는 프로그레스바 숨기기
+            // Fake, Purified 상태에서는 프로그레스바와 텍스트 숨기기
             bool shouldHideProgressBar = currentState == Features.Ggumtle.Models.GgumtleState.Fake ||
                                         currentState == Features.Ggumtle.Models.GgumtleState.Purified;
 
@@ -257,7 +257,21 @@ namespace Features.Ggumtle.Views
                 {
                     _progressBar.style.display = DisplayStyle.None;
                 }
+
+                // Fake 상태에서는 텍스트도 숨기기
+                if (currentState == Features.Ggumtle.Models.GgumtleState.Fake && _interactionLabel != null)
+                {
+                    _interactionLabel.style.display = DisplayStyle.None;
+                }
                 return;
+            }
+            else
+            {
+                // Fake가 아닌 상태에서는 텍스트 다시 표시
+                if (_interactionLabel != null)
+                {
+                    _interactionLabel.style.display = DisplayStyle.Flex;
+                }
             }
 
             if (shouldUseThisProgress)

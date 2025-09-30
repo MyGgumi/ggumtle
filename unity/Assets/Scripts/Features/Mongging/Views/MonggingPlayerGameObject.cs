@@ -35,7 +35,11 @@ namespace Features.Mongging.Views
         // 컴포넌트
         private Animator _animator;
         private Collider[] _colliders;
+        private ParticleSystem _stunEffect;
         private CompositeDisposable _disposables = new CompositeDisposable();
+
+        // 스턴 관련
+        private Coroutine _stunCoroutine;
 
         // 플레이어 정보
         public long PlayerId { get; private set; }
@@ -51,10 +55,13 @@ namespace Features.Mongging.Views
         private int _stateHash;
         private int _isAliveHash;
         private int _isFaintedHash;
+        private int _isDiggingHash;
+        private int _isFeedingHash;
 
         // 현재 상태
         private MonggingPlayerState _currentState = MonggingPlayerState.Normal;
         private bool _isPlayingAnimation = false;
+        private bool _isStunned = false; // 스턴 상태 플래그
 
         [Inject]
         public void Construct(
@@ -174,9 +181,17 @@ namespace Features.Mongging.Views
             // 렌더러 및 콜라이더 컴포넌트 캐시
             _colliders = GetComponentsInChildren<Collider>();
 
+            // stun_effect 찾기 (하위 오브젝트에서)
+            Transform stunEffectTransform = FindInChildren(transform, "stun_effect");
+            if (stunEffectTransform != null)
+            {
+                _stunEffect = stunEffectTransform.GetComponent<ParticleSystem>();
+            }
+
             if (enableDebugLogs)
             {
                 Debug.Log($"[MonggingPlayerGameObject] {_colliders.Length}개의 Collider 캐시 완료");
+                Debug.Log($"[MonggingPlayerGameObject] stun_effect: {(_stunEffect != null ? "찾음" : "없음")}");
             }
         }
 
@@ -192,6 +207,8 @@ namespace Features.Mongging.Views
                 _stateHash = Animator.StringToHash("State");
                 _isAliveHash = Animator.StringToHash("IsAlive");
                 _isFaintedHash = Animator.StringToHash("IsFainted");
+                _isDiggingHash = Animator.StringToHash("IsDigging");
+                _isFeedingHash = Animator.StringToHash("IsFeeding");
 
                 if (enableDebugLogs)
                 {
@@ -348,19 +365,37 @@ namespace Features.Mongging.Views
         {
             try
             {
-                if (enableDebugLogs)
+                Debug.Log(
+                    $"[MonggingPlayerGameObject] 상태 변경: PlayerId={message.PlayerId}, {message.PreviousState} → {message.NewState}, HP={message.CurrentHp}"
+                );
+
+                // Stunned 상태일 때는 다른 상태 변경 무시 (스턴 중)
+                if (_isStunned && message.NewState != MonggingPlayerState.Stunned)
                 {
-                    Debug.Log(
-                        $"[MonggingPlayerGameObject] 상태 변경: PlayerId={message.PlayerId}, {message.PreviousState} → {message.NewState}, HP={message.CurrentHp}"
-                    );
+                    Debug.Log($"[MonggingPlayerGameObject] Stunned 중이므로 상태 변경 무시: {message.NewState}");
+                    return;
                 }
 
                 _currentState = message.NewState;
-                UpdateAnimatorState();
+
+                try
+                {
+                    UpdateAnimatorState();
+                }
+                catch (System.Exception e)
+                {
+                    Debug.LogWarning($"[MonggingPlayerGameObject] 애니메이터 상태 업데이트 실패 (무시): {e.Message}");
+                }
+
+                Debug.Log($"[MonggingPlayerGameObject] Switch 진입 전: NewState={message.NewState}");
 
                 // 상태 전환 애니메이션
                 switch (message.NewState)
                 {
+                    case MonggingPlayerState.Stunned:
+                        Debug.Log($"[MonggingPlayerGameObject] Stunned case 진입!");
+                        OnStunnedState();
+                        break;
                     case MonggingPlayerState.Fainted:
                     case MonggingPlayerState.Dead:
                         TriggerAnimation("Down");
@@ -505,6 +540,13 @@ namespace Features.Mongging.Views
             _animator.SetInteger(_stateHash, (int)_currentState);
             _animator.SetBool(_isAliveHash, _currentState != MonggingPlayerState.Dead);
             _animator.SetBool(_isFaintedHash, _currentState == MonggingPlayerState.Fainted);
+            _animator.SetBool(_isDiggingHash, _currentState == MonggingPlayerState.Digging);
+            _animator.SetBool(_isFeedingHash, _currentState == MonggingPlayerState.Feeding);
+
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[MonggingPlayerGameObject] 애니메이터 상태 업데이트: State={_currentState}, IsDigging={_currentState == MonggingPlayerState.Digging}, IsFeeding={_currentState == MonggingPlayerState.Feeding}");
+            }
         }
 
         /// <summary>
@@ -525,6 +567,119 @@ namespace Features.Mongging.Views
         public MonggingPlayerState GetCurrentState()
         {
             return _currentState;
+        }
+
+        /// <summary>
+        /// Stunned 상태 처리 (10초 동안 이동 불가)
+        /// </summary>
+        private void OnStunnedState()
+        {
+            if (enableDebugLogs)
+            {
+                Debug.Log($"[MonggingPlayerGameObject] Stunned 상태 시작: PlayerId={PlayerId}");
+            }
+
+            // 스턴 플래그 설정 (다른 상태 변경 막기)
+            _isStunned = true;
+
+            // 모든 애니메이션 파라미터 false로 설정
+            if (_animator != null)
+            {
+                _animator.SetBool(_isDiggingHash, false);
+                _animator.SetBool(_isFeedingHash, false);
+            }
+
+            // stun_effect 재생
+            if (_stunEffect != null)
+            {
+                _stunEffect.gameObject.SetActive(true);
+                var main = _stunEffect.main;
+                main.loop = true;
+                _stunEffect.Play();
+
+                if (enableDebugLogs)
+                    Debug.Log($"[MonggingPlayerGameObject] stun_effect 재생 시작");
+            }
+            else
+            {
+                Debug.LogWarning($"[MonggingPlayerGameObject] stun_effect를 찾을 수 없습니다!");
+            }
+
+            // 기존 스턴 코루틴이 있으면 중단
+            if (_stunCoroutine != null)
+            {
+                StopCoroutine(_stunCoroutine);
+            }
+
+            // 10초 동안 이동 불가 처리
+            _stunCoroutine = StartCoroutine(StunCoroutine(10f));
+        }
+
+        private System.Collections.IEnumerator StunCoroutine(float duration)
+        {
+            // 이동 서비스 찾기 (로컬 플레이어만)
+            Features.Player.Services.PlayerMovementService movementService = null;
+
+            if (IsLocal)
+            {
+                var lifetimeScope = FindFirstObjectByType<DI.MainLifetimeScope>();
+                if (lifetimeScope != null)
+                {
+                    movementService = lifetimeScope.Container.Resolve<Features.Player.Services.PlayerMovementService>();
+                }
+            }
+
+            // 이동 비활성화
+            if (movementService != null)
+            {
+                movementService.CanMove = false;
+                if (enableDebugLogs)
+                    Debug.Log($"[MonggingPlayerGameObject] 이동 비활성화: {duration}초 동안");
+            }
+
+            // 대기
+            yield return new WaitForSeconds(duration);
+
+            // 이동 재활성화
+            if (movementService != null)
+            {
+                movementService.CanMove = true;
+                if (enableDebugLogs)
+                    Debug.Log($"[MonggingPlayerGameObject] 이동 재활성화");
+            }
+
+            // stun_effect 정지
+            if (_stunEffect != null)
+            {
+                _stunEffect.Stop();
+                _stunEffect.gameObject.SetActive(false);
+                if (enableDebugLogs)
+                    Debug.Log($"[MonggingPlayerGameObject] stun_effect 정지");
+            }
+
+            // 스턴 플래그 해제
+            _isStunned = false;
+            if (enableDebugLogs)
+                Debug.Log($"[MonggingPlayerGameObject] Stunned 종료 - 다시 상태 변경 가능");
+
+            _stunCoroutine = null;
+        }
+
+        /// <summary>
+        /// 하위 오브젝트에서 이름으로 Transform 찾기 (재귀)
+        /// </summary>
+        private Transform FindInChildren(Transform parent, string name)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name == name)
+                    return child;
+
+                Transform found = FindInChildren(child, name);
+                if (found != null)
+                    return found;
+            }
+            return null;
         }
 
         /// <summary>

@@ -331,6 +331,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
     private bool wasTakingDamage = false;
     private bool wasReviving = false;
     private bool wasDying = false;
+    private bool wasStunned = false;          // Stunned State 추적
 
     // 오디오 재생 간격 제어
     private float lastInteractingAudioTime = 0f;
@@ -356,6 +357,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
             bool isDigging = animator.GetBool("IsDigging");
             bool isFeeding = animator.GetBool("IsFeeding");
             bool isGettingHealed = animator.GetBool("IsGettingHealed");
+            bool isStunned = stateInfo.IsName("Stun") || stateInfo.IsName("Stunned");
 
             // Interact State (힐, 아이템 사용 트리거) - 애니메이션과 동기화
             if (isInInteractState && !wasInInteractState)
@@ -644,6 +646,83 @@ public class MonggingAnimationEventHandler : MonoBehaviour
                 }
             }
 
+            // Stunned 상태 (모든 파라미터 false + down_effect 재생)
+            if (isStunned && !wasStunned)
+            {
+                // 모든 애니메이션 파라미터 false로 설정
+                animator.SetBool("IsMoving", false);
+                animator.SetBool("IsInteracting", false);
+                animator.SetBool("IsDigging", false);
+                animator.SetBool("IsFeeding", false);
+                animator.SetBool("IsGettingHealed", false);
+
+                // 모든 이펙트 중단
+                if (interactEffect != null)
+                {
+                    ParticleSystem[] allParticles = interactEffect.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var ps in allParticles)
+                    {
+                        if (ps != null)
+                            ps.Stop();
+                    }
+                    interactEffect.gameObject.SetActive(false);
+                }
+                if (feedEffect != null)
+                {
+                    ParticleSystem[] allParticles = feedEffect.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var ps in allParticles)
+                    {
+                        if (ps != null)
+                            ps.Stop();
+                    }
+                    feedEffect.gameObject.SetActive(false);
+                }
+                if (getHealedEffect != null)
+                {
+                    ParticleSystem[] allParticles = getHealedEffect.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var ps in allParticles)
+                    {
+                        if (ps != null)
+                            ps.Stop();
+                    }
+                    getHealedEffect.gameObject.SetActive(false);
+                }
+
+                // down_effect 재생
+                if (downEffect != null)
+                {
+                    downEffect.gameObject.SetActive(true);
+                    ParticleSystem[] allParticles = downEffect.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var ps in allParticles)
+                    {
+                        if (ps != null)
+                        {
+                            var main = ps.main;
+                            main.loop = true;
+                            ps.Play();
+                        }
+                    }
+                    if (enableDebugLogs)
+                        Debug.Log($"[MonggingAnimationEventHandler] Stunned 시작 - 모든 파라미터 false, down_effect 재생 (하위 파티클 {allParticles.Length}개)");
+                }
+            }
+            else if (!isStunned && wasStunned)
+            {
+                // down_effect 정지
+                if (downEffect != null)
+                {
+                    ParticleSystem[] allParticles = downEffect.GetComponentsInChildren<ParticleSystem>();
+                    foreach (var ps in allParticles)
+                    {
+                        if (ps != null)
+                            ps.Stop();
+                    }
+                    downEffect.gameObject.SetActive(false);
+                    if (enableDebugLogs)
+                        Debug.Log("[MonggingAnimationEventHandler] Stunned 종료 - down_effect 정지");
+                }
+            }
+
             // 이전 상태 업데이트
             wasInInteractState = isInInteractState;
             wasInInteractingState = isInInteractingState;
@@ -655,6 +734,7 @@ public class MonggingAnimationEventHandler : MonoBehaviour
             wasTakingDamage = isTakingDamage;
             wasReviving = isReviving;
             wasDying = isDying;
+            wasStunned = isStunned;
         }
     }
 

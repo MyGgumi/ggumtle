@@ -456,7 +456,15 @@ namespace Features.Mongging.Services
         {
             if (message.Result == MongdungSkillResult.Success)
             {
-                // 모든 Local 몽깅이에게 공포 적용
+                // 로컬 몽깅이가 있는지 확인
+                var localPlayer = GetLocalPlayer();
+                if (localPlayer != null)
+                {
+                    // Global Volume Vignette 효과 적용
+                    ApplyFrightenVignetteEffect();
+                }
+
+                // 모든 Local 몽깅이에게 공포 적용 (원격용)
                 foreach (var playerService in _playerServices.Values)
                 {
                     var playerData = playerService.GetPlayerData();
@@ -470,8 +478,102 @@ namespace Features.Mongging.Services
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log("[MonggingTeamServiceImpl] 공포 스킬 적용 완료 - 모든 로컬 몽깅이");
+                    Debug.Log("[MonggingTeamServiceImpl] 공포 스킬 적용 완료 - Vignette 효과 + 상태 변경");
                 }
+            }
+        }
+
+        /// <summary>
+        /// 공포 Vignette 효과 적용
+        /// </summary>
+        private void ApplyFrightenVignetteEffect()
+        {
+            try
+            {
+                // Global Volume GameObject 찾기 (이름으로 찾기)
+                var globalVolumeGO = GameObject.Find("Global Volume");
+                if (globalVolumeGO == null)
+                {
+                    // 이름이 다를 수 있으니 Volume 컴포넌트가 있는 GameObject 찾기
+                    var volumeComponents = UnityEngine.Object.FindObjectsOfType<UnityEngine.Rendering.Volume>();
+                    foreach (var vol in volumeComponents)
+                    {
+                        if (vol.isGlobal)
+                        {
+                            globalVolumeGO = vol.gameObject;
+                            break;
+                        }
+                    }
+                }
+
+                if (globalVolumeGO != null)
+                {
+                    // Volume 컴포넌트 가져오기
+                    var volume = globalVolumeGO.GetComponent<UnityEngine.Rendering.Volume>();
+                    if (volume != null && volume.profile != null)
+                    {
+                        if (_enableDebugLogs)
+                        {
+                            Debug.Log($"[MonggingTeamServiceImpl] Volume 찾음: {globalVolumeGO.name}, isGlobal={volume.isGlobal}");
+                        }
+
+                        // Volume Profile에서 Vignette 효과 가져오기
+                        if (volume.profile.TryGet(out UnityEngine.Rendering.Universal.Vignette vignette))
+                        {
+                            if (_enableDebugLogs)
+                            {
+                                Debug.Log($"[MonggingTeamServiceImpl] Vignette 효과 가져옴: 현재 intensity={vignette.intensity.value}");
+                            }
+
+                            // Vignette 강도를 0.7로 설정
+                            vignette.active = true;
+                            vignette.intensity.overrideState = true;
+                            vignette.intensity.value = 0.7f;
+
+                            // 5초 후 기본값(0)으로 원복하는 코루틴 시작
+                            var coroutineRunner = UnityEngine.Object.FindObjectOfType<UnityEngine.MonoBehaviour>();
+                            if (coroutineRunner != null)
+                            {
+                                coroutineRunner.StartCoroutine(ResetVignetteCoroutine(vignette, 0f, 5f));
+                            }
+
+                            if (_enableDebugLogs)
+                            {
+                                Debug.Log("[MonggingTeamServiceImpl] 공포 Vignette 효과 적용 완료: intensity=0.7");
+                            }
+                        }
+                        else
+                        {
+                            Debug.LogWarning("[MonggingTeamServiceImpl] Volume Profile에서 Vignette 효과를 찾을 수 없습니다!");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("[MonggingTeamServiceImpl] Volume 컴포넌트 또는 Profile을 찾을 수 없습니다!");
+                    }
+                }
+                else
+                {
+                    Debug.LogWarning("[MonggingTeamServiceImpl] Global Volume GameObject를 찾을 수 없습니다!");
+                }
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MonggingTeamServiceImpl] Vignette 효과 적용 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Vignette 원복 코루틴
+        /// </summary>
+        private static System.Collections.IEnumerator ResetVignetteCoroutine(UnityEngine.Rendering.Universal.Vignette vignette, float originalIntensity, float delay)
+        {
+            yield return new UnityEngine.WaitForSeconds(delay);
+
+            if (vignette != null)
+            {
+                vignette.intensity.value = originalIntensity;
+                Debug.Log($"[MonggingTeamServiceImpl] 공포 Vignette 효과 해제: 0.7 → {originalIntensity}");
             }
         }
 
@@ -801,13 +903,35 @@ namespace Features.Mongging.Services
                             break;
 
                         case MonggingPlayerState.Stunned:
-                            // 스턴 상태로 변경
-                            playerService.ApplyStun(2f);
+                            // 스턴 상태로 변경 - 서버 상태 그대로 동기화
+                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            if (_enableDebugLogs)
+                            {
+                                Debug.Log($"[MonggingTeamServiceImpl] Stunned 상태로 변경: PlayerId={message.PlayerId}");
+                            }
                             break;
 
                         case MonggingPlayerState.Frightened:
                             // 공포 상태로 변경 - 서버 상태 그대로 동기화
                             playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            break;
+
+                        case MonggingPlayerState.Digging:
+                            // 땅 파기 상태로 변경 - 서버 상태 그대로 동기화
+                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            if (_enableDebugLogs)
+                            {
+                                Debug.Log($"[MonggingTeamServiceImpl] Digging 상태로 변경: PlayerId={message.PlayerId}");
+                            }
+                            break;
+
+                        case MonggingPlayerState.Feeding:
+                            // 먹이주기 상태로 변경 - 서버 상태 그대로 동기화
+                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            if (_enableDebugLogs)
+                            {
+                                Debug.Log($"[MonggingTeamServiceImpl] Feeding 상태로 변경: PlayerId={message.PlayerId}");
+                            }
                             break;
 
                         default:

@@ -110,6 +110,9 @@ namespace Features.Scenes.Lobby.Managers
 
             // UI 상태를 대기 상태로 설정
             PublishUIState(LobbyUIStateMessage.Ready("토큰을 입력하고 게임 시작을 눌러주세요"));
+
+            CallAndroidFunction("hideLoadingScreen");
+
         }
 
         void Update()

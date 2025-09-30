@@ -31,7 +31,6 @@ public class UnityToAndroidLoader : MonoBehaviour
         {
             // 같은 씬이면 바로 완료 처리
             SendProgressToAndroid(100, "로딩 완료!");
-            HideAndroidLoadingScreen();
         }
     }
 
@@ -137,9 +136,7 @@ public class UnityToAndroidLoader : MonoBehaviour
         // 씬이 완전히 로드된 후 완료 처리
         SendProgressToAndroid(100, "로딩 완료!");
         yield return new WaitForSeconds(0.5f);
-        
-        HideAndroidLoadingScreen();
-        
+                
         // 작업 완료 후 이 오브젝트 파괴
         Destroy(gameObject);
     }

@@ -145,7 +145,7 @@ class MainActivity : UnityPlayerGameActivity() {
         }
     }
 
-    fun hideLoadingScreen() {
+    fun hideLoadingScreen(vararg par: String) {
         lifecycleScope.launch {
             unityObserveManager.completeLoading()
         }

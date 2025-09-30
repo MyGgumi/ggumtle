@@ -157,6 +157,7 @@ namespace DI
             builder.RegisterMessageBroker<Features.FieldItem.Messages.FieldItemGlobalUsedMessage>(options);
             builder.RegisterMessageBroker<Features.FieldItem.Messages.HealthChangedMessage>(options);
             builder.RegisterMessageBroker<Features.FieldItem.Messages.SpeedChangedMessage>(options);
+            builder.RegisterMessageBroker<Features.FieldItem.Messages.FieldItemRemoveRequestMessage>(options);
 
             // ItemUsage Messages
             builder.RegisterMessageBroker<Features.ItemUsage.Messages.ItemUsedBroadcastMessage>(options);
@@ -180,6 +181,7 @@ namespace DI
             builder.RegisterMessageBroker<GgumtleJellyForceQuitMessage>(options);
             builder.RegisterMessageBroker<GgumtleSpawnMessage>(options);
             builder.RegisterMessageBroker<GgumtleStateBroadcastMessage>(options);
+            builder.RegisterMessageBroker<GgumtleRemoveRequestMessage>(options);
 
             builder.RegisterMessageBroker<JoystickInputMessage>(options);
             builder.RegisterMessageBroker<JoystickEndMessage>(options);

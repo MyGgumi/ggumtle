@@ -761,7 +761,7 @@ namespace Features.Ggumtle.ViewModels
                 GgumtleState.Emerging => "나오는 중...",
                 GgumtleState.Emerged => $"빛젤리 먹이기 ({CurrentFood.Value}/{MaxFood.Value})",
                 GgumtleState.Feeding => $"빛젤리 먹이기 ({CurrentFood.Value}/{MaxFood.Value})",
-                GgumtleState.Purified => "정화 완료!",
+                GgumtleState.Purified => string.Empty, // 성불 완료 - UI 표시 안함
                 GgumtleState.Fake => string.Empty, // 짭꿈틀이는 텍스트 표시 안함
                 _ => string.Empty,
             };

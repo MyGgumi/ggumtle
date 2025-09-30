@@ -91,4 +91,17 @@ namespace Features.FieldItem.Messages
             this.fieldItemId = fieldItemId;
         }
     }
+
+    /// <summary>
+    /// 필드 아이템 제거 요청 메시지 (GameObject 완전 삭제용)
+    /// </summary>
+    public readonly struct FieldItemRemoveRequestMessage
+    {
+        public readonly int fieldItemId;
+
+        public FieldItemRemoveRequestMessage(int fieldItemId)
+        {
+            this.fieldItemId = fieldItemId;
+        }
+    }
 }

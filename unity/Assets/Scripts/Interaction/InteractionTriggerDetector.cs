@@ -23,6 +23,18 @@ using VContainer;
 namespace Interaction
 {
     /// <summary>
+    /// 상호작용 가능한 객체 타입
+    /// </summary>
+    public enum InteractableType
+    {
+        None = 0,
+        FaintedMongging = 1,  // 기절한 몽깅이 (최우선)
+        EscapeGate = 2,        // 탈출 게이트
+        Ggumtle = 3,           // 꿈틀이
+        Chest = 4              // 상자
+    }
+
+    /// <summary>
     /// 플레이어에 부착하여 상호작용 객체를 실시간으로 감지하는 컴포넌트
     /// Trigger 방식으로 폴링 없이 즉시 반응
     /// </summary>
@@ -32,7 +44,7 @@ namespace Interaction
         [Header("Trigger Settings")]
         [SerializeField]
         [Range(1f, 20f)]
-        private float detectionRadius = 6f; // Inspector에서 조절 가능
+        private float detectionRadius = 2.5f; // Inspector에서 조절 가능 (상호작용 범위)
 
         [SerializeField]
         private LayerMask interactionLayerMask = 128; // Layer 7만 감지 (Interaction layer)
@@ -103,6 +115,19 @@ namespace Interaction
         // 현재 감지된 탈출 게이트들을 거리순으로 관리
         private readonly List<(EscapeGateGameObject escapeGate, Collider collider, float distance)> _detectedEscapeGates = new();
         private EscapeGateGameObject _currentClosestEscapeGate = null;
+
+        // 단일 상호작용 객체 관리 (가장 가까운 1개만)
+        private object _currentActiveInteractable = null;
+        private InteractableType _currentActiveType = InteractableType.None;
+
+        // 각 타입별 가장 가까운 거리 캐싱 (성능 최적화)
+        private float _closestGgumtleDistance = float.MaxValue;
+        private float _closestChestDistance = float.MaxValue;
+        private float _closestFaintedMonggingDistance = float.MaxValue;
+        private float _closestEscapeGateDistance = float.MaxValue;
+
+        // 떨림 방지를 위한 히스테리시스 임계값
+        private const float HYSTERESIS_THRESHOLD = 0.3f;
 
         void Awake()
         {
@@ -384,6 +409,7 @@ namespace Interaction
                 Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지 리스트에 추가: {ggumtle.GgumtleId}, 거리: {distance:F2}");
 
             UpdateClosestGgumtle();
+            UpdateSingleClosestInteractable(); // 단일 선택 업데이트
         }
 
         void OnTriggerExit(Collider other)
@@ -472,42 +498,35 @@ namespace Interaction
                     Debug.Log($"[InteractionTriggerDetector] 꿈틀이 감지 리스트에서 제거: {ggumtle.GgumtleId}");
 
                 UpdateClosestGgumtle();
+                UpdateSingleClosestInteractable(); // 단일 선택 업데이트
             }
         }
 
         /// <summary>
-        /// 가장 가까운 꿈틀이 업데이트 및 메시지 발행
+        /// 가장 가까운 꿈틀이 업데이트 및 거리 캐싱
         /// </summary>
         private void UpdateClosestGgumtle()
         {
             GgumtleGameObject newClosest = null;
+            float newClosestDistance = float.MaxValue;
 
             if (_detectedGgumtles.Count > 0)
             {
                 // 거리순으로 정렬하여 가장 가까운 꿈틀이 찾기
                 var closest = _detectedGgumtles.OrderBy(g => g.distance).First();
                 newClosest = closest.ggumtle;
+                newClosestDistance = closest.distance;
 
                 if (enableDebugLogs)
-                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 꿈틀이: {newClosest.GgumtleId}, 거리: {closest.distance:F2}");
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 꿈틀이: {newClosest.GgumtleId}, 거리: {newClosestDistance:F2}");
             }
 
-            // 가장 가까운 꿈틀이가 변경되었는지 확인
+            // 거리 캐싱
+            _closestGgumtleDistance = newClosestDistance;
+
+            // 가장 가까운 꿈틀이가 변경되었는지 확인 (타입 내부)
             if (_currentClosestGgumtle != newClosest)
             {
-                // 이전 꿈틀이가 있었다면 Left 메시지 발행
-                if (_currentClosestGgumtle != null)
-                {
-                    PublishGgumtleLeftMessage(_currentClosestGgumtle);
-                }
-
-                // 새로운 꿈틀이가 있다면 Detected 메시지 발행
-                if (newClosest != null)
-                {
-                    var closestInfo = _detectedGgumtles.First(g => g.ggumtle == newClosest);
-                    PublishGgumtleDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
-                }
-
                 _currentClosestGgumtle = newClosest;
             }
         }
@@ -581,6 +600,7 @@ namespace Interaction
                 Debug.Log($"[InteractionTriggerDetector] 상자 감지 리스트에 추가: {chest.ChestId}, 거리: {distance:F2}");
 
             UpdateClosestChest();
+            UpdateSingleClosestInteractable(); // 단일 선택 업데이트
         }
 
         /// <summary>
@@ -596,42 +616,35 @@ namespace Interaction
                     Debug.Log($"[InteractionTriggerDetector] 상자 감지 리스트에서 제거: {chest.ChestId}");
 
                 UpdateClosestChest();
+                UpdateSingleClosestInteractable(); // 단일 선택 업데이트
             }
         }
 
         /// <summary>
-        /// 가장 가까운 상자 업데이트 및 메시지 발행
+        /// 가장 가까운 상자 업데이트 및 거리 캐싱
         /// </summary>
         private void UpdateClosestChest()
         {
             ChestGameObject newClosest = null;
+            float newClosestDistance = float.MaxValue;
 
             if (_detectedChests.Count > 0)
             {
                 // 거리순으로 정렬하여 가장 가까운 상자 찾기
                 var closest = _detectedChests.OrderBy(c => c.distance).First();
                 newClosest = closest.chest;
+                newClosestDistance = closest.distance;
 
                 if (enableDebugLogs)
-                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 상자: {newClosest.ChestId}, 거리: {closest.distance:F2}");
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 상자: {newClosest.ChestId}, 거리: {newClosestDistance:F2}");
             }
 
-            // 가장 가까운 상자가 변경되었는지 확인
+            // 거리 캐싱
+            _closestChestDistance = newClosestDistance;
+
+            // 가장 가까운 상자가 변경되었는지 확인 (타입 내부)
             if (_currentClosestChest != newClosest)
             {
-                // 이전 상자가 있었다면 Left 메시지 발행
-                if (_currentClosestChest != null)
-                {
-                    PublishChestLeftMessage(_currentClosestChest);
-                }
-
-                // 새로운 상자가 있다면 Detected 메시지 발행
-                if (newClosest != null)
-                {
-                    var closestInfo = _detectedChests.First(c => c.chest == newClosest);
-                    PublishChestDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
-                }
-
                 _currentClosestChest = newClosest;
             }
         }
@@ -683,6 +696,7 @@ namespace Interaction
         /// </summary>
         private void UpdateDetectedGgumtleDistances()
         {
+            bool anyDistanceChanged = false;
             bool distanceChanged = false;
 
             // 꿈틀이들의 거리 업데이트
@@ -715,6 +729,7 @@ namespace Interaction
                 if (distanceChanged)
                 {
                     UpdateClosestGgumtle();
+                    anyDistanceChanged = true;
                 }
             }
 
@@ -749,6 +764,7 @@ namespace Interaction
                 if (distanceChanged)
                 {
                     UpdateClosestChest();
+                    anyDistanceChanged = true;
                 }
             }
 
@@ -783,6 +799,7 @@ namespace Interaction
                 if (distanceChanged)
                 {
                     UpdateClosestFaintedMongging();
+                    anyDistanceChanged = true;
                 }
             }
 
@@ -817,7 +834,14 @@ namespace Interaction
                 if (distanceChanged)
                 {
                     UpdateClosestEscapeGate();
+                    anyDistanceChanged = true;
                 }
+            }
+
+            // 어떤 타입이라도 거리가 변경되었다면 단일 상호작용 객체 업데이트
+            if (anyDistanceChanged)
+            {
+                UpdateSingleClosestInteractable();
             }
         }
 
@@ -928,6 +952,7 @@ namespace Interaction
                 Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 감지 리스트에 추가: {faintedMongging.PlayerId}, 거리: {distance:F2}");
 
             UpdateClosestFaintedMongging();
+            UpdateSingleClosestInteractable(); // 단일 선택 업데이트
         }
 
         /// <summary>
@@ -943,42 +968,35 @@ namespace Interaction
                     Debug.Log($"[InteractionTriggerDetector] 기절한 몽깅이 감지 리스트에서 제거: {faintedMongging.PlayerId}");
 
                 UpdateClosestFaintedMongging();
+                UpdateSingleClosestInteractable(); // 단일 선택 업데이트
             }
         }
 
         /// <summary>
-        /// 가장 가까운 기절한 몽깅이 업데이트 및 메시지 발행
+        /// 가장 가까운 기절한 몽깅이 업데이트 및 거리 캐싱
         /// </summary>
         private void UpdateClosestFaintedMongging()
         {
             FaintedMonggingInteractable newClosest = null;
+            float newClosestDistance = float.MaxValue;
 
             if (_detectedFaintedMonggings.Count > 0)
             {
                 // 거리순으로 정렬하여 가장 가까운 기절한 몽깅이 찾기
                 var closest = _detectedFaintedMonggings.OrderBy(f => f.distance).First();
                 newClosest = closest.faintedMongging;
+                newClosestDistance = closest.distance;
 
                 if (enableDebugLogs)
-                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 기절한 몽깅이: {newClosest.PlayerId}, 거리: {closest.distance:F2}");
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 기절한 몽깅이: {newClosest.PlayerId}, 거리: {newClosestDistance:F2}");
             }
 
-            // 가장 가까운 기절한 몽깅이가 변경되었는지 확인
+            // 거리 캐싱
+            _closestFaintedMonggingDistance = newClosestDistance;
+
+            // 가장 가까운 기절한 몽깅이가 변경되었는지 확인 (타입 내부)
             if (_currentClosestFaintedMongging != newClosest)
             {
-                // 이전 기절한 몽깅이가 있었다면 Left 메시지 발행
-                if (_currentClosestFaintedMongging != null)
-                {
-                    PublishFaintedMonggingLeftMessage(_currentClosestFaintedMongging);
-                }
-
-                // 새로운 기절한 몽깅이가 있다면 Detected 메시지 발행
-                if (newClosest != null)
-                {
-                    var closestInfo = _detectedFaintedMonggings.First(f => f.faintedMongging == newClosest);
-                    PublishFaintedMonggingDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
-                }
-
                 _currentClosestFaintedMongging = newClosest;
             }
         }
@@ -1062,6 +1080,7 @@ namespace Interaction
                 Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지 리스트에 추가: {escapeGate.GateId}, 거리: {distance:F2}");
 
             UpdateClosestEscapeGate();
+            UpdateSingleClosestInteractable(); // 단일 선택 업데이트
         }
 
         /// <summary>
@@ -1077,42 +1096,35 @@ namespace Interaction
                     Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 감지 리스트에서 제거: {escapeGate.GateId}");
 
                 UpdateClosestEscapeGate();
+                UpdateSingleClosestInteractable(); // 단일 선택 업데이트
             }
         }
 
         /// <summary>
-        /// 가장 가까운 탈출 게이트 업데이트 및 메시지 발행
+        /// 가장 가까운 탈출 게이트 업데이트 및 거리 캐싱
         /// </summary>
         private void UpdateClosestEscapeGate()
         {
             EscapeGateGameObject newClosest = null;
+            float newClosestDistance = float.MaxValue;
 
             if (_detectedEscapeGates.Count > 0)
             {
                 // 거리순으로 정렬하여 가장 가까운 탈출 게이트 찾기
                 var closest = _detectedEscapeGates.OrderBy(e => e.distance).First();
                 newClosest = closest.escapeGate;
+                newClosestDistance = closest.distance;
 
                 if (enableDebugLogs)
-                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 탈출 게이트: {newClosest.GateId}, 거리: {closest.distance:F2}");
+                    Debug.Log($"[InteractionTriggerDetector] 가장 가까운 탈출 게이트: {newClosest.GateId}, 거리: {newClosestDistance:F2}");
             }
 
-            // 가장 가까운 탈출 게이트가 변경되었는지 확인
+            // 거리 캐싱
+            _closestEscapeGateDistance = newClosestDistance;
+
+            // 가장 가까운 탈출 게이트가 변경되었는지 확인 (타입 내부)
             if (_currentClosestEscapeGate != newClosest)
             {
-                // 이전 탈출 게이트가 있었다면 Left 메시지 발행
-                if (_currentClosestEscapeGate != null)
-                {
-                    PublishEscapeGateLeftMessage(_currentClosestEscapeGate);
-                }
-
-                // 새로운 탈출 게이트가 있다면 Detected 메시지 발행
-                if (newClosest != null)
-                {
-                    var closestInfo = _detectedEscapeGates.First(e => e.escapeGate == newClosest);
-                    PublishEscapeGateDetectedMessage(newClosest, closestInfo.collider, closestInfo.distance);
-                }
-
                 _currentClosestEscapeGate = newClosest;
             }
         }
@@ -1158,6 +1170,157 @@ namespace Interaction
             if (enableDebugLogs)
                 Debug.Log($"[InteractionTriggerDetector] 탈출 게이트 벗어남 메시지 발행: {escapeGate.GateId}");
         }
+
+        #region Single Closest Interactable Selection
+
+        /// <summary>
+        /// 모든 타입 중에서 가장 가까운 1개의 상호작용 객체만 선택
+        /// O(1) 복잡도 - 각 타입별 가장 가까운 객체 4개만 비교
+        /// </summary>
+        private void UpdateSingleClosestInteractable()
+        {
+            // 후보 리스트 (4개만 비교)
+            var candidates = new[]
+            {
+                (distance: _closestFaintedMonggingDistance, obj: (object)_currentClosestFaintedMongging, type: InteractableType.FaintedMongging),
+                (distance: _closestEscapeGateDistance, obj: (object)_currentClosestEscapeGate, type: InteractableType.EscapeGate),
+                (distance: _closestGgumtleDistance, obj: (object)_currentClosestGgumtle, type: InteractableType.Ggumtle),
+                (distance: _closestChestDistance, obj: (object)_currentClosestChest, type: InteractableType.Chest)
+            };
+
+            // 가장 가까운 후보 찾기 (null 제외)
+            object newClosest = null;
+            float newClosestDistance = float.MaxValue;
+            InteractableType newClosestType = InteractableType.None;
+
+            foreach (var candidate in candidates)
+            {
+                if (candidate.obj != null && candidate.distance < newClosestDistance)
+                {
+                    newClosestDistance = candidate.distance;
+                    newClosest = candidate.obj;
+                    newClosestType = candidate.type;
+                }
+            }
+
+            // 히스테리시스 적용 (떨림 방지)
+            // 현재 선택된 객체가 있고, 새 객체와의 거리 차이가 임계값 미만이면 변경하지 않음
+            if (_currentActiveInteractable != null && newClosest != null)
+            {
+                float currentDistance = GetDistanceForType(_currentActiveType);
+                if (Mathf.Abs(currentDistance - newClosestDistance) < HYSTERESIS_THRESHOLD)
+                {
+                    return; // 변경하지 않음
+                }
+            }
+
+            // 선택된 객체가 변경된 경우
+            if (_currentActiveInteractable != newClosest)
+            {
+                // 이전 객체에 Left 메시지 발행
+                if (_currentActiveInteractable != null)
+                {
+                    PublishLeftMessageForType(_currentActiveType, _currentActiveInteractable);
+                }
+
+                // 새 객체에 Detected 메시지 발행
+                if (newClosest != null)
+                {
+                    PublishDetectedMessageForType(newClosestType, newClosest, newClosestDistance);
+                }
+
+                _currentActiveInteractable = newClosest;
+                _currentActiveType = newClosestType;
+
+                if (enableDebugLogs)
+                    Debug.Log($"[InteractionTriggerDetector] 활성 상호작용 객체 변경: {_currentActiveType} (거리: {newClosestDistance:F2})");
+            }
+        }
+
+        /// <summary>
+        /// 타입별 현재 거리 조회
+        /// </summary>
+        private float GetDistanceForType(InteractableType type)
+        {
+            return type switch
+            {
+                InteractableType.FaintedMongging => _closestFaintedMonggingDistance,
+                InteractableType.EscapeGate => _closestEscapeGateDistance,
+                InteractableType.Ggumtle => _closestGgumtleDistance,
+                InteractableType.Chest => _closestChestDistance,
+                _ => float.MaxValue
+            };
+        }
+
+        /// <summary>
+        /// 타입별 Left 메시지 발행
+        /// </summary>
+        private void PublishLeftMessageForType(InteractableType type, object obj)
+        {
+            switch (type)
+            {
+                case InteractableType.Ggumtle:
+                    if (obj is GgumtleGameObject ggumtle)
+                        PublishGgumtleLeftMessage(ggumtle);
+                    break;
+                case InteractableType.Chest:
+                    if (obj is ChestGameObject chest)
+                        PublishChestLeftMessage(chest);
+                    break;
+                case InteractableType.FaintedMongging:
+                    if (obj is FaintedMonggingInteractable fainted)
+                        PublishFaintedMonggingLeftMessage(fainted);
+                    break;
+                case InteractableType.EscapeGate:
+                    if (obj is EscapeGateGameObject gate)
+                        PublishEscapeGateLeftMessage(gate);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// 타입별 Detected 메시지 발행
+        /// </summary>
+        private void PublishDetectedMessageForType(InteractableType type, object obj, float distance)
+        {
+            switch (type)
+            {
+                case InteractableType.Ggumtle:
+                    if (obj is GgumtleGameObject ggumtle)
+                    {
+                        var ggumtleCollider = _detectedGgumtles.FirstOrDefault(g => g.ggumtle == ggumtle).collider;
+                        if (ggumtleCollider != null)
+                            PublishGgumtleDetectedMessage(ggumtle, ggumtleCollider, distance);
+                    }
+                    break;
+                case InteractableType.Chest:
+                    if (obj is ChestGameObject chest)
+                    {
+                        var chestCollider = _detectedChests.FirstOrDefault(c => c.chest == chest).collider;
+                        if (chestCollider != null)
+                            PublishChestDetectedMessage(chest, chestCollider, distance);
+                    }
+                    break;
+                case InteractableType.FaintedMongging:
+                    if (obj is FaintedMonggingInteractable fainted)
+                    {
+                        var faintedCollider = _detectedFaintedMonggings.FirstOrDefault(f => f.faintedMongging == fainted).collider;
+                        if (faintedCollider != null)
+                            PublishFaintedMonggingDetectedMessage(fainted, faintedCollider, distance);
+                    }
+                    break;
+                case InteractableType.EscapeGate:
+                    if (obj is EscapeGateGameObject gate)
+                    {
+                        var gateCollider = _detectedEscapeGates.FirstOrDefault(e => e.escapeGate == gate).collider;
+                        if (gateCollider != null)
+                            PublishEscapeGateDetectedMessage(gate, gateCollider, distance);
+                    }
+                    break;
+            }
+        }
+
+        #endregion
 
         #region Public Properties
 

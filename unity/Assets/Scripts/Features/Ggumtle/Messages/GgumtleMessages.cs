@@ -194,4 +194,19 @@ namespace Features.Ggumtle.Messages
             EatenCount = eatenCount;
         }
     }
+
+    /// <summary>
+    /// 꿈틀이 제거 요청 메시지 (GameObject 완전 삭제용)
+    /// </summary>
+    public readonly struct GgumtleRemoveRequestMessage
+    {
+        public readonly int GgumtleId;
+        public readonly string Reason; // "Fake" 또는 "Purified"
+
+        public GgumtleRemoveRequestMessage(int ggumtleId, string reason)
+        {
+            GgumtleId = ggumtleId;
+            Reason = reason;
+        }
+    }
 }

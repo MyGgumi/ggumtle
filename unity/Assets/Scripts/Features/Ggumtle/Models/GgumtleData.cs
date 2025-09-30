@@ -57,7 +57,7 @@ namespace Features.Ggumtle.Models
             position = Vector3.zero;
             currentState = GgumtleState.Buried;
             diggingHoldTime = 3f;
-            maxFoodRequired = 30;
+            maxFoodRequired = 5; // 테스트용으로 5개로 축소
             currentFoodAmount = 0;
             feedingRate = 1;
             acceptableFoodType = "Light";
@@ -77,7 +77,7 @@ namespace Features.Ggumtle.Models
             position = pos;
             currentState = GgumtleState.Buried;
             diggingHoldTime = 3f;
-            maxFoodRequired = 30;
+            maxFoodRequired = 5; // 테스트용으로 5개로 축소
             currentFoodAmount = 0;
             feedingRate = 1;
             acceptableFoodType = "Light";

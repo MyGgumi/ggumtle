@@ -70,6 +70,7 @@ namespace Features.Ggumtle.Views
         private GgumtleViewModel _viewModel;
         private Features.Ggumtle.Services.IGgumtleService _ggumtleService;
         private ISubscriber<GgumtleStateBroadcastMessage> _stateBroadcastSubscriber;
+        private IPublisher<GgumtleRemoveRequestMessage> _removeRequestPublisher;
         private CompositeDisposable _disposables = new();
 
         /// <summary>
@@ -79,12 +80,14 @@ namespace Features.Ggumtle.Views
         public void Construct(
             GgumtleViewModel viewModel,
             Features.Ggumtle.Services.IGgumtleService ggumtleService,
-            ISubscriber<GgumtleStateBroadcastMessage> stateBroadcastSubscriber
+            ISubscriber<GgumtleStateBroadcastMessage> stateBroadcastSubscriber,
+            IPublisher<GgumtleRemoveRequestMessage> removeRequestPublisher
         )
         {
             _viewModel = viewModel;
             _ggumtleService = ggumtleService;
             _stateBroadcastSubscriber = stateBroadcastSubscriber;
+            _removeRequestPublisher = removeRequestPublisher;
 
             if (enableDebugLogs)
             {
@@ -103,10 +106,10 @@ namespace Features.Ggumtle.Views
             );
 
             // VContainer 의존성 주입 확인
-            if (_viewModel == null || _ggumtleService == null || _stateBroadcastSubscriber == null)
+            if (_viewModel == null || _ggumtleService == null || _stateBroadcastSubscriber == null || _removeRequestPublisher == null)
             {
                 Debug.LogError(
-                    $"[GgumtleGameObject] VContainer 의존성 주입 실패: {gameObject.name}. ViewModel: {_viewModel != null}, Service: {_ggumtleService != null}, Subscriber: {_stateBroadcastSubscriber != null}"
+                    $"[GgumtleGameObject] VContainer 의존성 주입 실패: {gameObject.name}. ViewModel: {_viewModel != null}, Service: {_ggumtleService != null}, Subscriber: {_stateBroadcastSubscriber != null}, Publisher: {_removeRequestPublisher != null}"
                 );
                 return;
             }
@@ -485,9 +488,9 @@ namespace Features.Ggumtle.Views
                         Debug.LogError($"[GgumtleGameObject] childAnimator가 null입니다!");
                     }
 
-                    // 2초 딜레이 후 비활성화 (이펙트 duration 고려)
-                    Debug.Log($"[GgumtleGameObject] 코루틴 시작: 2초 후 비활성화");
-                    StartCoroutine(DelayedDeactivate(2f));
+                    // 2초 딜레이 후 제거 요청 메시지 발행 (이펙트 duration 고려)
+                    Debug.Log($"[GgumtleGameObject] 코루틴 시작: 2초 후 제거 요청");
+                    StartCoroutine(DelayedRemoveRequest(2f, "Fake"));
 
                     break;
 
@@ -497,6 +500,28 @@ namespace Features.Ggumtle.Views
 
                 case 30: // 정화 완료
                     childAnimator.SetTrigger("Purify");
+                    childAnimator.SetBool("IsFeeding", false);
+
+                    // 상호작용 비활성화 (Collider 끄기)
+                    var purifiedCollider = GetComponent<Collider>();
+                    if (purifiedCollider != null)
+                    {
+                        purifiedCollider.enabled = false;
+                        Debug.Log($"[GgumtleGameObject] 성불 완료 - Collider 비활성화: {gameObject.name} (ID={ggumtleId})");
+                    }
+
+                    // ViewModel 상태 업데이트
+                    if (_viewModel != null)
+                    {
+                        _viewModel.State.Value = GgumtleState.Purified;
+                        _viewModel.IsInRange.Value = false; // UI 강제로 숨기기
+                        Debug.Log($"[GgumtleGameObject] ViewModel 상태를 Purified로 설정 및 UI 숨김");
+                    }
+
+                    // 3초 딜레이 후 제거 요청 메시지 발행 (성불 애니메이션 고려)
+                    Debug.Log($"[GgumtleGameObject] 코루틴 시작: 3초 후 제거 요청 (성불)");
+                    StartCoroutine(DelayedRemoveRequest(3f, "Purified"));
+
                     break;
 
                 default:
@@ -670,48 +695,25 @@ namespace Features.Ggumtle.Views
                 feedingEffect.Stop();
         }
 
-        // OnStateFake() 메서드는 더 이상 사용하지 않음
-        // 애니메이션 이벤트 핸들러에서 자동으로 Fake 이펙트 처리
-        // UpdateAnimatorParameters의 case 11에서 직접 비활성화 코루틴 실행
-
-        private System.Collections.IEnumerator DelayedDeactivate(float delay)
+        /// <summary>
+        /// 딜레이 후 제거 요청 메시지 발행 (GameObject 완전 삭제용)
+        /// </summary>
+        private System.Collections.IEnumerator DelayedRemoveRequest(float delay, string reason)
         {
-            Debug.Log($"[GgumtleGameObject] DelayedDeactivate 코루틴 시작: {delay}초 대기");
+            Debug.Log($"[GgumtleGameObject] DelayedRemoveRequest 코루틴 시작: {delay}초 대기, Reason={reason}");
             yield return new WaitForSeconds(delay);
-            Debug.Log($"[GgumtleGameObject] {delay}초 경과! 비활성화 시작");
-            // 이펙트는 애니메이션 이벤트 핸들러에서 자동 재생되므로 바로 비활성화
-            DeactivateGgumtle();
-        }
+            Debug.Log($"[GgumtleGameObject] {delay}초 경과! 제거 요청 메시지 발행");
 
-        private void DeactivateGgumtle()
-        {
-            Debug.Log($"[GgumtleGameObject] DeactivateGgumtle 호출됨: {gameObject.name} (ID={ggumtleId})");
-
-            // 모든 Renderer 컴포넌트 비활성화 (시각적으로 사라짐)
-            var renderers = GetComponentsInChildren<Renderer>();
-            Debug.Log($"[GgumtleGameObject] 찾은 Renderer 수: {renderers.Length}");
-            foreach (var renderer in renderers)
+            // 제거 요청 메시지 발행
+            if (_removeRequestPublisher != null)
             {
-                renderer.enabled = false;
-                Debug.Log($"[GgumtleGameObject] Renderer 비활성화: {renderer.name}");
+                _removeRequestPublisher.Publish(new GgumtleRemoveRequestMessage(ggumtleId, reason));
+                Debug.Log($"[GgumtleGameObject] 제거 요청 메시지 발행 완료: ID={ggumtleId}, Reason={reason}");
             }
-
-            // 충돌체 비활성화 (중복 상호작용 방지)
-            var collider = GetComponent<Collider>();
-            if (collider != null)
+            else
             {
-                collider.enabled = false;
-                Debug.Log($"[GgumtleGameObject] Collider 비활성화: {collider.name}");
+                Debug.LogError($"[GgumtleGameObject] RemoveRequestPublisher가 null이어서 제거 요청 실패: {gameObject.name}");
             }
-
-            // 애니메이터 비활성화
-            if (childAnimator != null)
-            {
-                childAnimator.enabled = false;
-                Debug.Log($"[GgumtleGameObject] Animator 비활성화");
-            }
-
-            Debug.Log($"[GgumtleGameObject] 가짜 꿈틀이 비활성화 완료: {gameObject.name}");
         }
 
         #endregion

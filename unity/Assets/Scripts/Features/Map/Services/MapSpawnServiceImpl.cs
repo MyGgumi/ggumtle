@@ -35,6 +35,8 @@ namespace Features.Map.Services
         private readonly Features.Chest.Services.IChestService _chestService;
         private readonly IFieldItemService _fieldItemService;
         private readonly ISubscriber<GgumtleGameObjectSpawnRequestMessage> _ggumtleSpawnRequestSubscriber;
+        private readonly ISubscriber<Features.Ggumtle.Messages.GgumtleRemoveRequestMessage> _ggumtleRemoveRequestSubscriber;
+        private readonly ISubscriber<Features.FieldItem.Messages.FieldItemRemoveRequestMessage> _fieldItemRemoveRequestSubscriber;
         private readonly bool _enableDebugLogs = false;
         private readonly CompositeDisposable _disposables = new();
 
@@ -65,7 +67,9 @@ namespace Features.Map.Services
             IGgumtleService ggumtleService,
             Features.Chest.Services.IChestService chestService,
             IFieldItemService fieldItemService,
-            ISubscriber<GgumtleGameObjectSpawnRequestMessage> ggumtleSpawnRequestSubscriber
+            ISubscriber<GgumtleGameObjectSpawnRequestMessage> ggumtleSpawnRequestSubscriber,
+            ISubscriber<Features.Ggumtle.Messages.GgumtleRemoveRequestMessage> ggumtleRemoveRequestSubscriber,
+            ISubscriber<Features.FieldItem.Messages.FieldItemRemoveRequestMessage> fieldItemRemoveRequestSubscriber
         )
         {
             _addressableLoadService =
@@ -77,10 +81,26 @@ namespace Features.Map.Services
             _ggumtleSpawnRequestSubscriber =
                 ggumtleSpawnRequestSubscriber
                 ?? throw new ArgumentNullException(nameof(ggumtleSpawnRequestSubscriber));
+            _ggumtleRemoveRequestSubscriber =
+                ggumtleRemoveRequestSubscriber
+                ?? throw new ArgumentNullException(nameof(ggumtleRemoveRequestSubscriber));
+            _fieldItemRemoveRequestSubscriber =
+                fieldItemRemoveRequestSubscriber
+                ?? throw new ArgumentNullException(nameof(fieldItemRemoveRequestSubscriber));
 
             // 꿈틀이 스폰 요청 메시지 구독
             _ggumtleSpawnRequestSubscriber
                 .Subscribe(OnGgumtleSpawnRequestReceived)
+                .AddTo(_disposables);
+
+            // 꿈틀이 제거 요청 메시지 구독
+            _ggumtleRemoveRequestSubscriber
+                .Subscribe(OnGgumtleRemoveRequestReceived)
+                .AddTo(_disposables);
+
+            // 필드 아이템 제거 요청 메시지 구독
+            _fieldItemRemoveRequestSubscriber
+                .Subscribe(OnFieldItemRemoveRequestReceived)
                 .AddTo(_disposables);
 
             if (_enableDebugLogs)
@@ -591,6 +611,65 @@ namespace Features.Map.Services
             }
         }
 
+        /// <summary>
+        /// 필드 아이템 제거 (힐팩, 스피드팩)
+        /// </summary>
+        public bool RemoveFieldItem(int id)
+        {
+            try
+            {
+                // 힐팩에서 찾기
+                var healPackToRemove = _spawnedHealPacks.FirstOrDefault(h =>
+                    h != null && h.ItemId == id
+                );
+
+                if (healPackToRemove != null)
+                {
+                    // Addressable 해제
+                    _addressableLoadService.ReleaseInstance(healPackToRemove.gameObject);
+
+                    // 리스트에서 제거
+                    _spawnedHealPacks.Remove(healPackToRemove);
+
+                    OnObjectRemoved?.Invoke("HealPack", healPackToRemove.gameObject);
+
+                    if (_enableDebugLogs)
+                        Debug.Log($"[MapSpawnService] 힐팩 제거 완료: ID={id}");
+
+                    return true;
+                }
+
+                // 스피드팩에서 찾기
+                var speedPackToRemove = _spawnedSpeedPacks.FirstOrDefault(s =>
+                    s != null && s.ItemId == id
+                );
+
+                if (speedPackToRemove != null)
+                {
+                    // Addressable 해제
+                    _addressableLoadService.ReleaseInstance(speedPackToRemove.gameObject);
+
+                    // 리스트에서 제거
+                    _spawnedSpeedPacks.Remove(speedPackToRemove);
+
+                    OnObjectRemoved?.Invoke("SpeedPack", speedPackToRemove.gameObject);
+
+                    if (_enableDebugLogs)
+                        Debug.Log($"[MapSpawnService] 스피드팩 제거 완료: ID={id}");
+
+                    return true;
+                }
+
+                Debug.LogWarning($"[MapSpawnService] 제거할 필드 아이템을 찾을 수 없음: ID={id}");
+                return false;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MapSpawnService] 필드 아이템 제거 실패: ID={id}, {e.Message}");
+                return false;
+            }
+        }
+
         public void ClearAllObjects()
         {
             // 비동기 메서드 호출
@@ -700,6 +779,62 @@ namespace Features.Map.Services
                 Debug.LogError(
                     $"[MapSpawnService] 꿈틀이 GameObject 스폰 요청 처리 실패: {e.Message}"
                 );
+            }
+        }
+
+        /// <summary>
+        /// 꿈틀이 제거 요청 메시지 처리
+        /// </summary>
+        private void OnGgumtleRemoveRequestReceived(Features.Ggumtle.Messages.GgumtleRemoveRequestMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MapSpawnService] 꿈틀이 제거 요청 수신: ID={message.GgumtleId}, Reason={message.Reason}");
+                }
+
+                bool removeSuccess = RemoveGgumtle(message.GgumtleId);
+                if (removeSuccess)
+                {
+                    Debug.Log($"[MapSpawnService] 꿈틀이 제거 완료: ID={message.GgumtleId}, Reason={message.Reason}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[MapSpawnService] 꿈틀이 제거 실패: ID={message.GgumtleId}, Reason={message.Reason}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MapSpawnService] 꿈틀이 제거 요청 처리 실패: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// 필드 아이템 제거 요청 메시지 처리
+        /// </summary>
+        private void OnFieldItemRemoveRequestReceived(Features.FieldItem.Messages.FieldItemRemoveRequestMessage message)
+        {
+            try
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log($"[MapSpawnService] 필드 아이템 제거 요청 수신: ID={message.fieldItemId}");
+                }
+
+                bool removeSuccess = RemoveFieldItem(message.fieldItemId);
+                if (removeSuccess)
+                {
+                    Debug.Log($"[MapSpawnService] 필드 아이템 제거 완료: ID={message.fieldItemId}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[MapSpawnService] 필드 아이템 제거 실패: ID={message.fieldItemId}");
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[MapSpawnService] 필드 아이템 제거 요청 처리 실패: {e.Message}");
             }
         }
 

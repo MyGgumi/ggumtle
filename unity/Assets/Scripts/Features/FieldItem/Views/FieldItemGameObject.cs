@@ -44,6 +44,7 @@ namespace Features.FieldItem.Views
 
         private IFieldItemService _fieldItemService;
         private ISubscriber<FieldItemGlobalUsedMessage> _globalUsedSubscriber;
+        private IPublisher<FieldItemRemoveRequestMessage> _removeRequestPublisher;
         private CompositeDisposable _disposables = new();
         private bool _isInjected = false;
 
@@ -53,10 +54,12 @@ namespace Features.FieldItem.Views
         [Inject]
         public void Construct(
             IFieldItemService fieldItemService,
-            ISubscriber<FieldItemGlobalUsedMessage> globalUsedSubscriber)
+            ISubscriber<FieldItemGlobalUsedMessage> globalUsedSubscriber,
+            IPublisher<FieldItemRemoveRequestMessage> removeRequestPublisher)
         {
             _fieldItemService = fieldItemService;
             _globalUsedSubscriber = globalUsedSubscriber;
+            _removeRequestPublisher = removeRequestPublisher;
             _isInjected = true;
 
             if (enableDebugLogs)
@@ -185,8 +188,9 @@ namespace Features.FieldItem.Views
                 Debug.Log($"[FieldItemGameObject] 글로벌 사용 메시지 수신: ID={itemId}, Success={message.success}");
             }
 
-            // 성공/실패 관계없이 아이템을 비활성화 (서버에서 사용됨을 의미)
+            // 성공/실패 관계없이 아이템을 비활성화하고 제거 요청 (서버에서 사용됨을 의미)
             DeactivateItem();
+            RequestRemove();
         }
 
         private void DeactivateItem()
@@ -211,6 +215,26 @@ namespace Features.FieldItem.Views
             if (enableDebugLogs)
             {
                 Debug.Log($"[FieldItemGameObject] 필드 아이템 비활성화 (Renderer+Collider): ID={itemId}, Renderers={renderers.Length}개 비활성화");
+            }
+        }
+
+        /// <summary>
+        /// 필드 아이템 제거 요청 (MapSpawnService로 전달)
+        /// </summary>
+        private void RequestRemove()
+        {
+            if (_removeRequestPublisher != null)
+            {
+                _removeRequestPublisher.Publish(new FieldItemRemoveRequestMessage(itemId));
+
+                if (enableDebugLogs)
+                {
+                    Debug.Log($"[FieldItemGameObject] 제거 요청 메시지 발행: ID={itemId}");
+                }
+            }
+            else
+            {
+                Debug.LogError($"[FieldItemGameObject] RemoveRequestPublisher가 null이어서 제거 요청 실패: ID={itemId}");
             }
         }
 

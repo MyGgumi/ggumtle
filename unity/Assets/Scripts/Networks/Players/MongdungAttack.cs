@@ -78,13 +78,21 @@ namespace Networks.Players
 
     public class MongdungSkillSend : Sendable
     {
+        public const int Unit = 100;
         public override PacketType Type => PacketType.MongdungSkill;
 
         public int skillType;
+        public int x;
+        public int y;
+        public int z;
 
-        public MongdungSkillSend(int skillType)
+        public MongdungSkillSend(int skillType, Vector3 position)
         {
             this.skillType = skillType;
+
+            this.x = (int)(position.x * Unit);
+            this.y = (int)(position.y * Unit);
+            this.z = (int)(position.z * Unit);
         }
 
         public override byte[] ToBytes()
@@ -92,6 +100,9 @@ namespace Networks.Players
             var buffer = Unpooled.Buffer(4);
 
             buffer.WriteInt(skillType);
+            buffer.WriteInt(this.x);
+            buffer.WriteInt(this.y);
+            buffer.WriteInt(this.z);
 
             var bytes = new byte[buffer.ReadableBytes];
             buffer.ReadBytes(bytes);

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Features.Mongdung.Messages;
 using Features.Mongging.Messages;
 using Features.Mongging.Models;
-using Features.Mongdung.Messages;
 using Features.PlayerHealth.Services;
 using Features.PlayerList.Messages;
 using Features.Revival.Messages;
@@ -30,7 +30,8 @@ namespace Features.Mongging.Services
         public ReadOnlyReactiveProperty<int> DeadPlayerCount => _deadPlayerCount;
         public ReadOnlyReactiveProperty<int> EscapedPlayerCount => _escapedPlayerCount;
         public ReadOnlyReactiveProperty<bool> IsGameOver => _isGameOver;
-        public ReadOnlyReactiveProperty<Dictionary<long, MonggingPlayerData>> AllPlayers => _allPlayers;
+        public ReadOnlyReactiveProperty<Dictionary<long, MonggingPlayerData>> AllPlayers =>
+            _allPlayers;
 
         #endregion
 
@@ -42,7 +43,9 @@ namespace Features.Mongging.Services
         private readonly ReactiveProperty<int> _deadPlayerCount = new(0);
         private readonly ReactiveProperty<int> _escapedPlayerCount = new(0);
         private readonly ReactiveProperty<bool> _isGameOver = new(false);
-        private readonly ReactiveProperty<Dictionary<long, MonggingPlayerData>> _allPlayers = new(new());
+        private readonly ReactiveProperty<Dictionary<long, MonggingPlayerData>> _allPlayers = new(
+            new()
+        );
 
         private readonly MonggingTeamData _teamData = new();
         private readonly Dictionary<long, IMonggingPlayerService> _playerServices = new();
@@ -122,7 +125,8 @@ namespace Features.Mongging.Services
             ISubscriber<MonggingPlayerEscapedMessage> playerEscapedSubscriber,
             IPublisher<Features.Revival.Messages.MonggingInteractableStateMessage> interactableStatePublisher,
             IPublisher<Features.PlayerHealth.Messages.HealReceivedMessage> healReceivedPublisher,
-            Features.GameInfo.Services.IGameInfoService gameInfoService)
+            Features.GameInfo.Services.IGameInfoService gameInfoService
+        )
         {
             _teamSyncPublisher = teamSyncPublisher;
             _playerUpdatedPublisher = playerUpdatedPublisher;
@@ -182,7 +186,12 @@ namespace Features.Mongging.Services
             }
         }
 
-        public void RegisterPlayer(long playerId, string playerName, MonggingPlayerType playerType, bool isLocal = false)
+        public void RegisterPlayer(
+            long playerId,
+            string playerName,
+            MonggingPlayerType playerType,
+            bool isLocal = false
+        )
         {
             if (_playerServices.ContainsKey(playerId))
             {
@@ -210,11 +219,15 @@ namespace Features.Mongging.Services
 
             UpdateObservables();
 
-            _playerUpdatedPublisher.Publish(new MonggingTeamPlayerUpdatedMessage(playerId, playerData));
+            _playerUpdatedPublisher.Publish(
+                new MonggingTeamPlayerUpdatedMessage(playerId, playerData)
+            );
 
             if (_enableDebugLogs)
             {
-                Debug.Log($"[MonggingTeamServiceImpl] 플레이어 등록: ID={playerId}, Name={playerName}, Type={playerType}, Local={isLocal}");
+                Debug.Log(
+                    $"[MonggingTeamServiceImpl] 플레이어 등록: ID={playerId}, Name={playerName}, Type={playerType}, Local={isLocal}"
+                );
             }
         }
 
@@ -283,14 +296,10 @@ namespace Features.Mongging.Services
         private void SubscribeToMongdungActions()
         {
             // 몽둥이 공격 액션 구독
-            _attackActionSubscriber
-                .Subscribe(OnMongdungAttackAction)
-                .AddTo(_disposables);
+            _attackActionSubscriber.Subscribe(OnMongdungAttackAction).AddTo(_disposables);
 
             // 몽둥이 스킬 액션 구독
-            _skillActionSubscriber
-                .Subscribe(OnMongdungSkillAction)
-                .AddTo(_disposables);
+            _skillActionSubscriber.Subscribe(OnMongdungSkillAction).AddTo(_disposables);
 
             if (_enableDebugLogs)
             {
@@ -301,29 +310,19 @@ namespace Features.Mongging.Services
         private void SubscribeToNetworkEvents()
         {
             // 서버 상태 브로드캐스트 구독
-            _stateBroadcastSubscriber
-                .Subscribe(OnStateBroadcastReceived)
-                .AddTo(_disposables);
+            _stateBroadcastSubscriber.Subscribe(OnStateBroadcastReceived).AddTo(_disposables);
 
             // 플레이어 부활 구독
-            _playerRevivedSubscriber
-                .Subscribe(OnPlayerRevivedReceived)
-                .AddTo(_disposables);
+            _playerRevivedSubscriber.Subscribe(OnPlayerRevivedReceived).AddTo(_disposables);
 
             // 서버 상태 구독
-            _serverStateSubscriber
-                .Subscribe(OnServerStateReceived)
-                .AddTo(_disposables);
+            _serverStateSubscriber.Subscribe(OnServerStateReceived).AddTo(_disposables);
 
             // Revival 완료 구독
-            _revivalCompletedSubscriber
-                .Subscribe(OnRevivalCompleted)
-                .AddTo(_disposables);
+            _revivalCompletedSubscriber.Subscribe(OnRevivalCompleted).AddTo(_disposables);
 
             // EscapeGate 탈출 구독
-            _playerEscapedSubscriber
-                .Subscribe(OnPlayerEscapedFromGate)
-                .AddTo(_disposables);
+            _playerEscapedSubscriber.Subscribe(OnPlayerEscapedFromGate).AddTo(_disposables);
 
             if (_enableDebugLogs)
             {
@@ -340,11 +339,16 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] 몽둥이 공격 액션 수신: TargetId={message.TargetId}, Result={message.Result}, LeftHp={message.LeftHp}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 몽둥이 공격 액션 수신: TargetId={message.TargetId}, Result={message.Result}, LeftHp={message.LeftHp}"
+                    );
                 }
 
                 // targetId가 유효한 몽깅이인지 확인
-                if (message.TargetId > 0 && _playerServices.TryGetValue(message.TargetId, out var targetPlayerService))
+                if (
+                    message.TargetId > 0
+                    && _playerServices.TryGetValue(message.TargetId, out var targetPlayerService)
+                )
                 {
                     // 피격 처리 (Local/Remote 모두)
                     var targetData = targetPlayerService.GetPlayerData();
@@ -362,7 +366,9 @@ namespace Features.Mongging.Services
 
                                     if (_enableDebugLogs)
                                     {
-                                        Debug.Log($"[MonggingTeamServiceImpl] PlayerHealth 동기화: TargetId={message.TargetId}, LeftHP={message.LeftHp}");
+                                        Debug.Log(
+                                            $"[MonggingTeamServiceImpl] PlayerHealth 동기화: TargetId={message.TargetId}, LeftHP={message.LeftHp}"
+                                        );
                                     }
                                 }
 
@@ -372,7 +378,9 @@ namespace Features.Mongging.Services
 
                                 if (_enableDebugLogs)
                                 {
-                                    Debug.Log($"[MonggingTeamServiceImpl] 로컬 몽깅이 피격 처리: TargetId={message.TargetId}, Damage=40, ServerLeftHP={message.LeftHp}");
+                                    Debug.Log(
+                                        $"[MonggingTeamServiceImpl] 로컬 몽깅이 피격 처리: TargetId={message.TargetId}, Damage=40, ServerLeftHP={message.LeftHp}"
+                                    );
                                 }
                             }
                             else
@@ -391,7 +399,9 @@ namespace Features.Mongging.Services
 
                                 if (_enableDebugLogs)
                                 {
-                                    Debug.Log($"[MonggingTeamServiceImpl] 원격 몽깅이 피격 애니메이션: TargetId={message.TargetId}");
+                                    Debug.Log(
+                                        $"[MonggingTeamServiceImpl] 원격 몽깅이 피격 애니메이션: TargetId={message.TargetId}"
+                                    );
                                 }
                             }
                             break;
@@ -400,7 +410,9 @@ namespace Features.Mongging.Services
                             // 타겟이 기절/사망 상태여서 공격 실패
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] 공격 실패 - 타겟이 기절/사망 상태: TargetId={message.TargetId}");
+                                Debug.Log(
+                                    $"[MonggingTeamServiceImpl] 공격 실패 - 타겟이 기절/사망 상태: TargetId={message.TargetId}"
+                                );
                             }
                             break;
 
@@ -411,7 +423,9 @@ namespace Features.Mongging.Services
                             // 기타 실패 케이스들
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] 공격 실패 - {message.Result}: TargetId={message.TargetId}");
+                                Debug.Log(
+                                    $"[MonggingTeamServiceImpl] 공격 실패 - {message.Result}: TargetId={message.TargetId}"
+                                );
                             }
                             break;
                     }
@@ -419,7 +433,9 @@ namespace Features.Mongging.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MonggingTeamServiceImpl] 몽둥이 공격 액션 처리 실패: {e.Message}");
+                Debug.LogError(
+                    $"[MonggingTeamServiceImpl] 몽둥이 공격 액션 처리 실패: {e.Message}"
+                );
             }
         }
 
@@ -432,8 +448,14 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    string skillName = message.ActionType == Features.Mongdung.Models.MongdungActionType.TrapSetting ? "TrapSetting(꿈틀이 심기)" : message.ActionType.ToString();
-                    Debug.Log($"[MonggingTeamServiceImpl] 몽둥이 스킬 액션 수신: SkillType={message.SkillType}, ActionType={skillName}, Result={message.Result}");
+                    string skillName =
+                        message.ActionType
+                        == Features.Mongdung.Models.MongdungActionType.TrapSetting
+                            ? "TrapSetting(꿈틀이 심기)"
+                            : message.ActionType.ToString();
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 몽둥이 스킬 액션 수신: SkillType={message.SkillType}, ActionType={skillName}, Result={message.Result}"
+                    );
                 }
 
                 // 스킬 타입에 따른 처리
@@ -450,7 +472,9 @@ namespace Features.Mongging.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MonggingTeamServiceImpl] 몽둥이 스킬 액션 처리 실패: {e.Message}");
+                Debug.LogError(
+                    $"[MonggingTeamServiceImpl] 몽둥이 스킬 액션 처리 실패: {e.Message}"
+                );
             }
         }
 
@@ -473,7 +497,11 @@ namespace Features.Mongging.Services
                 foreach (var playerService in _playerServices.Values)
                 {
                     var playerData = playerService.GetPlayerData();
-                    if (playerData.isLocal && playerData.IsAlive && playerData.currentState == MonggingPlayerState.Normal)
+                    if (
+                        playerData.isLocal
+                        && playerData.IsAlive
+                        && playerData.currentState == MonggingPlayerState.Normal
+                    )
                     {
                         playerService.ApplyFrighten(5f);
                     }
@@ -483,7 +511,9 @@ namespace Features.Mongging.Services
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log("[MonggingTeamServiceImpl] 공포 스킬 적용 완료 - Vignette 효과 + 상태 변경");
+                    Debug.Log(
+                        "[MonggingTeamServiceImpl] 공포 스킬 적용 완료 - Vignette 효과 + 상태 변경"
+                    );
                 }
             }
         }
@@ -500,7 +530,8 @@ namespace Features.Mongging.Services
                 if (globalVolumeGO == null)
                 {
                     // 이름이 다를 수 있으니 Volume 컴포넌트가 있는 GameObject 찾기
-                    var volumeComponents = UnityEngine.Object.FindObjectsOfType<UnityEngine.Rendering.Volume>();
+                    var volumeComponents =
+                        UnityEngine.Object.FindObjectsOfType<UnityEngine.Rendering.Volume>();
                     foreach (var vol in volumeComponents)
                     {
                         if (vol.isGlobal)
@@ -519,47 +550,66 @@ namespace Features.Mongging.Services
                     {
                         if (_enableDebugLogs)
                         {
-                            Debug.Log($"[MonggingTeamServiceImpl] Volume 찾음: {globalVolumeGO.name}, isGlobal={volume.isGlobal}");
+                            Debug.Log(
+                                $"[MonggingTeamServiceImpl] Volume 찾음: {globalVolumeGO.name}, isGlobal={volume.isGlobal}"
+                            );
                         }
 
                         // Volume Profile에서 Vignette 효과 가져오기
-                        if (volume.profile.TryGet(out UnityEngine.Rendering.Universal.Vignette vignette))
+                        if (
+                            volume.profile.TryGet(
+                                out UnityEngine.Rendering.Universal.Vignette vignette
+                            )
+                        )
                         {
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] Vignette 효과 가져옴: 현재 intensity={vignette.intensity.value}");
+                                Debug.Log(
+                                    $"[MonggingTeamServiceImpl] Vignette 효과 가져옴: 현재 intensity={vignette.intensity.value}"
+                                );
                             }
 
                             // Vignette 강도를 0.7로 설정
                             vignette.active = true;
                             vignette.intensity.overrideState = true;
-                            vignette.intensity.value = 0.7f;
+                            vignette.intensity.value = 1f;
 
                             // 5초 후 기본값(0)으로 원복하는 코루틴 시작
-                            var coroutineRunner = UnityEngine.Object.FindObjectOfType<UnityEngine.MonoBehaviour>();
+                            var coroutineRunner =
+                                UnityEngine.Object.FindObjectOfType<UnityEngine.MonoBehaviour>();
                             if (coroutineRunner != null)
                             {
-                                coroutineRunner.StartCoroutine(ResetVignetteCoroutine(vignette, 0f, 5f));
+                                coroutineRunner.StartCoroutine(
+                                    ResetVignetteCoroutine(vignette, 0f, 5f)
+                                );
                             }
 
                             if (_enableDebugLogs)
                             {
-                                Debug.Log("[MonggingTeamServiceImpl] 공포 Vignette 효과 적용 완료: intensity=0.7");
+                                Debug.Log(
+                                    "[MonggingTeamServiceImpl] 공포 Vignette 효과 적용 완료: intensity=0.7"
+                                );
                             }
                         }
                         else
                         {
-                            Debug.LogWarning("[MonggingTeamServiceImpl] Volume Profile에서 Vignette 효과를 찾을 수 없습니다!");
+                            Debug.LogWarning(
+                                "[MonggingTeamServiceImpl] Volume Profile에서 Vignette 효과를 찾을 수 없습니다!"
+                            );
                         }
                     }
                     else
                     {
-                        Debug.LogWarning("[MonggingTeamServiceImpl] Volume 컴포넌트 또는 Profile을 찾을 수 없습니다!");
+                        Debug.LogWarning(
+                            "[MonggingTeamServiceImpl] Volume 컴포넌트 또는 Profile을 찾을 수 없습니다!"
+                        );
                     }
                 }
                 else
                 {
-                    Debug.LogWarning("[MonggingTeamServiceImpl] Global Volume GameObject를 찾을 수 없습니다!");
+                    Debug.LogWarning(
+                        "[MonggingTeamServiceImpl] Global Volume GameObject를 찾을 수 없습니다!"
+                    );
                 }
             }
             catch (System.Exception e)
@@ -571,14 +621,20 @@ namespace Features.Mongging.Services
         /// <summary>
         /// Vignette 원복 코루틴
         /// </summary>
-        private static System.Collections.IEnumerator ResetVignetteCoroutine(UnityEngine.Rendering.Universal.Vignette vignette, float originalIntensity, float delay)
+        private static System.Collections.IEnumerator ResetVignetteCoroutine(
+            UnityEngine.Rendering.Universal.Vignette vignette,
+            float originalIntensity,
+            float delay
+        )
         {
             yield return new UnityEngine.WaitForSeconds(delay);
 
             if (vignette != null)
             {
                 vignette.intensity.value = originalIntensity;
-                Debug.Log($"[MonggingTeamServiceImpl] 공포 Vignette 효과 해제: 0.7 → {originalIntensity}");
+                Debug.Log(
+                    $"[MonggingTeamServiceImpl] 공포 Vignette 효과 해제: 0.7 → {originalIntensity}"
+                );
             }
         }
 
@@ -604,7 +660,9 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] 서버 상태 브로드캐스트 수신: PlayerId={message.PlayerId}, StateType={message.StateType}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 서버 상태 브로드캐스트 수신: PlayerId={message.PlayerId}, StateType={message.StateType}"
+                    );
                 }
 
                 if (_playerServices.TryGetValue(message.PlayerId, out var playerService))
@@ -618,7 +676,9 @@ namespace Features.Mongging.Services
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MonggingTeamServiceImpl] 서버 상태 브로드캐스트 처리 실패: {e.Message}");
+                Debug.LogError(
+                    $"[MonggingTeamServiceImpl] 서버 상태 브로드캐스트 처리 실패: {e.Message}"
+                );
             }
         }
 
@@ -631,7 +691,9 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] 플레이어 부활 수신: RevivedId={message.RevivedPlayerId}, RevivingId={message.RevivingPlayerId}, HP={message.ReviveHp}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 플레이어 부활 수신: RevivedId={message.RevivedPlayerId}, RevivingId={message.RevivingPlayerId}, HP={message.ReviveHp}"
+                    );
                 }
 
                 if (_playerServices.TryGetValue(message.RevivedPlayerId, out var playerService))
@@ -659,7 +721,7 @@ namespace Features.Mongging.Services
                 3 => MonggingPlayerState.Escaped,
                 4 => MonggingPlayerState.Stunned,
                 5 => MonggingPlayerState.Frightened,
-                _ => MonggingPlayerState.Normal
+                _ => MonggingPlayerState.Normal,
             };
         }
 
@@ -679,7 +741,7 @@ namespace Features.Mongging.Services
                     MonggingPlayerState.Escaped => "escape",
                     MonggingPlayerState.Stunned => "default", // 스턴은 기본 아이콘 유지
                     MonggingPlayerState.Frightened => "default", // 공포도 기본 아이콘 유지
-                    _ => "default"
+                    _ => "default",
                 };
 
                 // 플레이어 이름 가져오기
@@ -691,15 +753,15 @@ namespace Features.Mongging.Services
                 }
 
                 // PlayerList에게 상태 변경 알림
-                _playerListStatePublisher.Publish(new PlayerListMonggingStateUpdateMessage(
-                    playerId,
-                    statusString,
-                    playerName
-                ));
+                _playerListStatePublisher.Publish(
+                    new PlayerListMonggingStateUpdateMessage(playerId, statusString, playerName)
+                );
 
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] PlayerList 상태 알림: Player{playerId} → {statusString} ({playerName})");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] PlayerList 상태 알림: Player{playerId} → {statusString} ({playerName})"
+                    );
                 }
             }
             catch (Exception e)
@@ -728,23 +790,27 @@ namespace Features.Mongging.Services
             _allPlayers.Value = new Dictionary<long, MonggingPlayerData>(allPlayerData);
 
             // 팀 동기화 메시지 발행
-            _teamSyncPublisher.Publish(new MonggingTeamSyncMessage(
-                _teamData.TotalPlayerCount,
-                _teamData.AlivePlayerCount,
-                _teamData.FaintedPlayerCount,
-                _teamData.DeadPlayerCount,
-                _teamData.EscapedPlayerCount,
-                _teamData.IsGameOver()
-            ));
+            _teamSyncPublisher.Publish(
+                new MonggingTeamSyncMessage(
+                    _teamData.TotalPlayerCount,
+                    _teamData.AlivePlayerCount,
+                    _teamData.FaintedPlayerCount,
+                    _teamData.DeadPlayerCount,
+                    _teamData.EscapedPlayerCount,
+                    _teamData.IsGameOver()
+                )
+            );
 
             // 게임 종료 체크
             if (_teamData.IsGameOver() && !_isGameOver.Value)
             {
-                _gameOverPublisher.Publish(new MonggingTeamGameOverMessage(
-                    _teamData.DeadPlayerCount == _teamData.TotalPlayerCount,
-                    _teamData.EscapedPlayerCount == _teamData.TotalPlayerCount,
-                    GetAllPlayers()
-                ));
+                _gameOverPublisher.Publish(
+                    new MonggingTeamGameOverMessage(
+                        _teamData.DeadPlayerCount == _teamData.TotalPlayerCount,
+                        _teamData.EscapedPlayerCount == _teamData.TotalPlayerCount,
+                        GetAllPlayers()
+                    )
+                );
             }
         }
 
@@ -785,8 +851,12 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] 서버 상태 수신: PlayerId={message.PlayerId}, State={message.NewState}");
-                    Debug.Log($"[MonggingTeamServiceImpl] 현재 등록된 플레이어 수: {_playerServices.Count}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 서버 상태 수신: PlayerId={message.PlayerId}, State={message.NewState}"
+                    );
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 현재 등록된 플레이어 수: {_playerServices.Count}"
+                    );
                     foreach (var kvp in _playerServices)
                     {
                         Debug.Log($"[MonggingTeamServiceImpl] 등록된 플레이어: {kvp.Key}");
@@ -797,26 +867,36 @@ namespace Features.Mongging.Services
                 {
                     if (_enableDebugLogs)
                     {
-                        Debug.Log($"[MonggingTeamServiceImpl] 플레이어 서비스 찾음: PlayerId={message.PlayerId}, Service={playerService}");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] 플레이어 서비스 찾음: PlayerId={message.PlayerId}, Service={playerService}"
+                        );
                     }
 
                     if (playerService == null)
                     {
-                        Debug.LogError($"[MonggingTeamServiceImpl] PlayerService가 null입니다: PlayerId={message.PlayerId}");
+                        Debug.LogError(
+                            $"[MonggingTeamServiceImpl] PlayerService가 null입니다: PlayerId={message.PlayerId}"
+                        );
                         return;
                     }
 
                     var playerData = playerService.GetPlayerData();
                     if (playerData == null)
                     {
-                        Debug.LogError($"[MonggingTeamServiceImpl] PlayerData가 null입니다: PlayerId={message.PlayerId}");
+                        Debug.LogError(
+                            $"[MonggingTeamServiceImpl] PlayerData가 null입니다: PlayerId={message.PlayerId}"
+                        );
                         return;
                     }
 
                     if (_enableDebugLogs)
                     {
-                        Debug.Log($"[MonggingTeamServiceImpl] PlayerData 획득 성공: PlayerId={message.PlayerId}, PlayerData={playerData}");
-                        Debug.Log($"[MonggingTeamServiceImpl] PlayerData Type: {playerData.GetType()}");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] PlayerData 획득 성공: PlayerId={message.PlayerId}, PlayerData={playerData}"
+                        );
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] PlayerData Type: {playerData.GetType()}"
+                        );
                     }
 
                     MonggingPlayerState previousState;
@@ -824,17 +904,23 @@ namespace Features.Mongging.Services
                     {
                         if (_enableDebugLogs)
                         {
-                            Debug.Log($"[MonggingTeamServiceImpl] PlayerData.currentState 접근 시도");
+                            Debug.Log(
+                                $"[MonggingTeamServiceImpl] PlayerData.currentState 접근 시도"
+                            );
                         }
                         previousState = playerData.currentState;
                         if (_enableDebugLogs)
                         {
-                            Debug.Log($"[MonggingTeamServiceImpl] PreviousState 획득 성공: {previousState}");
+                            Debug.Log(
+                                $"[MonggingTeamServiceImpl] PreviousState 획득 성공: {previousState}"
+                            );
                         }
                     }
                     catch (Exception ex)
                     {
-                        Debug.LogError($"[MonggingTeamServiceImpl] PlayerData.currentState 접근 실패: {ex.Message}");
+                        Debug.LogError(
+                            $"[MonggingTeamServiceImpl] PlayerData.currentState 접근 실패: {ex.Message}"
+                        );
                         Debug.LogError($"[MonggingTeamServiceImpl] Stack trace: {ex.StackTrace}");
                         return;
                     }
@@ -855,51 +941,79 @@ namespace Features.Mongging.Services
                                 if (localPlayer != null && localPlayer.playerId == message.PlayerId)
                                 {
                                     // 체력바 시스템에 회복 메시지 전송
-                                    _healReceivedPublisher.Publish(new Features.PlayerHealth.Messages.HealReceivedMessage(
-                                        50, // healAmount
-                                        0,  // previousHp
-                                        50, // currentHp
-                                        Features.PlayerHealth.Models.PlayerState.Normal // newState
-                                    ));
+                                    _healReceivedPublisher.Publish(
+                                        new Features.PlayerHealth.Messages.HealReceivedMessage(
+                                            50, // healAmount
+                                            0, // previousHp
+                                            50, // currentHp
+                                            Features.PlayerHealth.Models.PlayerState.Normal // newState
+                                        )
+                                    );
 
                                     if (_enableDebugLogs)
                                     {
-                                        Debug.Log($"[MonggingTeamServiceImpl] 체력바 시스템에 직접 부활 회복 메시지 전송: PlayerId={message.PlayerId}, HP=0→50");
+                                        Debug.Log(
+                                            $"[MonggingTeamServiceImpl] 체력바 시스템에 직접 부활 회복 메시지 전송: PlayerId={message.PlayerId}, HP=0→50"
+                                        );
                                     }
                                 }
                                 else if (_enableDebugLogs)
                                 {
-                                    Debug.Log($"[MonggingTeamServiceImpl] 체력바 시스템 부활 처리 건너뜀: LocalPlayer={localPlayer?.playerId}, TargetPlayer={message.PlayerId}");
+                                    Debug.Log(
+                                        $"[MonggingTeamServiceImpl] 체력바 시스템 부활 처리 건너뜀: LocalPlayer={localPlayer?.playerId}, TargetPlayer={message.PlayerId}"
+                                    );
                                 }
 
                                 // 몽깅이 시스템도 부활 체력으로 동기화
-                                playerService.SyncFromServer(50, message.NewState, playerData.faintCount);
+                                playerService.SyncFromServer(
+                                    50,
+                                    message.NewState,
+                                    playerData.faintCount
+                                );
 
                                 if (_enableDebugLogs)
                                 {
-                                    Debug.Log($"[MonggingTeamServiceImpl] 서버 상태 변경으로 직접 부활 처리: PlayerId={message.PlayerId}, HP=50, State=Normal");
+                                    Debug.Log(
+                                        $"[MonggingTeamServiceImpl] 서버 상태 변경으로 직접 부활 처리: PlayerId={message.PlayerId}, HP=50, State=Normal"
+                                    );
                                 }
                             }
                             else
                             {
                                 // 이미 정상 상태이거나 다른 상태에서 정상으로 변경된 경우
-                                playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                                playerService.SyncFromServer(
+                                    playerData.currentHp,
+                                    message.NewState,
+                                    playerData.faintCount
+                                );
                             }
 
                             // 상호작용 불가능 상태로 변경 (정상 상태이므로)
-                            PublishInteractableState(message.PlayerId, false, playerData.playerName);
+                            PublishInteractableState(
+                                message.PlayerId,
+                                false,
+                                playerData.playerName
+                            );
                             break;
 
                         case MonggingPlayerState.Fainted:
                             // 기절 상태로 변경 - 서버 상태 그대로 동기화
-                            playerService.SyncFromServer(0, message.NewState, playerData.faintCount);
+                            playerService.SyncFromServer(
+                                0,
+                                message.NewState,
+                                playerData.faintCount
+                            );
                             // 상호작용 가능 상태로 변경
                             PublishInteractableState(message.PlayerId, true, playerData.playerName);
                             break;
 
                         case MonggingPlayerState.Dead:
                             // 사망 상태로 변경
-                            playerService.SyncFromServer(0, message.NewState, playerData.faintCount);
+                            playerService.SyncFromServer(
+                                0,
+                                message.NewState,
+                                playerData.faintCount
+                            );
                             break;
 
                         case MonggingPlayerState.Escaped:
@@ -909,40 +1023,64 @@ namespace Features.Mongging.Services
 
                         case MonggingPlayerState.Stunned:
                             // 스턴 상태로 변경 - 서버 상태 그대로 동기화
-                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            playerService.SyncFromServer(
+                                playerData.currentHp,
+                                message.NewState,
+                                playerData.faintCount
+                            );
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] Stunned 상태로 변경: PlayerId={message.PlayerId}");
+                                Debug.Log(
+                                    $"[MonggingTeamServiceImpl] Stunned 상태로 변경: PlayerId={message.PlayerId}"
+                                );
                             }
                             break;
 
                         case MonggingPlayerState.Frightened:
                             // 공포 상태로 변경 - 서버 상태 그대로 동기화
-                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            playerService.SyncFromServer(
+                                playerData.currentHp,
+                                message.NewState,
+                                playerData.faintCount
+                            );
                             break;
 
                         case MonggingPlayerState.Digging:
                             // 땅 파기 상태로 변경 - 서버 상태 그대로 동기화
-                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            playerService.SyncFromServer(
+                                playerData.currentHp,
+                                message.NewState,
+                                playerData.faintCount
+                            );
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] Digging 상태로 변경: PlayerId={message.PlayerId}");
+                                Debug.Log(
+                                    $"[MonggingTeamServiceImpl] Digging 상태로 변경: PlayerId={message.PlayerId}"
+                                );
                             }
                             break;
 
                         case MonggingPlayerState.Feeding:
                             // 먹이주기 상태로 변경 - 서버 상태 그대로 동기화
-                            playerService.SyncFromServer(playerData.currentHp, message.NewState, playerData.faintCount);
+                            playerService.SyncFromServer(
+                                playerData.currentHp,
+                                message.NewState,
+                                playerData.faintCount
+                            );
                             if (_enableDebugLogs)
                             {
-                                Debug.Log($"[MonggingTeamServiceImpl] Feeding 상태로 변경: PlayerId={message.PlayerId}");
+                                Debug.Log(
+                                    $"[MonggingTeamServiceImpl] Feeding 상태로 변경: PlayerId={message.PlayerId}"
+                                );
                             }
                             break;
 
                         default:
                             if (_enableDebugLogs)
                             {
-                                Debug.LogWarning($"[MonggingTeamServiceImpl] 처리되지 않은 서버 상태: {message.NewState}");
+                                Debug.LogWarning(
+                                    $"[MonggingTeamServiceImpl] 처리되지 않은 서버 상태: {message.NewState}"
+                                );
                             }
                             break;
                     }
@@ -951,14 +1089,18 @@ namespace Features.Mongging.Services
 
                     if (_enableDebugLogs)
                     {
-                        Debug.Log($"[MonggingTeamServiceImpl] 서버 상태 동기화 완료: PlayerId={message.PlayerId}, {previousState} → {message.NewState}");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] 서버 상태 동기화 완료: PlayerId={message.PlayerId}, {previousState} → {message.NewState}"
+                        );
                     }
                 }
                 else
                 {
                     if (_enableDebugLogs)
                     {
-                        Debug.LogWarning($"[MonggingTeamServiceImpl] 플레이어 서비스를 찾을 수 없음: PlayerId={message.PlayerId}");
+                        Debug.LogWarning(
+                            $"[MonggingTeamServiceImpl] 플레이어 서비스를 찾을 수 없음: PlayerId={message.PlayerId}"
+                        );
                     }
                 }
             }
@@ -979,24 +1121,38 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] Revival 부활 완료 수신: RevivedId={message.revivedPlayerId}, FromSelfDefib={message.isFromSelfDefib}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] Revival 부활 완료 수신: RevivedId={message.revivedPlayerId}, FromSelfDefib={message.isFromSelfDefib}"
+                    );
                 }
 
                 if (_playerServices.TryGetValue(message.revivedPlayerId, out var playerService))
                 {
                     // 체력바 시스템 업데이트 먼저 (로컬 플레이어만)
                     var localPlayer = GetLocalPlayer();
-                    if (_playerHealthService != null && localPlayer != null && localPlayer.playerId == message.revivedPlayerId)
+                    if (
+                        _playerHealthService != null
+                        && localPlayer != null
+                        && localPlayer.playerId == message.revivedPlayerId
+                    )
                     {
                         _playerHealthService.RevivePlayer(message.reviveHp);
                         if (_enableDebugLogs)
                         {
-                            Debug.Log($"[MonggingTeamServiceImpl] 로컬 플레이어 체력바 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp}");
+                            Debug.Log(
+                                $"[MonggingTeamServiceImpl] 로컬 플레이어 체력바 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp}"
+                            );
                         }
                     }
-                    else if (_enableDebugLogs && localPlayer != null && localPlayer.playerId != message.revivedPlayerId)
+                    else if (
+                        _enableDebugLogs
+                        && localPlayer != null
+                        && localPlayer.playerId != message.revivedPlayerId
+                    )
                     {
-                        Debug.Log($"[MonggingTeamServiceImpl] 원격 플레이어 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp} (체력바 업데이트 없음)");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] 원격 플레이어 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp} (체력바 업데이트 없음)"
+                        );
                     }
 
                     // 몽깅이 부활 처리
@@ -1007,11 +1163,16 @@ namespace Features.Mongging.Services
                     if (_enableDebugLogs)
                     {
                         var playerData = playerService.GetPlayerData();
-                        Debug.Log($"[MonggingTeamServiceImpl] 몽깅이 부활 후 HP 확인: PlayerId={message.revivedPlayerId}, 설정HP={message.reviveHp}, 실제HP={playerData.currentHp}, 상태={playerData.currentState}");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] 몽깅이 부활 후 HP 확인: PlayerId={message.revivedPlayerId}, 설정HP={message.reviveHp}, 실제HP={playerData.currentHp}, 상태={playerData.currentState}"
+                        );
                     }
 
                     // PlayerList에 상태 변경 알림
-                    NotifyPlayerListStateChange(message.revivedPlayerId, MonggingPlayerState.Normal);
+                    NotifyPlayerListStateChange(
+                        message.revivedPlayerId,
+                        MonggingPlayerState.Normal
+                    );
 
                     // 애니메이션 상태 변경 (기절 → 정상)
                     try
@@ -1025,38 +1186,57 @@ namespace Features.Mongging.Services
 
                         if (_enableDebugLogs)
                         {
-                            Debug.Log($"[MonggingTeamServiceImpl] 부활 애니메이션 메시지 발행: PlayerId={message.revivedPlayerId}");
+                            Debug.Log(
+                                $"[MonggingTeamServiceImpl] 부활 애니메이션 메시지 발행: PlayerId={message.revivedPlayerId}"
+                            );
                         }
                     }
                     catch (Exception animEx)
                     {
-                        Debug.LogError($"[MonggingTeamServiceImpl] 애니메이션 메시지 발행 실패: {animEx.Message}");
+                        Debug.LogError(
+                            $"[MonggingTeamServiceImpl] 애니메이션 메시지 발행 실패: {animEx.Message}"
+                        );
                     }
 
                     // 상호작용 불가 상태로 변경
-                    if (_playerServices.TryGetValue(message.revivedPlayerId, out var revivedPlayerService))
+                    if (
+                        _playerServices.TryGetValue(
+                            message.revivedPlayerId,
+                            out var revivedPlayerService
+                        )
+                    )
                     {
                         var revivedPlayerData = revivedPlayerService.GetPlayerData();
-                        PublishInteractableState(message.revivedPlayerId, false, revivedPlayerData.playerName);
+                        PublishInteractableState(
+                            message.revivedPlayerId,
+                            false,
+                            revivedPlayerData.playerName
+                        );
                     }
 
                     if (_enableDebugLogs)
                     {
                         string revivalType = message.isFromSelfDefib ? "자가제세동기" : "직접 부활";
-                        Debug.Log($"[MonggingTeamServiceImpl] {revivalType} 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp}");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] {revivalType} 부활 처리 완료: PlayerId={message.revivedPlayerId}, HP={message.reviveHp}"
+                        );
                     }
                 }
                 else
                 {
                     if (_enableDebugLogs)
                     {
-                        Debug.LogWarning($"[MonggingTeamServiceImpl] 부활할 플레이어 서비스를 찾을 수 없음: PlayerId={message.revivedPlayerId}");
+                        Debug.LogWarning(
+                            $"[MonggingTeamServiceImpl] 부활할 플레이어 서비스를 찾을 수 없음: PlayerId={message.revivedPlayerId}"
+                        );
                     }
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MonggingTeamServiceImpl] Revival 부활 완료 처리 실패: {e.Message}");
+                Debug.LogError(
+                    $"[MonggingTeamServiceImpl] Revival 부활 완료 처리 실패: {e.Message}"
+                );
                 Debug.LogError($"[MonggingTeamServiceImpl] Stack trace: {e.StackTrace}");
             }
         }
@@ -1070,14 +1250,20 @@ namespace Features.Mongging.Services
             {
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[MonggingTeamServiceImpl] EscapeGate 탈출 메시지 수신: PlayerId={message.PlayerId}, Position={message.EscapePosition}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] EscapeGate 탈출 메시지 수신: PlayerId={message.PlayerId}, Position={message.EscapePosition}"
+                    );
                 }
 
                 if (_playerServices.TryGetValue(message.PlayerId, out var playerService))
                 {
                     // 플레이어 상태를 탈출로 변경 (메시지 재발행 방지를 위해 SyncFromServer 사용)
                     var currentPlayerData = playerService.GetPlayerData();
-                    playerService.SyncFromServer(currentPlayerData.currentHp, MonggingPlayerState.Escaped, currentPlayerData.faintCount);
+                    playerService.SyncFromServer(
+                        currentPlayerData.currentHp,
+                        MonggingPlayerState.Escaped,
+                        currentPlayerData.faintCount
+                    );
                     UpdateObservables();
 
                     // 로컬 플레이어인 경우 GameInfo에 "관전 모드" 표시
@@ -1086,7 +1272,9 @@ namespace Features.Mongging.Services
                         _gameInfoService.SetStatusMessage("관전 모드");
                         if (_enableDebugLogs)
                         {
-                            Debug.Log($"[MonggingTeamServiceImpl] 로컬 플레이어 탈출 - GameInfo에 '관전 모드' 설정");
+                            Debug.Log(
+                                $"[MonggingTeamServiceImpl] 로컬 플레이어 탈출 - GameInfo에 '관전 모드' 설정"
+                            );
                         }
                     }
 
@@ -1098,12 +1286,16 @@ namespace Features.Mongging.Services
 
                     if (_enableDebugLogs)
                     {
-                        Debug.Log($"[MonggingTeamServiceImpl] 플레이어 탈출 처리 완료: PlayerId={message.PlayerId}, 탈출 위치={message.EscapePosition}");
+                        Debug.Log(
+                            $"[MonggingTeamServiceImpl] 플레이어 탈출 처리 완료: PlayerId={message.PlayerId}, 탈출 위치={message.EscapePosition}"
+                        );
                     }
                 }
                 else
                 {
-                    Debug.LogWarning($"[MonggingTeamServiceImpl] 탈출할 플레이어 서비스를 찾을 수 없음: PlayerId={message.PlayerId}");
+                    Debug.LogWarning(
+                        $"[MonggingTeamServiceImpl] 탈출할 플레이어 서비스를 찾을 수 없음: PlayerId={message.PlayerId}"
+                    );
                 }
             }
             catch (Exception e)
@@ -1130,12 +1322,16 @@ namespace Features.Mongging.Services
                 if (_enableDebugLogs)
                 {
                     string action = isInteractable ? "활성화" : "비활성화";
-                    Debug.Log($"[MonggingTeamServiceImpl] 상호작용 상태 {action} 메시지 발행: PlayerId={playerId}, Name={playerName}");
+                    Debug.Log(
+                        $"[MonggingTeamServiceImpl] 상호작용 상태 {action} 메시지 발행: PlayerId={playerId}, Name={playerName}"
+                    );
                 }
             }
             catch (Exception e)
             {
-                Debug.LogError($"[MonggingTeamServiceImpl] 상호작용 상태 메시지 발행 실패: {e.Message}");
+                Debug.LogError(
+                    $"[MonggingTeamServiceImpl] 상호작용 상태 메시지 발행 실패: {e.Message}"
+                );
             }
         }
 

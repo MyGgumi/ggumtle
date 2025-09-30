@@ -107,7 +107,11 @@ namespace Features.Notification.Services
 
         #region Public Methods
 
-        public void ShowNotification(string message, float duration = -1f, NotificationType type = NotificationType.Info)
+        public void ShowNotification(
+            string message,
+            float duration = -1f,
+            NotificationType type = NotificationType.Info
+        )
         {
             if (string.IsNullOrEmpty(message))
                 return;
@@ -128,12 +132,18 @@ namespace Features.Notification.Services
             UpdateObservables();
 
             _showPublisher.Publish(new NotificationShowMessage(message, displayDuration, type));
-            _visibilityChangedPublisher.Publish(new NotificationVisibilityChangedMessage(true, message));
+            _visibilityChangedPublisher.Publish(
+                new NotificationVisibilityChangedMessage(true, message)
+            );
 
             DebugLog($"알림 표시: {message} ({displayDuration}초, {type})");
         }
 
-        public void QueueNotification(string message, float duration = -1f, NotificationType type = NotificationType.Info)
+        public void QueueNotification(
+            string message,
+            float duration = -1f,
+            NotificationType type = NotificationType.Info
+        )
         {
             if (string.IsNullOrEmpty(message))
                 return;
@@ -144,7 +154,9 @@ namespace Features.Notification.Services
             _notificationModel.QueueNotification(notification);
             UpdateObservables();
 
-            _queuedPublisher.Publish(new NotificationQueuedMessage(notification, _notificationModel.QueueCount));
+            _queuedPublisher.Publish(
+                new NotificationQueuedMessage(notification, _notificationModel.QueueCount)
+            );
 
             if (!_notificationModel.isShowing)
             {
@@ -160,7 +172,9 @@ namespace Features.Notification.Services
             UpdateObservables();
 
             _hidePublisher.Publish(new NotificationHideMessage(immediate));
-            _visibilityChangedPublisher.Publish(new NotificationVisibilityChangedMessage(false, ""));
+            _visibilityChangedPublisher.Publish(
+                new NotificationVisibilityChangedMessage(false, "")
+            );
 
             DebugLog($"알림 숨김 {(immediate ? "(즉시)" : "(애니메이션)")}");
         }
@@ -175,8 +189,19 @@ namespace Features.Notification.Services
                     _notificationModel.SetCurrentNotification(notification);
                     UpdateObservables();
 
-                    _showPublisher.Publish(new NotificationShowMessage(notification.message, notification.duration, notification.type));
-                    _queueProcessPublisher.Publish(new NotificationQueueProcessMessage(notification, _notificationModel.QueueCount));
+                    _showPublisher.Publish(
+                        new NotificationShowMessage(
+                            notification.message,
+                            notification.duration,
+                            notification.type
+                        )
+                    );
+                    _queueProcessPublisher.Publish(
+                        new NotificationQueueProcessMessage(
+                            notification,
+                            _notificationModel.QueueCount
+                        )
+                    );
 
                     DebugLog($"큐에서 알림 처리: {notification.message}");
                 }
@@ -223,41 +248,53 @@ namespace Features.Notification.Services
         public void ShowGameStartNotification()
         {
             ShowNotification("게임이 시작되었습니다!", 3f, NotificationType.Game);
-            _gameEventPublisher.Publish(new GameEventNotificationMessage("game_start", "게임이 시작되었습니다!", 3f));
+            _gameEventPublisher.Publish(
+                new GameEventNotificationMessage("game_start", "게임이 시작되었습니다!", 3f)
+            );
         }
 
         public void ShowGameEndNotification()
         {
             ShowNotification("게임이 종료되었습니다.", 3f, NotificationType.Game);
-            _gameEventPublisher.Publish(new GameEventNotificationMessage("game_end", "게임이 종료되었습니다.", 3f));
+            _gameEventPublisher.Publish(
+                new GameEventNotificationMessage("game_end", "게임이 종료되었습니다.", 3f)
+            );
         }
 
         public void ShowPlayerJoinedNotification(string playerName)
         {
             string message = $"{playerName}님이 게임에 참가했습니다.";
             ShowNotification(message, 2.5f, NotificationType.Player);
-            _playerEventPublisher.Publish(new PlayerEventNotificationMessage(0, playerName, "joined", message, 2.5f));
+            _playerEventPublisher.Publish(
+                new PlayerEventNotificationMessage(0, playerName, "joined", message, 2.5f)
+            );
         }
 
         public void ShowPlayerLeftNotification(string playerName)
         {
             string message = $"{playerName}님이 게임을 떠났습니다.";
             ShowNotification(message, 2.5f, NotificationType.Player);
-            _playerEventPublisher.Publish(new PlayerEventNotificationMessage(0, playerName, "left", message, 2.5f));
+            _playerEventPublisher.Publish(
+                new PlayerEventNotificationMessage(0, playerName, "left", message, 2.5f)
+            );
         }
 
         public void ShowPlayerDiedNotification(string playerName)
         {
             string message = $"{playerName}님이 사망했습니다.";
             ShowNotification(message, 3f, NotificationType.Player);
-            _playerEventPublisher.Publish(new PlayerEventNotificationMessage(0, playerName, "died", message, 3f));
+            _playerEventPublisher.Publish(
+                new PlayerEventNotificationMessage(0, playerName, "died", message, 3f)
+            );
         }
 
         public void ShowPlayerEscapedNotification(string playerName)
         {
             string message = $"{playerName}님이 탈출했습니다!";
             ShowNotification(message, 3f, NotificationType.Player);
-            _playerEventPublisher.Publish(new PlayerEventNotificationMessage(0, playerName, "escaped", message, 3f));
+            _playerEventPublisher.Publish(
+                new PlayerEventNotificationMessage(0, playerName, "escaped", message, 3f)
+            );
         }
 
         public void ShowObjectiveNotification(string objective)
@@ -268,21 +305,21 @@ namespace Features.Notification.Services
 
         public void ShowWarningNotification(string warning)
         {
-            string message = $"⚠️ {warning}";
+            string message = $"{warning}";
             ShowNotification(message, 3f, NotificationType.Warning);
             _warningPublisher.Publish(new WarningNotificationMessage(warning, 3f, false));
         }
 
         public void ShowSuccessNotification(string success)
         {
-            string message = $"✅ {success}";
+            string message = $"{success}";
             ShowNotification(message, 2.5f, NotificationType.Success);
             _successPublisher.Publish(new SuccessNotificationMessage(success, 2.5f));
         }
 
         public void ShowItemCannotBeUsedNotification(string itemName, string reason)
         {
-            string message = $"⚠️ {itemName}을(를) 사용할 수 없습니다: {reason}";
+            string message = $"{reason}";
             ShowNotification(message, 2.5f, NotificationType.Warning);
             _warningPublisher.Publish(new WarningNotificationMessage(message, 2.5f, false));
         }

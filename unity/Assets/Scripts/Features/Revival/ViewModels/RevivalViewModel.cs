@@ -188,9 +188,13 @@ namespace Features.Revival.ViewModels
             {
                 _holdProgress.Value = progressData.progress;
 
+                // 자가제세동기처럼 남은 시간 표시
+                float remainingTime = progressData.GetRemainingTime();
+                _revivalStatusText.Value = $"부활시키는 중... ({remainingTime:F1}초)";
+
                 if (_enableDebugLogs)
                 {
-                    Debug.Log($"[RevivalViewModel] 직접 부활 진행률: {progressData.progress:P1}");
+                    Debug.Log($"[RevivalViewModel] 직접 부활 진행률: {progressData.progress:P1}, 남은 시간: {remainingTime:F1}초");
                 }
             }
         }

@@ -611,8 +611,8 @@ namespace Features.Mongging.Views
                 StopCoroutine(_stunCoroutine);
             }
 
-            // 10초 동안 이동 불가 처리
-            _stunCoroutine = StartCoroutine(StunCoroutine(10f));
+            // 2초 동안 이동 불가 처리
+            _stunCoroutine = StartCoroutine(StunCoroutine(2f));
         }
 
         private System.Collections.IEnumerator StunCoroutine(float duration)

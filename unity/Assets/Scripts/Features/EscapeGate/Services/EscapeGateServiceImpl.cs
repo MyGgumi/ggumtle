@@ -41,6 +41,7 @@ namespace Features.EscapeGate.Services
         private readonly CompositeDisposable _disposables = new();
 
         private readonly bool _enableDebugLogs = true;
+        private bool _isEscaping = false; // 탈출 진행 중 플래그
 
         // Addressable 키 상수
         private const string ESCAPEGATE_PREFAB_KEY = "EscapeGateGameObject";
@@ -293,12 +294,14 @@ namespace Features.EscapeGate.Services
             if (!_registeredGates.TryGetValue(gateId, out var gateData))
             {
                 Debug.LogError($"[EscapeGateServiceImpl] 등록되지 않은 탈출구에 탈출 시도: {gateId}");
+                _isEscaping = false;
                 return;
             }
 
             if (!gateData.CanInteract)
             {
-                _notificationService.ShowWarningNotification("아직 탈출할 수 없습니다.");
+                // 실패 알림 제거 (조용히 무시)
+                _isEscaping = false;
                 return;
             }
 
@@ -309,11 +312,20 @@ namespace Features.EscapeGate.Services
                     Debug.Log($"[EscapeGateServiceImpl] 탈출 시도 시작: {gateData.GateName}");
                 }
 
+                // 게이트를 InUse 상태로 변경 (중복 시도 방지)
+                gateData.SetInUse();
+                _currentGateState.Value = EscapeGateState.InUse;
+
                 var response = await _networkSource.AttemptEscapeAsync(gateId);
 
                 if (response.Success)
                 {
                     _notificationService.ShowSuccessNotification("탈출 성공!");
+
+                    // 게이트를 Disabled 상태로 변경 (재사용 불가)
+                    gateData.Disable();
+                    _currentGateState.Value = EscapeGateState.Disabled;
+                    _isInRange.Value = false;
 
                     // 로컬 플레이어 탈출 시 몽깅이 팀 시스템에 알림
                     var localPlayer = _playerManagerService.GetLocalPlayer();
@@ -342,17 +354,27 @@ namespace Features.EscapeGate.Services
                 }
                 else
                 {
-                    _notificationService.ShowWarningNotification("탈출에 실패했습니다.");
+                    // 실패 시 조용히 처리 (알림 제거)
+                    // 게이트 상태를 다시 Active로 복구
+                    gateData.Activate();
+                    _currentGateState.Value = EscapeGateState.Active;
+
                     if (_enableDebugLogs)
                     {
-                        Debug.Log($"[EscapeGateServiceImpl] 탈출 실패: {gateData.GateName}");
+                        Debug.Log($"[EscapeGateServiceImpl] 탈출 실패 (조용히 처리): {gateData.GateName}");
                     }
                 }
             }
             catch (Exception e)
             {
                 Debug.LogError($"[EscapeGateServiceImpl] 탈출 시도 중 오류 발생: {e.Message}");
-                _notificationService.ShowWarningNotification("탈출 시도 중 오류가 발생했습니다.");
+                // 오류 시 게이트 상태 복구
+                gateData.Activate();
+                _currentGateState.Value = EscapeGateState.Active;
+            }
+            finally
+            {
+                _isEscaping = false; // 탈출 플래그 해제
             }
         }
 
@@ -451,6 +473,16 @@ namespace Features.EscapeGate.Services
 
         private void OnHoldStartMessage(InteractHoldStartMessage message)
         {
+            // 이미 탈출 중이면 무시 (중복 요청 방지)
+            if (_isEscaping)
+            {
+                if (_enableDebugLogs)
+                {
+                    Debug.Log("[EscapeGateServiceImpl] 이미 탈출 처리 중 - 무시");
+                }
+                return;
+            }
+
             // 현재 감지된 게이트가 있고, 활성화된 상태인지 확인
             if (_currentGateId.Value == -1 || !_isInRange.Value)
             {
@@ -472,40 +504,21 @@ namespace Features.EscapeGate.Services
 
             if (_enableDebugLogs)
             {
-                Debug.Log($"[EscapeGateServiceImpl] 탈출 홀드 시작: {gateData.GateName}");
+                Debug.Log($"[EscapeGateServiceImpl] 홀드 시작 - 즉시 탈출 시도: {gateData.GateName}");
             }
 
-            // 홀드 시작 시에는 로그만 남기고 실제 탈출은 홀드 완료 시에 처리
+            // 홀드 시작 시 즉시 탈출 시도 (한 번만 요청)
+            _isEscaping = true;
+            AttemptEscape(_currentGateId.Value);
         }
 
         private void OnHoldEndMessage(InteractHoldEndMessage message)
         {
-            // 홀드 완료 시 탈출 시도
-            if (_currentGateId.Value == -1 || !_isInRange.Value)
-            {
-                if (_enableDebugLogs)
-                {
-                    Debug.Log("[EscapeGateServiceImpl] 홀드 완료 - 감지된 탈출구가 없음");
-                }
-                return;
-            }
-
-            if (!_registeredGates.TryGetValue(_currentGateId.Value, out var gateData) || !gateData.CanInteract)
-            {
-                if (_enableDebugLogs)
-                {
-                    Debug.Log($"[EscapeGateServiceImpl] 홀드 완료 - 탈출구 상호작용 불가: ID={_currentGateId.Value}");
-                }
-                return;
-            }
-
+            // 홀드 종료 시 아무것도 하지 않음 (이미 시작 시 탈출 처리)
             if (_enableDebugLogs)
             {
-                Debug.Log($"[EscapeGateServiceImpl] 탈출 홀드 완료 - 탈출 시도: {gateData.GateName}");
+                Debug.Log("[EscapeGateServiceImpl] 홀드 종료 - 아무 동작 없음 (시작 시 이미 탈출 처리)");
             }
-
-            // 홀드 완료 시 탈출 시도
-            AttemptEscape(_currentGateId.Value);
         }
 
 

@@ -71,6 +71,9 @@ namespace Features.Mongging.Services
         // PlayerList 연동
         private readonly IPublisher<PlayerListMonggingStateUpdateMessage> _playerListStatePublisher;
 
+        // GameInfo 연동
+        private readonly Features.GameInfo.Services.IGameInfoService _gameInfoService;
+
         // 몽둥이 액션 구독
         private readonly ISubscriber<MongdungAttackActionMessage> _attackActionSubscriber;
         private readonly ISubscriber<MongdungSkillActionMessage> _skillActionSubscriber;
@@ -118,7 +121,8 @@ namespace Features.Mongging.Services
             ISubscriber<RevivalCompletedMessage> revivalCompletedSubscriber,
             ISubscriber<MonggingPlayerEscapedMessage> playerEscapedSubscriber,
             IPublisher<Features.Revival.Messages.MonggingInteractableStateMessage> interactableStatePublisher,
-            IPublisher<Features.PlayerHealth.Messages.HealReceivedMessage> healReceivedPublisher)
+            IPublisher<Features.PlayerHealth.Messages.HealReceivedMessage> healReceivedPublisher,
+            Features.GameInfo.Services.IGameInfoService gameInfoService)
         {
             _teamSyncPublisher = teamSyncPublisher;
             _playerUpdatedPublisher = playerUpdatedPublisher;
@@ -141,6 +145,7 @@ namespace Features.Mongging.Services
             _playerEscapedSubscriber = playerEscapedSubscriber;
             _interactableStatePublisher = interactableStatePublisher;
             _healReceivedPublisher = healReceivedPublisher;
+            _gameInfoService = gameInfoService;
 
             if (_enableDebugLogs)
             {
@@ -1074,6 +1079,16 @@ namespace Features.Mongging.Services
                     var currentPlayerData = playerService.GetPlayerData();
                     playerService.SyncFromServer(currentPlayerData.currentHp, MonggingPlayerState.Escaped, currentPlayerData.faintCount);
                     UpdateObservables();
+
+                    // 로컬 플레이어인 경우 GameInfo에 "관전 모드" 표시
+                    if (currentPlayerData.isLocal && _gameInfoService != null)
+                    {
+                        _gameInfoService.SetStatusMessage("관전 모드");
+                        if (_enableDebugLogs)
+                        {
+                            Debug.Log($"[MonggingTeamServiceImpl] 로컬 플레이어 탈출 - GameInfo에 '관전 모드' 설정");
+                        }
+                    }
 
                     // PlayerList에 탈출 상태 알림
                     NotifyPlayerListStateChange(message.PlayerId, MonggingPlayerState.Escaped);

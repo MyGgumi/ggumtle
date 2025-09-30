@@ -21,7 +21,7 @@ namespace Features.FieldItem.Services
         #region Constants
 
         private const int HEAL_PACK_HP_AMOUNT = 50;
-        private const float SPEED_PACK_MULTIPLIER = 3.0f;
+        private const float SPEED_PACK_MULTIPLIER = 1.5f;
         private const float SPEED_PACK_DURATION = 5f;
 
         #endregion

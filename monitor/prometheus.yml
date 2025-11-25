@@ -1,0 +1,22 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'ggumtle-game-servers'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['spring-1:8889']
+        labels:
+          application: 'ggumtle-game-server'
+          instance: 'spring-1'
+      
+      - targets: ['spring-2:8889']
+        labels:
+          application: 'ggumtle-game-server'
+          instance: 'spring-2'
+      
+      - targets: ['spring-3:8889']
+        labels:
+          application: 'ggumtle-game-server'
+          instance: 'spring-3'

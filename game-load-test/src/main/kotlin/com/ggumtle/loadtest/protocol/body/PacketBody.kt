@@ -33,18 +33,25 @@ data class RoomJoinBody(val roomId: Long) : PacketBody {
 }
 
 /**
- * Player movement - 3 ints (x, y, z) = 12 bytes
+ * Player movement - 6 ints (x, y, z, vx, vy, vz) = 24 bytes
+ * Matches game-server's PlayerMoveCommand record
  */
 data class PlayerMoveBody(
     val x: Int,
     val y: Int,
-    val z: Int
+    val z: Int,
+    val vx: Int = 0,
+    val vy: Int = 0,
+    val vz: Int = 0
 ) : PacketBody {
     override fun toBytes(): ByteArray =
-        ByteBuffer.allocate(12)
+        ByteBuffer.allocate(24)
             .putInt(x)
             .putInt(y)
             .putInt(z)
+            .putInt(vx)
+            .putInt(vy)
+            .putInt(vz)
             .array()
 }
 

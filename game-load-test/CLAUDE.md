@@ -8,9 +8,11 @@ Netty 기반 게임 서버(game-server)의 부하 테스트를 위한 클라이�
 
 - Kotlin 2.0.21 + Coroutines 1.9.0
 - Netty Client 4.2.x
+- JJWT 0.12.5 (JWT 토큰 생성 - game-server와 동일 버전)
 - Clikt (CLI), kaml (YAML)
 - kotlin-logging + Logback
 - **Required Java**: 21 (Java 25는 Gradle 호환성 문제로 빌드 불가)
+- **Required Env**: `ACCESS_SECRET` (game-server와 동일한 BASE64 인코딩된 시크릿)
 
 ## 프로토콜 정보
 
@@ -29,7 +31,7 @@ Netty 기반 게임 서버(game-server)의 부하 테스트를 위한 클라이�
 | VERIFY_TOKEN | 1 | UTF-8 string |
 | ROOM_JOIN | 10 | Long (roomId) |
 | SCENE_CHANGE | 30 | 없음 |
-| PLAYER_MOVE | 40 | 3 ints (x, y, z) |
+| PLAYER_MOVE | 40 | 6 ints (x, y, z, vx, vy, vz) |
 | SHOW_BOX | 50 | Int (boxId) |
 | CLOSE_BOX | 52 | Int (boxId) |
 | TAKE_ITEM_FROM_BOX | 54 | 2 ints (boxId, index) |
@@ -151,9 +153,14 @@ game-load-test/
 # 빌드
 ./gradlew :game-load-test:build
 
+# 환경변수 설정 (game-server와 동일한 값)
+export ACCESS_SECRET="your-base64-encoded-secret"
+
 # 실행
 java -jar game-load-test.jar run --config config.yaml
 ```
+
+**주의**: `ACCESS_SECRET`은 game-server의 `.env` 또는 `application.yml`에서 확인 가능
 
 ## 시나리오 DSL 예시
 

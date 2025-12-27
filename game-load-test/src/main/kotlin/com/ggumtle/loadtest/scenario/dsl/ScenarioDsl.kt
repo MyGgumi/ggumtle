@@ -115,8 +115,8 @@ class SetupPhaseBuilder(
 class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
 
     // Movement
-    suspend fun move(x: Int, y: Int, z: Int) {
-        player.sendMove(x, y, z)
+    suspend fun move(x: Int, y: Int, z: Int, vx: Int = 0, vy: Int = 0, vz: Int = 0) {
+        player.sendMove(x, y, z, vx, vy, vz)
     }
 
     suspend fun randomMove(count: Int = 1, intervalMs: Long = 16) {
@@ -125,7 +125,10 @@ class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
             val x = baseX + (i % 100)
             val y = baseY
             val z = baseZ + (i / 100)
-            player.sendMove(x, y, z)
+            // Calculate velocity based on movement direction
+            val vx = if (i > 0) 1 else 0
+            val vz = if (i > 0 && i % 100 == 0) 1 else 0
+            player.sendMove(x, y, z, vx, 0, vz)
             delay(intervalMs)
         }
     }
@@ -139,7 +142,10 @@ class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
             val x = baseX + (step % 100)
             val y = baseY
             val z = baseZ + (step / 100) % 100
-            player.sendMove(x, y, z)
+            // Calculate velocity based on movement pattern
+            val vx = 1  // Moving in x direction
+            val vz = if (step > 0 && step % 100 == 0) 1 else 0
+            player.sendMove(x, y, z, vx, 0, vz)
             step++
             delay(intervalMs)
         }

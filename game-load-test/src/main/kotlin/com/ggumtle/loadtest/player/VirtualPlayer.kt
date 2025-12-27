@@ -87,8 +87,8 @@ class VirtualPlayer(
 
     // ===== Movement =====
 
-    suspend fun sendMove(x: Int, y: Int, z: Int) {
-        client.send(SendPacketType.PLAYER_MOVE, PlayerMoveBody(x, y, z))
+    suspend fun sendMove(x: Int, y: Int, z: Int, vx: Int = 0, vy: Int = 0, vz: Int = 0) {
+        client.send(SendPacketType.PLAYER_MOVE, PlayerMoveBody(x, y, z, vx, vy, vz))
         metrics.incrementCounter("moves")
     }
 

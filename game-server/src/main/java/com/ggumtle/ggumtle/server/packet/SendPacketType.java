@@ -11,6 +11,7 @@ public enum SendPacketType {
 
     // 방 관리
     ROOM_JOIN((short) 11),
+    ROOM_CREATE((short) 13),
 
     // 드림 초기화
     INITIALIZE_MAP((short) 20),

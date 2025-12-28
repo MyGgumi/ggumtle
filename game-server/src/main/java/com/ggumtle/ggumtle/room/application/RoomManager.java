@@ -75,6 +75,16 @@ public class RoomManager {
         return room;
     }
 
+    public Room createRoomFromPacket(List<PlayerInfo> playerInfos) {
+        long roomId = roomIdGenerator.incrementAndGet();
+        log.debug("{}번 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
+
+        Room room = new Room(roomId, playerInfos);
+        idToRoom.put(roomId, room);
+
+        return room;
+    }
+
     public void insertRoom(Room room) {
         idToRoom.put(room.id, room);
     }

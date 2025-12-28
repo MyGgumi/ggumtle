@@ -8,6 +8,7 @@ import com.ggumtle.loadtest.protocol.SendPacketType
 import com.ggumtle.loadtest.protocol.body.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.*
+import kotlin.coroutines.cancellation.CancellationException
 import mu.KotlinLogging
 import java.nio.ByteBuffer
 
@@ -46,13 +47,22 @@ class VirtualPlayer(
     // ===== Authentication & Room Join =====
 
     suspend fun authenticate(token: String) {
+        logger.info { "Player $id: Starting authentication" }
         _state.value = PlayerState.AUTHENTICATING
         val start = System.nanoTime()
 
         client.send(SendPacketType.VERIFY_TOKEN, AuthTokenBody(token))
+        logger.debug { "Player $id: VERIFY_TOKEN packet sent" }
 
-        // Wait for authentication response
-        _state.first { it == PlayerState.AUTHENTICATED || it == PlayerState.ERROR }
+        // Wait for authentication response with timeout
+        try {
+            withTimeout(5000) {
+                _state.first { it == PlayerState.AUTHENTICATED || it == PlayerState.ERROR }
+            }
+        } catch (e: TimeoutCancellationException) {
+            logger.error { "Player $id: Authentication timeout - no response received" }
+            _state.value = PlayerState.ERROR
+        }
         metrics.recordLatency("auth", System.nanoTime() - start)
     }
 
@@ -186,8 +196,24 @@ class VirtualPlayer(
 
         when (type) {
             ReceivePacketType.VERIFY_TOKEN -> {
-                _state.value = PlayerState.AUTHENTICATED
-                logger.debug { "Player $id: Authenticated" }
+                // 응답 바디 파싱 (9 bytes: 1 byte success + 8 bytes sessionId)
+                val data = packet.data
+                if (data != null && data.isNotEmpty()) {
+                    val success = data[0].toInt() == 1
+                    if (success) {
+                        val sessionId = if (data.size >= 9) {
+                            ByteBuffer.wrap(data, 1, 8).long
+                        } else -1L
+                        _state.value = PlayerState.AUTHENTICATED
+                        logger.info { "Player $id: Authenticated successfully (sessionId=$sessionId)" }
+                    } else {
+                        _state.value = PlayerState.ERROR
+                        logger.error { "Player $id: Authentication failed - server returned failure" }
+                    }
+                } else {
+                    _state.value = PlayerState.AUTHENTICATED
+                    logger.debug { "Player $id: Authenticated (no response body)" }
+                }
             }
 
             ReceivePacketType.ROOM_JOIN -> {

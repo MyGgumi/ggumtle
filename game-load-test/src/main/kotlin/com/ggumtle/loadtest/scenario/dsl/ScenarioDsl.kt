@@ -49,9 +49,9 @@ class ScenarioBuilder(private val name: String) {
     fun build(): Scenario = Scenario(
         name = name,
         config = config,
-        setupPhase = setupBlock?.let { SetupPhase { SetupPhaseBuilder(player, token).it() } },
-        gamePhase = gameBlock?.let { GamePhase { GamePhaseBuilder(player).it() } },
-        teardownPhase = teardownBlock?.let { TeardownPhase { TeardownPhaseBuilder(player).it() } }
+        setupPhase = setupBlock?.let { block -> SetupPhase { (this as SetupPhaseBuilder).block() } },
+        gamePhase = gameBlock?.let { block -> GamePhase { (this as GamePhaseBuilder).block() } },
+        teardownPhase = teardownBlock?.let { block -> TeardownPhase { (this as TeardownPhaseBuilder).block() } }
     )
 }
 
@@ -259,15 +259,3 @@ class TeardownPhaseBuilder(val player: VirtualPlayer) : TeardownPhaseContext {
     }
 }
 
-// Extension property for context access
-private val SetupPhaseContext.player: VirtualPlayer
-    get() = (this as SetupPhaseBuilder).player
-
-private val SetupPhaseContext.token: String
-    get() = throw IllegalStateException("Token should be accessed through SetupPhaseBuilder")
-
-private val GamePhaseContext.player: VirtualPlayer
-    get() = (this as GamePhaseBuilder).player
-
-private val TeardownPhaseContext.player: VirtualPlayer
-    get() = (this as TeardownPhaseBuilder).player

@@ -64,15 +64,15 @@ class RunCommand : CliktCommand(
 
             setup {
                 authenticate()
-                joinRoom()
-                sendSceneChange()
-                waitForGameStart()
+//                joinRoom()
+//                sendSceneChange()
+//                waitForGameStart()
             }
 
-            game {
-                // Continuous movement for the duration
-                continuousMove(duration = (durationSeconds - 10).seconds)
-            }
+//            game {
+//                // Continuous movement for the duration
+//                continuousMove(duration = (durationSeconds - 10).seconds)
+//            }
 
             teardown {
                 disconnect()

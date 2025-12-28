@@ -34,6 +34,9 @@ dependencies {
     implementation("io.github.microutils:kotlin-logging-jvm:3.0.5")
     implementation("ch.qos.logback:logback-classic:1.4.14")
 
+    // Environment (.env file loading)
+    implementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
+
     // JWT (matching game-server version)
     implementation("io.jsonwebtoken:jjwt-api:0.12.5")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.5")

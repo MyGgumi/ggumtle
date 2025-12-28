@@ -1,6 +1,7 @@
 package com.ggumtle.loadtest.cli
 
 import com.ggumtle.loadtest.config.ConfigLoader
+import com.ggumtle.loadtest.config.EnvLoader
 import com.ggumtle.loadtest.scenario.dsl.scenario
 import com.ggumtle.loadtest.scenario.runner.ScenarioRunner
 import com.github.ajalt.clikt.core.CliktCommand
@@ -25,11 +26,11 @@ class RunCommand : CliktCommand(
         .default("config.yaml")
 
     private val host by option("-h", "--host", help = "Server host")
-        .default("localhost")
+        .default(EnvLoader.gameServerHost)
 
     private val port by option("-p", "--port", help = "Server port")
         .int()
-        .default(9000)
+        .default(EnvLoader.gameServerPort)
 
     private val players by option("-n", "--players", help = "Number of players")
         .int()

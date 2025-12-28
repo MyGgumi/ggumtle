@@ -1,5 +1,6 @@
 package com.ggumtle.loadtest.util
 
+import com.ggumtle.loadtest.config.EnvLoader
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.security.Keys
 import java.util.Base64
@@ -9,17 +10,12 @@ import javax.crypto.SecretKey
 /**
  * Generates JWT tokens for testing that are compatible with game-server's JwtService.
  *
- * Requires ACCESS_SECRET environment variable (BASE64 encoded) to match game-server config.
+ * Requires ACCESS_SECRET in .env file or environment variable (BASE64 encoded).
  */
 object MockTokenGenerator {
 
     private val secret: SecretKey by lazy {
-        val secretString = System.getenv("ACCESS_SECRET")
-            ?: throw IllegalStateException(
-                "ACCESS_SECRET 환경변수가 설정되지 않았습니다. " +
-                "game-server와 동일한 값을 설정해주세요."
-            )
-        val keyBytes = Base64.getDecoder().decode(secretString)
+        val keyBytes = Base64.getDecoder().decode(EnvLoader.accessSecret)
         Keys.hmacShaKeyFor(keyBytes)
     }
 

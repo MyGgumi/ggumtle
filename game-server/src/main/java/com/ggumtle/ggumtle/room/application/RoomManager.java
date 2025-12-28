@@ -78,13 +78,8 @@ public class RoomManager {
     }
 
     public Room createRoomFromPacket(List<PlayerInfo> playerInfos) {
-        // 테스트 방 플레이어 스폰 위치가 5개로 제한되어 있음
-        if (playerInfos.size() > 5) {
-            throw new IllegalArgumentException("패킷으로 생성하는 방은 최대 5명까지 지원합니다. 요청: " + playerInfos.size() + "명");
-        }
-
         long roomId = testRoomIdGenerator.decrementAndGet();  // 음수 ID: -101, -102, -103, ...
-        log.debug("{}번 테스트 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
+        log.debug("{}번 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
 
         Room room = new Room(roomId, playerInfos);
         idToRoom.put(roomId, room);

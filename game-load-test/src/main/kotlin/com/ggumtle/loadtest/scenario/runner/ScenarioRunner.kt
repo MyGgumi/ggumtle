@@ -6,8 +6,10 @@ import com.ggumtle.loadtest.metrics.TestReport
 import com.ggumtle.loadtest.network.ConnectionPool
 import com.ggumtle.loadtest.player.VirtualPlayer
 import com.ggumtle.loadtest.scenario.dsl.GamePhaseBuilder
+import com.ggumtle.loadtest.scenario.dsl.GroupSetupPhaseBuilder
 import com.ggumtle.loadtest.scenario.dsl.SetupPhaseBuilder
 import com.ggumtle.loadtest.scenario.dsl.TeardownPhaseBuilder
+import com.ggumtle.loadtest.scenario.model.PlayerGroup
 import com.ggumtle.loadtest.scenario.model.Scenario
 import com.ggumtle.loadtest.util.MockTokenGenerator
 import kotlinx.coroutines.*
@@ -57,8 +59,45 @@ class ScenarioRunner(
             val createdPlayers = playerJobs.awaitAll()
             logger.info { "All ${createdPlayers.size} players created" }
 
-            // Phase 2: Setup
-            scenario.setupPhase?.let { phase ->
+            // Organize players into groups
+            val groups = mutableListOf<PlayerGroup>()
+            val playersPerGroup = scenario.config.playersPerRoom
+            createdPlayers.chunked(playersPerGroup).forEachIndexed { groupIndex, groupPlayers ->
+                val group = PlayerGroup(
+                    groupId = groupIndex + 1,
+                    leaderIndex = 0,
+                    players = groupPlayers.toMutableList()
+                )
+                groups.add(group)
+                logger.debug { "Created group ${group.groupId} with ${group.size} players (leader: ${group.leader?.id})" }
+            }
+            logger.info { "Organized ${createdPlayers.size} players into ${groups.size} groups" }
+
+            // Phase 2: Group Setup (if defined) or Regular Setup
+            scenario.groupSetupPhase?.let { phase ->
+                logger.info { "Starting group setup phase" }
+
+                val groupJobs = groups.map { group ->
+                    launch {
+                        // Execute setup for each player in the group
+                        val playerJobs = group.players.map { player ->
+                            async {
+                                try {
+                                    val token = MockTokenGenerator.generate(player.id)
+                                    val builder = GroupSetupPhaseBuilder(group, player, token)
+                                    phase.block(builder)
+                                } catch (e: Exception) {
+                                    logger.error(e) { "Group setup failed for player ${player.id} in group ${group.groupId}" }
+                                    metrics.recordError(player.id, "groupSetup", e)
+                                }
+                            }
+                        }
+                        playerJobs.awaitAll()
+                    }
+                }
+                groupJobs.joinAll()
+                logger.info { "Group setup phase completed" }
+            } ?: scenario.setupPhase?.let { phase ->
                 logger.info { "Starting setup phase" }
                 val setupJobs = createdPlayers.map { player ->
                     launch {

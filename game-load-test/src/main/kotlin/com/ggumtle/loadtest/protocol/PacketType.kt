@@ -9,6 +9,7 @@ enum class SendPacketType(val value: Short) {
 
     // Room management
     ROOM_JOIN(10),
+    ROOM_CREATE(12),
 
     // Dream initialization
     SCENE_CHANGE(30),
@@ -55,6 +56,7 @@ enum class ReceivePacketType(val value: Short) {
 
     // Room management
     ROOM_JOIN(11),
+    ROOM_CREATE(13),
 
     // Dream initialization
     INITIALIZE_MAP(20),

@@ -11,6 +11,7 @@ data class Scenario(
     val name: String,
     val config: ScenarioConfig,
     val setupPhase: SetupPhase?,
+    val groupSetupPhase: GroupSetupPhase?,
     val gamePhase: GamePhase?,
     val teardownPhase: TeardownPhase?
 )
@@ -48,7 +49,15 @@ class TeardownPhase(
     val block: suspend TeardownPhaseContext.() -> Unit
 )
 
+/**
+ * Group setup phase definition (suspend lambda with group context)
+ */
+class GroupSetupPhase(
+    val block: suspend GroupSetupPhaseContext.() -> Unit
+)
+
 // Context interfaces for type safety
 interface SetupPhaseContext
+interface GroupSetupPhaseContext
 interface GamePhaseContext
 interface TeardownPhaseContext

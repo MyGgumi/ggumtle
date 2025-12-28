@@ -34,6 +34,10 @@ class VirtualPlayer(
     var spawnPosition: Triple<Int, Int, Int> = Triple(0, 0, 0)
         private set
 
+    // Room creation result
+    var createdRoomId: Long? = null
+        private set
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -66,11 +70,33 @@ class VirtualPlayer(
         metrics.recordLatency("auth", System.nanoTime() - start)
     }
 
-    suspend fun joinRoom() {
+    suspend fun createRoom(players: List<PlayerInfoBody>): Long? {
+        logger.info { "Player $id: Creating room with ${players.size} players" }
+        _state.value = PlayerState.CREATING_ROOM
+        val start = System.nanoTime()
+
+        client.send(SendPacketType.ROOM_CREATE, RoomCreateBody(players))
+
+        try {
+            withTimeout(10_000) {
+                _state.first { it == PlayerState.ROOM_CREATED || it == PlayerState.ERROR }
+            }
+        } catch (e: TimeoutCancellationException) {
+            logger.error { "Player $id: Room creation timeout" }
+            _state.value = PlayerState.ERROR
+            return null
+        }
+
+        metrics.recordLatency("roomCreate", System.nanoTime() - start)
+        return createdRoomId
+    }
+
+    suspend fun joinRoom(targetRoomId: Long? = null) {
+        val roomToJoin = targetRoomId ?: roomId
         _state.value = PlayerState.JOINING_ROOM
         val start = System.nanoTime()
 
-        client.send(SendPacketType.ROOM_JOIN, RoomJoinBody(roomId))
+        client.send(SendPacketType.ROOM_JOIN, RoomJoinBody(roomToJoin))
 
         // Wait for room join response
         _state.first { it == PlayerState.IN_ROOM || it == PlayerState.ERROR }
@@ -219,6 +245,27 @@ class VirtualPlayer(
             ReceivePacketType.ROOM_JOIN -> {
                 _state.value = PlayerState.IN_ROOM
                 logger.debug { "Player $id: Joined room $roomId" }
+            }
+
+            ReceivePacketType.ROOM_CREATE -> {
+                val data = packet.data
+                if (data != null && data.size >= 12) {
+                    val buffer = ByteBuffer.wrap(data)
+                    val success = buffer.int == 1
+                    val newRoomId = buffer.long
+
+                    if (success) {
+                        createdRoomId = newRoomId
+                        _state.value = PlayerState.ROOM_CREATED
+                        logger.info { "Player $id: Created room $newRoomId" }
+                    } else {
+                        _state.value = PlayerState.ERROR
+                        logger.error { "Player $id: Room creation failed" }
+                    }
+                } else {
+                    _state.value = PlayerState.ERROR
+                    logger.error { "Player $id: Invalid room creation response" }
+                }
             }
 
             ReceivePacketType.INITIALIZE_PLAYER -> {

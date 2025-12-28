@@ -34,11 +34,11 @@ class RunCommand : CliktCommand(
 
     private val players by option("-n", "--players", help = "Number of players")
         .int()
-        .default(60)
+        .default(5)
 
     private val durationSeconds by option("-d", "--duration", help = "Test duration in seconds")
         .int()
-        .default(300)
+        .default(11)
 
     override fun run() = runBlocking {
         logger.info { "Starting load test..." }
@@ -51,28 +51,29 @@ class RunCommand : CliktCommand(
             port = port
         )
 
-        // Create default scenario
-        val testScenario = scenario("Basic Load Test") {
+        // Create default scenario with dynamic room creation
+        val testScenario = scenario("Dynamic Room Load Test") {
             config {
                 playerCount = players
                 roomIdStart = -1L
                 roomIdEnd = -20L
-                playersPerRoom = 3
+                playersPerRoom = 5  // 5 players per group/room
                 duration = durationSeconds.seconds
                 rampUpDuration = 10.seconds
             }
 
-            setup {
+            // Group-based setup: leader creates room, all players join
+            groupSetup {
                 authenticate()
-//                joinRoom()
-//                sendSceneChange()
-//                waitForGameStart()
+                coordinatedRoomSetup()  // Leader creates room, members wait and join
+                sendSceneChange()
+                waitForGameStart()
             }
 
-//            game {
-//                // Continuous movement for the duration
-//                continuousMove(duration = (durationSeconds - 10).seconds)
-//            }
+            game {
+                // Continuous movement for the duration
+                continuousMove(duration = (durationSeconds - 10).seconds)
+            }
 
             teardown {
                 disconnect()

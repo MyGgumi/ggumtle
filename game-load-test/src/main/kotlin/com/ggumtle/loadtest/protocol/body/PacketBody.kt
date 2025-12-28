@@ -117,3 +117,42 @@ data class AttackWithItemBody(
             .putInt(itemId)
             .array()
 }
+
+/**
+ * Player info for room creation - 28 bytes
+ * Matches game-server's CreateRoomCommand.PlayerInfoCommand
+ */
+data class PlayerInfoBody(
+    val playerId: Long,          // 8 bytes
+    val monggingClassId: Long,   // 8 bytes
+    val additionalHp: Int,       // 4 bytes
+    val additionalTaskSpeed: Int, // 4 bytes
+    val additionalHealSpeed: Int  // 4 bytes
+) {
+    fun toBytes(): ByteArray =
+        ByteBuffer.allocate(28)
+            .putLong(playerId)
+            .putLong(monggingClassId)
+            .putInt(additionalHp)
+            .putInt(additionalTaskSpeed)
+            .putInt(additionalHealSpeed)
+            .array()
+}
+
+/**
+ * Room create command body
+ * Format: playerCount (4 bytes) + List<PlayerInfoBody> (28 bytes each)
+ */
+data class RoomCreateBody(
+    val players: List<PlayerInfoBody>
+) : PacketBody {
+    override fun toBytes(): ByteArray {
+        val playerBytes = players.map { it.toBytes() }
+        val totalSize = 4 + playerBytes.sumOf { it.size }
+
+        return ByteBuffer.allocate(totalSize).apply {
+            putInt(players.size)
+            playerBytes.forEach { put(it) }
+        }.array()
+    }
+}

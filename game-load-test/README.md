@@ -17,8 +17,17 @@ Netty 기반 게임 서버(game-server)의 부하 테스트를 위한 클라이�
 | 항목 | 요구 사항 |
 |------|----------|
 | **Java** | 21 (필수, Java 25는 Gradle 호환성 문제) |
-| **환경변수** | `ACCESS_SECRET` (game-server와 동일한 BASE64 시크릿) |
 | **game-server** | 실행 중이어야 함 |
+
+### 환경변수
+
+`.env` 파일 또는 시스템 환경변수로 설정 (우선순위: 시스템 환경변수 > .env 파일 > 기본값)
+
+| 변수 | 필수 | 기본값 | 설명 |
+|------|:----:|--------|------|
+| `ACCESS_SECRET` | O | - | JWT 시크릿 (game-server와 동일, BASE64) |
+| `GAME_SERVER_HOST` | X | localhost | 게임 서버 호스트 |
+| `GAME_SERVER_PORT` | X | 9000 | 게임 서버 포트 |
 
 ## 프로젝트 구조
 
@@ -28,6 +37,7 @@ game-load-test/
 ├── settings.gradle.kts
 ├── README.md
 ├── CLAUDE.md                 # AI 어시스턴트용 컨텍스트
+├── .env                      # 환경변수 (선택, gitignore)
 └── src/main/kotlin/com/ggumtle/loadtest/
     ├── Application.kt        # 진입점
     │
@@ -36,8 +46,9 @@ game-load-test/
     │   └── RunCommand.kt
     │
     ├── config/               # 설정 관리
-    │   ├── LoadTestConfig.kt
-    │   └── ConfigLoader.kt
+    │   ├── EnvLoader.kt      # .env 파일 자동 로딩
+    │   ├── ConfigLoader.kt
+    │   └── LoadTestConfig.kt
     │
     ├── protocol/             # 패킷 프로토콜
     │   ├── PacketType.kt     # 패킷 타입 정의
@@ -53,7 +64,8 @@ game-load-test/
     │   ├── GameClient.kt     # TCP 클라이언트
     │   ├── ConnectionPool.kt
     │   ├── ClientHandler.kt
-    │   └── ClientInitializer.kt
+    │   ├── ClientInitializer.kt
+    │   └── NettyCoroutineExt.kt  # Coroutine 확장
     │
     ├── player/               # 가상 플레이어
     │   ├── VirtualPlayer.kt  # 플레이어 시뮬레이션
@@ -64,13 +76,13 @@ game-load-test/
     │   ├── dsl/
     │   │   └── ScenarioDsl.kt
     │   ├── model/
-    │   │   └── Scenario.kt
+    │   │   ├── Scenario.kt
+    │   │   └── PlayerGroup.kt  # 그룹 기반 플레이어 관리
     │   └── runner/
     │       └── ScenarioRunner.kt
     │
     ├── metrics/              # 메트릭 수집
-    │   ├── MetricsCollector.kt
-    │   └── TestReport.kt
+    │   └── MetricsCollector.kt  # TestReport 포함
     │
     └── util/
         └── MockTokenGenerator.kt  # JWT 토큰 생성
@@ -101,7 +113,7 @@ export ACCESS_SECRET="your-base64-encoded-secret"
 ### 2. 실행
 
 ```bash
-# 기본 실행 (localhost:9000, 60명, 300초)
+# 기본 실행 (환경변수 또는 기본값 사용)
 java -jar build/libs/game-load-test-1.0.0.jar run
 
 # 옵션 지정
@@ -116,11 +128,13 @@ java -jar build/libs/game-load-test-1.0.0.jar run \
 
 | 옵션 | 단축 | 기본값 | 설명 |
 |------|------|--------|------|
-| `--host` | `-h` | localhost | 게임 서버 호스트 |
-| `--port` | `-p` | 9000 | 게임 서버 포트 |
-| `--players` | `-n` | 60 | 가상 플레이어 수 |
-| `--duration` | `-d` | 300 | 테스트 시간 (초) |
 | `--config` | `-c` | config.yaml | 설정 파일 경로 |
+| `--host` | `-h` | 환경변수 | 게임 서버 호스트 |
+| `--port` | `-p` | 환경변수 | 게임 서버 포트 |
+| `--players` | `-n` | 5 | 가상 플레이어 수 |
+| `--duration` | `-d` | 11 | 테스트 시간 (초) |
+
+> **참고**: `rampUpDuration`(10초), `playersPerRoom`(5) 등은 현재 하드코딩됨
 
 ### 4. 설정 파일 (config.yaml)
 
@@ -166,6 +180,8 @@ auth:
 
 ### 시나리오 DSL 예시
 
+#### 기본 setup 패턴
+
 ```kotlin
 val loadTest = scenario("Custom Load Test") {
     config {
@@ -204,28 +220,85 @@ val loadTest = scenario("Custom Load Test") {
 }
 ```
 
+#### groupSetup 패턴 (리더/멤버 동기화)
+
+```kotlin
+val groupLoadTest = scenario("Group Synchronized Test") {
+    config {
+        playerCount = 60
+        roomIdStart = -1L
+        roomIdEnd = -20L
+        playersPerRoom = 3
+        duration = 5.minutes
+    }
+
+    // 그룹 기반 셋업 - 리더가 방 생성, 멤버가 조인 대기
+    groupSetup { group ->
+        authenticate()
+        group.coordinatedRoomSetup()  // 리더/멤버 자동 동기화
+        sendSceneChange()
+        waitForGameStart()
+    }
+
+    game {
+        repeat(10) {
+            continuousMove(duration = 30.seconds)
+            wait(1.seconds)
+        }
+    }
+
+    teardown {
+        disconnect()
+    }
+}
+```
+
 ### 사용 가능한 액션
 
-**Setup Phase**
+**Setup Phase** (setup { } 또는 groupSetup { })
 - `authenticate()` - JWT 토큰 인증
-- `joinRoom()` - 방 입장
+- `joinRoom()` - 방 입장 (setup에서만)
 - `sendSceneChange()` - 씬 로드 신호
 - `waitForGameStart()` - 게임 시작 대기
 - `wait(duration)` - 대기
+
+**GroupSetup 전용** (groupSetup { group -> })
+- `group.isLeader(player)` - 리더 여부 확인
+- `group.coordinatedRoomSetup()` - 리더/멤버 동기화 방 설정
 
 **Game Phase**
 - `move(x, y, z, vx, vy, vz)` - 이동
 - `randomMove(count, intervalMs)` - 랜덤 이동
 - `continuousMove(duration, intervalMs)` - 지속 이동
+- `repeat(times) { }` - 반복 실행
+- `wait(duration)` - 대기
+
+*Ggumtle 상호작용:*
 - `digUpGgumtle(ggumtleId)` - 꿈틀이 파기
-- `feedGgumtle(ggumtleId, duration)` - 꿈틀이 먹이기
+- `stopDigging()` - 파기 중지
+- `startFeed(ggumtleId)` - 먹이기 시작
+- `stopFeed()` - 먹이기 중지
+- `feedGgumtle(ggumtleId, duration)` - 먹이기 (시작+대기+중지)
+
+*박스/아이템:*
 - `openBox(boxId)` / `closeBox(boxId)` - 박스 열기/닫기
 - `takeItem(boxId, itemIndex)` - 아이템 획득
+- `putItem(boxId, itemId)` - 아이템 넣기
+
+*전투:*
 - `hitMongging(targetId, vx, vy, vz)` - 몽이 공격
 - `startRevive(targetId)` / `stopRevive()` - 부활
 - `mongdungSkill(skillType)` - 몽둥이 스킬
+- `attackWithItem(x, y, z, itemId)` - 아이템으로 공격
+- `useFieldItem(itemId)` - 필드 아이템 사용
+- `useDefibrillator()` - 제세동기 사용
+
+*탈출:*
 - `escape(exitId)` - 탈출
-- `ifMongging { }` / `ifMongdung { }` - 조건부 실행
+
+*조건부 실행:*
+- `ifMongging { }` - 꿈틀 플레이어 전용
+- `ifMongdung { }` - 몽둥이 플레이어 전용
 
 **Teardown Phase**
 - `disconnect()` - 연결 종료

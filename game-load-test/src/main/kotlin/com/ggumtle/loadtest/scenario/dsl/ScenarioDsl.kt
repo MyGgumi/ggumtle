@@ -1,11 +1,15 @@
 package com.ggumtle.loadtest.scenario.dsl
 
 import com.ggumtle.loadtest.player.VirtualPlayer
+import com.ggumtle.loadtest.protocol.body.PlayerInfoBody
 import com.ggumtle.loadtest.scenario.model.*
 import kotlinx.coroutines.delay
+import mu.KotlinLogging
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * DSL marker for scenario building
@@ -27,6 +31,7 @@ fun scenario(name: String, block: ScenarioBuilder.() -> Unit): Scenario {
 class ScenarioBuilder(private val name: String) {
     private var config = ScenarioConfig()
     private var setupBlock: (suspend SetupPhaseBuilder.() -> Unit)? = null
+    private var groupSetupBlock: (suspend GroupSetupPhaseBuilder.() -> Unit)? = null
     private var gameBlock: (suspend GamePhaseBuilder.() -> Unit)? = null
     private var teardownBlock: (suspend TeardownPhaseBuilder.() -> Unit)? = null
 
@@ -36,6 +41,10 @@ class ScenarioBuilder(private val name: String) {
 
     fun setup(block: suspend SetupPhaseBuilder.() -> Unit) {
         setupBlock = block
+    }
+
+    fun groupSetup(block: suspend GroupSetupPhaseBuilder.() -> Unit) {
+        groupSetupBlock = block
     }
 
     fun game(block: suspend GamePhaseBuilder.() -> Unit) {
@@ -50,6 +59,7 @@ class ScenarioBuilder(private val name: String) {
         name = name,
         config = config,
         setupPhase = setupBlock?.let { block -> SetupPhase { (this as SetupPhaseBuilder).block() } },
+        groupSetupPhase = groupSetupBlock?.let { block -> GroupSetupPhase { (this as GroupSetupPhaseBuilder).block() } },
         gamePhase = gameBlock?.let { block -> GamePhase { (this as GamePhaseBuilder).block() } },
         teardownPhase = teardownBlock?.let { block -> TeardownPhase { (this as TeardownPhaseBuilder).block() } }
     )
@@ -93,6 +103,89 @@ class SetupPhaseBuilder(
 
     suspend fun joinRoom() {
         player.joinRoom()
+    }
+
+    suspend fun sendSceneChange() {
+        player.sendSceneChange()
+    }
+
+    suspend fun waitForGameStart(): Boolean {
+        return player.waitForGameStart()
+    }
+
+    suspend fun wait(duration: Duration) {
+        delay(duration)
+    }
+}
+
+/**
+ * Group-based setup phase builder for coordinated room creation
+ */
+@ScenarioDsl
+class GroupSetupPhaseBuilder(
+    val group: PlayerGroup,
+    val player: VirtualPlayer,
+    private val token: String
+) : GroupSetupPhaseContext {
+
+    val isLeader: Boolean = group.isLeader(player)
+
+    suspend fun authenticate() {
+        player.authenticate(token)
+    }
+
+    /**
+     * Leader creates room, members wait and then all join
+     * Synchronizes all players before proceeding to ensure Dream is created
+     */
+    suspend fun coordinatedRoomSetup() {
+        if (isLeader) {
+            // Leader creates the room
+            val playerInfos = group.toPlayerInfoBodies()
+            val roomId = player.createRoom(playerInfos)
+
+            if (roomId != null) {
+                group.roomId = roomId
+            } else {
+                throw RuntimeException("Room creation failed for group ${group.groupId}")
+            }
+        } else {
+            // Members wait for room to be created
+            var attempts = 0
+            while (group.roomId == null && attempts < 100) {
+                delay(100)
+                attempts++
+            }
+
+            if (group.roomId == null) {
+                throw RuntimeException("Timeout waiting for room creation in group ${group.groupId}")
+            }
+        }
+
+        // All players join the room
+        val roomId = group.roomId ?: throw RuntimeException("Room ID not set")
+        player.joinRoom(roomId)
+
+        // Synchronization: Wait for all players to join before proceeding
+        // This ensures Dream is created (triggered when last player joins)
+        val joined = group.incrementJoinedCount()
+        logger.debug { "Player ${player.id} joined room $roomId (${joined}/${group.size})" }
+
+        // Wait for all players to join
+        var waitAttempts = 0
+        while (group.joinedCount < group.size && waitAttempts < 100) {
+            delay(50)
+            waitAttempts++
+        }
+
+        if (group.joinedCount < group.size) {
+            logger.warn { "Player ${player.id}: Not all players joined (${group.joinedCount}/${group.size})" }
+        } else {
+            logger.debug { "Player ${player.id}: All players joined, proceeding" }
+            // Wait for server to complete Dream creation
+            // CreateDreamEvent → DreamService.createDream() is async
+            delay(10000)
+        }
     }
 
     suspend fun sendSceneChange() {

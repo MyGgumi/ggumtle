@@ -8,6 +8,8 @@ enum class PlayerState {
     CONNECTED,
     AUTHENTICATING,
     AUTHENTICATED,
+    CREATING_ROOM,
+    ROOM_CREATED,
     JOINING_ROOM,
     IN_ROOM,
     LOADING_SCENE,

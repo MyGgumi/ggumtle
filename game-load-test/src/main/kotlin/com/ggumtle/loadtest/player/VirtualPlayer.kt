@@ -41,6 +41,17 @@ class VirtualPlayer(
     var createdRoomId: Long? = null
         private set
 
+    // Box states (boxId -> BoxState)
+    private val boxStates = mutableMapOf<Int, BoxState>()
+
+    // Currently opened box ID (null if not viewing any box)
+    var currentBoxId: Int? = null
+        private set
+
+    // Player's inventory - simplified as single item ID for now
+    var heldItemId: Int = -1
+        private set
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -288,6 +299,22 @@ class VirtualPlayer(
                 logger.debug { "Player $id: Game ended" }
             }
 
+            ReceivePacketType.SHOW_BOX -> {
+                parseShowBox(packet.data)
+            }
+
+            ReceivePacketType.CLOSE_BOX -> {
+                parseCloseBox(packet.data)
+            }
+
+            ReceivePacketType.TAKE_ITEM -> {
+                parseTakeItem(packet.data)
+            }
+
+            ReceivePacketType.PUT_ITEM -> {
+                parsePutItem(packet.data)
+            }
+
             else -> {
                 logger.trace { "Player $id: Received ${type.name}" }
             }
@@ -380,4 +407,173 @@ class VirtualPlayer(
             logger.warn(e) { "Player $id: Failed to parse map data" }
         }
     }
+
+    // ===== Box Response Parsing =====
+
+    /**
+     * Parse SHOW_BOX (51) response
+     * 바이트 구조: success(1) + boxId(4) + itemCount(4) + items(36) = 45 bytes
+     */
+    private fun parseShowBox(data: ByteArray?) {
+        if (data == null || data.size < 45) {
+            logger.warn { "Player $id: Invalid SHOW_BOX response size: ${data?.size}" }
+            return
+        }
+
+        try {
+            val buffer = ByteBuffer.wrap(data)
+            val success = buffer.get() == 1.toByte()
+
+            if (!success) {
+                logger.debug { "Player $id: SHOW_BOX failed" }
+                return
+            }
+
+            val boxId = buffer.int
+            val itemCount = buffer.int  // Should be 9 (BOX_SIZE)
+
+            val items = IntArray(BoxState.BOX_SIZE) { i ->
+                if (i < itemCount && buffer.remaining() >= 4) buffer.int else -1
+            }
+
+            boxStates[boxId] = BoxState(boxId, items)
+            currentBoxId = boxId
+
+            logger.debug { "Player $id: Opened box $boxId with ${items.count { it != -1 }} items" }
+            metrics.incrementCounter("boxOpensSuccess")
+        } catch (e: Exception) {
+            logger.warn(e) { "Player $id: Failed to parse SHOW_BOX response" }
+        }
+    }
+
+    /**
+     * Parse CLOSE_BOX (53) response
+     * 바이트 구조: result(4) = 4 bytes
+     */
+    private fun parseCloseBox(data: ByteArray?) {
+        if (data == null || data.size < 4) {
+            logger.warn { "Player $id: Invalid CLOSE_BOX response size: ${data?.size}" }
+            return
+        }
+
+        try {
+            val buffer = ByteBuffer.wrap(data)
+            val resultCode = buffer.int
+            val result = CloseBoxResult.fromValue(resultCode)
+
+            val closedBox = currentBoxId
+            if (result == CloseBoxResult.SUCCESS) {
+                currentBoxId = null
+                logger.debug { "Player $id: Closed box $closedBox" }
+            } else {
+                logger.debug { "Player $id: CLOSE_BOX failed with result $result" }
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "Player $id: Failed to parse CLOSE_BOX response" }
+        }
+    }
+
+    /**
+     * Parse TAKE_ITEM (55) response
+     * 바이트 구조: result(4) + playerId(8) + boxId(4) + boxSize(4) + items(36) + takenItem(4) = 60 bytes
+     *
+     * 브로드캐스트 처리:
+     * - playerId == serverId: 본인이 아이템 가져감 → heldItemId 업데이트
+     * - playerId != serverId: 다른 플레이어가 가져감 → 상자 상태만 업데이트
+     */
+    private fun parseTakeItem(data: ByteArray?) {
+        if (data == null || data.size < 60) {
+            logger.warn { "Player $id: Invalid TAKE_ITEM response size: ${data?.size}" }
+            return
+        }
+
+        try {
+            val buffer = ByteBuffer.wrap(data)
+            val resultCode = buffer.int
+            val result = TakeItemResult.fromValue(resultCode)
+            val playerId = buffer.long
+            val boxId = buffer.int
+            val boxSize = buffer.int  // Should be 9
+
+            val items = IntArray(BoxState.BOX_SIZE) { i ->
+                if (i < boxSize && buffer.remaining() >= 4) buffer.int else -1
+            }
+
+            val takenItemId = if (buffer.remaining() >= 4) buffer.int else -1
+
+            if (result == TakeItemResult.SUCCESS) {
+                // 상자 상태 업데이트 (본인/타인 무관)
+                boxStates[boxId] = BoxState(boxId, items)
+
+                if (playerId == serverId) {
+                    // 본인이 아이템 가져감
+                    heldItemId = takenItemId
+                    logger.debug { "Player $id: Took item $takenItemId from box $boxId" }
+                    metrics.incrementCounter("itemTakesSuccess")
+                } else {
+                    // 다른 플레이어가 아이템 가져감 (브로드캐스트)
+                    logger.trace { "Player $id: Player $playerId took item from box $boxId" }
+                }
+            } else {
+                logger.debug { "Player $id: TAKE_ITEM failed with result $result" }
+                metrics.incrementCounter("itemTakesFailed")
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "Player $id: Failed to parse TAKE_ITEM response" }
+        }
+    }
+
+    /**
+     * Parse PUT_ITEM (57) response
+     * 바이트 구조: result(4) + boxSize(4) + items(36) = 44 bytes
+     */
+    private fun parsePutItem(data: ByteArray?) {
+        if (data == null || data.size < 44) {
+            logger.warn { "Player $id: Invalid PUT_ITEM response size: ${data?.size}" }
+            return
+        }
+
+        try {
+            val buffer = ByteBuffer.wrap(data)
+            val resultCode = buffer.int
+            val result = PutItemResult.fromValue(resultCode)
+            val boxSize = buffer.int
+
+            if (result == PutItemResult.SUCCESS && boxSize > 0) {
+                val items = IntArray(BoxState.BOX_SIZE) { i ->
+                    if (i < boxSize && buffer.remaining() >= 4) buffer.int else -1
+                }
+
+                // 현재 열린 상자 상태 업데이트
+                currentBoxId?.let { boxId ->
+                    boxStates[boxId] = BoxState(boxId, items)
+                }
+
+                val putItemId = heldItemId
+                heldItemId = -1  // 아이템 소모
+
+                logger.debug { "Player $id: Put item $putItemId to box" }
+                metrics.incrementCounter("itemPutsSuccess")
+            } else {
+                logger.debug { "Player $id: PUT_ITEM failed with result $result" }
+                metrics.incrementCounter("itemPutsFailed")
+            }
+        } catch (e: Exception) {
+            logger.warn(e) { "Player $id: Failed to parse PUT_ITEM response" }
+        }
+    }
+
+    // ===== Box State Queries =====
+
+    /** Get box state by ID */
+    fun getBoxState(boxId: Int): BoxState? = boxStates[boxId]
+
+    /** Get current opened box state */
+    fun getCurrentBoxState(): BoxState? = currentBoxId?.let { boxStates[it] }
+
+    /** Check if player has an item */
+    fun hasItem(): Boolean = heldItemId != -1
+
+    /** Check if viewing a box */
+    fun isViewingBox(): Boolean = currentBoxId != null
 }

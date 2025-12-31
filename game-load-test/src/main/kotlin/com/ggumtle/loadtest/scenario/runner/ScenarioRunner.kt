@@ -30,6 +30,7 @@ class ScenarioRunner(
     suspend fun run(): TestReport = coroutineScope {
         logger.info { "Starting scenario: ${scenario.name}" }
         logger.info { "Players: ${scenario.config.playerCount}, Duration: ${scenario.config.duration}" }
+        metrics.markStart(scenario.config.playerCount)
 
         val connectionPool = ConnectionPool(config.host, config.port)
         val players = mutableListOf<VirtualPlayer>()
@@ -151,6 +152,7 @@ class ScenarioRunner(
             }
 
             logger.info { "Scenario completed" }
+            metrics.markEnd()
 
         } finally {
             connectionPool.closeAll()

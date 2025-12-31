@@ -1,5 +1,6 @@
 package com.ggumtle.loadtest.scenario.dsl
 
+import com.ggumtle.loadtest.player.DigUpResult
 import com.ggumtle.loadtest.player.VirtualPlayer
 import com.ggumtle.loadtest.protocol.body.PlayerInfoBody
 import com.ggumtle.loadtest.scenario.model.*
@@ -145,7 +146,7 @@ class GroupSetupPhaseBuilder(
             logger.debug { "Player ${player.id}: All players joined, proceeding" }
             // Wait for server to complete Dream creation
             // CreateDreamEvent → DreamService.createDream() is async
-            delay(10000)
+            delay(1000)
         }
     }
 
@@ -237,6 +238,17 @@ class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
     // Ggumtle interactions
     suspend fun digUpGgumtle(ggumtleId: Int) {
         player.sendDigUp(ggumtleId)
+    }
+
+    /**
+     * Send DIG_UP_GGUMTLE and wait for DIG_UP_RECEIVE response
+     * @param ggumtleId ID of the ggumtle to dig
+     * @param timeoutMs timeout in milliseconds to wait for response
+     * @return DigUpResult from server
+     */
+    suspend fun digUpGgumtleAndWait(ggumtleId: Int, timeoutMs: Long = 5000): DigUpResult {
+        player.sendDigUp(ggumtleId)
+        return player.waitForDigResponse(timeoutMs)
     }
 
     suspend fun stopDigging() {

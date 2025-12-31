@@ -52,6 +52,11 @@ class VirtualPlayer(
     var heldItemId: Int = -1
         private set
 
+    // Dig response tracking
+    var lastDigResult: DigUpResult? = null
+        private set
+    private val digResponseReceived = MutableStateFlow(false)
+
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     init {
@@ -315,6 +320,10 @@ class VirtualPlayer(
                 parsePutItem(packet.data)
             }
 
+            ReceivePacketType.DIG_UP_RECEIVE -> {
+                parseDigUpResponse(packet.data)
+            }
+
             else -> {
                 logger.trace { "Player $id: Received ${type.name}" }
             }
@@ -576,4 +585,47 @@ class VirtualPlayer(
 
     /** Check if viewing a box */
     fun isViewingBox(): Boolean = currentBoxId != null
+
+    // ===== Dig Response Handling =====
+
+    /**
+     * Parse DIG_UP_RECEIVE (101) response
+     * 바이트 구조: result(1 byte)
+     */
+    private fun parseDigUpResponse(data: ByteArray?) {
+        val result = if (data != null && data.isNotEmpty()) {
+            DigUpResult.fromValue(data[0])
+        } else {
+            DigUpResult.UNKNOWN
+        }
+
+        lastDigResult = result
+        digResponseReceived.value = true
+
+        if (result.isSuccess) {
+            metrics.incrementCounter("digUpsSuccess")
+            logger.debug { "Player $id: DIG_UP_RECEIVE START_DIGGING (success)" }
+        } else {
+            metrics.incrementCounter("digUpsFailed")
+            logger.debug { "Player $id: DIG_UP_RECEIVE $result (failed)" }
+        }
+    }
+
+    /**
+     * Wait for DIG_UP_RECEIVE response with timeout
+     * @return DigUpResult - the result from server, or UNKNOWN on timeout
+     */
+    suspend fun waitForDigResponse(timeoutMs: Long = 5000): DigUpResult {
+        digResponseReceived.value = false
+        lastDigResult = null
+        return try {
+            withTimeout(timeoutMs) {
+                digResponseReceived.first { it }
+            }
+            lastDigResult ?: DigUpResult.UNKNOWN
+        } catch (e: TimeoutCancellationException) {
+            logger.warn { "Player $id: DIG_UP response timeout" }
+            DigUpResult.UNKNOWN
+        }
+    }
 }

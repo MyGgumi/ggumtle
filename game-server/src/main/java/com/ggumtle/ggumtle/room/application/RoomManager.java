@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RoomManager {
 
     private final AtomicLong roomIdGenerator = new AtomicLong(0);
+    // RoomCreator에서 -1 ~ -20 사용하므로 -100부터 시작하여 ID 충돌 방지
+    private final AtomicLong testRoomIdGenerator = new AtomicLong(-100);
     private final ConcurrentHashMap<Long, Room> idToRoom = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Room> playerIdToRoom = new ConcurrentHashMap<>();
 
@@ -76,8 +78,13 @@ public class RoomManager {
     }
 
     public Room createRoomFromPacket(List<PlayerInfo> playerInfos) {
-        long roomId = roomIdGenerator.incrementAndGet();
-        log.debug("{}번 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
+        // 테스트 방 플레이어 스폰 위치가 5개로 제한되어 있음
+        if (playerInfos.size() > 5) {
+            throw new IllegalArgumentException("패킷으로 생성하는 방은 최대 5명까지 지원합니다. 요청: " + playerInfos.size() + "명");
+        }
+
+        long roomId = testRoomIdGenerator.decrementAndGet();  // 음수 ID: -101, -102, -103, ...
+        log.debug("{}번 테스트 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
 
         Room room = new Room(roomId, playerInfos);
         idToRoom.put(roomId, room);

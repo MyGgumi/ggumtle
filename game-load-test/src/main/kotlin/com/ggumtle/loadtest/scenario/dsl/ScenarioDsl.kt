@@ -205,6 +205,35 @@ class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
         }
     }
 
+    // Position-based movement (using map data)
+    suspend fun moveToPosition(x: Int, y: Int, z: Int) {
+        player.sendMove(x, y, z, 0, 0, 0)
+    }
+
+    suspend fun moveToGgumtle(ggumtleId: Int) {
+        val pos = player.mapData.findGgumtle(ggumtleId)
+            ?: throw IllegalArgumentException("Ggumtle $ggumtleId not found in map data")
+        player.sendMove(pos.x, pos.y, pos.z, 0, 0, 0)
+    }
+
+    suspend fun moveToBox(boxId: Int) {
+        val pos = player.mapData.findBox(boxId)
+            ?: throw IllegalArgumentException("Box $boxId not found in map data")
+        player.sendMove(pos.x, pos.y, pos.z, 0, 0, 0)
+    }
+
+    suspend fun moveToHealPack(itemId: Int) {
+        val pos = player.mapData.findHealPack(itemId)
+            ?: throw IllegalArgumentException("HealPack $itemId not found in map data")
+        player.sendMove(pos.x, pos.y, pos.z, 0, 0, 0)
+    }
+
+    suspend fun moveToSpeedPack(itemId: Int) {
+        val pos = player.mapData.findSpeedPack(itemId)
+            ?: throw IllegalArgumentException("SpeedPack $itemId not found in map data")
+        player.sendMove(pos.x, pos.y, pos.z, 0, 0, 0)
+    }
+
     // Ggumtle interactions
     suspend fun digUpGgumtle(ggumtleId: Int) {
         player.sendDigUp(ggumtleId)

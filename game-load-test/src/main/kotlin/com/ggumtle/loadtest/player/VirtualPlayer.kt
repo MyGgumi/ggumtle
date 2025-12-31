@@ -33,6 +33,10 @@ class VirtualPlayer(
     var spawnPosition: Triple<Int, Int, Int> = Triple(0, 0, 0)
         private set
 
+    // Map data from INITIALIZE_MAP
+    var mapData: MapData = MapData()
+        private set
+
     // Room creation result
     var createdRoomId: Long? = null
         private set
@@ -266,6 +270,10 @@ class VirtualPlayer(
                 }
             }
 
+            ReceivePacketType.INITIALIZE_MAP -> {
+                parseMapData(packet.data)
+            }
+
             ReceivePacketType.INITIALIZE_PLAYER -> {
                 parsePlayerInfo(packet.data)
             }
@@ -321,6 +329,55 @@ class VirtualPlayer(
             }
         } catch (e: Exception) {
             logger.warn(e) { "Player $id: Failed to parse player info" }
+        }
+    }
+
+    private fun parseMapData(data: ByteArray?) {
+        if (data == null || data.size < 16) return  // At least 4 counts (4 bytes each)
+
+        try {
+            val buffer = ByteBuffer.wrap(data)
+
+            // Parse boxes
+            val boxCount = buffer.int
+            val boxes = mutableListOf<EntityPosition>()
+            repeat(boxCount) {
+                if (buffer.remaining() >= 16) {
+                    boxes.add(EntityPosition(buffer.int, buffer.int, buffer.int, buffer.int))
+                }
+            }
+
+            // Parse ggumtles
+            val ggumtleCount = buffer.int
+            val ggumtles = mutableListOf<EntityPosition>()
+            repeat(ggumtleCount) {
+                if (buffer.remaining() >= 16) {
+                    ggumtles.add(EntityPosition(buffer.int, buffer.int, buffer.int, buffer.int))
+                }
+            }
+
+            // Parse healPacks
+            val healPackCount = buffer.int
+            val healPacks = mutableListOf<EntityPosition>()
+            repeat(healPackCount) {
+                if (buffer.remaining() >= 16) {
+                    healPacks.add(EntityPosition(buffer.int, buffer.int, buffer.int, buffer.int))
+                }
+            }
+
+            // Parse speedPacks
+            val speedPackCount = buffer.int
+            val speedPacks = mutableListOf<EntityPosition>()
+            repeat(speedPackCount) {
+                if (buffer.remaining() >= 16) {
+                    speedPacks.add(EntityPosition(buffer.int, buffer.int, buffer.int, buffer.int))
+                }
+            }
+
+            mapData = MapData(boxes, ggumtles, healPacks, speedPacks)
+            logger.debug { "Player $id: Map initialized - ${boxes.size} boxes, ${ggumtles.size} ggumtles, ${healPacks.size} healPacks, ${speedPacks.size} speedPacks" }
+        } catch (e: Exception) {
+            logger.warn(e) { "Player $id: Failed to parse map data" }
         }
     }
 }

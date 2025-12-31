@@ -10,7 +10,6 @@ import kotlin.time.Duration.Companion.seconds
 data class Scenario(
     val name: String,
     val config: ScenarioConfig,
-    val setupPhase: SetupPhase?,
     val groupSetupPhase: GroupSetupPhase?,
     val gamePhase: GamePhase?,
     val teardownPhase: TeardownPhase?
@@ -21,18 +20,10 @@ data class Scenario(
  */
 data class ScenarioConfig(
     val playerCount: Int = 10,
-    val roomIdRange: LongRange = -1L..-20L,
     val playersPerRoom: Int = 3,
     val duration: Duration = 1.minutes,
     val rampUpDuration: Duration = 10.seconds,
     val moveIntervalMs: Long = 16
-)
-
-/**
- * Setup phase definition (suspend lambda)
- */
-class SetupPhase(
-    val block: suspend SetupPhaseContext.() -> Unit
 )
 
 /**
@@ -57,7 +48,6 @@ class GroupSetupPhase(
 )
 
 // Context interfaces for type safety
-interface SetupPhaseContext
 interface GroupSetupPhaseContext
 interface GamePhaseContext
 interface TeardownPhaseContext

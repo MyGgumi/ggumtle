@@ -7,7 +7,6 @@ import com.ggumtle.loadtest.network.ConnectionPool
 import com.ggumtle.loadtest.player.VirtualPlayer
 import com.ggumtle.loadtest.scenario.dsl.GamePhaseBuilder
 import com.ggumtle.loadtest.scenario.dsl.GroupSetupPhaseBuilder
-import com.ggumtle.loadtest.scenario.dsl.SetupPhaseBuilder
 import com.ggumtle.loadtest.scenario.dsl.TeardownPhaseBuilder
 import com.ggumtle.loadtest.scenario.model.PlayerGroup
 import com.ggumtle.loadtest.scenario.model.Scenario
@@ -47,12 +46,11 @@ class ScenarioRunner(
                 async {
                     if (playerId > 1) delay(rampUpDelay)
 
-                    val roomId = assignRoomId(playerId)
                     val client = connectionPool.createClient()
-                    val player = VirtualPlayer(playerId, client, roomId, metrics)
+                    val player = VirtualPlayer(playerId, client, metrics)
                     synchronized(players) { players.add(player) }
 
-                    logger.debug { "Created player $playerId for room $roomId" }
+                    logger.debug { "Created player $playerId" }
                     player
                 }
             }
@@ -73,7 +71,7 @@ class ScenarioRunner(
             }
             logger.info { "Organized ${createdPlayers.size} players into ${groups.size} groups" }
 
-            // Phase 2: Group Setup (if defined) or Regular Setup
+            // Phase 2: Group Setup
             scenario.groupSetupPhase?.let { phase ->
                 logger.info { "Starting group setup phase" }
 
@@ -97,22 +95,6 @@ class ScenarioRunner(
                 }
                 groupJobs.joinAll()
                 logger.info { "Group setup phase completed" }
-            } ?: scenario.setupPhase?.let { phase ->
-                logger.info { "Starting setup phase" }
-                val setupJobs = createdPlayers.map { player ->
-                    launch {
-                        try {
-                            val token = MockTokenGenerator.generate(player.id)
-                            val builder = SetupPhaseBuilder(player, token)
-                            phase.block(builder)
-                        } catch (e: Exception) {
-                            logger.error(e) { "Setup failed for player ${player.id}" }
-                            metrics.recordError(player.id, "setup", e)
-                        }
-                    }
-                }
-                setupJobs.joinAll()
-                logger.info { "Setup phase completed" }
             }
 
             // Phase 3: Game
@@ -175,15 +157,5 @@ class ScenarioRunner(
         }
 
         metrics.generateReport(scenario.name)
-    }
-
-    /**
-     * Assign a room ID based on player ID
-     */
-    private fun assignRoomId(playerId: Int): Long {
-        val roomRange = scenario.config.roomIdRange
-        val roomCount = (roomRange.last - roomRange.first).toInt().coerceAtLeast(1) + 1
-        val roomIndex = (playerId - 1) / scenario.config.playersPerRoom % roomCount
-        return roomRange.first - roomIndex
     }
 }

@@ -30,17 +30,12 @@ fun scenario(name: String, block: ScenarioBuilder.() -> Unit): Scenario {
 @ScenarioDsl
 class ScenarioBuilder(private val name: String) {
     private var config = ScenarioConfig()
-    private var setupBlock: (suspend SetupPhaseBuilder.() -> Unit)? = null
     private var groupSetupBlock: (suspend GroupSetupPhaseBuilder.() -> Unit)? = null
     private var gameBlock: (suspend GamePhaseBuilder.() -> Unit)? = null
     private var teardownBlock: (suspend TeardownPhaseBuilder.() -> Unit)? = null
 
     fun config(block: ScenarioConfigBuilder.() -> Unit) {
         config = ScenarioConfigBuilder().apply(block).build()
-    }
-
-    fun setup(block: suspend SetupPhaseBuilder.() -> Unit) {
-        setupBlock = block
     }
 
     fun groupSetup(block: suspend GroupSetupPhaseBuilder.() -> Unit) {
@@ -58,7 +53,6 @@ class ScenarioBuilder(private val name: String) {
     fun build(): Scenario = Scenario(
         name = name,
         config = config,
-        setupPhase = setupBlock?.let { block -> SetupPhase { (this as SetupPhaseBuilder).block() } },
         groupSetupPhase = groupSetupBlock?.let { block -> GroupSetupPhase { (this as GroupSetupPhaseBuilder).block() } },
         gamePhase = gameBlock?.let { block -> GamePhase { (this as GamePhaseBuilder).block() } },
         teardownPhase = teardownBlock?.let { block -> TeardownPhase { (this as TeardownPhaseBuilder).block() } }
@@ -71,8 +65,6 @@ class ScenarioBuilder(private val name: String) {
 @ScenarioDsl
 class ScenarioConfigBuilder {
     var playerCount: Int = 10
-    var roomIdStart: Long = -1L
-    var roomIdEnd: Long = -20L
     var playersPerRoom: Int = 3
     var duration: Duration = 60.seconds
     var rampUpDuration: Duration = 10.seconds
@@ -80,42 +72,11 @@ class ScenarioConfigBuilder {
 
     fun build() = ScenarioConfig(
         playerCount = playerCount,
-        roomIdRange = roomIdStart..roomIdEnd,
         playersPerRoom = playersPerRoom,
         duration = duration,
         rampUpDuration = rampUpDuration,
         moveIntervalMs = moveIntervalMs
     )
-}
-
-/**
- * Setup phase builder with DSL methods
- */
-@ScenarioDsl
-class SetupPhaseBuilder(
-    val player: VirtualPlayer,
-    private val token: String
-) : SetupPhaseContext {
-
-    suspend fun authenticate() {
-        player.authenticate(token)
-    }
-
-    suspend fun joinRoom() {
-        player.joinRoom()
-    }
-
-    suspend fun sendSceneChange() {
-        player.sendSceneChange()
-    }
-
-    suspend fun waitForGameStart(): Boolean {
-        return player.waitForGameStart()
-    }
-
-    suspend fun wait(duration: Duration) {
-        delay(duration)
-    }
 }
 
 /**

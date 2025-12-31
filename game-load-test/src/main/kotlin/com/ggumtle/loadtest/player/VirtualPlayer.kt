@@ -20,7 +20,6 @@ private val logger = KotlinLogging.logger {}
 class VirtualPlayer(
     val id: Int,
     private val client: GameClient,
-    val roomId: Long,
     private val metrics: MetricsCollector
 ) {
     private val _state = MutableStateFlow(PlayerState.CONNECTED)
@@ -91,12 +90,11 @@ class VirtualPlayer(
         return createdRoomId
     }
 
-    suspend fun joinRoom(targetRoomId: Long? = null) {
-        val roomToJoin = targetRoomId ?: roomId
+    suspend fun joinRoom(roomId: Long) {
         _state.value = PlayerState.JOINING_ROOM
         val start = System.nanoTime()
 
-        client.send(SendPacketType.ROOM_JOIN, RoomJoinBody(roomToJoin))
+        client.send(SendPacketType.ROOM_JOIN, RoomJoinBody(roomId))
 
         // Wait for room join response
         _state.first { it == PlayerState.IN_ROOM || it == PlayerState.ERROR }
@@ -244,7 +242,7 @@ class VirtualPlayer(
 
             ReceivePacketType.ROOM_JOIN -> {
                 _state.value = PlayerState.IN_ROOM
-                logger.debug { "Player $id: Joined room $roomId" }
+                logger.debug { "Player $id: Joined room" }
             }
 
             ReceivePacketType.ROOM_CREATE -> {

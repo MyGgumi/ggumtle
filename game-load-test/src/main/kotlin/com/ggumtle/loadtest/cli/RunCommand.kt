@@ -10,7 +10,6 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
-import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {}
@@ -55,8 +54,6 @@ class RunCommand : CliktCommand(
         val testScenario = scenario("Dynamic Room Load Test") {
             config {
                 playerCount = players
-                roomIdStart = -1L
-                roomIdEnd = -20L
                 playersPerRoom = 5  // 5 players per group/room
                 duration = durationSeconds.seconds
                 rampUpDuration = 10.seconds

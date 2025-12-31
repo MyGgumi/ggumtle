@@ -128,8 +128,8 @@ data class PlayerInfoBody(
     val additionalHp: Int,       // 4 bytes
     val additionalTaskSpeed: Int, // 4 bytes
     val additionalHealSpeed: Int  // 4 bytes
-) {
-    fun toBytes(): ByteArray =
+) : PacketBody {
+    override fun toBytes(): ByteArray =
         ByteBuffer.allocate(28)
             .putLong(playerId)
             .putLong(monggingClassId)

@@ -133,7 +133,7 @@ class VirtualPlayer(
                 _state.first { it == PlayerState.IN_GAME || it == PlayerState.ERROR }
             }
             _state.value == PlayerState.IN_GAME
-        } catch (e: TimeoutCancellationException) {
+        } catch (e: TimeoutCancellationException){
             logger.warn { "Player $id: Timeout waiting for game start" }
             false
         }
@@ -322,6 +322,26 @@ class VirtualPlayer(
 
             ReceivePacketType.DIG_UP_RECEIVE -> {
                 parseDigUpResponse(packet.data)
+            }
+
+            ReceivePacketType.START_FEED -> {
+                parseStartFeedResponse(packet.data)
+            }
+
+            ReceivePacketType.STOP_FEED -> {
+                parseStopFeedResponse(packet.data)
+            }
+
+            ReceivePacketType.LEFT_JELLY_COUNT -> {
+                parseLeftJellyCount(packet.data)
+            }
+
+            ReceivePacketType.GGUMTLE_FED_JELLY -> {
+                parseGgumtleFedJelly(packet.data)
+            }
+
+            ReceivePacketType.GGUMTLE_STATUS -> {
+                parseGgumtleStatus(packet.data)
             }
 
             else -> {
@@ -609,6 +629,93 @@ class VirtualPlayer(
             metrics.incrementCounter("digUpsFailed")
             logger.debug { "Player $id: DIG_UP_RECEIVE $result (failed)" }
         }
+    }
+
+    // ===== Feed Response Handling =====
+
+    /**
+     * Parse START_FEED (111) response
+     * 바이트 구조: result(1 byte)
+     */
+    private fun parseStartFeedResponse(data: ByteArray?) {
+        val result = if (data != null && data.isNotEmpty()) {
+            StartFeedResult.fromValue(data[0])
+        } else {
+            StartFeedResult.UNKNOWN
+        }
+
+        logger.debug { "Player $id: START_FEED result = $result (success=${result.isSuccess})" }
+    }
+
+    /**
+     * Parse STOP_FEED (113) response
+     * 바이트 구조: result(1 byte) + leftFeedItemCount(4 bytes)
+     */
+    private fun parseStopFeedResponse(data: ByteArray?) {
+        if (data == null || data.size < 5) {
+            logger.warn { "Player $id: Invalid STOP_FEED response size: ${data?.size}" }
+            return
+        }
+
+        val result = data[0].toInt()
+        val leftCount = ByteBuffer.wrap(data, 1, 4).int
+
+        logger.debug { "Player $id: STOP_FEED result=$result, leftFeedItemCount=$leftCount" }
+    }
+
+    /**
+     * Parse LEFT_JELLY_COUNT (121) response
+     * 바이트 구조: count(4 bytes)
+     */
+    private fun parseLeftJellyCount(data: ByteArray?) {
+        if (data == null || data.size < 4) {
+            logger.warn { "Player $id: Invalid LEFT_JELLY_COUNT response size: ${data?.size}" }
+            return
+        }
+
+        val count = ByteBuffer.wrap(data).int
+        logger.debug { "Player $id: LEFT_JELLY_COUNT = $count" }
+    }
+
+    /**
+     * Parse GGUMTLE_FED_JELLY (122) response
+     * 바이트 구조: ggumtleId(4 bytes) + fedJellyCount(4 bytes)
+     */
+    private fun parseGgumtleFedJelly(data: ByteArray?) {
+        if (data == null || data.size < 8) {
+            logger.warn { "Player $id: Invalid GGUMTLE_FED_JELLY response size: ${data?.size}" }
+            return
+        }
+
+        val buffer = ByteBuffer.wrap(data)
+        val ggumtleId = buffer.int
+        val fedCount = buffer.int
+
+        logger.debug { "Player $id: GGUMTLE_FED_JELLY ggumtleId=$ggumtleId, fedCount=$fedCount" }
+    }
+
+    /**
+     * Parse GGUMTLE_STATUS (120) response
+     * 바이트 구조: ggumtleId(4 bytes) + status(1 byte)
+     * Status: 10=NORMAL, 20=FEEDING, 30=DONE
+     */
+    private fun parseGgumtleStatus(data: ByteArray?) {
+        if (data == null || data.size < 5) {
+            logger.warn { "Player $id: Invalid GGUMTLE_STATUS response size: ${data?.size}" }
+            return
+        }
+
+        val buffer = ByteBuffer.wrap(data)
+        val ggumtleId = buffer.int
+        val status = buffer.get().toInt()
+        val statusName = when (status) {
+            10 -> "NORMAL"
+            20 -> "FEEDING"
+            30 -> "DONE"
+            else -> "UNKNOWN($status)"
+        }
+
+        logger.debug { "Player $id: GGUMTLE_STATUS ggumtleId=$ggumtleId, status=$statusName" }
     }
 
     /**

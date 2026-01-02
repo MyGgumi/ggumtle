@@ -1,5 +1,6 @@
 package com.ggumtle.loadtest.scenario.model
 
+import com.ggumtle.loadtest.scenario.definitions.RoleScenario
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -11,7 +12,9 @@ data class Scenario(
     val name: String,
     val config: ScenarioConfig,
     val groupSetupPhase: GroupSetupPhase?,
-    val gamePhase: GamePhase?,
+    val monggingScenarios: Map<Int, RoleScenario> = emptyMap(),  // Mongging index (0-3) -> Scenario
+    val mongdungScenario: RoleScenario? = null,                   // Mongdung scenario
+    val gamePhase: GamePhase?,                                    // Fallback game phase
     val teardownPhase: TeardownPhase?
 )
 

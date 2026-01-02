@@ -99,7 +99,86 @@ class ScenarioRunner(
             }
 
             // Phase 3: Game
-            scenario.gamePhase?.let { phase ->
+            val hasRoleScenarios = scenario.monggingScenarios.isNotEmpty() || scenario.mongdungScenario != null
+
+            if (hasRoleScenarios) {
+                // Role-based game phase
+                logger.info { "Starting role-based game phase (duration: ${scenario.config.duration})" }
+                logger.info { "Mongging scenarios: ${scenario.monggingScenarios.keys}, Mongdung: ${scenario.mongdungScenario != null}" }
+
+                val gameJobs = groups.flatMap { group ->
+                    // Group players by role (based on server-assigned isMongging)
+                    val monggingPlayers = group.players.filter { it.isMongging }
+                    val mongdungPlayers = group.players.filter { !it.isMongging }
+
+                    logger.debug { "Group ${group.groupId}: ${monggingPlayers.size} monggings, ${mongdungPlayers.size} mongdungs" }
+
+                    val monggingJobs = monggingPlayers.mapIndexed { monggingIndex, player ->
+                        launch(SupervisorJob()) {
+                            try {
+                                val roleScenario = scenario.monggingScenarios[monggingIndex]
+                                withTimeout(scenario.config.duration) {
+                                    val builder = GamePhaseBuilder(player)
+                                    if (roleScenario != null) {
+                                        with(roleScenario) { builder.execute() }
+                                    } else {
+                                        // Fallback to default game phase
+                                        scenario.gamePhase?.block?.invoke(builder)
+                                    }
+                                }
+                            } catch (e: TimeoutCancellationException) {
+                                logger.debug { "Mongging ${player.id} completed (timeout)" }
+                            } catch (e: CancellationException) {
+                                // Normal cancellation
+                            } catch (e: Exception) {
+                                logger.error(e) { "Game error for mongging ${player.id}" }
+                                metrics.recordError(player.id, "game", e)
+                            }
+                        }
+                    }
+
+                    val mongdungJobs = mongdungPlayers.map { player ->
+                        launch(SupervisorJob()) {
+                            try {
+                                withTimeout(scenario.config.duration) {
+                                    val builder = GamePhaseBuilder(player)
+                                    val roleScenario = scenario.mongdungScenario
+                                    if (roleScenario != null) {
+                                        with(roleScenario) { builder.execute() }
+                                    } else {
+                                        // Fallback to default game phase
+                                        scenario.gamePhase?.block?.invoke(builder)
+                                    }
+                                }
+                            } catch (e: TimeoutCancellationException) {
+                                logger.debug { "Mongdung ${player.id} completed (timeout)" }
+                            } catch (e: CancellationException) {
+                                // Normal cancellation
+                            } catch (e: Exception) {
+                                logger.error(e) { "Game error for mongdung ${player.id}" }
+                                metrics.recordError(player.id, "game", e)
+                            }
+                        }
+                    }
+
+                    monggingJobs + mongdungJobs
+                }
+
+                // Progress reporting
+                val progressJob = launch {
+                    while (isActive) {
+                        delay(10_000)
+                        logger.info { "Progress: ${metrics.getSummary()}" }
+                    }
+                }
+
+                gameJobs.joinAll()
+                progressJob.cancel()
+                logger.info { "Role-based game phase completed" }
+
+            } else if (scenario.gamePhase != null) {
+                // Default game phase (all players run same scenario)
+                val phase = scenario.gamePhase
                 logger.info { "Starting game phase (duration: ${scenario.config.duration})" }
 
                 val gameJobs = createdPlayers.map { player ->

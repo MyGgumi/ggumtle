@@ -2,6 +2,11 @@ package com.ggumtle.loadtest.cli
 
 import com.ggumtle.loadtest.config.ConfigLoader
 import com.ggumtle.loadtest.config.EnvLoader
+import com.ggumtle.loadtest.scenario.definitions.mongdung.MongdungScenario
+import com.ggumtle.loadtest.scenario.definitions.mongging.Mongging0Scenario
+import com.ggumtle.loadtest.scenario.definitions.mongging.Mongging1Scenario
+import com.ggumtle.loadtest.scenario.definitions.mongging.Mongging2Scenario
+import com.ggumtle.loadtest.scenario.definitions.mongging.Mongging3Scenario
 import com.ggumtle.loadtest.scenario.dsl.scenario
 import com.ggumtle.loadtest.scenario.model.Scenario
 import com.ggumtle.loadtest.scenario.runner.ScenarioRunner
@@ -41,7 +46,7 @@ class RunCommand : CliktCommand(
         .int()
         .default(11)
 
-    private val scenarioName by option("-s", "--scenario", help = "Scenario to run: default, dig-test")
+    private val scenarioName by option("-s", "--scenario", help = "Scenario to run: default, dig-test, role-based")
         .default("default")
 
     override fun run() = runBlocking {
@@ -58,6 +63,7 @@ class RunCommand : CliktCommand(
         // Select scenario based on option
         val testScenario = when (scenarioName) {
             "dig-test" -> createDigTestScenario()
+            "role-based" -> createRoleBasedScenario()
             else -> createDefaultScenario()
         }
 
@@ -140,6 +146,36 @@ class RunCommand : CliktCommand(
             stopDigging()
             logger.info { "Player ${player.id}: Stopped digging" }
         }
+
+        teardown {
+            disconnect()
+        }
+    }
+
+    /**
+     * Role-based scenario: each mongging/mongdung has its own scenario
+     */
+    private fun createRoleBasedScenario(): Scenario = scenario("Role-based Test") {
+        config {
+            playerCount = players
+            playersPerRoom = 5  // 4 monggings + 1 mongdung
+            duration = durationSeconds.seconds
+            rampUpDuration = 10.seconds
+        }
+
+        groupSetup {
+            authenticate()
+            coordinatedRoomSetup()
+            sendSceneChange()
+            waitForGameStart()
+        }
+
+        // Register role-specific scenarios
+        mongging(0, Mongging0Scenario)  // Ggumtle excavation
+        mongging(1, Mongging1Scenario)  // Box item collection
+        mongging(2, Mongging2Scenario)  // Movement test
+        mongging(3, Mongging3Scenario)  // Escape
+        mongdung(MongdungScenario)      // Attack
 
         teardown {
             disconnect()

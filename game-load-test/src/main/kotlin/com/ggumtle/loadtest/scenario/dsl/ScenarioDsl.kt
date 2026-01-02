@@ -3,6 +3,7 @@ package com.ggumtle.loadtest.scenario.dsl
 import com.ggumtle.loadtest.player.DigUpResult
 import com.ggumtle.loadtest.player.VirtualPlayer
 import com.ggumtle.loadtest.protocol.body.PlayerInfoBody
+import com.ggumtle.loadtest.scenario.definitions.RoleScenario
 import com.ggumtle.loadtest.scenario.model.*
 import kotlinx.coroutines.delay
 import mu.KotlinLogging
@@ -35,6 +36,10 @@ class ScenarioBuilder(private val name: String) {
     private var gameBlock: (suspend GamePhaseBuilder.() -> Unit)? = null
     private var teardownBlock: (suspend TeardownPhaseBuilder.() -> Unit)? = null
 
+    // Role-based scenarios
+    private val monggingScenarios: MutableMap<Int, RoleScenario> = mutableMapOf()
+    private var mongdungScenario: RoleScenario? = null
+
     fun config(block: ScenarioConfigBuilder.() -> Unit) {
         config = ScenarioConfigBuilder().apply(block).build()
     }
@@ -47,6 +52,21 @@ class ScenarioBuilder(private val name: String) {
         gameBlock = block
     }
 
+    /**
+     * Register a mongging scenario for a specific index (0-3)
+     */
+    fun mongging(index: Int, scenario: RoleScenario) {
+        require(index in 0..3) { "Mongging index must be 0-3, got $index" }
+        monggingScenarios[index] = scenario
+    }
+
+    /**
+     * Register the mongdung scenario
+     */
+    fun mongdung(scenario: RoleScenario) {
+        this.mongdungScenario = scenario
+    }
+
     fun teardown(block: suspend TeardownPhaseBuilder.() -> Unit) {
         teardownBlock = block
     }
@@ -55,6 +75,8 @@ class ScenarioBuilder(private val name: String) {
         name = name,
         config = config,
         groupSetupPhase = groupSetupBlock?.let { block -> GroupSetupPhase { (this as GroupSetupPhaseBuilder).block() } },
+        monggingScenarios = monggingScenarios.toMap(),
+        mongdungScenario = mongdungScenario,
         gamePhase = gameBlock?.let { block -> GamePhase { (this as GamePhaseBuilder).block() } },
         teardownPhase = teardownBlock?.let { block -> TeardownPhase { (this as TeardownPhaseBuilder).block() } }
     )

@@ -4,8 +4,14 @@ import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
 import com.ggumtle.ggumtle.common.event.CreateDreamEvent;
 import com.ggumtle.ggumtle.common.event.StartDreamEvent;
+import com.ggumtle.ggumtle.room.application.command.CreateRoomCommand;
 import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
 import com.ggumtle.ggumtle.common.PacketCommandHandler;
+import com.ggumtle.ggumtle.room.application.body.CreateRoomBody;
+import com.ggumtle.ggumtle.room.domain.PlayerInfo;
+import com.ggumtle.ggumtle.room.domain.Room;
+
+import java.util.List;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.application.body.JoinRoomBody;
@@ -48,6 +54,44 @@ public class RoomService {
         if (result == JoinRoomResult.DONE) {
             applicationEventPublisher.publishEvent(new CreateDreamEvent(command.roomId()));
         }
+    }
+
+    @PacketCommandHandler(type = ReceivePacketType.ROOM_CREATE)
+    public void createRoom(CreateRoomCommand command, Session session) {
+        log.info("[{}] 방 생성 요청 - 플레이어 수: {}, Session: {}",
+                session.getChannel().id(), command.players().size(), session);
+
+        // 요청자가 플레이어 목록에 포함되어 있는지 확인
+        boolean creatorInList = command.players().stream()
+                .anyMatch(p -> p.playerId() == session.getMemberId());
+
+        if (!creatorInList) {
+            log.warn("[{}] 방 생성 실패: 요청자가 플레이어 목록에 없음", session.getChannel().id());
+            Body body = new CreateRoomBody(CreateRoomBody.Result.FAIL, 0L);
+            Packet packet = Packet.of(SendPacketType.ROOM_CREATE, System.currentTimeMillis(), body);
+            session.sendPacket(packet);
+            return;
+        }
+
+        // PlayerInfo 리스트 생성
+        List<PlayerInfo> playerInfos = command.players().stream()
+                .map(p -> PlayerInfo.builder()
+                        .playerId(p.playerId())
+                        .nickname("LoadTest-" + p.playerId())
+                        .monggingClassId(p.monggingClassId())
+                        .additionalHp(p.additionalHp())
+                        .additionalHealSpeed(p.additionalHealSpeed())
+                        .additionalTaskSpeed(p.additionalTaskSpeed())
+                        .build())
+                .toList();
+
+        // 방 생성
+        Room room = roomManager.createRoomFromPacket(playerInfos);
+        log.info("[{}] 방 생성 완료 - roomId: {}", session.getChannel().id(), room.id);
+
+        Body body = new CreateRoomBody(CreateRoomBody.Result.SUCCESS, room.id);
+        Packet packet = Packet.of(SendPacketType.ROOM_CREATE, System.currentTimeMillis(), body);
+        session.sendPacket(packet);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.SCENE_CHANGE)

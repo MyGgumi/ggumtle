@@ -11,6 +11,7 @@ public enum ReceivePacketType {
 
     // 방 관리
     ROOM_JOIN((short) 10),
+    ROOM_CREATE((short) 12),
 
     // 드림 초기화
     SCENE_CHANGE((short) 30),

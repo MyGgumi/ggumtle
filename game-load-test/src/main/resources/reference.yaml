@@ -1,0 +1,19 @@
+# Game Load Test Default Configuration
+
+server:
+  host: "localhost"
+  port: 9000
+
+test:
+  playerCount: 60
+  roomIdStart: -1
+  roomIdEnd: -20
+  playersPerRoom: 3
+  durationSeconds: 300
+  rampUpSeconds: 30
+  moveIntervalMs: 16
+
+auth:
+  # Mock token configuration
+  useMockToken: true
+  mockTokenPrefix: "mock-player-"

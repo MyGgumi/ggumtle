@@ -124,6 +124,16 @@ public class RoomManager {
         return connectedChannelCount >= room.getPlayerSize() ? JoinRoomResult.DONE : JoinRoomResult.SUCCESS;
     }
 
+    public void broadcastInitialDream(Long roomId) {
+        Room room = idToRoom.getOrDefault(roomId, null);
+        if (room == null) {
+            log.error("{}번 방을 찾을 수 없습니다", roomId);
+            return;
+        }
+
+        room.broadcastInitialDream();
+    }
+
     public SceneChangeResult changeScene(Channel channel) {
         Long memberId = ChannelManager.getMemberId(channel);
 

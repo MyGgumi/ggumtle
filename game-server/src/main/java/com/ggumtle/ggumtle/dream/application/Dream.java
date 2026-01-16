@@ -7,6 +7,7 @@ import com.ggumtle.ggumtle.dream.application.body.DreamEndBody;
 import com.ggumtle.ggumtle.dream.application.body.GgumtleFedJellyCountBody;
 import com.ggumtle.ggumtle.dream.application.body.LeftJellyCountBody;
 import com.ggumtle.ggumtle.dream.application.body.UseDefibrillatorBody;
+import com.ggumtle.ggumtle.dream.application.result.DreamState;
 import com.ggumtle.ggumtle.dream.application.tickevent.*;
 import com.ggumtle.ggumtle.dream.application.body.DigUpReceiveBody;
 import com.ggumtle.ggumtle.dream.application.body.GgumtleStatusBody;
@@ -140,6 +141,16 @@ public class Dream {
         }
 
         log.info("{}번 드림의 타이머 설정 완료: 시작 시간 = {}, 딜레이 = {}", room.id, startTimestamp, delay);
+    }
+
+    public DreamState getDreamState() {
+        return new DreamState(
+                this.boxes.values().stream().toList(),
+                this.ggumtles.values().stream().toList(),
+                this.fieldItems.values().stream().filter((item) -> item.type == FieldItem.Type.HEAL).toList(),
+                this.fieldItems.values().stream().filter((item) -> item.type == FieldItem.Type.SPEED).toList(),
+                this.players.values().stream().toList()
+        );
     }
 
     public void on(PlayerMoveEvent event) {

@@ -53,6 +53,10 @@ public class RoomService {
         Body body = new JoinRoomBody(JoinRoomBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.ROOM_JOIN, System.currentTimeMillis(), body);
         channel.writeAndFlush(packet);
+
+        if (result == JoinRoomResult.DONE) {
+            roomManager.broadcastInitialDream(command.roomId());
+        }
     }
 
     @PacketCommandHandler(type = ReceivePacketType.ROOM_CREATE)
@@ -144,7 +148,7 @@ public class RoomService {
 
     public void dispatchToRoom(TickEvent tickEvent, Channel channel) {
         Long memberId = ChannelManager.getMemberId(channel);
-        Optional<Room> optionalRoom = this.roomManager.getRoomById(memberId);
+        Optional<Room> optionalRoom = this.roomManager.getRoomByPlayerId(memberId);
 
         if (optionalRoom.isEmpty()) {
             log.error("틱 이벤트 디스패치 실패: {}번 사용자에 해당하는 방이 없음", memberId);

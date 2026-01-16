@@ -10,18 +10,22 @@ import com.ggumtle.ggumtle.auth.body.AuthBody;
 import io.netty.channel.ChannelHandlerContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.context.event.ContextRefreshedEvent;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.ServiceLoader;
+import java.util.Set;
 
 
 @Slf4j
@@ -39,6 +43,8 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
     public void onApplicationEvent(ContextRefreshedEvent event) {
         initializePacketCommandHandler();
         initializeTickEvent();
+
+        log.debug("TickEvent 맵: {}", tickEventMap);
     }
 
     private void initializePacketCommandHandler() {
@@ -61,14 +67,47 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
     }
 
     private void initializeTickEvent() {
-        ServiceLoader<TickEvent> loader = ServiceLoader.load(TickEvent.class);
+        ClassPathScanningCandidateComponentProvider scanner = new ClassPathScanningCandidateComponentProvider(false);
 
-        for (TickEvent event : loader) {
-            tickEventMap.put(
-                    event.type(),
-                    new TickEventInfo(event.getClass())
-            );
+        scanner.addIncludeFilter(new AssignableTypeFilter(TickEvent.class));
+        
+        Set<BeanDefinition> candidates = scanner.findCandidateComponents(
+            "com.ggumtle.ggumtle.dream.application.tickevent"
+        );
+        
+        for (BeanDefinition bd : candidates) {
+            try {
+                Class<?> clazz = Class.forName(bd.getBeanClassName());
+                
+                // 인터페이스나 추상 클래스는 제외
+                if (TickEvent.class.isAssignableFrom(clazz) && !clazz.isInterface()) {
+                    ReceivePacketType packetType = null;
+                    Class<? extends TickEvent> tickEventClass = (Class<? extends TickEvent>) clazz;
+
+                    try {
+                        Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+                        if (constructors.length > 0) {
+                            Constructor<?> constructor = constructors[0];
+                            Object[] params = new Object[constructor.getParameterCount()];
+                            TickEvent tempInstance = (TickEvent) constructor.newInstance(params);
+                            packetType = tempInstance.type();
+                        }
+                    } catch (Exception e) {
+                        log.warn("TickEvent type() 메소드 호출 실패, 클래스 이름으로 추론 시도: {}", clazz.getSimpleName());
+                        continue;
+                    }
+                    
+                    if (packetType != null) {
+                        tickEventMap.put(packetType, new TickEventInfo(tickEventClass));
+                        log.debug("TickEvent 등록: {} -> {}", packetType, clazz.getSimpleName());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("TickEvent 초기화 실패: {}", bd.getBeanClassName(), e);
+            }
         }
+        
+        log.info("총 {}개의 TickEvent가 등록되었습니다", tickEventMap.size());
     }
 
     public void dispatch(ChannelHandlerContext ctx, Packet packet) {

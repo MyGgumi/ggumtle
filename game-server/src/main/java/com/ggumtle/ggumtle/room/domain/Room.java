@@ -1,7 +1,12 @@
 package com.ggumtle.ggumtle.room.domain;
 
+import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.dream.application.Dream;
+import com.ggumtle.ggumtle.dream.application.body.InitializeMapBody;
+import com.ggumtle.ggumtle.dream.application.body.InitializePlayerBody;
+import com.ggumtle.ggumtle.dream.application.result.DreamState;
 import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
+import com.ggumtle.ggumtle.dream.domain.player.Player;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
@@ -89,21 +94,23 @@ public class Room {
         Long memberId = ChannelManager.getMemberId(channel);
 
         if (!playerInfos.containsKey(ChannelManager.getMemberId(channel))) {
-            log.error("[{}] {}번 사용자는 {}번 방에 들어올 수 없습니다", channel.id(), memberId, this.id);
+            log.error("[{}] 채널 추가 실패: {}번 사용자는 {}번 방에 들어올 수 없습니다", channel.id(), memberId, this.id);
             return -1;
         }
 
         final int connectedSessionCount;
         synchronized (playerChannels) {
-            if (playerChannels.containsKey(memberId)) {
+            Channel prevChannel = playerChannels.put(memberId, channel);
+            connectedSessionCount = playerChannels.size();
+
+            if (prevChannel == null) {
+                log.debug("[{}] 채널 추가 성공: {}번 방의 {}번 사용자의 채널이 추가됨", channel.id(), this.id, memberId);
+            } else {
                 log.debug(
-                        "[{}] {}번 방의 {}번 사용자의 채널 업데이트: {} -> {}",
-                        channel.id(), id, memberId, playerChannels.get(memberId).id(), channel.id()
+                        "[{}] 채널 교체: {}번 방의 {}번 사용자의 채널이 변경됨: {} -> {}",
+                        channel.id(), this.id, memberId, prevChannel.id(), channel.id()
                 );
             }
-
-            playerChannels.put(memberId, channel);
-            connectedSessionCount = playerChannels.size();
         }
 
         return connectedSessionCount;
@@ -134,6 +141,21 @@ public class Room {
         }
 
         return sceneChangerCount;
+    }
+
+    public void broadcastInitialDream() {
+        DreamState dreamState = dream.getDreamState();
+
+        for (Player player : dreamState.players()) {
+            Body body = new InitializePlayerBody(player.getId(), dreamState.players(), playerInfos);
+            Packet packet = Packet.of(SendPacketType.INITIALIZE_PLAYER, System.currentTimeMillis(), body);
+            playerChannels.get(player.getId()).writeAndFlush(packet);
+        }
+
+
+        Body body = new InitializeMapBody(dreamState.boxes(), dreamState.ggumtles(), dreamState.healPacks(), dreamState.speedPacks());
+        Packet packet = Packet.of(SendPacketType.INITIALIZE_MAP, System.currentTimeMillis(), body);
+        this.broadcast(packet);
     }
 
     public void broadcast(Packet packet) {

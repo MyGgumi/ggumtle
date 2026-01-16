@@ -1,8 +1,10 @@
 package com.ggumtle.ggumtle.server;
 
-import lombok.RequiredArgsConstructor;
+import com.ggumtle.ggumtle.common.dto.Timestamp;
+import com.ggumtle.ggumtle.server.packet.PacketHeader;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
@@ -12,12 +14,38 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-@Component
-@RequiredArgsConstructor
 @Slf4j
 public class PacketMapper {
+    public static Object decodePacket(ChannelHandlerContext ctx, PacketHeader header, ByteBuffer buffer, Class<?> type) {
+        try {
+            if (Channel.class.isAssignableFrom(type)) {
+                return ctx.channel();
+            }
 
-    public <T> T getInstance(Class<T> clazz, ByteBuffer buffer) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+            if (Timestamp.class.isAssignableFrom(type)) {
+                return new Timestamp(header.timestamp());
+            }
+
+            return decodeObject(type, buffer);
+        } catch (Exception e) {
+            log.error("[{}] 패킷 직렬화 중 오류 발생: {}", ctx.channel().id(), e.getMessage());
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public static Object[] decodePacket(ChannelHandlerContext ctx, PacketHeader header, ByteBuffer buffer, Class<?>... types) {
+        Object[] instances = new Object[types.length];
+
+        for (int i = 0; i < types.length; i++) {
+            instances[i] = decodePacket(ctx, header, buffer, types[i]);
+        }
+
+        return instances;
+    }
+
+    public static <T> T decodeObject(Class<T> clazz, ByteBuffer buffer) throws InvocationTargetException, InstantiationException, IllegalAccessException {
         Constructor<?> constructor = clazz.getConstructors()[0];
         Type[] parameters = constructor.getGenericParameterTypes();
 
@@ -67,7 +95,7 @@ public class PacketMapper {
                     List<Object> list = new ArrayList<>();
 
                     for (int j = 0; j < count; j++) {
-                        Object object = getInstance(elementClass, buffer);
+                        Object object = decodeObject(elementClass, buffer);
                         list.add(object);
                     }
 

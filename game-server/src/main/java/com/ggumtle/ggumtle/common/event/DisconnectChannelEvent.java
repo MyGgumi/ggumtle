@@ -2,8 +2,7 @@ package com.ggumtle.ggumtle.common.event;
 
 import io.netty.channel.Channel;
 
-public record JoinRoomEvent(
-        long roomId,
+public record DisconnectChannelEvent(
         Channel channel
 ) {
 }

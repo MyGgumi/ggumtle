@@ -1,7 +1,7 @@
 package com.ggumtle.ggumtle.dream.domain.item;
 
+import com.ggumtle.ggumtle.dream.domain.player.Player;
 import com.ggumtle.ggumtle.dream.vo.Position;
-import com.ggumtle.ggumtle.session.Session;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,7 +27,7 @@ public class Box {
     private int totalCount;
     private final Object itemLock;
 
-    private final List<Session> viewer;
+    private final List<Player> viewer;
 
     public Box(int id, Position position) {
         this.id = id;
@@ -129,21 +129,21 @@ public class Box {
         }
     }
 
-    public void addViewer(Session session) {
+    public void addViewer(Player player) {
         synchronized (this.viewer) {
-            this.viewer.add(session);
+            this.viewer.add(player);
         }
     }
 
-    public List<Session> getViewers() {
+    public List<Player> getViewers() {
         synchronized (this.viewer) {
             return Collections.unmodifiableList(this.viewer);
         }
     }
 
-    public boolean removeViewer(Session session) {
+    public boolean removeViewer(Player player) {
         synchronized (this.viewer) {
-            return this.viewer.remove(session);
+            return this.viewer.remove(player);
         }
     }
 

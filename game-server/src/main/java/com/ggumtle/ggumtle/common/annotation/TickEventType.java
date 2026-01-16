@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.common;
+package com.ggumtle.ggumtle.common.annotation;
 
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 
@@ -7,9 +7,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface PacketCommandHandler {
-
+@Target(ElementType.TYPE)
+@Retention(RetentionPolicy.SOURCE)
+public @interface TickEventType {
     ReceivePacketType type();
 }

@@ -34,32 +34,26 @@ public class RoomCreator {
             );
         }
 
-        Room room3 = new Room(-1L, playerInfos.subList(0, 3));
-        Room room4 = new Room(-2L, playerInfos.subList(0, 4));
-        Room room5 = new Room(-3L, playerInfos.subList(0, 5));
-        Room monggingRoom = new Room(-4L, playerInfos.subList(0, 1));
-        Room mongdungRoom = new Room(-5L, playerInfos.subList(0, 1));
+        roomManager.insertRoomOfId(-1L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-2L, playerInfos.subList(0, 4));
+        roomManager.insertRoomOfId(-3L, playerInfos.subList(0, 5));
+        roomManager.insertRoomOfId(-4L, playerInfos.subList(0, 1));
+        roomManager.insertRoomOfId(-5L, playerInfos.subList(0, 1));
 
-        roomManager.insertRoom(room3);
-        roomManager.insertRoom(room4);
-        roomManager.insertRoom(room5);
-        roomManager.insertRoom(monggingRoom);
-        roomManager.insertRoom(mongdungRoom);
-
-        roomManager.insertRoom(new Room(-6L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-7L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-8L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-9L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-10L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-11L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-12L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-13L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-14L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-15L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-16L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-17L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-18L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-19L, playerInfos.subList(0, 3)));
-        roomManager.insertRoom(new Room(-20L, playerInfos.subList(0, 3)));
+        roomManager.insertRoomOfId(-6L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-7L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-8L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-9L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-10L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-11L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-12L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-13L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-14L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-15L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-16L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-17L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-18L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-19L, playerInfos.subList(0, 3));
+        roomManager.insertRoomOfId(-20L, playerInfos.subList(0, 3));
     }
 }

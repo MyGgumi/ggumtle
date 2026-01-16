@@ -1,30 +1,33 @@
 package com.ggumtle.ggumtle.room.application;
 
 import com.ggumtle.ggumtle.common.dto.Body;
-import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
-import com.ggumtle.ggumtle.common.event.CreateDreamEvent;
+import com.ggumtle.ggumtle.common.event.DisconnectChannelEvent;
+import com.ggumtle.ggumtle.common.event.DreamEndEvent;
 import com.ggumtle.ggumtle.common.event.StartDreamEvent;
-import com.ggumtle.ggumtle.room.application.command.CreateRoomCommand;
-import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
-import com.ggumtle.ggumtle.common.PacketCommandHandler;
+import com.ggumtle.ggumtle.common.annotation.PacketCommandHandler;
+import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
 import com.ggumtle.ggumtle.room.application.body.CreateRoomBody;
-import com.ggumtle.ggumtle.room.domain.PlayerInfo;
-import com.ggumtle.ggumtle.room.domain.Room;
-
-import java.util.List;
-import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
-import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.application.body.JoinRoomBody;
 import com.ggumtle.ggumtle.room.application.body.SceneChangeBody;
+import com.ggumtle.ggumtle.room.application.command.CreateRoomCommand;
+import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
+import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
+import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
+import com.ggumtle.ggumtle.room.domain.PlayerInfo;
+import com.ggumtle.ggumtle.room.domain.Room;
+import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
-import com.ggumtle.ggumtle.session.Session;
+import io.netty.channel.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -35,41 +38,36 @@ public class RoomService {
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @PacketCommandHandler(type = ReceivePacketType.ROOM_JOIN)
-    public void joinRoom(JoinRoomCommand command, Session session) {
-        log.info("[{}] 방 입장 요청 - Type: {}, Session: {}", session.getChannel().id(), command.roomId(), session);
+    public void joinRoom(JoinRoomCommand command, Channel channel) {
+        log.info("[{}] 방 입장 요청 - Type: {}", channel.id(), command.roomId());
 
-        JoinRoomResult result = roomManager.joinRoom(command.roomId(), session);
+        JoinRoomResult result = roomManager.joinRoom(command.roomId(), channel);
 
         if (result == JoinRoomResult.FAIL) {
             Body body = new JoinRoomBody(JoinRoomBody.Result.FAIL);
             Packet packet = Packet.of(SendPacketType.ROOM_JOIN, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
+            channel.writeAndFlush(packet);
             return;
         }
 
         Body body = new JoinRoomBody(JoinRoomBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.ROOM_JOIN, System.currentTimeMillis(), body);
-        session.sendPacket(packet);
-
-        if (result == JoinRoomResult.DONE) {
-            applicationEventPublisher.publishEvent(new CreateDreamEvent(command.roomId()));
-        }
+        channel.writeAndFlush(packet);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.ROOM_CREATE)
-    public void createRoom(CreateRoomCommand command, Session session) {
-        log.info("[{}] 방 생성 요청 - 플레이어 수: {}, Session: {}",
-                session.getChannel().id(), command.players().size(), session);
+    public void createRoom(CreateRoomCommand command, Channel channel) {
+        log.info("[{}] 방 생성 요청 - 플레이어 수: {}", channel.id(), command.players().size());
 
         // 요청자가 플레이어 목록에 포함되어 있는지 확인
         boolean creatorInList = command.players().stream()
-                .anyMatch(p -> p.playerId() == session.getMemberId());
+                .anyMatch(p -> p.playerId() == ChannelManager.getMemberId(channel));
 
         if (!creatorInList) {
-            log.warn("[{}] 방 생성 실패: 요청자가 플레이어 목록에 없음", session.getChannel().id());
+            log.warn("[{}] 방 생성 실패: 요청자가 플레이어 목록에 없음", channel.id());
             Body body = new CreateRoomBody(CreateRoomBody.Result.FAIL, 0L);
             Packet packet = Packet.of(SendPacketType.ROOM_CREATE, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
+            channel.writeAndFlush(packet);
             return;
         }
 
@@ -87,40 +85,72 @@ public class RoomService {
 
         // 방 생성
         Room room = roomManager.createRoomFromPacket(playerInfos);
-        log.info("[{}] 방 생성 완료 - roomId: {}", session.getChannel().id(), room.id);
+        log.info("[{}] 방 생성 완료 - roomId: {}", channel.id(), room.id);
 
         Body body = new CreateRoomBody(CreateRoomBody.Result.SUCCESS, room.id);
         Packet packet = Packet.of(SendPacketType.ROOM_CREATE, System.currentTimeMillis(), body);
-        session.sendPacket(packet);
+        channel.writeAndFlush(packet);
     }
 
     @PacketCommandHandler(type = ReceivePacketType.SCENE_CHANGE)
-    public void changeScene(Session session) {
-        log.info("[{}] 씬 변경 요청 - Session: {}", session.getChannel().id(), session);
+    public void changeScene(Channel channel) {
+        log.info("[{}] 씬 변경 요청", channel.id());
 
-        SceneChangeResult result = roomManager.changeScene(session);
+        SceneChangeResult result = roomManager.changeScene(channel);
 
         if (result.status() == SceneChangeResult.Status.FAIL) {
             Body body = new SceneChangeBody(SceneChangeBody.Result.FAIL);
             Packet packet = Packet.of(SendPacketType.SCENE_CHANGE, System.currentTimeMillis(), body);
-            session.sendPacket(packet);
+            channel.writeAndFlush(packet);
             return;
         }
 
         Body body = new SceneChangeBody(SceneChangeBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.SCENE_CHANGE, System.currentTimeMillis(), body);
-        session.sendPacket(packet);
+        channel.writeAndFlush(packet);
 
         if (result.status() == SceneChangeResult.Status.DONE) {
-            long now = System.currentTimeMillis();
-            packet = Packet.of(SendPacketType.GAME_START, now, null);
-            roomManager.broadcast(result.roomId(), packet);
-            applicationEventPublisher.publishEvent(new StartDreamEvent(result.roomId(), now));
+            applicationEventPublisher.publishEvent(new StartDreamEvent(result.roomId()));
         }
     }
 
     @EventListener
-    public void leaveRoom(DisconnectSessionEvent event) {
-        this.roomManager.removeSession(event.session());
+    public void leaveRoom(DisconnectChannelEvent event) {
+        this.roomManager.leftRoom(event.channel());
+    }
+
+    @EventListener
+    public void startDream(StartDreamEvent event) {
+        this.roomManager.startDream(event.roomId());
+    }
+
+    @EventListener
+    public void endDream(DreamEndEvent event) {
+        Optional<Room> optionalRoom = this.roomManager.getRoomById(event.roomId());
+        if (optionalRoom.isEmpty()) {
+            log.error("드림 종료 실패: {}번 방이 없습니다", event.roomId());
+            return;
+        }
+
+        Room room = optionalRoom.get();
+        List<Channel> playerChannels = room.getPlayerChannels();
+        playerChannels.forEach(channel -> {
+            this.roomManager.leftRoom(channel);
+        });
+        this.roomManager.removeRoom(room.id);
+
+        // Dream 삭제 추가
+    }
+
+    public void dispatchToRoom(TickEvent tickEvent, Channel channel) {
+        Long memberId = ChannelManager.getMemberId(channel);
+        Optional<Room> optionalRoom = this.roomManager.getRoomById(memberId);
+
+        if (optionalRoom.isEmpty()) {
+            log.error("틱 이벤트 디스패치 실패: {}번 사용자에 해당하는 방이 없음", memberId);
+            return;
+        }
+
+        optionalRoom.get().addTickEvent(tickEvent);
     }
 }

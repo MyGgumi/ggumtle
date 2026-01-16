@@ -1,29 +1,25 @@
 package com.ggumtle.ggumtle.server.applicatoin;
 
 import com.ggumtle.ggumtle.auth.JwtService;
-import com.ggumtle.ggumtle.server.packet.Packet;
-import com.ggumtle.ggumtle.server.packet.SendPacketType;
-import com.ggumtle.ggumtle.session.Session;
-import com.ggumtle.ggumtle.session.SessionManager;
-import com.ggumtle.ggumtle.session.result.SessionBody;
 import io.netty.channel.Channel;
 import io.netty.channel.group.ChannelGroup;
 import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChannelManager {
 
+    private static final AttributeKey<Boolean> authAttributeKey = AttributeKey.valueOf("authenticated∂");
+    private static final AttributeKey<Long> memberIdAttributeKey = AttributeKey.valueOf("memberId");
+
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
-    private final SessionManager sessionManager;
     private final JwtService jwtService;
 
     public void addChannel(Channel channel) {
@@ -31,7 +27,6 @@ public class ChannelManager {
     }
 
     public void removeChannel(Channel channel) {
-        sessionManager.removeSession(channel);
         channels.remove(channel);
     }
 
@@ -39,41 +34,34 @@ public class ChannelManager {
         return channels.size();
     }
 
-    public void authorizeChannel(Channel channel, String accessToken) {
-        Optional<Session> optionalSession = sessionManager.getSession(channel);
-        if (optionalSession.isPresent()) {
-            Session existingSession = optionalSession.get();
-            log.warn("[{}] 이미 {}번 사용자의 {}번 세션이 존재합니다", channel.id(), existingSession.getMemberId(), existingSession.getSessionId());
+    public boolean authorizeChannel(Channel channel, String accessToken) {
+        if (channel.attr(authAttributeKey).get() != null) {
+            log.warn("[{}] 채널 인증: 본 채널은 이미 {}번 사용자로 인증되었습니다", channel.id(), channel.attr(memberIdAttributeKey).get());
 
-            SessionBody sessionResult = new SessionBody(false, -1L);
-            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN, System.currentTimeMillis(), sessionResult);
-            channel.writeAndFlush(packet);
-
-            return;
+            return true;
         }
 
         if (!jwtService.verifyToken(accessToken)) {
-            log.info("[{}] 토큰이 유효하지 않습니다", channel.id());
+            log.info("[{}] 채널 인증: 토큰이 유효하지 않습니다", channel.id());
 
-            SessionBody sessionResult = new SessionBody(false, -1L);
-            Packet packet = Packet.of(SendPacketType.VERIFY_TOKEN, System.currentTimeMillis(), sessionResult);
-            channel.writeAndFlush(packet);
-
-            return;
+            return false;
         }
 
-        log.info("[{}] 토큰 인증 성공", channel.id());
         long memberId = jwtService.parseId(accessToken);
+        channel.attr(authAttributeKey).set(true);
+        channel.attr(memberIdAttributeKey).set(memberId);
 
-        sessionManager.createSession(channel, memberId);
+        log.info("[{}] 채널 인증: 본 채널을 {}번 사용자로 인증하였습니다", channel.id(), channel.attr(memberIdAttributeKey).get());
+
+        return true;
     }
 
-    public boolean isAuthorized(Channel channel) {
-        return sessionManager.existSession(channel);
+    public static boolean isAuthenticated(Channel channel) {
+        return channel.attr(authAttributeKey).get();
     }
 
-    public Optional<Session> getSession(Channel channel) {
-        return sessionManager.getSession(channel);
+    public static Long getMemberId(Channel channel) {
+        return channel.attr(memberIdAttributeKey).get();
     }
 
     public long getPendingWriteCount() {

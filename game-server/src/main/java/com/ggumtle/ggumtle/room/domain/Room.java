@@ -1,35 +1,68 @@
 package com.ggumtle.ggumtle.room.domain;
 
+import com.ggumtle.ggumtle.dream.application.Dream;
+import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
+import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
+import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
-import com.ggumtle.ggumtle.session.Session;
+import com.ggumtle.ggumtle.server.packet.SendPacketType;
+import io.netty.channel.Channel;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 @Slf4j
 public class Room {
 
     public final long id;
+
     private final ConcurrentHashMap<Long, PlayerInfo> playerInfos;
-    private final ConcurrentHashMap<Long, Session> playerSessions;
+    private final ConcurrentHashMap<Long, Channel> playerChannels;
     private final CopyOnWriteArraySet<Long> sceneChanger;
 
-    public Room(long id, List<PlayerInfo> playerInfos) {
+    private final Dream dream;
+    private final ConcurrentLinkedQueue<TickEvent> tickEvents;
+
+    public Room(long id, List<PlayerInfo> playerInfos, ApplicationEventPublisher applicationEventPublisher, SpawnCache spawnCache) {
         this.id = id;
         this.playerInfos = new ConcurrentHashMap<>(playerInfos.size());
         for (PlayerInfo playerInfo : playerInfos) {
             this.playerInfos.put(playerInfo.playerId, playerInfo);
         }
 
-        this.playerSessions = new ConcurrentHashMap<>(playerInfos.size());
+        this.tickEvents = new ConcurrentLinkedQueue<>();
+
+        this.playerChannels = new ConcurrentHashMap<>(playerInfos.size());
         this.sceneChanger = new CopyOnWriteArraySet<>();
+
+        this.dream = new Dream(this, spawnCache, applicationEventPublisher);
     }
 
-    public int getConnectedPlayerCount() {
-        return playerSessions.size();
+    public void addTickEvent(TickEvent tickEvent) {
+        this.tickEvents.add(tickEvent);
+
+        log.info("TickEvent: {}", this.tickEvents);
+    }
+
+    public void tick() {
+        TickEvent e;
+        while ((e = tickEvents.poll()) != null) {
+            e.process(this.dream);
+        }
+    }
+
+    public void startDream() {
+        long now = System.currentTimeMillis();
+
+        this.dream.setTimer(now);
+
+        Packet packet = Packet.of(SendPacketType.GAME_START, now, null);
+        broadcast(packet);
     }
 
     public List<Long> getPlayerIds() {
@@ -48,40 +81,41 @@ public class Room {
         return playerInfos.size();
     }
 
-    public synchronized List<Session> getPlayerSessions() {
-        return List.copyOf(playerSessions.values());
+    public synchronized List<Channel> getPlayerChannels() {
+        return List.copyOf(playerChannels.values());
     }
 
+    public int addChannel(Channel channel) {
+        Long memberId = ChannelManager.getMemberId(channel);
 
-    public int addSession(Session session) {
-        if (!playerInfos.containsKey(session.getMemberId())) {
-            log.error("[{}] {}번 사용자는 {}번 방에 들어올 수 없습니다", session.getChannel().id(), session.getMemberId(), this.id);
+        if (!playerInfos.containsKey(ChannelManager.getMemberId(channel))) {
+            log.error("[{}] {}번 사용자는 {}번 방에 들어올 수 없습니다", channel.id(), memberId, this.id);
             return -1;
         }
 
         final int connectedSessionCount;
-        synchronized (playerSessions) {
-            if (playerSessions.containsKey(session.getMemberId())) {
+        synchronized (playerChannels) {
+            if (playerChannels.containsKey(memberId)) {
                 log.debug(
-                        "[{}] {}번 방의 {}번 사용자의 세션 업데이트: {} -> {}",
-                        session.getChannel().id(), id, session.getMemberId(), playerSessions.get(session.getMemberId()), session);
+                        "[{}] {}번 방의 {}번 사용자의 채널 업데이트: {} -> {}",
+                        channel.id(), id, memberId, playerChannels.get(memberId).id(), channel.id()
+                );
             }
 
-            playerSessions.put(session.getMemberId(), session);
-            connectedSessionCount = playerSessions.size();
+            playerChannels.put(memberId, channel);
+            connectedSessionCount = playerChannels.size();
         }
 
         return connectedSessionCount;
     }
 
-    public boolean removeSession(Session session) {
-        Session removedSession = playerSessions.remove(session.getMemberId());
-
-        return removedSession == null;
+    public void removeChannel(Channel channel) {
+        playerChannels.remove(ChannelManager.getMemberId(channel));
+        channel.disconnect();
     }
 
     public int addSceneChanger(long playerId) {
-        if (!playerSessions.containsKey(playerId)) {
+        if (!playerChannels.containsKey(playerId)) {
             log.debug("{}번 방에 {}번 사용자가 연결되지 않아 씬 체인지 기록 불가", this.id, playerId);
             return -1;
         }
@@ -103,31 +137,10 @@ public class Room {
     }
 
     public void broadcast(Packet packet) {
-        playerSessions.values().forEach(session -> session.sendPacket(packet));
+        playerChannels.forEach((id, channel) -> channel.write(packet));
     }
 
-    public boolean sendPacket(long memberId, Packet packet) {
-        if (!playerSessions.containsKey(memberId)) {
-            return false;
-        }
-
-        playerSessions.get(memberId).sendPacket(packet);
-        return true;
-    }
-
-    public int sendPacket(List<Long> memberIds, Packet packet) {
-        int count = 0;
-
-        for (Long memberId : memberIds) {
-            Session session = playerSessions.getOrDefault(memberId, null);
-            if (session == null) {
-                log.warn("{}번 사용자의 세션이 없어 {} 패킷을 전송하지 못했습니다", memberId, packet);
-                continue;
-            }
-            session.sendPacket(packet);
-            count++;
-        }
-
-        return count;
+    public void flush() {
+        playerChannels.forEach((id, channel) -> channel.flush());
     }
 }

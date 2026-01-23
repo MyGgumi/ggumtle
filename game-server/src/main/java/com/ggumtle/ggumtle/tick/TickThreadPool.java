@@ -42,6 +42,8 @@ public class TickThreadPool {
     @PostConstruct
     public void start() {
         log.info("TickThreadPool 시작");
+
+        tickWorkers.forEach(executor::submit);
     }
 
     @PreDestroy

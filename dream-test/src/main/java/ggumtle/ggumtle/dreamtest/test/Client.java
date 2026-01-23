@@ -105,7 +105,7 @@ public class Client {
     }
 
     public void sendMoveMessage(int x, int y, int z) {
-        byte[] data = ByteBuffer.allocate(12).putInt(x).putInt(y).putInt(z).array();
+        byte[] data = ByteBuffer.allocate(12 * 2).putInt(x).putInt(y).putInt(z).putInt(x).putInt(y).putInt(z).array();
         ReceivePacketType receivePacketType = ReceivePacketType.PLAYER_MOVE;
         PacketHeader packetHeader = new PacketHeader(receivePacketType.value, data.length, System.currentTimeMillis());
         Packet packet = new Packet(packetHeader, data);

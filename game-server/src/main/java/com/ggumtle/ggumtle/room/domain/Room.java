@@ -51,13 +51,14 @@ public class Room {
     public void addTickEvent(TickEvent tickEvent) {
         this.tickEvents.add(tickEvent);
 
-        log.info("TickEvent: {}", this.tickEvents);
+        log.trace("TickEvent 추가: {}", this.tickEvents);
     }
 
     public void tick() {
         TickEvent e;
         while ((e = tickEvents.poll()) != null) {
             e.process(this.dream);
+            log.trace("TickEvent 처리: {}", e);
         }
     }
 

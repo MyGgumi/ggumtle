@@ -23,12 +23,12 @@ public class TickWorker implements Runnable {
 
     public void assign(Room room) {
         rooms.add(room);
-        log.info("Room {}이 TickWorker에 할당되었습니다. 현재 관리 중인 Room 수: {}", room, rooms.size());
+        log.info("{}번 TickWorker에 {}번 방이 할당되었습니다. 현재 관리 중인 Room 수: {}", room.id, this.id, rooms.size());
     }
 
     public void unassign(Room room) {
         rooms.remove(room);
-        log.info("Room {}이 TickWorker에서 제거되었습니다. 현재 관리 중인 Room 수: {}", room, rooms.size());
+        log.info("{}번 TickWorker에서 {}번 방이 제거되었습니다. 현재 관리 중인 Room 수: {}", room.id, this.id, rooms.size());
     }
 
     public int getRoomCount() {
@@ -37,7 +37,7 @@ public class TickWorker implements Runnable {
 
     @Override
     public void run() {
-        log.info("TickWorker 시작 - Tick Rate: {}, Tick Interval: {}ms", TICK_RATE, TICK_INTERVAL_MS);
+        log.info("{}번 TickWorker 시작 - Tick Rate: {}, Tick Interval: {}ms", this.id, TICK_RATE, TICK_INTERVAL_MS);
 
         while (!Thread.currentThread().isInterrupted()) {
             long tickStartTime = System.currentTimeMillis();
@@ -55,12 +55,12 @@ public class TickWorker implements Runnable {
                 try {
                     Thread.sleep(sleepTime);
                 } catch (InterruptedException e) {
-                    log.info("TickWorker가 인터럽트되어 종료됩니다.");
+                    log.info("{}번 TickWorker가 인터럽트되어 종료됩니다.", this.id);
                     Thread.currentThread().interrupt();
                     break;
                 }
             } else {
-                log.warn("Tick 처리 시간({}ms)이 Tick Interval({}ms)을 초과했습니다.", tickDuration, TICK_INTERVAL_MS);
+                log.warn("{}번 TickWorker에서 Tick 처리 시간({}ms)이 Tick Interval({}ms)을 초과했습니다.", this.id, tickDuration, TICK_INTERVAL_MS);
             }
         }
     }

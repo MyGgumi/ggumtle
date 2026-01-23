@@ -23,6 +23,7 @@ public record RequestRoomMessage(
                 null,
                 players.stream().map(p -> CreateRoomCommand.Player.builder()
                         .playerId(p.id)
+                        .nickname(p.nickname)
                         .monggingClassId(p.monggingClassId)
                         .additionalTaskSpeed(p.additionalTaskSpeed)
                         .additionalHealSpeed(p.additionalHealSpeed)

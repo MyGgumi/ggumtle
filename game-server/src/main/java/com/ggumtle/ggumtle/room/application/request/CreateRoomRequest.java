@@ -22,6 +22,7 @@ public record CreateRoomRequest(
                 players.stream()
                         .map(p -> CreateRoomCommand.Player.builder()
                                 .playerId(p.playerId)
+                                .nickname("Load test - " + p.playerId)
                                 .additionalHp(p.additionalHp)
                                 .additionalHealSpeed(p.additionalHealSpeed)
                                 .additionalTaskSpeed(p.additionalTaskSpeed)

@@ -75,7 +75,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 public class Dream {
@@ -98,7 +97,7 @@ public class Dream {
     private final Room room;
     private final Map<Long, Player> players;
     private final ConcurrentHashMap<Integer, Ggumtle> ggumtles;
-    private final AtomicInteger ggumtleIdGenerator;
+    private int ggumtleIdGenerator;
     private final Map<Integer, Box> boxes;
     private final Map<Integer, FieldItem> fieldItems;
     private final Map<Integer, Exit> exits;
@@ -113,7 +112,7 @@ public class Dream {
         this.room = room;
         this.players = new HashMap<>();
         this.ggumtles = new ConcurrentHashMap<>();
-        this.ggumtleIdGenerator = new AtomicInteger(0);
+        this.ggumtleIdGenerator = 0;
         this.boxes = new HashMap<>();
         this.fieldItems = new HashMap<>();
         this.exits = new HashMap<>();
@@ -994,7 +993,7 @@ public class Dream {
                 // 몽깅이 상태를 NORMAL로 복원
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 log.info("[{} - {}] 꿈틀이 파기 성공: {}번 몽깅이가 {}번 꿈틀이를 성공적으로 파내고 상태가 NORMAL로 복원됨", event.channel().id(), room.id, player.getId(), ggumtle.id);
             }
@@ -1433,7 +1432,7 @@ public class Dream {
         Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
         channel.write(packet);
 
-        int id = ggumtleIdGenerator.addAndGet(1);
+        int id = ++ggumtleIdGenerator;
         FakeGgumtle fakeGgumtle = new FakeGgumtle(id, new Position(x, y, z, -1));
 
         this.ggumtles.put(id, fakeGgumtle);
@@ -1541,13 +1540,12 @@ public class Dream {
 
         // 꿈틀이 위치 초기화
         for (int i = 0; i < GGUMTLE_SPAWN_SIZE; i++) {
-            ggumtles.put(i, new Ggumtle(i, Position.from(ggumtleSpawns.get(i))));
+            ggumtles.put(++ggumtleIdGenerator, new Ggumtle(ggumtleIdGenerator, Position.from(ggumtleSpawns.get(i))));
         }
-        ggumtleIdGenerator.set(GGUMTLE_SPAWN_SIZE);
 
         // TEST: 가짜 꿈틀이
         if (this.room.id < 0) {
-            int id = ggumtleIdGenerator.addAndGet(1);
+            int id = ++ggumtleIdGenerator;
             Position fakePosition = new Position(
                     (int) (52.38745 * 100),
                     (int) (5.027 * 100),
@@ -1555,7 +1553,6 @@ public class Dream {
                     0);
             FakeGgumtle fakeGgumtle = new FakeGgumtle(id, fakePosition);
             ggumtles.put(id, fakeGgumtle);
-            ggumtleIdGenerator.set(GGUMTLE_SPAWN_SIZE + 1);
         }
 
         // 상자 위치 초기화

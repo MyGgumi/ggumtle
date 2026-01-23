@@ -167,7 +167,7 @@ public class Dream {
         if (distanceSquare > maxDistance * maxDistance) {
             Body body = PlayerMoveBody.rollbackOf(player.getId(), lastPosition);
             Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.warn("[{} - {}] {}번 사용자의 이동 핸들링: 비정상적인 이동 감지: {{}, {}, {}}", event.channel().id(), room.id,
                     player.getId(), event.command().x(), event.command().y(), event.command().z());
@@ -179,7 +179,7 @@ public class Dream {
         Body body = new PlayerMoveBody(player.getId(), event.command().x(), event.command().y(), event.command().z(),
                 event.command().vx(), event.command().vy(), event.command().vz());
         Packet packet = Packet.of(SendPacketType.PLAYER_MOVE_RELAY, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.debug("[{} - {}] {}번 사용자의 이동 핸들링: {{}, {}, {}}",
                 event.channel().id(), room.id, player.getId(), event.command().x(), event.command().y(), event.command().z());
@@ -191,7 +191,7 @@ public class Dream {
         if (requester == null) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_PLAYER, -1, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 몽둥이의 타격 실패: 요청자 {}번 사용자를 찾을 수 없음", event.channel().id(), room.id,
                     ChannelManager.getMemberId(event.channel()));
@@ -201,7 +201,7 @@ public class Dream {
         if (!(requester instanceof Mongdung mongdung)) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_MONGDUNG, -1, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽둥이의 타격 실패: 요청자 {}번 사용자가 몽둥이가 아님", event.channel().id(), room.id,
                     ChannelManager.getMemberId(event.channel()));
@@ -211,7 +211,7 @@ public class Dream {
         if (event.command().targetId() < 0) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.FAIL, -1, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-//            this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.warn("[{} - {}] 몽둥이의 타격 실패: 클라이언트에서 실패로 요청", event.channel().id(), room.id);
             return;
@@ -221,7 +221,7 @@ public class Dream {
         if (targetPlayer == null) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_FOUND_TARGET, -1, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 몽둥이의 타격 실패: 대상 {}번 사용자를 찾을 수 없음", event.channel().id(), room.id,
                     event.command().targetId());
@@ -231,7 +231,7 @@ public class Dream {
         if (!(targetPlayer instanceof Mongging targetMongging)) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_MONGGING, -1, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽둥이의 타격 실패: 대상 {}번 사용자가 몽깅이가 아님", event.channel().id(), room.id,
                     event.command().targetId());
@@ -244,7 +244,7 @@ public class Dream {
         if (!isHit) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.FAIL, -1, -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.info("[{} - {}] 몽둥이의 타격 성공: {}번 몽깅이가 타격 범위 내에 없음", event.channel().id(), room.id,
                     event.command().targetId());
@@ -256,14 +256,14 @@ public class Dream {
         if (result.result() == GetHitResult.Result.NOT_ALIVE) {
             Body body = new HitMonggingBody(HitMonggingBody.Result.NOT_ALIVE, targetMongging.getId(), -1);
             Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
             log.info("[{} - {}] 몽둥이의 타격 실패: {}번 몽깅이가 살아 있지 않음", event.channel().id(), room.id, event.command().targetId());
             return;
         }
 
         Body body = new HitMonggingBody(HitMonggingBody.Result.SUCCESS, targetMongging.getId(), result.leftHp());
         Packet packet = Packet.of(SendPacketType.HIT, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("[{} - {}] 몽둥이의 타격 성공: {}번 몽깅이 타격, 대미지: {}, 남은 HP: {}", event.channel().id(), room.id,
                 event.command().targetId(), mongdung.damage, result.leftHp());
@@ -277,7 +277,7 @@ public class Dream {
 
             body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.KNOCKOUT);
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             distributeDroppedItem(targetMongging);
 
@@ -293,7 +293,7 @@ public class Dream {
 
             body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.DEAD);
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             distributeDroppedItem(targetMongging);
 
@@ -315,7 +315,7 @@ public class Dream {
                 !(players.getOrDefault(event.command().targetMonggingId(), null) instanceof Mongging targetMongging)) {
             Body body = new StartReviveBody(StartReviveBody.Result.NOT_FOUND_MONGGING);
             Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 부활 시작 실패: 요청자 {}번 사용자 혹은 대상 {}번 사용자를 찾을 수 없거나 몽깅이가 아님",
                     event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()), event.command().targetMonggingId());
@@ -325,7 +325,7 @@ public class Dream {
         if (!targetMongging.isKnockout()) {
             Body body = new StartReviveBody(StartReviveBody.Result.NOT_KNOCKOUT);
             Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 몽깅이 부활 시작 실패: 대상 {}번 사용자가 기절 상태가 아님", event.channel().id(), room.id, targetMongging.getId());
             return;
@@ -337,7 +337,7 @@ public class Dream {
         if (requesterPosition.getDistanceSquareWith(targetPosition) > Mongging.REVIVE_DISTANCE_SQUARE) {
             Body body = new StartReviveBody(StartReviveBody.Result.NOT_NEAR);
             Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 몽깅이 부활 시작 실패: 대상 {}번 몽깅이와 요청한 {}번 몽깅이가 근처에 없음", event.channel().id(), room.id, targetMongging.getId(), requesterMongging.getId());
             return;
@@ -349,11 +349,11 @@ public class Dream {
 
                     Body body = new DoneReviveBody(targetMongging.getId());
                     Packet packet = Packet.of(SendPacketType.DONE_REVIVE, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
 
                     body = new MonggingStatusBody(targetMongging.getId(), MonggingStatusBody.Result.NORMAL);
                     packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-                    // this.room.broadcast(packet);
+                    this.room.broadcast(packet);
 
                     workingThreads.remove(requesterMongging.getId());
 
@@ -366,7 +366,7 @@ public class Dream {
 
         Body body = new StartReviveBody(StartReviveBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.START_REVIVE, System.currentTimeMillis(), body);
-//        session.sendPacket(packet);
+        event.channel().write(packet);
         log.info("[{} - {}] 몽깅이 부활 시작 성공: 잠시 후 {}번 몽깅이 부활 예정", event.channel().id(), room.id, targetMongging.getId());
     }
 
@@ -388,7 +388,7 @@ public class Dream {
             log.warn("[{} - {}] 몽깅이 부활 종료 실패: {}번 사용자에게 진행 중인 부활 작업이 없음", event.channel().id(), room.id, memberId);
         }
         Packet packet = Packet.of(SendPacketType.STOP_REVIVE, System.currentTimeMillis(), body);
-//        session.sendPacket(packet);
+        event.channel().write(packet);
     }
 
     public void on(MongdungSkillEvent event) {
@@ -396,7 +396,7 @@ public class Dream {
         if (skillType == null) {
             Body body = new MongdungSkillBody(event.command().skillTypeId(), MongdungSkillBody.Result.NOT_FOUND_SKILL);
             Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽둥이 스킬 실패: {}번에 해당하는 스킬 없음", event.channel().id(), room.id, event.command().skillTypeId());
             return;
@@ -406,7 +406,7 @@ public class Dream {
         if (!(player instanceof Mongdung mongdung)) {
             Body body = new MongdungSkillBody(skillType.getId(), MongdungSkillBody.Result.NOT_FOUND_MONGDUNG);
             Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽둥이 스킬 실패: {}번 사용자가 없거나 몽둥이가 아님", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -429,7 +429,7 @@ public class Dream {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM_ID, event.command().itemId(),
                     event.command().effectX(), event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번에 해당하는 아이템 없음", event.channel().id(), room.id,
                     event.command().itemId());
@@ -440,7 +440,7 @@ public class Dream {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_ATTACK_ITEM, item.id, event.command().effectX(),
                     event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번 아이템은 공격형 아이템이 아님", event.channel().id(), room.id,
                     event.command().itemId());
@@ -451,7 +451,7 @@ public class Dream {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGGING, item.id,
                     event.command().effectX(), event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: 요청한 {}번 사용자가 몽깅이가 아님", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -462,7 +462,7 @@ public class Dream {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_ITEM, item.id, event.command().effectX(),
                     event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: {}번 몽깅이에게 {} 아이템이 없음", event.channel().id(), room.id, mongging.getId(), item);
             return;
@@ -479,7 +479,7 @@ public class Dream {
             // TEST
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id, event.command().effectX(), event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.error("[{} - {}] 몽깅이 아이템 공격 실패: 드림에 몽둥이가 없음", event.channel().id(), room.id);
             return;
@@ -510,7 +510,7 @@ public class Dream {
         if (!isHit) {
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id, event.command().effectX(), event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.info("[{} - {}] 몽깅이 아이템 공격 실패: 몽둥이가 {}번 아이템의 피격 범위에 없음", event.channel().id(), room.id, item.id);
             return;
@@ -518,7 +518,7 @@ public class Dream {
 
         Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.SUCCESS, item.id, event.command().effectX(), event.command().effectY(), event.command().effectZ());
         Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.error("[{} - {}] 몽깅이 아이템 공격 성공", event.channel().id(), room.id);
     }
@@ -531,7 +531,7 @@ public class Dream {
         if (!(players.getOrDefault(ChannelManager.getMemberId(event.channel()), null) instanceof Mongging mongging)) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_MONGGING, event.command().itemId());
             Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 필드 아이템 사용 실패: 요청자 {}번 사용자가 없거나 몽깅이가 아님", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -542,7 +542,7 @@ public class Dream {
         if (fieldItem == null) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_FOUND_FIELD_ITEM, event.command().itemId());
             Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 필드 아이템 사용 실패: {}번에 해당하는 필드 아이템이 없음", event.channel().id(), room.id, event.command().itemId());
             return;
@@ -552,7 +552,7 @@ public class Dream {
         if (!fieldItem.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_NEAR, fieldItem.id);
             Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 필드 아이템 사용 실패: {}번 필드 아이템이 몽깅이 근처에 없음", event.channel().id(), room.id, fieldItem.id);
             return;
@@ -564,7 +564,7 @@ public class Dream {
         if (!success) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.ALREADY_USED, fieldItem.id);
             Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 필드 아이템 사용 실패: {}번 필드 아이템을 이미 사용함", event.channel().id(), room.id, fieldItem.id);
             return;
@@ -577,7 +577,7 @@ public class Dream {
         // 필드 아이템 사용은 모든 플레이어에게 전송되어야 함
         Body body = new UseFieldItemBody(UseFieldItemBody.Result.SUCCESS, fieldItem.id);
         Packet packet = Packet.of(SendPacketType.USE_FIELD_ITEM, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("[{} - {}] 필드 아이템 사용 성공: {}번 필드 아이템 사용", event.channel().id(), room.id, fieldItem.id);
     }
@@ -591,7 +591,7 @@ public class Dream {
         if (!(players.getOrDefault(ChannelManager.getMemberId(event.channel()), null) instanceof Mongging mongging)) {
             Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_FOUND_MONGGING, -1);
             Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 제세동기 사용 실패: 요청자 {}번 사용자가 없거나 몽깅이가 아님", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -602,7 +602,7 @@ public class Dream {
         if (result == -1) {
             Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_KNOCK_OUT, -1);
             Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 제세동기 사용 실패: {}번 몽깅이가 기절 상태가 아님", event.channel().id(), room.id, mongging.getId());
             return;
@@ -611,7 +611,7 @@ public class Dream {
         if (result == -2) {
             Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_FOUND_DEFIBRILLATOR, -1);
             Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 제세동기 사용 실패: {}번 몽깅이에게 제세동기가 없음", event.channel().id(), room.id, mongging.getId());
             return;
@@ -619,11 +619,11 @@ public class Dream {
 
         Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.SUCCESS, result);
         Packet packet = Packet.of(SendPacketType.USE_DEFIBRILLATOR, System.currentTimeMillis(), body);
-//        session.sendPacket(packet);
+        event.channel().write(packet);
 
         body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
         packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.error("[{} - {}] 제세동기 사용 성공: {}번 몽깅이가 제세동기로 부활함", event.channel().id(), room.id, mongging.getId());
     }
@@ -637,7 +637,7 @@ public class Dream {
         if (!boxes.containsKey(event.command().boxId())) {
             Body body = new ShowBoxBody(false, -1, null);
             Packet packet = Packet.of(SendPacketType.SHOW_BOX, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자 오픈 실패: {}번 상자가 없음", event.channel().id(), room.id, event.command().boxId());
             return;
@@ -648,7 +648,7 @@ public class Dream {
         if (!(player instanceof Mongging mongging)) {
             Body body = new ShowBoxBody(false, -1, null);
             Packet packet = Packet.of(SendPacketType.SHOW_BOX, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자 오픈 실패: 요청자 {}번 사용자가 몽깅이가 아님", event.channel().id(), room.id, player.getId());
             return;
@@ -661,7 +661,7 @@ public class Dream {
         if (!box.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
             Body body = new ShowBoxBody(false, -1, null);
             Packet packet = Packet.of(SendPacketType.SHOW_BOX, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자 오픈 실패: 상자 근처에 없음", event.channel().id(), room.id);
             return;
@@ -676,7 +676,7 @@ public class Dream {
         // 상자 열기 응답 전송
         Body body = new ShowBoxBody(true, box.id, items);
         Packet packet = Packet.of(SendPacketType.SHOW_BOX, System.currentTimeMillis(), body);
-//        session.sendPacket(packet);
+        event.channel().write(packet);
 
         log.info("[{} - {}] 상자 오픈 성공: {}번 상자에 {}번 세션 추가", event.channel().id(), room.id, box.id, player.getId());
     }
@@ -697,7 +697,7 @@ public class Dream {
         // 상자 닫기 응답 전송
         Body body = new CloseBoxBody(success ? CloseBoxBody.CloseResult.SUCCESS : CloseBoxBody.CloseResult.NOT_VIEWER);
         Packet packet = Packet.of(SendPacketType.CLOSE_BOX, System.currentTimeMillis(), body);
-//        session.sendPacket(packet);
+        event.channel().write(packet);
 
         log.info("[{} - {}] 상자 닫기 성공: {}번 상자에 {}번 플레이어 삭제", event.channel().id(), room.id, box.id, player.getId());
     }
@@ -708,7 +708,7 @@ public class Dream {
         if (box == null) {
             Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, ChannelManager.getMemberId(event.channel()), event.command().boxId(), null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에서 아이템 꺼내기 실패: {}번 상자가 없음", event.channel().id(), room.id, event.command().boxId());
             return;
@@ -719,7 +719,7 @@ public class Dream {
             Body body = new TakeItemBody(TakeItemBody.Result.INDEX_OUT_OF_RANGE, ChannelManager.getMemberId(event.channel()), box.id, null,
                     null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에서 아이템 꺼내기 실패: 인덱스 범위 오류 - {}", event.channel().id(), room.id, event.command().index());
             return;
@@ -730,7 +730,7 @@ public class Dream {
         if (player == null) {
             Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_PLAYER, ChannelManager.getMemberId(event.channel()), box.id, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 상자에서 아이템 꺼내기 실패: 요청자 {}번 사용자가 없음",
                     event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
@@ -741,7 +741,7 @@ public class Dream {
         if (!(player instanceof Mongging mongging)) {
             Body body = new TakeItemBody(TakeItemBody.Result.NOT_MONGGING, player.getId(), box.id, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에서 아이템 꺼내기 실패: 요청자 {}번 사용자가 몽깅이가 아님", event.channel().id(), room.id, player.getId());
             return;
@@ -751,7 +751,7 @@ public class Dream {
         if (!box.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
             Body body = new TakeItemBody(TakeItemBody.Result.NOT_NEAR, player.getId(), box.id, null, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에서 아이템 꺼내기 실패: 상자 근처에 없음", event.channel().id(), room.id);
             return;
@@ -768,7 +768,7 @@ public class Dream {
                 if (targetItem == null) {
                     Body body = new TakeItemBody(TakeItemBody.Result.NOT_FOUND_BOX, player.getId(), box.id, null, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
 
                     log.warn("[{} - {}] 상자에서 아이템 꺼내기 실패: {}번 상자의 {}번째 칸에 아이템이 없음", event.channel().id(), room.id, box.id, event.command().index());
                     return;
@@ -778,7 +778,7 @@ public class Dream {
                 if (!mongging.canAddItem(targetItem)) {
                     Body body = new TakeItemBody(TakeItemBody.Result.FULL_ABOUT_ITEM, player.getId(), box.id, null, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
 
                     log.info("[{} - {}] 상자에서 아이템 꺼내기 실패: {}번 몽깅이의 인벤토리에 빈 공간이 없음", event.channel().id(), room.id, player.getId());
                     return;
@@ -797,7 +797,7 @@ public class Dream {
 
                     Body body = new TakeItemBody(TakeItemBody.Result.FAIL, player.getId(), box.id, null, null);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
                     return;
                 }
 
@@ -805,7 +805,7 @@ public class Dream {
                 box.getViewers().forEach(viewer -> {
                     Body body = new TakeItemBody(TakeItemBody.Result.SUCCESS, viewer.getId(), box.id, popResult, popResult[Box.BOX_SIZE]);
                     Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    this.room.sendPacket(viewer.getId(), packet);
                 });
 
                 log.info("[{} - {}] 상자에서 아이템 꺼내기 성공: {}번 몽깅이가 {} 아이템 획득", event.channel().id(), room.id, player.getId(), popResult[Box.BOX_SIZE]);
@@ -819,7 +819,7 @@ public class Dream {
         if (targetItem == null) {
             Body body = new PutItemBody(PutItemBody.Result.ILLEGAL_ITEM_ID, null);
             Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에 아이템 넣기 실패: {}번 아이디에 대응하는 아이템 없음", event.channel().id(), room.id, event.command().itemId());
             return;
@@ -830,7 +830,7 @@ public class Dream {
         if (box == null) {
             Body body = new PutItemBody(PutItemBody.Result.NOT_FOUND_BOX, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에 아이템 넣기 실패: {}번 아이디에 대응하는 상자 없음", event.channel().id(), room.id, event.command().boxId());
             return;
@@ -841,7 +841,7 @@ public class Dream {
         if (player == null) {
             Body body = new PutItemBody(PutItemBody.Result.NOT_FOUND_PLAYER, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 상자에 아이템 넣기 실패: 요청자 {}번 사용자가 없음", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -851,7 +851,7 @@ public class Dream {
         if (!(player instanceof Mongging mongging)) {
             Body body = new PutItemBody(PutItemBody.Result.NOT_MONGGING, null);
             Packet packet = Packet.of(SendPacketType.TAKE_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 상자에 아이템 넣기 실패: 요청자 {}번 사용자가 몽깅이가 아님", event.channel().id(), room.id, player.getId());
             return;
@@ -861,7 +861,7 @@ public class Dream {
         if (!box.detectPosition(mongging.getPositionAt(System.currentTimeMillis()))) {
             Body body = new PutItemBody(PutItemBody.Result.NOT_NEAR, null);
             Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 상자에 아이템 넣기 실패: 상자 근처에 없음", event.channel().id(), room.id);
             return;
@@ -877,7 +877,7 @@ public class Dream {
                 if (count == 0) {
                     Body body = new PutItemBody(PutItemBody.Result.NOT_FOUND_ITEM, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
 
                     log.warn("[{} - {}] 상자에 아이템 넣기 실패: {}번 몽깅이에게 {}번 아이템이 없음", event.channel().id(), room.id, player.getId(), targetItem.id);
                     return;
@@ -887,7 +887,7 @@ public class Dream {
                 if (box.isFull()) {
                     Body body = new PutItemBody(PutItemBody.Result.FULL_ABOUT_ITEM, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
 
                     log.info("[{} - {}] 상자에 아이템 넣기 실패: {}번 상자에 빈 공간이 없음", event.channel().id(), room.id, box.id);
                     return;
@@ -901,7 +901,7 @@ public class Dream {
                 if (!success) {
                     Body body = new PutItemBody(PutItemBody.Result.FAIL, null);
                     Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
-//                    session.sendPacket(packet);
+                    event.channel().write(packet);
 
                     log.error("[{} - {}] 상자에 아이템 넣기 실패: {}번 상자가 {}을 가질 수 있는지 확인하고 {}을 넣었는 데 실패. 상자: {}",
                             event.channel().id(),
@@ -916,7 +916,7 @@ public class Dream {
                 // 아이템 넣기 성공 시 성공 응답 전송
                 Body body = new PutItemBody(PutItemBody.Result.SUCCESS, box.getItems());
                 Packet packet = Packet.of(SendPacketType.PUT_ITEM, System.currentTimeMillis(), body);
-//                session.sendPacket(packet);
+                event.channel().write(packet);
 
                 log.info("[{} - {}] 상자에 아이템 넣기 성공: {}번 상자에 {} 아이템 추가", event.channel().id(), room.id, box.id, targetItem.id);
                 return;
@@ -929,7 +929,7 @@ public class Dream {
         if (!(player instanceof Mongging mongging)) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND_MONGGING);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 꿈틀이 파기 시작 실패: {}번 플레이어가 없거나 몽깅이가 아님", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -938,7 +938,7 @@ public class Dream {
         if (!ggumtles.containsKey(event.command().ggumtleId())) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND_GGUMTLE);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 꿈틀이 파기 시작 실패: {}번 아이디에 대응하는 꿈틀이가 없음", event.channel().id(), room.id, event.command().ggumtleId());
             return;
@@ -948,7 +948,7 @@ public class Dream {
         if (ggumtle.isDugUp()) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.ALREADY_DIG_UP);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 꿈틀이 파기 시작 실패: {}번 꿈틀이가 이미 파짐", event.channel().id(), room.id, ggumtle.id);
             return;
@@ -958,7 +958,7 @@ public class Dream {
         if (!ggumtle.detectDigUp(playerPosition)) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_AROUND);
             Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 꿈틀이 파기 시작 실패: {}번 사용자가 {}번 꿈틀이의 유효 범위 내에 없음", event.channel().id(), room.id, player.getId(), ggumtle.id);
             return;
@@ -989,7 +989,7 @@ public class Dream {
             if (digUpResult == 1) {
                 Body body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.NORMAL);
                 Packet packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 // 몽깅이 상태를 NORMAL로 복원
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
@@ -1002,11 +1002,11 @@ public class Dream {
             if (digUpResult == -1) {
                 Body body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.FAKE);
                 Packet packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.STUNNED);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 log.info("[{} - {}] 꿈틀이 파기 스턴: 가짜 꿈틀이를 파낸 {}번 몽깅이 스턴", event.channel().id(), room.id, player.getId());
 
@@ -1014,7 +1014,7 @@ public class Dream {
                 ScheduledFuture<?> stunRecoveryFuture = workerThreadPool.schedule(() -> {
                     Body stunRecoveryBody = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
                     Packet stunRecoveryPacket = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), stunRecoveryBody);
-//                    this.room.broadcast(stunRecoveryPacket);
+                    this.room.broadcast(stunRecoveryPacket);
 
                     log.info("[{} - {}] 스턴 상태 해제: {}번 몽깅이의 스턴 상태가 자동으로 해제됨", event.channel().id(), room.id, player.getId());
                 }, 1500, TimeUnit.MILLISECONDS);
@@ -1025,12 +1025,12 @@ public class Dream {
         // 꿈틀이 파기 시작 성공 응답
         Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.START_DIGGING);
         Packet packet = Packet.of(SendPacketType.DIG_UP_RECEIVE, System.currentTimeMillis(), body);
-//        session.sendPacket(packet);
+        event.channel().write(packet);
 
         // 몽깅이 땅파는 상태 전파
         body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.DIGGING);
         packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-//        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         // 다른 몽깅이가 해당 꿈틀이에 작업 중이었는지 확인
         long count = workingThreads.values().stream()
@@ -1039,7 +1039,7 @@ public class Dream {
         if (count == 0) {
             body = new GgumtleStatusBody(ggumtle.id, GgumtleStatusBody.Status.DIGGING);
             packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-//            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
             log.info("[{} - {}] 꿈틀이 파기 시작 방송: {}번 꿈틀이의 상태를 파는 중으로 방송", event.channel().id(), room.id, ggumtle.id);
         }
 
@@ -1057,7 +1057,7 @@ public class Dream {
 
             Body body = new StopDiggingBody(StopDiggingBody.Result.STOP);
             Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.info("[{} - {}] 꿈틀이 파기 중단 완료: {}번 사용자의 작업 중단", event.channel().id(), room.id, memberId);
 
@@ -1066,7 +1066,7 @@ public class Dream {
             if (player instanceof Mongging mongging) {
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 log.info("[{} - {}] 꿈틀이 파기 중단: {}번 몽깅이 상태가 NORMAL로 복원됨", event.channel().id(), room.id, memberId);
             }
@@ -1078,13 +1078,13 @@ public class Dream {
             if (count == 0 && !ggumtles.get(targetThread.ggumtleId).isDugUp()) {
                 body = new GgumtleStatusBody(targetThread.ggumtleId, GgumtleStatusBody.Status.BURY);
                 packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
                 log.info("[{} - {}] 꿈틀이 파기 중단 전파: {}번 꿈틀이에 작업 중인 사용자가 없어 묻힘 상태로 전파", event.channel().id(), room.id, memberId);
             }
         } else {
             Body body = new StopDiggingBody(StopDiggingBody.Result.NOT_FOUND_DIGGING);
             Packet packet = Packet.of(SendPacketType.STOP_DIGGING, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 꿈틀이 파기 중단 실패: {}번 사용자가 꿈틀이 파내기 작업 없음", event.channel().id(), room.id, memberId);
         }
@@ -1095,7 +1095,7 @@ public class Dream {
         if (!(player instanceof Mongging mongging)) {
             Body body = new StartFeedBody(StartFeedBody.Result.NOT_FOUND_PLAYER);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 꿈틀이 먹이기 시작 실패: {}번 플레이어가 없거나 몽깅이가 아님", event.channel().id(), room.id, player.getId());
             return;
@@ -1105,7 +1105,7 @@ public class Dream {
         if (!targetGgumtle.isDugUp()) {
             Body body = new StartFeedBody(StartFeedBody.Result.YET_DIG_UP);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 꿈틀이 먹이기 시작 실패: {}번 꿈틀이가 아직 파지지 않음", event.channel().id(), room.id, targetGgumtle.id);
             return;
@@ -1114,7 +1114,7 @@ public class Dream {
         if (targetGgumtle.isDone()) {
             Body body = new StartFeedBody(StartFeedBody.Result.ALREADY_DONE);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 꿈틀이 먹이기 시작 실패: {}번 꿈틀이가 이미 정화됨", event.channel().id(), room.id, targetGgumtle.id);
             return;
@@ -1124,7 +1124,7 @@ public class Dream {
         if (count == 0) {
             Body body = new StartFeedBody(StartFeedBody.Result.LACK_OF_FEED_ITEM);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 꿈틀이 먹이기 시작 실패: {}번 몽깅이에게 빛젤리가 없음", event.channel().id(), room.id, player.getId());
             return;
@@ -1134,7 +1134,7 @@ public class Dream {
         if (!targetGgumtle.detectFeed(position)) {
             Body body = new StartFeedBody(StartFeedBody.Result.NOT_AROUND);
             Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.warn("[{} - {}] 꿈틀이 먹이기 시작 실패: {}번 몽깅이가 {}번 꿈틀이 근처에 없음", event.channel().id(), room.id, player.getId(), targetGgumtle.id);
             return;
@@ -1149,11 +1149,11 @@ public class Dream {
 
                 Body body = new LeftJellyCountBody(leftLightJellyCount);
                 Packet packet = Packet.of(SendPacketType.LEFT_JELLY_COUNT, System.currentTimeMillis(), body);
-//                session.sendPacket(packet);
+                event.channel().write(packet);
 
                 body = new GgumtleFedJellyCountBody(targetGgumtle.id, Ggumtle.INIT_LEFT_FEED_COUNT - leftNeedJellyCount);
                 packet = Packet.of(SendPacketType.GGUMTLE_FED_JELLY, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 Iterator<Map.Entry<Long, WorkingThread>> iterator = workingThreads.entrySet().iterator();
                 while (iterator.hasNext()) {
@@ -1166,16 +1166,16 @@ public class Dream {
 
                 body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
                 packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
-//                session.sendPacket(packet);
+                event.channel().write(packet);
 
                 // 몽깅이 상태를 NORMAL로 복원
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.DONE);
                 packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 tryOpenExit();
 
@@ -1190,12 +1190,12 @@ public class Dream {
 
                 Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, mongging.countItem(ItemDictionary.LIGHT_JELLY.boxableItem));
                 Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
-//                session.sendPacket(packet);
+                event.channel().write(packet);
 
                 // 몽깅이 상태를 NORMAL로 복원
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-//                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 log.info("[{} - {}] 꿈틀이 먹이기 종료: 다른 몽깅이가 성불시켜 종료, {}번 몽깅이 상태가 NORMAL로 복원됨", event.channel().id(), room.id, player.getId());
                 return;
@@ -1206,11 +1206,11 @@ public class Dream {
 
             Body body = new LeftJellyCountBody(leftLightJellyCount);
             Packet packet = Packet.of(SendPacketType.LEFT_JELLY_COUNT, System.currentTimeMillis(), body);
-//            session.sendPacket(packet);
+            event.channel().write(packet);
 
             body = new GgumtleFedJellyCountBody(targetGgumtle.id, Ggumtle.INIT_LEFT_FEED_COUNT - leftNeedJellyCount);
             packet = Packet.of(SendPacketType.GGUMTLE_FED_JELLY, System.currentTimeMillis(), body);
-//            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             // 남은 아이템이 없으면 종료
             if (leftLightJellyCount == 0) {
@@ -1219,12 +1219,11 @@ public class Dream {
 
                 body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
                 packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
-                // session.sendPacket(packet);
+                event.channel().write(packet);
 
-                // 몽깅이 상태를 NORMAL로 복원
                 body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
                 packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
 
                 log.info("[{} - {}] 아이템 소진으로 먹이기 종료: {}번 몽깅이 상태가 NORMAL로 복원됨", event.channel().id(), room.id, player.getId());
 
@@ -1234,7 +1233,7 @@ public class Dream {
                 if (!isWorking) {
                     body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.NORMAL);
                     packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-                    // this.room.broadcast(packet);
+                    this.room.broadcast(packet);
                     log.info("[{} - {}] 꿈틀이 먹이기 전파: {}번 꿈틀이에 작업 중인 몽깅이가 없어 일반 상태로 전파", event.channel().id(), room.id, targetGgumtle.id);
                 }
 
@@ -1247,12 +1246,11 @@ public class Dream {
 
         Body body = new StartFeedBody(StartFeedBody.Result.START_FEEDING);
         Packet packet = Packet.of(SendPacketType.START_FEED, System.currentTimeMillis(), body);
-        // session.sendPacket(packet);
+        event.channel().write(packet);
 
-        // 몽깅이 먹이는 상태 전파
         body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.FEEDING);
         packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         // 다른 사용자가 작업중이 아니면 Feeding으로 전파
         boolean isWorking = workingThreads.values().stream()
@@ -1260,7 +1258,7 @@ public class Dream {
         if (!isWorking) {
             body = new GgumtleStatusBody(targetGgumtle.id, GgumtleStatusBody.Status.FEEDING);
             packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.info("[{} - {}] 꿈틀이 먹이기 시작 전파: {}번 사용자가 {}번 꿈틀이에게 빛젤리 먹이기 전파", event.channel().id(), room.id, player.getId(), targetGgumtle.id);
         }
@@ -1282,14 +1280,13 @@ public class Dream {
 
             Body body = new StopFeedingBody(StopFeedingBody.Result.STOP, leftLightJellyCount);
             Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.info("[{} - {}] 꿈틀이 먹이기 중단 성공: {}번 사용자의 빛젤리 먹이기 작업 중단", event.channel().id(), room.id, memberId);
 
-            // 몽깅이 상태를 NORMAL로 복원
             body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.NORMAL);
             packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-            // this.room.broadcast(packet);
+            this.room.broadcast(packet);
 
             log.info("[{} - {}] 꿈틀이 먹이기 중단: {}번 몽깅이 상태가 NORMAL로 복원됨", event.channel().id(), room.id, memberId);
 
@@ -1300,13 +1297,13 @@ public class Dream {
             if (count == 0 && !ggumtles.get(targetThread.ggumtleId).isDone()) {
                 body = new GgumtleStatusBody(targetThread.ggumtleId, GgumtleStatusBody.Status.NORMAL);
                 packet = Packet.of(SendPacketType.GGUMTLE_STATUS, System.currentTimeMillis(), body);
-                // this.room.broadcast(packet);
+                this.room.broadcast(packet);
                 log.info("[{} - {}] 꿈틀이 먹이기 중단 전파: {}번 꿈틀이에 작업 중인 사용자가 없어 일반 상태로 전파", event.channel().id(), room.id, memberId);
             }
         } else {
             Body body = new StopFeedingBody(StopFeedingBody.Result.NOT_FOUND, leftLightJellyCount);
             Packet packet = Packet.of(SendPacketType.STOP_FEED, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 꿈틀이 먹이기 종료 실패: {}번 사용자에게 빛젤리 먹이기 작업 없음", event.channel().id(), room.id, memberId);
         }
@@ -1328,7 +1325,7 @@ public class Dream {
 
         Body body = new ExitOpen(this.exits.values().stream().toList());
         Packet packet = Packet.of(SendPacketType.OPEN_EXIT, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
         log.info("{}번 드림에 탈출구가 열림!", this.room.id);
     }
 
@@ -1339,7 +1336,7 @@ public class Dream {
         if (exit == null) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_FOUND_EXIT);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 탈출 실패: {}번 아이디에 해당하는 문이 없음", event.channel().id(), room.id, event.command().exitId());
             return;
@@ -1350,7 +1347,7 @@ public class Dream {
         if (!(player instanceof Mongging mongging)) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_MONGGING);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 탈출 실패: 요청 {}번 사용자는 몽깅이가 아님", event.channel().id(), room.id, ChannelManager.getMemberId(event.channel()));
             return;
@@ -1361,7 +1358,7 @@ public class Dream {
         if (!exit.detectEscape(monggingPosition)) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_IN_EXIT);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 탈출 실패: {}번 몽깅이가 탈출구 범위 내에 없음", event.channel().id(), room.id, player.getId());
             return;
@@ -1371,7 +1368,7 @@ public class Dream {
         if (!mongging.isNotDead()) {
             Body body = new EscapeBody(EscapeBody.Result.NOT_ALIVE);
             Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            event.channel().write(packet);
 
             log.error("[{} - {}] 몽깅이 탈출 실패: {}번 몽깅이는 죽어서 탈출이 불가능", event.channel().id(), room.id, player.getId());
             return;
@@ -1383,12 +1380,11 @@ public class Dream {
         // 몽깅이 탈출 성공
         Body body = new EscapeBody(EscapeBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.ESCAPE_RESULT, System.currentTimeMillis(), body);
-        // session.sendPacket(packet);
+        event.channel().write(packet);
 
-        // 몽깅이 상태 업데이트
         body = new MonggingStatusBody(mongging.getId(), MonggingStatusBody.Result.ESCAPE);
         packet = Packet.of(SendPacketType.MONGGING_STATUS, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("[{} - {}] 몽깅이 탈출 성공: {}번 몽깅이 탈출 성공", event.channel().id(), room.id, player.getId());
 
@@ -1408,7 +1404,7 @@ public class Dream {
         if (!success) {
             Body body = new MongdungSkillBody(Mongdung.SkillType.SCARE, MongdungSkillBody.Result.YET_COOL_TIME);
             Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            channel.write(packet);
 
             log.warn("[{} - {}] 몽둥이 공포 스킬 실패: 쿨타임 부족", channel.id(), room.id);
             return;
@@ -1416,7 +1412,7 @@ public class Dream {
 
         Body body = new MongdungSkillBody(Mongdung.SkillType.SCARE, MongdungSkillBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("[{} - {}] 몽둥이 공포 스킬 성공", channel.id(), room.id);
     }
@@ -1427,7 +1423,7 @@ public class Dream {
         if (!success) {
             Body body = new MongdungSkillBody(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillBody.Result.LACK_USE_COUNT);
             Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
+            channel.write(packet);
 
             log.warn("[{} - {}] 몽둥이 가짜 꿈틀이 스킬 실패: 사용 횟수 소진", channel.id(), room.id);
             return;
@@ -1435,7 +1431,7 @@ public class Dream {
 
         Body body = new MongdungSkillBody(Mongdung.SkillType.FAKE_GGUMTLE, MongdungSkillBody.Result.SUCCESS);
         Packet packet = Packet.of(SendPacketType.MONGDUNG_SKILL, System.currentTimeMillis(), body);
-        // session.sendPacket(packet);
+        channel.write(packet);
 
         int id = ggumtleIdGenerator.addAndGet(1);
         FakeGgumtle fakeGgumtle = new FakeGgumtle(id, new Position(x, y, z, -1));
@@ -1444,7 +1440,7 @@ public class Dream {
 
         body = new NewGgumtleBody(fakeGgumtle.id, fakeGgumtle.position);
         packet = Packet.of(SendPacketType.NEW_GGUMTLE, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("[{} - {}] 몽둥이 가짜 꿈틀이 스킬 성공", channel.id(), room.id);
     }
@@ -1465,7 +1461,7 @@ public class Dream {
         // 드림 종료 브로드캐스팅
         Body body = new DreamEndBody(isMonggingWin, this.players.values());
         Packet packet = Packet.of(SendPacketType.END, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("{}번 드림 종료: 몽깅이 우승 = {}", room.id, isMonggingWin);
 
@@ -1611,7 +1607,7 @@ public class Dream {
                 healPacks,
                 speedPacks);
         Packet packet = Packet.of(SendPacketType.INITIALIZE_MAP, System.currentTimeMillis(), body);
-        // this.room.broadcast(packet);
+        this.room.broadcast(packet);
 
         log.info("{}번 드림 맵 초기화 완료: 꿈틀이={}, 힐팩={}, 스피드팩={}, 출구={}, 상자={}", this.room.id, this.ggumtles, healPacks,
                 speedPacks, this.exits, this.boxes);

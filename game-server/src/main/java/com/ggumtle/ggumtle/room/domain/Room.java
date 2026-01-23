@@ -163,6 +163,13 @@ public class Room {
         playerChannels.forEach((id, channel) -> channel.write(packet));
     }
 
+    public void sendPacket(long playerId, Packet packet) {
+        Channel channel = playerChannels.get(playerId);
+        if (channel != null) {
+            channel.write(packet);
+        }
+    }
+
     public void flush() {
         playerChannels.forEach((id, channel) -> channel.flush());
     }

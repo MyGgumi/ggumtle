@@ -4,21 +4,23 @@ import com.ggumtle.ggumtle.common.dto.Body;
 import com.ggumtle.ggumtle.common.event.DisconnectChannelEvent;
 import com.ggumtle.ggumtle.common.event.DreamEndEvent;
 import com.ggumtle.ggumtle.common.event.StartDreamEvent;
-import com.ggumtle.ggumtle.common.annotation.PacketCommandHandler;
+import com.ggumtle.ggumtle.common.annotation.RequestPacketHandler;
 import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
+import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
 import com.ggumtle.ggumtle.room.application.body.CreateRoomBody;
 import com.ggumtle.ggumtle.room.application.body.JoinRoomBody;
 import com.ggumtle.ggumtle.room.application.body.SceneChangeBody;
-import com.ggumtle.ggumtle.room.application.command.CreateRoomCommand;
-import com.ggumtle.ggumtle.room.application.command.JoinRoomCommand;
+import com.ggumtle.ggumtle.room.application.dto.CreateRoomCommand;
+import com.ggumtle.ggumtle.room.application.request.CreateRoomRequest;
+import com.ggumtle.ggumtle.room.application.request.JoinRoomRequest;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
-import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 import com.ggumtle.ggumtle.room.domain.Room;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
+import com.ggumtle.ggumtle.tick.TickThreadPool;
 import io.netty.channel.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,13 +37,14 @@ import java.util.Optional;
 public class RoomService {
 
     private final RoomManager roomManager;
+    private final TickThreadPool tickThreadPool;
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @PacketCommandHandler(type = ReceivePacketType.ROOM_JOIN)
-    public void joinRoom(JoinRoomCommand command, Channel channel) {
-        log.info("[{}] 방 입장 요청 - Type: {}", channel.id(), command.roomId());
+    @RequestPacketHandler(type = ReceivePacketType.ROOM_JOIN)
+    public void joinRoom(JoinRoomRequest request, Channel channel) {
+        log.info("[{}] 방 입장 요청 - Type: {}", channel.id(), request.roomId());
 
-        JoinRoomResult result = roomManager.joinRoom(command.roomId(), channel);
+        JoinRoomResult result = roomManager.joinRoom(request.roomId(), channel);
 
         if (result == JoinRoomResult.FAIL) {
             Body body = new JoinRoomBody(JoinRoomBody.Result.FAIL);
@@ -55,18 +58,17 @@ public class RoomService {
         channel.writeAndFlush(packet);
 
         if (result == JoinRoomResult.DONE) {
-            roomManager.broadcastInitialDream(command.roomId());
+            roomManager.broadcastInitialDream(request.roomId());
         }
     }
 
-    @PacketCommandHandler(type = ReceivePacketType.ROOM_CREATE)
-    public void createRoom(CreateRoomCommand command, Channel channel) {
-        log.info("[{}] 방 생성 요청 - 플레이어 수: {}", channel.id(), command.players().size());
+    @RequestPacketHandler(type = ReceivePacketType.ROOM_CREATE)
+    public void createRoom(CreateRoomRequest request, Channel channel) {
+        log.info("[{}] 방 생성 요청 - 플레이어 수: {}", channel.id(), request.players().size());
 
         // 요청자가 플레이어 목록에 포함되어 있는지 확인
-        boolean creatorInList = command.players().stream()
+        boolean creatorInList = request.players().stream()
                 .anyMatch(p -> p.playerId() == ChannelManager.getMemberId(channel));
-
         if (!creatorInList) {
             log.warn("[{}] 방 생성 실패: 요청자가 플레이어 목록에 없음", channel.id());
             Body body = new CreateRoomBody(CreateRoomBody.Result.FAIL, 0L);
@@ -75,28 +77,24 @@ public class RoomService {
             return;
         }
 
-        // PlayerInfo 리스트 생성
-        List<PlayerInfo> playerInfos = command.players().stream()
-                .map(p -> PlayerInfo.builder()
-                        .playerId(p.playerId())
-                        .nickname("LoadTest-" + p.playerId())
-                        .monggingClassId(p.monggingClassId())
-                        .additionalHp(p.additionalHp())
-                        .additionalHealSpeed(p.additionalHealSpeed())
-                        .additionalTaskSpeed(p.additionalTaskSpeed())
-                        .build())
-                .toList();
-
         // 방 생성
-        Room room = roomManager.createRoomFromPacket(playerInfos);
-        log.info("[{}] 방 생성 완료 - roomId: {}", channel.id(), room.id);
+        CreateRoomCommand command = request.toCommand();
+        Room room = roomManager.createRoom(command);
+        tickThreadPool.assignRoom(room);
 
         Body body = new CreateRoomBody(CreateRoomBody.Result.SUCCESS, room.id);
         Packet packet = Packet.of(SendPacketType.ROOM_CREATE, System.currentTimeMillis(), body);
         channel.writeAndFlush(packet);
     }
 
-    @PacketCommandHandler(type = ReceivePacketType.SCENE_CHANGE)
+    public Room createRoom(RequestRoomMessage request) {
+        CreateRoomCommand command = request.toCommand();
+        Room room = roomManager.createRoom(command);
+        tickThreadPool.assignRoom(room);
+        return room;
+    }
+
+    @RequestPacketHandler(type = ReceivePacketType.SCENE_CHANGE)
     public void changeScene(Channel channel) {
         log.info("[{}] 씬 변경 요청", channel.id());
 

@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.server;
 
-import com.ggumtle.ggumtle.common.annotation.PacketCommandHandler;
+import com.ggumtle.ggumtle.common.annotation.RequestPacketHandler;
 import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
 import com.ggumtle.ggumtle.room.application.RoomService;
 import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
@@ -34,25 +34,25 @@ import java.util.Set;
 public class PacketDispatcher implements ApplicationListener<ContextRefreshedEvent> {
 
     private final ApplicationContext applicationContext;
-    private final EnumMap<ReceivePacketType, HandlerInfo> commandHandlerMap = new EnumMap<>(ReceivePacketType.class);
+    private final EnumMap<ReceivePacketType, HandlerInfo> requestHandlerMap = new EnumMap<>(ReceivePacketType.class);
     private final EnumMap<ReceivePacketType, TickEventInfo> tickEventMap = new EnumMap<>(ReceivePacketType.class);
     private final ChannelManager channelManager;
     private final RoomService roomService;
 
     @Override
     public void onApplicationEvent(ContextRefreshedEvent event) {
-        initializePacketCommandHandler();
+        initializePacketRequestHandler();
         initializeTickEvent();
 
         log.debug("TickEvent 맵: {}", tickEventMap);
     }
 
-    private void initializePacketCommandHandler() {
+    private void initializePacketRequestHandler() {
         for (String beanName : applicationContext.getBeanDefinitionNames()) {
             Object bean = applicationContext.getBean(beanName);
 
             for (Method method : bean.getClass().getMethods()) {
-                PacketCommandHandler annotation = method.getAnnotation(PacketCommandHandler.class);
+                RequestPacketHandler annotation = method.getAnnotation(RequestPacketHandler.class);
 
                 if (annotation == null) {
                     continue;
@@ -61,7 +61,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
                 ReceivePacketType type = annotation.type();
                 Class<?>[] parameterTypes = method.getParameterTypes();
 
-                commandHandlerMap.put(type, new HandlerInfo(type, bean, method, parameterTypes));
+                requestHandlerMap.put(type, new HandlerInfo(type, bean, method, parameterTypes));
             }
         }
     }
@@ -131,9 +131,9 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         log.debug("[{}] 수신한 패킷 데이터: {}", ctx.channel().id(), packet.data());
 
         // 핸들러로 디스패치
-        HandlerInfo handlerInfo = commandHandlerMap.get(receivePacketType);
+        HandlerInfo handlerInfo = requestHandlerMap.get(receivePacketType);
         if (handlerInfo != null) {
-            dispatchHandlerCommand(handlerInfo, ctx, packet);
+            dispatchRequestPacket(handlerInfo, ctx, packet);
             return;
         }
 
@@ -147,7 +147,7 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         throw new RuntimeException("알 수 없는 패킷 타입: " + packet.header().packetType());
     }
 
-    private void dispatchHandlerCommand(HandlerInfo handlerInfo, ChannelHandlerContext ctx, Packet packet) {
+    private void dispatchRequestPacket(HandlerInfo handlerInfo, ChannelHandlerContext ctx, Packet packet) {
         Object[] parameters = PacketMapper.decodePacket(ctx, packet.header(), packet.data() != null ? ByteBuffer.wrap(packet.data()) : ByteBuffer.allocate(0), handlerInfo.parameterTypes);
 
         log.debug("[{}] 핸들러: {}\n파라미터: {}", ctx.channel().id(), handlerInfo, Arrays.toString(parameters));

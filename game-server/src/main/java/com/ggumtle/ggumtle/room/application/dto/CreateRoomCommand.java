@@ -1,12 +1,17 @@
-package com.ggumtle.ggumtle.room.application.command;
+package com.ggumtle.ggumtle.room.application.dto;
+
+import lombok.Builder;
 
 import java.util.List;
 
 public record CreateRoomCommand(
-        List<PlayerInfoCommand> players
+        Long roomId,
+        List<Player> players
 ) {
-    public record PlayerInfoCommand(
+    @Builder
+    public record Player(
             long playerId,
+            String nickname,
             long monggingClassId,
             int additionalHp,
             int additionalTaskSpeed,

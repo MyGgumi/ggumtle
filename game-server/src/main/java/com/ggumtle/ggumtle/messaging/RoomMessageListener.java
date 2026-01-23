@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ggumtle.ggumtle.common.property.GameServerProperty;
 import com.ggumtle.ggumtle.messaging.message.CreatedRoomMessage;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
-import com.ggumtle.ggumtle.room.application.RoomManager;
+import com.ggumtle.ggumtle.room.application.RoomService;
 import com.ggumtle.ggumtle.room.domain.Room;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,18 +21,19 @@ public class RoomMessageListener implements MessageListener {
     private final String gameServerId;
     private final ObjectMapper objectMapper;
     private final RedisTemplate<String, String> redisTemplate;
-    private final RoomManager roomManager;
+    private final RoomService roomService;
 
     @Autowired
     protected RoomMessageListener(
             GameServerProperty gameServerProperty,
             ObjectMapper objectMapper,
             RedisTemplate<String, String> redisTemplate,
-            RoomManager roomManager) {
+            RoomService roomService
+    ) {
         this.gameServerId = gameServerProperty.getId();
         this.objectMapper = objectMapper;
         this.redisTemplate = redisTemplate;
-        this.roomManager = roomManager;
+        this.roomService = roomService;
     }
 
     @Override
@@ -40,7 +41,7 @@ public class RoomMessageListener implements MessageListener {
         try {
             RequestRoomMessage requestRoom = objectMapper.readValue(message.getBody(), RequestRoomMessage.class);
 
-            Room room = roomManager.createRoom(requestRoom);
+            Room room = roomService.createRoom(requestRoom);
 
             CreatedRoomMessage createdRoomMessage = new CreatedRoomMessage(room.id, requestRoom.requestId(), this.gameServerId);
             String json =  objectMapper.writeValueAsString(createdRoomMessage);

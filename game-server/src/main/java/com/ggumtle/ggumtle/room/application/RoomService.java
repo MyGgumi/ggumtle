@@ -20,7 +20,7 @@ import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
-import com.ggumtle.ggumtle.tick.TickWorkerPool;
+import com.ggumtle.ggumtle.tick.TickThreadPool;
 import io.netty.channel.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +37,7 @@ import java.util.Optional;
 public class RoomService {
 
     private final RoomManager roomManager;
-    private final TickWorkerPool tickWorkerPool;
+    private final TickThreadPool tickThreadPool;
     private final ApplicationEventPublisher applicationEventPublisher;
 
     @RequestPacketHandler(type = ReceivePacketType.ROOM_JOIN)
@@ -80,7 +80,7 @@ public class RoomService {
         // 방 생성
         CreateRoomCommand command = request.toCommand();
         Room room = roomManager.createTestRoom(command);
-        tickWorkerPool.assignRoom(room);
+        tickThreadPool.assignRoom(room);
 
         Body body = new CreateRoomBody(CreateRoomBody.Result.SUCCESS, room.id);
         Packet packet = Packet.of(SendPacketType.ROOM_CREATE, System.currentTimeMillis(), body);
@@ -90,7 +90,7 @@ public class RoomService {
     public Room createRoom(RequestRoomMessage request) {
         CreateRoomCommand command = request.toCommand();
         Room room = roomManager.createRoom(command);
-        tickWorkerPool.assignRoom(room);
+        tickThreadPool.assignRoom(room);
         return room;
     }
 

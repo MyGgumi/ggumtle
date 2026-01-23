@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
-public class TickWorkerPool {
+public class TickThreadPool {
     // TODO: TickWorker가 처리량 확인 후 수정
     private static final int WORKER_COUNT = 1;
     private final List<TickWorker> tickWorkers;
@@ -27,7 +27,7 @@ public class TickWorkerPool {
 
     private int pointer = 0;
 
-    public TickWorkerPool() {
+    public TickThreadPool() {
         executor = Executors.newFixedThreadPool(WORKER_COUNT);
         roomAssignmentExecutor = Executors.newSingleThreadExecutor();
 

@@ -135,13 +135,14 @@ public class RoomService {
         }
 
         Room room = optionalRoom.get();
+
+        tickThreadPool.unassignRoom(room);
+
         List<Channel> playerChannels = room.getPlayerChannels();
         playerChannels.forEach(channel -> {
             this.roomManager.leftRoom(channel);
         });
         this.roomManager.removeRoom(room.id);
-
-        // Dream 삭제 추가
     }
 
     public void dispatchToRoom(TickEvent tickEvent, Channel channel) {

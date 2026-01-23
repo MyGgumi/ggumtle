@@ -23,12 +23,12 @@ public class TickWorker implements Runnable {
 
     public void assign(Room room) {
         rooms.add(room);
-        log.info("{}번 TickWorker에 {}번 방이 할당되었습니다. 현재 관리 중인 Room 수: {}", room.id, this.id, rooms.size());
+        log.info("{}번 TickWorker에 {}번 방이 할당되었습니다. 현재 관리 중인 Room 수: {}", this.id, room.id, rooms.size());
     }
 
     public void unassign(Room room) {
         rooms.remove(room);
-        log.info("{}번 TickWorker에서 {}번 방이 제거되었습니다. 현재 관리 중인 Room 수: {}", room.id, this.id, rooms.size());
+        log.info("{}번 TickWorker에서 {}번 방이 제거되었습니다. 현재 관리 중인 Room 수: {}", this.id, room.id, rooms.size());
     }
 
     public int getRoomCount() {

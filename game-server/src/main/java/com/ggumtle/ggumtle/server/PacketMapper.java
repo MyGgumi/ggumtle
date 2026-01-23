@@ -26,7 +26,7 @@ public class PacketMapper {
                 return new Timestamp(header.timestamp());
             }
 
-            return decodeObject(type, buffer);
+            return decodeObject(type, buffer, header, ctx);
         } catch (Exception e) {
             log.error("[{}] 패킷 직렬화 중 오류 발생: {}", ctx.channel().id(), e.getMessage());
             e.printStackTrace();
@@ -45,7 +45,7 @@ public class PacketMapper {
         return instances;
     }
 
-    public static <T> T decodeObject(Class<T> clazz, ByteBuffer buffer) throws InvocationTargetException, InstantiationException, IllegalAccessException {
+    public static <T> T decodeObject(Class<T> clazz, ByteBuffer buffer, PacketHeader header, ChannelHandlerContext ctx) throws InvocationTargetException, InstantiationException, IllegalAccessException {
         Constructor<?> constructor = clazz.getConstructors()[0];
         Type[] parameters = constructor.getGenericParameterTypes();
 
@@ -55,6 +55,16 @@ public class PacketMapper {
             Type type = parameters[i];
 
             if (type instanceof Class<?> classType) {
+                if (Channel.class.isAssignableFrom(classType)) {
+                    constructorArgs[i] = ctx.channel();
+                    continue;
+                }
+
+                if (Timestamp.class.isAssignableFrom(classType)) {
+                    constructorArgs[i] = new Timestamp(header.timestamp());
+                    continue;
+                }
+
                 if (classType.equals(short.class) || classType.equals(Short.class)) {
                     constructorArgs[i] = buffer.getShort();
                     continue;
@@ -75,6 +85,8 @@ public class PacketMapper {
                     constructorArgs[i] = buffer.get() != 0;
                     continue;
                 }
+
+                constructorArgs[i] = decodeObject(classType, buffer, header, ctx);
             }
 
             if (type instanceof ParameterizedType parameterizedType) {
@@ -95,7 +107,7 @@ public class PacketMapper {
                     List<Object> list = new ArrayList<>();
 
                     for (int j = 0; j < count; j++) {
-                        Object object = decodeObject(elementClass, buffer);
+                        Object object = decodeObject(elementClass, buffer, header, ctx);
                         list.add(object);
                     }
 

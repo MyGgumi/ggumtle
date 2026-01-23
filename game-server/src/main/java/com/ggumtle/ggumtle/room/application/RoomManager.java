@@ -2,6 +2,8 @@ package com.ggumtle.ggumtle.room.application;
 
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
 import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
+import com.ggumtle.ggumtle.room.application.dto.CreateRoomCommand;
+import com.ggumtle.ggumtle.room.application.dto.CreateTestRoom;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.domain.PlayerInfo;
@@ -59,36 +61,33 @@ public class RoomManager {
         return Optional.of(room);
     }
 
-    public Room createRoom(RequestRoomMessage request) {
+    public Room createRoom(CreateRoomCommand command) {
         long roomId = roomIdGenerator.incrementAndGet();
 
-        log.debug("{}번 방 생성: {}", roomId, request);
-
-        List<PlayerInfo> playerInfos = new ArrayList<>();
-        for (RequestRoomMessage.Player player : request.players()) {
-            playerInfos.add(
-                    PlayerInfo.builder()
-                            .playerId(player.id())
-                            .nickname(player.nickname())
-                            .monggingClassId(player.monggingClassId())
-                            .additionalHp(player.additionalHp())
-                            .additionalHealSpeed(player.additionalHealSpeed())
-                            .additionalTaskSpeed(player.additionalTaskSpeed())
-                            .build()
-            );
-        }
+        List<PlayerInfo> playerInfos = command.players().stream()
+                .map(CreateRoomCommand.Player::toDomain)
+                .toList();
         Room room = new Room(roomId, playerInfos, applicationEventPublisher, spawnCache);
         idToRoom.put(roomId, room);
+
+        log.debug("{}번 방 생성: {}명의 플레이어", roomId, playerInfos.size());
 
         return room;
     }
 
-    public Room createRoomFromPacket(List<PlayerInfo> playerInfos) {
-        long roomId = testRoomIdGenerator.decrementAndGet();  // 음수 ID: -101, -102, -103, ...
-        log.debug("{}번 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
+    public Room createTestRoom(CreateRoomCommand command) {
+        Long roomId = command.roomId();
+        if (roomId == null) {
+            testRoomIdGenerator.decrementAndGet();
+        }
 
+        List<PlayerInfo> playerInfos = command.players().stream()
+                .map(CreateRoomCommand.Player::toDomain)
+                .toList();
         Room room = new Room(roomId, playerInfos, applicationEventPublisher, spawnCache);
         idToRoom.put(roomId, room);
+
+        log.debug("{}번 테스트방 생성: {}명의 플레이어", roomId, playerInfos.size());
 
         return room;
     }

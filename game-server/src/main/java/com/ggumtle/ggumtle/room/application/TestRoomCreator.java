@@ -34,26 +34,26 @@ public class TestRoomCreator {
             );
         }
 
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -1L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -2L, playerInfos.subList(0, 4))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -3L, playerInfos.subList(0, 5))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -4L, playerInfos.subList(0, 1))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -5L, playerInfos.subList(0, 1))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -1L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -2L, playerInfos.subList(0, 4))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -3L, playerInfos.subList(0, 5))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -4L, playerInfos.subList(0, 1))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -5L, playerInfos.subList(0, 1))));
 
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -6L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -7L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -8L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -9L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -10L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -11L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -12L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -13L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -14L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -15L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -16L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -17L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -18L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -19L, playerInfos.subList(0, 3))));
-        tickThreadPool.assignRoom(roomManager.createRoom(new CreateRoomCommand( -20L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -6L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -7L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -8L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -9L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -10L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -11L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -12L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -13L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -14L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -15L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -16L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -17L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -18L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -19L, playerInfos.subList(0, 3))));
+        tickThreadPool.assignRoom(roomManager.createTestRoom(new CreateRoomCommand( -20L, playerInfos.subList(0, 3))));
     }
 }

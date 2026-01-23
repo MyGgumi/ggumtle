@@ -79,7 +79,7 @@ public class RoomService {
 
         // 방 생성
         CreateRoomCommand command = request.toCommand();
-        Room room = roomManager.createRoom(command);
+        Room room = roomManager.createTestRoom(command);
         tickThreadPool.assignRoom(room);
 
         Body body = new CreateRoomBody(CreateRoomBody.Result.SUCCESS, room.id);

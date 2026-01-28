@@ -1,4 +1,4 @@
-package com.ggumtle.ggumtle.server.applicatoin;
+package com.ggumtle.ggumtle.server.application;
 
 import com.ggumtle.ggumtle.auth.JwtService;
 import io.netty.channel.Channel;

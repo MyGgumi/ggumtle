@@ -2,7 +2,7 @@ package com.ggumtle.ggumtle.server.pipeline;
 
 import com.ggumtle.ggumtle.common.event.DisconnectChannelEvent;
 import com.ggumtle.ggumtle.server.PacketDispatcher;
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;

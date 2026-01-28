@@ -8,7 +8,7 @@ import com.ggumtle.ggumtle.dream.application.result.DreamState;
 import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
 import com.ggumtle.ggumtle.dream.domain.player.Player;
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;
 import io.netty.channel.Channel;

@@ -16,7 +16,7 @@ import com.ggumtle.ggumtle.room.application.request.JoinRoomRequest;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.domain.Room;
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.server.packet.SendPacketType;

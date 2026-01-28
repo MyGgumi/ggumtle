@@ -3,7 +3,7 @@ package com.ggumtle.ggumtle.server;
 import com.ggumtle.ggumtle.common.annotation.RequestPacketHandler;
 import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
 import com.ggumtle.ggumtle.room.application.RoomService;
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import com.ggumtle.ggumtle.auth.body.AuthBody;

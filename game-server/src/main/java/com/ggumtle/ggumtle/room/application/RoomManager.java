@@ -1,14 +1,12 @@
 package com.ggumtle.ggumtle.room.application;
 
 import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
-import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
 import com.ggumtle.ggumtle.room.application.dto.CreateRoomCommand;
-import com.ggumtle.ggumtle.room.application.dto.CreateTestRoom;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 import com.ggumtle.ggumtle.room.domain.Room;
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import io.netty.channel.Channel;
 import lombok.AccessLevel;
@@ -17,7 +15,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;

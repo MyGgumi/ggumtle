@@ -1,6 +1,6 @@
 package com.ggumtle.ggumtle.monitor.metric;
 
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.sun.management.OperatingSystemMXBean;
 import com.sun.management.UnixOperatingSystemMXBean;
 import io.micrometer.core.instrument.Gauge;

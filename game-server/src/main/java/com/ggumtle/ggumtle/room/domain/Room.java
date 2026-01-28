@@ -99,10 +99,10 @@ public class Room {
             return -1;
         }
 
-        final int connectedSessionCount;
+        final int connectedChannelCount;
         synchronized (playerChannels) {
             Channel prevChannel = playerChannels.put(memberId, channel);
-            connectedSessionCount = playerChannels.size();
+            connectedChannelCount = playerChannels.size();
 
             if (prevChannel == null) {
                 log.debug("[{}] 채널 추가 성공: {}번 방의 {}번 사용자의 채널이 추가됨", channel.id(), this.id, memberId);
@@ -114,7 +114,7 @@ public class Room {
             }
         }
 
-        return connectedSessionCount;
+        return connectedChannelCount;
     }
 
     public void removeChannel(Channel channel) {

@@ -469,13 +469,6 @@ public class Dream {
 
         Player mongdungPlayer = players.values().stream().filter(p -> p instanceof Mongdung).findFirst().orElse(null);
         if (mongdungPlayer == null) {
-            // Body body = new
-            // UseMonggingItemBody(UseMonggingItemBody.Result.NOT_FOUND_MONGDUNG, item.id,
-            // event.command().effectX(), event.command().effectY(), event.command().effectZ());
-            // Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM,
-            // System.currentTimeMillis(), body);
-            // session.sendPacket(packet);
-            // TEST
             Body body = new UseMonggingItemBody(UseMonggingItemBody.Result.MISS, item.id, event.command().effectX(), event.command().effectY(), event.command().effectZ());
             Packet packet = Packet.of(SendPacketType.ATTACK_WITH_ITEM, System.currentTimeMillis(), body);
             this.room.broadcast(packet);

@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public class ChannelManager {
 
-    private static final AttributeKey<Boolean> authAttributeKey = AttributeKey.valueOf("authenticated∂");
+    private static final AttributeKey<Boolean> authAttributeKey = AttributeKey.valueOf("authenticated");
     private static final AttributeKey<Long> memberIdAttributeKey = AttributeKey.valueOf("memberId");
 
     private final ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);

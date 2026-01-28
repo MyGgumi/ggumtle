@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @Slf4j
-public class TickThreadPool {
+public class TickWorkerPool {
     // TODO: TickWorker가 처리량 확인 후 수정
     private static final int WORKER_COUNT = 1;
     private final List<TickWorker> tickWorkers;
@@ -27,7 +27,7 @@ public class TickThreadPool {
 
     private int pointer = 0;
 
-    public TickThreadPool() {
+    public TickWorkerPool() {
         executor = Executors.newFixedThreadPool(WORKER_COUNT);
         roomAssignmentExecutor = Executors.newSingleThreadExecutor();
 
@@ -41,14 +41,14 @@ public class TickThreadPool {
 
     @PostConstruct
     public void start() {
-        log.info("TickThreadPool 시작");
+        log.info("TickWorkerPool 시작");
 
         tickWorkers.forEach(executor::submit);
     }
 
     @PreDestroy
     public void shutdown() {
-        log.info("TickThreadPool 종료 중...");
+        log.info("TickWorkerPool 종료 중...");
 
         executor.shutdown();
         roomAssignmentExecutor.shutdown();
@@ -65,7 +65,7 @@ public class TickThreadPool {
             Thread.currentThread().interrupt();
         }
 
-        log.info("TickThreadPool 종료 완료");
+        log.info("TickWorkerPool 종료 완료");
     }
 
     public CompletableFuture<Void> assignRoom(Room room) {

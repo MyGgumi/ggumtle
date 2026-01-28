@@ -7,9 +7,9 @@ import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
 @TickEventType(type = ReceivePacketType.START_REVIVE)
-public record StartReviveEvent(
+public record StartReviveTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(

@@ -6,20 +6,20 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.START_FEED)
-public record StartFeedEvent(
+@TickEventType(type = ReceivePacketType.SHOW_BOX)
+public record ShowBoxTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
-            int ggumtleId
+            int boxId
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.START_FEED;
+        return ReceivePacketType.SHOW_BOX;
     }
 
     @Override

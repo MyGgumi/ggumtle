@@ -6,25 +6,23 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.PLAYER_MOVE)
-public record PlayerMoveEvent(
+@TickEventType(type = ReceivePacketType.MONGDUNG_SKILL)
+public record MongdungSkillTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
+            int skillTypeId,
             int x,
             int y,
-            int z,
-            int vx,
-            int vy,
-            int vz
+            int z
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.PLAYER_MOVE;
+        return ReceivePacketType.MONGDUNG_SKILL;
     }
 
     @Override

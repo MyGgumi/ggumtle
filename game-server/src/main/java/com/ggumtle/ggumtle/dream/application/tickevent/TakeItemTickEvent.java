@@ -1,24 +1,26 @@
 package com.ggumtle.ggumtle.dream.application.tickevent;
 
 import com.ggumtle.ggumtle.common.annotation.TickEventType;
+import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.USE_FIELD_ITEM)
-public record UseFieldItemEvent(
+@TickEventType(type = ReceivePacketType.TAKE_ITEM_FROM_BOX)
+public record TakeItemTickEvent(
         Channel channel,
-        Long timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
-            int itemId
+            int boxId,
+            int index
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.USE_FIELD_ITEM;
+        return ReceivePacketType.TAKE_ITEM_FROM_BOX;
     }
 
     @Override

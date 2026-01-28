@@ -6,20 +6,15 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.DIG_UP_GGUMTLE)
-public record DigUpEvent(
+@TickEventType(type = ReceivePacketType.STOP_FEED)
+public record StopFeedingTickEvent(
         Channel channel,
-        Timestamp timeStamp,
-        Command command
+        Timestamp timestamp
 ) implements TickEvent {
-    public record Command(
-            int ggumtleId
-    ) {
-    }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.DIG_UP_GGUMTLE;
+        return ReceivePacketType.STOP_FEED;
     }
 
     @Override

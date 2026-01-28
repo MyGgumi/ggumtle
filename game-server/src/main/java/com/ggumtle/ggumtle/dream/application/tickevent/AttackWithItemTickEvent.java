@@ -9,7 +9,7 @@ import io.netty.channel.Channel;
 @TickEventType(type = ReceivePacketType.ATTACK_WITH_ITEM)
 public record AttackWithItemTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(

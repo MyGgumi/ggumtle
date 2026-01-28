@@ -6,20 +6,23 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.SHOW_BOX)
-public record ShowBoxEvent(
+@TickEventType(type = ReceivePacketType.HIT_MONGGING)
+public record HitMonggingTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
-            int boxId
+            int vx,
+            int vy,
+            int vz,
+            long targetId
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.SHOW_BOX;
+        return ReceivePacketType.HIT_MONGGING;
     }
 
     @Override

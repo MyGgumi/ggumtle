@@ -6,23 +6,20 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.HIT_MONGGING)
-public record HitMonggingEvent(
+@TickEventType(type = ReceivePacketType.ESCAPE)
+public record EscapeTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
-            int vx,
-            int vy,
-            int vz,
-            long targetId
+            int exitId
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.HIT_MONGGING;
+        return ReceivePacketType.ESCAPE;
     }
 
     @Override

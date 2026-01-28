@@ -1,26 +1,18 @@
 package com.ggumtle.ggumtle.dream.application.tickevent;
 
 import com.ggumtle.ggumtle.common.annotation.TickEventType;
-import com.ggumtle.ggumtle.common.dto.Timestamp;
 import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.TAKE_ITEM_FROM_BOX)
-public record TakeItemEvent(
-        Channel channel,
-        Timestamp timeStamp,
-        Command command
+@TickEventType(type = ReceivePacketType.USE_DEFIBRILLATOR)
+public record UseDefibrillatorTickEvent(
+        Channel channel
 ) implements TickEvent {
-    public record Command(
-            int boxId,
-            int index
-    ) {
-    }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.TAKE_ITEM_FROM_BOX;
+        return ReceivePacketType.USE_DEFIBRILLATOR;
     }
 
     @Override

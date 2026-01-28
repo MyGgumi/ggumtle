@@ -6,20 +6,20 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.ESCAPE)
-public record EscapeEvent(
+@TickEventType(type = ReceivePacketType.USE_FIELD_ITEM)
+public record UseFieldItemTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
-            int exitId
+            int itemId
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.ESCAPE;
+        return ReceivePacketType.USE_FIELD_ITEM;
     }
 
     @Override

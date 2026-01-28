@@ -152,7 +152,7 @@ public class Dream {
         );
     }
 
-    public void on(PlayerMoveEvent event) {
+    public void on(PlayerMoveTickEvent event) {
         long now = System.currentTimeMillis();
 
         Player player = players.get(ChannelManager.getMemberId(event.channel()));
@@ -184,7 +184,7 @@ public class Dream {
                 event.channel().id(), room.id, player.getId(), event.command().x(), event.command().y(), event.command().z());
     }
 
-    public void on(HitMonggingEvent event) {
+    public void on(HitMonggingTickEvent event) {
         Player requester = players.getOrDefault(ChannelManager.getMemberId(event.channel()), null);
 
         if (requester == null) {
@@ -309,7 +309,7 @@ public class Dream {
         }
     }
 
-    public void on(StartReviveEvent event) {
+    public void on(StartReviveTickEvent event) {
         if (!(players.getOrDefault(ChannelManager.getMemberId(event.channel()), null) instanceof Mongging requesterMongging) ||
                 !(players.getOrDefault(event.command().targetMonggingId(), null) instanceof Mongging targetMongging)) {
             Body body = new StartReviveBody(StartReviveBody.Result.NOT_FOUND_MONGGING);
@@ -369,7 +369,7 @@ public class Dream {
         log.info("[{} - {}] 몽깅이 부활 시작 성공: 잠시 후 {}번 몽깅이 부활 예정", event.channel().id(), room.id, targetMongging.getId());
     }
 
-    public void on(StopReviveEvent event) {
+    public void on(StopReviveTickEvent event) {
         Long memberId = ChannelManager.getMemberId(event.channel());
         WorkingThread targetThread = workingThreads.getOrDefault(memberId, null);
 
@@ -390,7 +390,7 @@ public class Dream {
         event.channel().write(packet);
     }
 
-    public void on(MongdungSkillEvent event) {
+    public void on(MongdungSkillTickEvent event) {
         Mongdung.SkillType skillType = Mongdung.SkillType.valueById(event.command().skillTypeId());
         if (skillType == null) {
             Body body = new MongdungSkillBody(event.command().skillTypeId(), MongdungSkillBody.Result.NOT_FOUND_SKILL);
@@ -525,7 +525,7 @@ public class Dream {
     /**
      * 필드 아이템 사용
      */
-    public void on(UseFieldItemEvent event) {
+    public void on(UseFieldItemTickEvent event) {
         // 몽깅이 존재 확인
         if (!(players.getOrDefault(ChannelManager.getMemberId(event.channel()), null) instanceof Mongging mongging)) {
             Body body = new UseFieldItemBody(UseFieldItemBody.Result.NOT_MONGGING, event.command().itemId());
@@ -585,7 +585,7 @@ public class Dream {
      * 자가 제세동기 사용
      * 기절한 상태에서 자가 제세동기를 사용해 부활한다
      */
-    public void on(UseDefibrillatorEvent event) {
+    public void on(UseDefibrillatorTickEvent event) {
         // 몽깅이 존재 확인
         if (!(players.getOrDefault(ChannelManager.getMemberId(event.channel()), null) instanceof Mongging mongging)) {
             Body body = new UseDefibrillatorBody(UseDefibrillatorBody.Result.NOT_FOUND_MONGGING, -1);
@@ -631,7 +631,7 @@ public class Dream {
      * 상자 열기
      * 상자의 데이터를 사용자에게 반환하고, 상자를 보고 있는 사용자 정보에 요청한 사용자를 추가한다
      **/
-    public void on(ShowBoxEvent event) {
+    public void on(ShowBoxTickEvent event) {
         // 상자가 존재하지 않으면 실패
         if (!boxes.containsKey(event.command().boxId())) {
             Body body = new ShowBoxBody(false, -1, null);
@@ -680,7 +680,7 @@ public class Dream {
         log.info("[{} - {}] 상자 오픈 성공: {}번 상자에 {}번 세션 추가", event.channel().id(), room.id, box.id, player.getId());
     }
 
-    public void on(CloseBoxEvent event) {
+    public void on(CloseBoxTickEvent event) {
         // 상자 존재 확인
         Box box = boxes.getOrDefault(event.command().boxId(), null);
 
@@ -701,7 +701,7 @@ public class Dream {
         log.info("[{} - {}] 상자 닫기 성공: {}번 상자에 {}번 플레이어 삭제", event.channel().id(), room.id, box.id, player.getId());
     }
 
-    public void on(TakeItemEvent event) {
+    public void on(TakeItemTickEvent event) {
         // 상자 존재 확인
         Box box = boxes.getOrDefault(event.command().boxId(), null);
         if (box == null) {
@@ -812,7 +812,7 @@ public class Dream {
         }
     }
 
-    public void on(PutItemEvent event) {
+    public void on(PutItemTickEvent event) {
         // 아이템 존재 확인
         Boxable targetItem = ItemDictionary.valueOf(event.command().itemId());
         if (targetItem == null) {
@@ -923,7 +923,7 @@ public class Dream {
         }
     }
 
-    public void on(DigUpEvent event) {
+    public void on(DigUpTickEvent event) {
         Player player = players.getOrDefault(ChannelManager.getMemberId(event.channel()), null);
         if (!(player instanceof Mongging mongging)) {
             Body body = new DigUpReceiveBody(DigUpReceiveBody.Result.NOT_FOUND_MONGGING);
@@ -1045,7 +1045,7 @@ public class Dream {
         log.info("[{} - {}] 꿈틀이 파기 시작 완료: 잠시 후 {}번 꿈틀이 파기 완료 예정", event.channel().id(), room.id, ggumtle.id);
     }
 
-    public void on(StopDiggingEvent event) {
+    public void on(StopDiggingTickEvent event) {
         Long memberId = ChannelManager.getMemberId(event.channel());
 
         WorkingThread targetThread = workingThreads.getOrDefault(memberId, null);
@@ -1089,7 +1089,7 @@ public class Dream {
         }
     }
 
-    public void on(StartFeedEvent event) {
+    public void on(StartFeedTickEvent event) {
         Player player = players.getOrDefault(ChannelManager.getMemberId(event.channel()), null);
         if (!(player instanceof Mongging mongging)) {
             Body body = new StartFeedBody(StartFeedBody.Result.NOT_FOUND_PLAYER);
@@ -1265,7 +1265,7 @@ public class Dream {
         log.info("[{} - {}] 꿈틀이 먹이기 시작 성공: {}번 사용자가 {}번 꿈틀이에게 빛젤리 먹이기 시작함", event.channel().id(), room.id, player.getId(), targetGgumtle.id);
     }
 
-    public void on(StopFeedingEvent event) {
+    public void on(StopFeedingTickEvent event) {
         Long memberId = ChannelManager.getMemberId(event.channel());
 
         WorkingThread targetThread = workingThreads.getOrDefault(memberId, null);
@@ -1328,7 +1328,7 @@ public class Dream {
         log.info("{}번 드림에 탈출구가 열림!", this.room.id);
     }
 
-    public void on(EscapeEvent event) {
+    public void on(EscapeTickEvent event) {
         Exit exit = exits.getOrDefault(event.command().exitId(), null);
 
         // 탈출구 존재 확인

@@ -6,21 +6,15 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.PUT_ITEM_TO_BOX)
-public record PutItemEvent(
+@TickEventType(type = ReceivePacketType.STOP_REVIVE)
+public record StopReviveTickEvent(
         Channel channel,
-        Timestamp timeStamp,
-        Command command
+        Timestamp timestamp
 ) implements TickEvent {
-    public record Command(
-            int boxId,
-            int itemId
-    ) {
-    }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.PUT_ITEM_TO_BOX;
+        return ReceivePacketType.STOP_REVIVE;
     }
 
     @Override

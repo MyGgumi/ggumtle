@@ -6,23 +6,20 @@ import com.ggumtle.ggumtle.dream.application.Dream;
 import com.ggumtle.ggumtle.server.packet.ReceivePacketType;
 import io.netty.channel.Channel;
 
-@TickEventType(type = ReceivePacketType.MONGDUNG_SKILL)
-public record MongdungSkillEvent(
+@TickEventType(type = ReceivePacketType.CLOSE_BOX)
+public record CloseBoxTickEvent(
         Channel channel,
-        Timestamp timeStamp,
+        Timestamp timestamp,
         Command command
 ) implements TickEvent {
     public record Command(
-            int skillTypeId,
-            int x,
-            int y,
-            int z
+            int boxId
     ) {
     }
 
     @Override
     public ReceivePacketType type() {
-        return ReceivePacketType.MONGDUNG_SKILL;
+        return ReceivePacketType.CLOSE_BOX;
     }
 
     @Override

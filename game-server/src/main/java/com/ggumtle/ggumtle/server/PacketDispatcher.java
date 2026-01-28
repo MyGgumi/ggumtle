@@ -1,6 +1,7 @@
 package com.ggumtle.ggumtle.server;
 
 import com.ggumtle.ggumtle.common.annotation.RequestPacketHandler;
+import com.ggumtle.ggumtle.common.annotation.TickEventType;
 import com.ggumtle.ggumtle.dream.application.tickevent.TickEvent;
 import com.ggumtle.ggumtle.room.application.RoomService;
 import com.ggumtle.ggumtle.server.application.ChannelManager;
@@ -18,7 +19,6 @@ import org.springframework.context.event.ContextRefreshedEvent;
 import org.springframework.core.type.filter.AssignableTypeFilter;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -78,29 +78,20 @@ public class PacketDispatcher implements ApplicationListener<ContextRefreshedEve
         for (BeanDefinition bd : candidates) {
             try {
                 Class<?> clazz = Class.forName(bd.getBeanClassName());
-                
+
                 // 인터페이스나 추상 클래스는 제외
                 if (TickEvent.class.isAssignableFrom(clazz) && !clazz.isInterface()) {
-                    ReceivePacketType packetType = null;
-                    Class<? extends TickEvent> tickEventClass = (Class<? extends TickEvent>) clazz;
-
-                    try {
-                        Constructor<?>[] constructors = clazz.getDeclaredConstructors();
-                        if (constructors.length > 0) {
-                            Constructor<?> constructor = constructors[0];
-                            Object[] params = new Object[constructor.getParameterCount()];
-                            TickEvent tempInstance = (TickEvent) constructor.newInstance(params);
-                            packetType = tempInstance.type();
-                        }
-                    } catch (Exception e) {
-                        log.warn("TickEvent type() 메소드 호출 실패, 클래스 이름으로 추론 시도: {}", clazz.getSimpleName());
+                    TickEventType annotation = clazz.getAnnotation(TickEventType.class);
+                    if (annotation == null) {
+                        log.warn("TickEventType 어노테이션이 없는 TickEvent 클래스: {}", clazz.getSimpleName());
                         continue;
                     }
-                    
-                    if (packetType != null) {
-                        tickEventMap.put(packetType, new TickEventInfo(tickEventClass));
-                        log.debug("TickEvent 등록: {} -> {}", packetType, clazz.getSimpleName());
-                    }
+
+                    ReceivePacketType packetType = annotation.type();
+                    Class<? extends TickEvent> tickEventClass = (Class<? extends TickEvent>) clazz;
+
+                    tickEventMap.put(packetType, new TickEventInfo(tickEventClass));
+                    log.debug("TickEvent 등록: {} -> {}", packetType, clazz.getSimpleName());
                 }
             } catch (Exception e) {
                 log.error("TickEvent 초기화 실패: {}", bd.getBeanClassName(), e);

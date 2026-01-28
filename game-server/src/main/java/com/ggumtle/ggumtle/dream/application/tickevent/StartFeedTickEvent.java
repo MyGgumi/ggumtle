@@ -18,11 +18,6 @@ public record StartFeedTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.START_FEED;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

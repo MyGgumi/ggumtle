@@ -23,11 +23,6 @@ public record PlayerMoveTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.PLAYER_MOVE;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

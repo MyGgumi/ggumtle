@@ -19,11 +19,6 @@ public record PutItemTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.PUT_ITEM_TO_BOX;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

@@ -21,11 +21,6 @@ public record HitMonggingTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.HIT_MONGGING;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

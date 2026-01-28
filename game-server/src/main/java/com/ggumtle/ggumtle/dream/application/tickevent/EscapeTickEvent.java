@@ -18,11 +18,6 @@ public record EscapeTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.ESCAPE;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

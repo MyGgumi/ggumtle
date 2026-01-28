@@ -18,11 +18,6 @@ public record ShowBoxTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.SHOW_BOX;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

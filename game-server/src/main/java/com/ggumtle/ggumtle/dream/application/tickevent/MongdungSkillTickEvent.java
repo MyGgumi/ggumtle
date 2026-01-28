@@ -21,11 +21,6 @@ public record MongdungSkillTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.MONGDUNG_SKILL;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

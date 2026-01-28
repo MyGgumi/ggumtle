@@ -18,11 +18,6 @@ public record DigUpTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.DIG_UP_GGUMTLE;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

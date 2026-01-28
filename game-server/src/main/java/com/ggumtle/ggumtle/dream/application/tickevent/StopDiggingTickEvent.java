@@ -11,11 +11,6 @@ public record StopDiggingTickEvent(
 ) implements TickEvent {
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.STOP_DIGGING;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

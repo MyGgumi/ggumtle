@@ -18,11 +18,6 @@ public record StartReviveTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.START_REVIVE;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

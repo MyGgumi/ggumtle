@@ -18,11 +18,6 @@ public record UseFieldItemTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.USE_FIELD_ITEM;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

@@ -19,11 +19,6 @@ public record AttackWithItemTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.ATTACK_WITH_ITEM;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

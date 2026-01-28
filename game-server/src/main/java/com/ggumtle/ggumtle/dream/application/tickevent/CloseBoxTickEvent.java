@@ -18,11 +18,6 @@ public record CloseBoxTickEvent(
     }
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.CLOSE_BOX;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

@@ -11,11 +11,6 @@ public record UseDefibrillatorTickEvent(
 ) implements TickEvent {
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.USE_DEFIBRILLATOR;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

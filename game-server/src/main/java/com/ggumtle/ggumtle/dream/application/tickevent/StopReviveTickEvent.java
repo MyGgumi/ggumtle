@@ -13,11 +13,6 @@ public record StopReviveTickEvent(
 ) implements TickEvent {
 
     @Override
-    public ReceivePacketType type() {
-        return ReceivePacketType.STOP_REVIVE;
-    }
-
-    @Override
     public void process(Dream dream) {
         dream.on(this);
     }

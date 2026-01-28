@@ -1,8 +1,8 @@
 package com.ggumtle.ggumtle.server.pipeline;
 
-import com.ggumtle.ggumtle.common.event.DisconnectSessionEvent;
+import com.ggumtle.ggumtle.common.event.DisconnectChannelEvent;
 import com.ggumtle.ggumtle.server.PacketDispatcher;
-import com.ggumtle.ggumtle.server.applicatoin.ChannelManager;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -24,6 +24,8 @@ public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, Packet packet) {
+        log.info("패킷 수신: {} - {}", packet.header(), packet.data());
+
         packetDispatcher.dispatch(ctx, packet);
     }
 
@@ -36,9 +38,7 @@ public class PacketHandler extends SimpleChannelInboundHandler<Packet> {
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) {
-        channelManager.getSession(ctx.channel())
-                .ifPresent(session -> applicationEventPublisher.publishEvent(new DisconnectSessionEvent(session)));
-
+        applicationEventPublisher.publishEvent(new DisconnectChannelEvent(ctx.channel()));
         channelManager.removeChannel(ctx.channel());
 
         log.info("[{}] 클라이언트 연결 해제됨: {}", ctx.channel().id(), ctx.channel().remoteAddress());

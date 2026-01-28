@@ -1,18 +1,20 @@
 package com.ggumtle.ggumtle.room.application;
 
-import com.ggumtle.ggumtle.messaging.message.RequestRoomMessage;
+import com.ggumtle.ggumtle.dream.persistence.SpawnCache;
+import com.ggumtle.ggumtle.room.application.dto.CreateRoomCommand;
 import com.ggumtle.ggumtle.room.application.dto.JoinRoomResult;
 import com.ggumtle.ggumtle.room.application.dto.SceneChangeResult;
 import com.ggumtle.ggumtle.room.domain.PlayerInfo;
 import com.ggumtle.ggumtle.room.domain.Room;
+import com.ggumtle.ggumtle.server.application.ChannelManager;
 import com.ggumtle.ggumtle.server.packet.Packet;
-import com.ggumtle.ggumtle.session.Session;
+import io.netty.channel.Channel;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -28,6 +30,9 @@ public class RoomManager {
     private final AtomicLong testRoomIdGenerator = new AtomicLong(-100);
     private final ConcurrentHashMap<Long, Room> idToRoom = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<Long, Room> playerIdToRoom = new ConcurrentHashMap<>();
+
+    private final ApplicationEventPublisher applicationEventPublisher;
+    private final SpawnCache spawnCache;
 
     public Optional<Room> getRoomById(Long roomId) {
         Room room = idToRoom.getOrDefault(roomId, null);
@@ -53,47 +58,39 @@ public class RoomManager {
         return Optional.of(room);
     }
 
-    public Room createRoom(RequestRoomMessage request) {
+    public Room createRoom(CreateRoomCommand command) {
         long roomId = roomIdGenerator.incrementAndGet();
 
-        log.debug("{}번 방 생성: {}", roomId, request);
-
-        List<PlayerInfo> playerInfos = new ArrayList<>();
-        for (RequestRoomMessage.Player player : request.players()) {
-            playerInfos.add(
-                    PlayerInfo.builder()
-                            .playerId(player.id())
-                            .nickname(player.nickname())
-                            .monggingClassId(player.monggingClassId())
-                            .additionalHp(player.additionalHp())
-                            .additionalHealSpeed(player.additionalHealSpeed())
-                            .additionalTaskSpeed(player.additionalTaskSpeed())
-                            .build()
-            );
-        }
-        Room room = new Room(roomId, playerInfos);
+        List<PlayerInfo> playerInfos = command.players().stream()
+                .map(CreateRoomCommand.Player::toDomain)
+                .toList();
+        Room room = new Room(roomId, playerInfos, applicationEventPublisher, spawnCache);
         idToRoom.put(roomId, room);
+
+        log.debug("{}번 방 생성: {}명의 플레이어", roomId, playerInfos.size());
 
         return room;
     }
 
-    public Room createRoomFromPacket(List<PlayerInfo> playerInfos) {
-        // 테스트 방 플레이어 스폰 위치가 5개로 제한되어 있음
-        if (playerInfos.size() > 5) {
-            throw new IllegalArgumentException("패킷으로 생성하는 방은 최대 5명까지 지원합니다. 요청: " + playerInfos.size() + "명");
+    public Room createTestRoom(CreateRoomCommand command) {
+        Long roomId = command.roomId();
+        if (roomId == null) {
+            testRoomIdGenerator.decrementAndGet();
         }
 
-        long roomId = testRoomIdGenerator.decrementAndGet();  // 음수 ID: -101, -102, -103, ...
-        log.debug("{}번 테스트 방 생성 (패킷): {} 명의 플레이어", roomId, playerInfos.size());
-
-        Room room = new Room(roomId, playerInfos);
+        List<PlayerInfo> playerInfos = command.players().stream()
+                .map(CreateRoomCommand.Player::toDomain)
+                .toList();
+        Room room = new Room(roomId, playerInfos, applicationEventPublisher, spawnCache);
         idToRoom.put(roomId, room);
+
+        log.debug("{}번 테스트방 생성: {}명의 플레이어", roomId, playerInfos.size());
 
         return room;
     }
 
-    public void insertRoom(Room room) {
-        idToRoom.put(room.id, room);
+    public void insertRoomOfId(Long id, List<PlayerInfo> playerInfos) {
+        idToRoom.put(id, new Room(id, playerInfos, applicationEventPublisher, spawnCache));
     }
 
     public void removeRoom(Long roomId) {
@@ -105,56 +102,81 @@ public class RoomManager {
         idToRoom.remove(roomId);
     }
 
-    public void removeSession(Session session) {
-        for (Room room : idToRoom.values()) {
-            room.removeSession(session);
-        }
-        playerIdToRoom.remove(session.getMemberId());
-    }
-
-    public List<Room> getRooms() {
-        return idToRoom.values().stream().toList();
-    }
-
-    public JoinRoomResult joinRoom(Long roomId, Session session) {
+    public JoinRoomResult joinRoom(Long roomId, Channel channel) {
         Room room = idToRoom.getOrDefault(roomId, null);
         if (room == null) {
-            log.error("[{}] {}번 방을 찾을 수 없습니다", session.getChannel().id(), roomId);
+            log.error("[{}] {}번 방을 찾을 수 없습니다", channel.id(), roomId);
             return JoinRoomResult.FAIL;
         }
 
-        int connectedSessionCount = room.addSession(session);
-        if (connectedSessionCount == -1) {
+        int connectedChannelCount = room.addChannel(channel);
+        if (connectedChannelCount == -1) {
             return JoinRoomResult.FAIL;
         }
 
-        playerIdToRoom.put(session.getMemberId(), room);
-        log.debug("[{}] {}번 방에 세션 추가 결과: 현재 인원 {}인", session.getChannel().id(), roomId, connectedSessionCount);
+        playerIdToRoom.put(ChannelManager.getMemberId(channel), room);
+        log.debug("[{}] {}번 방에 세션 추가 결과: 현재 인원 {}인", channel.id(), roomId, connectedChannelCount);
 
-        return connectedSessionCount >= room.getPlayerSize() ? JoinRoomResult.DONE : JoinRoomResult.SUCCESS;
+        return connectedChannelCount >= room.getPlayerSize() ? JoinRoomResult.DONE : JoinRoomResult.SUCCESS;
     }
 
-    public SceneChangeResult changeScene(Session session) {
-        Room room = playerIdToRoom.getOrDefault(session.getMemberId(), null);
+    public void broadcastInitialDream(Long roomId) {
+        Room room = idToRoom.getOrDefault(roomId, null);
         if (room == null) {
-            log.error("[{}] {}번 사용자에 연결된 방을 찾을 수 없음", session.getChannel().id(), session.getMemberId());
+            log.error("{}번 방을 찾을 수 없습니다", roomId);
+            return;
+        }
+
+        room.broadcastInitialDream();
+    }
+
+    public SceneChangeResult changeScene(Channel channel) {
+        Long memberId = ChannelManager.getMemberId(channel);
+
+        Room room = playerIdToRoom.getOrDefault(memberId, null);
+        if (room == null) {
+            log.error("[{}] {}번 사용자에 연결된 방을 찾을 수 없음", channel.id(), memberId);
             return new SceneChangeResult(SceneChangeResult.Status.FAIL, null);
         }
 
-        int sceneChangerCount = room.addSceneChanger(session.getMemberId());
+        int sceneChangerCount = room.addSceneChanger(memberId);
         if (sceneChangerCount == -1) {
             return new SceneChangeResult(SceneChangeResult.Status.FAIL, null);
         }
 
-        playerIdToRoom.put(session.getMemberId(), room);
-        log.debug("[{}] {}번 방에 씬 체인저 추가 결과: 현재 인원 {}인", session.getChannel().id(), room.id, sceneChangerCount);
+        playerIdToRoom.put(memberId, room);
+        log.debug("[{}] {}번 방에 씬 체인저 추가 결과: 현재 인원 {}인", channel.id(), room.id, sceneChangerCount);
 
         return new SceneChangeResult(
                 sceneChangerCount >= room.getPlayerSize() ? SceneChangeResult.Status.DONE : SceneChangeResult.Status.SUCCESS,
                 room.id);
     }
 
+    public void leftRoom(Channel channel) {
+        Room room = playerIdToRoom.getOrDefault(ChannelManager.getMemberId(channel), null);
+
+        if (room == null) {
+            log.warn("[{}] 방 나가기 요청을 처리할 방이 없음", channel.id());
+            return;
+        }
+
+        room.removeChannel(channel);
+
+        log.debug("[{}] {}번 방 나가기 완료", channel.id(), room.id);
+    }
+
     public void broadcast(long roomId, Packet packet) {
         this.idToRoom.get(roomId).broadcast(packet);
     }
+
+    public void startDream(long roomId) {
+        Room room = idToRoom.getOrDefault(roomId, null);
+        if (room == null) {
+            log.warn("드림 시작 실패: %d번 방이 없습니다", roomId);
+            return;
+        }
+
+        room.startDream();
+    }
+
 }

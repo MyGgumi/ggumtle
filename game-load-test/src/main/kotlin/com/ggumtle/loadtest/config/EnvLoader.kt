@@ -2,6 +2,7 @@ package com.ggumtle.loadtest.config
 
 import io.github.cdimascio.dotenv.dotenv
 import mu.KotlinLogging
+import kotlin.math.round
 
 private val logger = KotlinLogging.logger {}
 
@@ -50,4 +51,33 @@ object EnvLoader {
     val accessSecret: String by lazy { getRequired("ACCESS_SECRET") }
     val gameServerHost: String by lazy { get("GAME_SERVER_HOST", "localhost") }
     val gameServerPort: Int by lazy { get("GAME_SERVER_PORT", "9000").toInt() }
+
+    /**
+     * Unity FixedUpdate frequency (Hz). Default: 60
+     */
+    val fixedUpdateHz: Int by lazy {
+        val value = get("FIXED_UPDATE_HZ")?.toIntOrNull()
+        when {
+            value == null -> {
+                logger.info { "FIXED_UPDATE_HZ not set, using default 60Hz" }
+                60
+            }
+            value <= 0 -> {
+                logger.warn { "Invalid FIXED_UPDATE_HZ=$value, using default 60Hz" }
+                60
+            }
+            else -> {
+                logger.info { "FIXED_UPDATE_HZ=$value (interval=${round(1000.0 / value).toLong()}ms)" }
+                value
+            }
+        }
+    }
+
+    /**
+     * Movement packet interval in milliseconds.
+     * Derived from fixedUpdateHz: 1000 / Hz, rounded.
+     */
+    val moveIntervalMs: Long by lazy {
+        round(1000.0 / fixedUpdateHz).toLong().coerceAtLeast(1L)
+    }
 }

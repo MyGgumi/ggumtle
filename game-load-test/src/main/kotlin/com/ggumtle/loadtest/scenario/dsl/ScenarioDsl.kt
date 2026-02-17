@@ -1,5 +1,6 @@
 package com.ggumtle.loadtest.scenario.dsl
 
+import com.ggumtle.loadtest.config.EnvLoader
 import com.ggumtle.loadtest.player.DigUpResult
 import com.ggumtle.loadtest.player.VirtualPlayer
 import com.ggumtle.loadtest.protocol.body.PlayerInfoBody
@@ -196,7 +197,7 @@ class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
         player.sendMove(x, y, z, vx, vy, vz)
     }
 
-    suspend fun randomMove(count: Int = 1, intervalMs: Long = 16) {
+    suspend fun randomMove(count: Int = 1, intervalMs: Long = EnvLoader.moveIntervalMs) {
         val (baseX, baseY, baseZ) = player.spawnPosition
         repeat(count) { i ->
             val x = baseX + (i % 100)
@@ -210,7 +211,7 @@ class GamePhaseBuilder(val player: VirtualPlayer) : GamePhaseContext {
         }
     }
 
-    suspend fun continuousMove(duration: Duration, intervalMs: Long = 16) {
+    suspend fun continuousMove(duration: Duration, intervalMs: Long = EnvLoader.moveIntervalMs) {
         val endTime = System.currentTimeMillis() + duration.inWholeMilliseconds
         var step = 0
         val (baseX, baseY, baseZ) = player.spawnPosition

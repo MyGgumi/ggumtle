@@ -75,7 +75,7 @@ public class RoomManager {
     public Room createTestRoom(CreateRoomCommand command) {
         Long roomId = command.roomId();
         if (roomId == null) {
-            testRoomIdGenerator.decrementAndGet();
+            roomId = testRoomIdGenerator.decrementAndGet();
         }
 
         List<PlayerInfo> playerInfos = command.players().stream()
